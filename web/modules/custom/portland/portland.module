@@ -28,7 +28,6 @@ use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
-use Drupal\views\ResultRow;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -1290,25 +1289,6 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
   }
 }
 
-
-const MIME_TYPES = [
-  'application/pdf' => 'PDF Document (PDF)',
-  'application/msword' => 'Word Document (DOC)',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'Word Document (DOCX)',
-  'application/vnd.ms-excel' => 'Excel Document (XLS)',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'Excel Document (XLSX)',
-  'application/vnd.ms-powerpoint' => 'PowerPoint Document (PPT)',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'PowerPoint Document (PPTX)',
-  'text/plain' => 'Text Document (TXT)',
-  'text/csv' => 'Comma Separated Values (CSV)',
-  'application/postscript' => 'PostScript Document (PS)',
-  'application/octet-stream' => 'Binary File',
-  'image/jpeg' => 'JPEG Image (JPG)',
-  'image/png' => 'PNG Image (PNG)',
-  'image/gif' => 'GIF Image (GIF)',
-  'none' => 'Other',
-];
-
 /**
  * Implements hook_views_pre_render().
  */
@@ -1330,20 +1310,6 @@ function portland_views_pre_render(ViewExecutable $view)
         }
       }
     }
-  }
-  else if ($view->id() === 'media' && $view->current_display === 'page_file_size_by_type') {
-    $results = &$view->result;
-
-    // Sort by rewritten file type
-    usort($results, function (ResultRow $a, ResultRow $b) {
-      $mime_type_a = $a->_entity->get('field_mime_type')->value ?? "none";
-      $mime_type_b = $b->_entity->get('field_mime_type')->value ?? "none";
-
-      $readable_mime_type_a = array_key_exists($mime_type_a, MIME_TYPES) ? MIME_TYPES[$mime_type_a] : 'Other';
-      $readable_mime_type_b = array_key_exists($mime_type_b, MIME_TYPES) ? MIME_TYPES[$mime_type_b] : 'Other';;
-
-      return $readable_mime_type_a <=> $readable_mime_type_b; // Ascending; use -($a <=> $b) for descending
-    });
   }
 }
 
@@ -1390,6 +1356,37 @@ function portland_views_query_alter($view, $query)
 
     // Force sorting on revision ID
     $query->addOrderBy('media_field_revision', 'vid', 'DESC');
+  }
+  else if ($view->id() === 'media' && $view->current_display === 'page_file_size_by_type') {
+    // Only modify the query when it's sorting by MIME type
+    if(!empty($query->orderby) && array_key_exists('field', $query->orderby[0]) && $query->orderby[0]['field'] == 'media__field_mime_type_field_mime_type_value') {
+      // Build a CASE statement for sorting by display values
+      // Please note that this list must be in sync with how we re-write the MIME type
+      // See views.view.media.yml
+      $field = "media__field_mime_type.field_mime_type_value";
+      $case = "CASE ";
+      $case .= "WHEN $field = 'application/pdf' THEN 'PDF Document (PDF)' ";
+      $case .= "WHEN $field = 'application/msword' THEN 'Word Document (DOC)' ";
+      $case .= "WHEN $field = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' THEN 'Word Document (DOCX)' ";
+      $case .= "WHEN $field = 'application/vnd.ms-excel' THEN 'Excel Document (XLS)' ";
+      $case .= "WHEN $field = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' THEN 'Excel Document (XLSX)' ";
+      $case .= "WHEN $field = 'application/vnd.ms-powerpoint' THEN 'PowerPoint Document (PPT)' ";
+      $case .= "WHEN $field = 'application/vnd.openxmlformats-officedocument.presentationml.presentation' THEN 'PowerPoint Document (PPTX)' ";
+      $case .= "WHEN $field = 'text/plain' THEN 'Text Document (TXT)' ";
+      $case .= "WHEN $field = 'text/csv' THEN 'Comma Separated Values (CSV)' ";
+      $case .= "WHEN $field = 'application/postscript' THEN 'PostScript Document (PS)' ";
+      $case .= "WHEN $field = 'application/octet-stream' THEN 'Binary File' ";
+      $case .= "WHEN $field = 'image/jpeg' THEN 'JPEG Image (JPG)' ";
+      $case .= "WHEN $field = 'image/png' THEN 'PNG Image (PNG)' ";
+      $case .= "WHEN $field = 'image/gif' THEN 'GIF Image (GIF)' ";
+      $case .= "ELSE 'Other' END";
+      // Keep track of the original sort direction
+      $direction = $query->orderby[0]['direction'];
+      // Clear the original OrderBy
+      $query->orderby = [];
+      // Order by displayed MIME type values
+      $query->addOrderBy(NULL, $case, $direction, 'displayed_mime_type');    
+    }
   }
 }
 
