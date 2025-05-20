@@ -121,10 +121,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    $error_level = error_reporting();
-    error_reporting(E_ALL & ~E_DEPRECATED);
-
     $webform_fields = $this->getWebform()->getElementsDecoded();
     $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
     $form_ticket_fields = [];
@@ -367,9 +363,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
     // display link for token variables
     $form['token_link'] = $this->token_manager->buildTreeLink();
-
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    error_reporting($error_level);
 
     return parent::buildConfigurationForm($form, $form_state);
   }

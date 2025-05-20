@@ -122,10 +122,6 @@ class ZendeskHandler extends WebformHandlerBase
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    $error_level = error_reporting();
-    error_reporting(E_ALL & ~E_DEPRECATED);
-
     $webform_fields = $this->getWebform()->getElementsDecoded();
     $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
     $options = [
@@ -492,9 +488,6 @@ class ZendeskHandler extends WebformHandlerBase
       $form['ticket_fork_field']['#weight'] = 5;
       $form['custom_fields']['#weight'] = 6;
 
-      // TODO: remove once zendesk PHP library is updated for PHP 8.2
-      error_reporting($error_level);
-
       return parent::buildConfigurationForm($form, $form_state);
   }
 
@@ -684,6 +677,12 @@ class ZendeskHandler extends WebformHandlerBase
       // so default to anonymous.
       if (!str_contains($request['requester_email'], '@')) {
         $request['requester_email'] = self::ANONYMOUS_EMAIL;
+      }
+
+      // if requester_name contains an html entity, we need to html decode it
+      // so it doesn't get passed to Zendesk as an entity.
+      if (str_contains($request['requester_name'], '&')) {
+        $request['requester_name'] = html_entity_decode($request['requester_name']);
       }
 
       $request['requester'] = $request['requester_name']
