@@ -62,9 +62,8 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           link.parentNode.insertBefore(wrapper, link);
           wrapper.appendChild(link);
 
-          // Detect mobile devices (phones & tablets, regardless of viewport size)
+          // Detect mobile devices
           function isMobileDevice() {
-            // Checks for touch capability and common mobile user agents
             return (
               window.matchMedia('(pointer: coarse)').matches ||
               'ontouchstart' in window ||
@@ -75,12 +74,10 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           let reference;
           if (isMobile || !hasLongDefinition) {
-            // Replace link with span for mobile OR if there is no long definition
             reference = document.createElement('span');
             reference.className = link.className;
             reference.textContent = link.textContent;
             reference.setAttribute('tabindex', '0');
-            // Copy data attributes if needed
             Array.from(link.attributes).forEach(attr => {
               if (attr.name.startsWith('data-')) {
                 reference.setAttribute(attr.name, attr.value);
@@ -98,7 +95,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;
 
-          // Force reflow before Popper init
           tooltip.offsetHeight;
 
           requestAnimationFrame(() => {
@@ -120,8 +116,8 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               clearTimeout(hideTimeout);
               tooltip.classList.add('visible');
               tooltip.setAttribute('aria-hidden', 'false');
-              tooltip.style.transform = 'scale(1)'; // GPU promotion
-              tooltip.offsetHeight; // Force repaint
+              tooltip.style.transform = 'scale(1)';
+              tooltip.offsetHeight;
               popperInstance.update();
             }
 
@@ -137,7 +133,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             tooltip.setAttribute('aria-hidden', 'true');
 
             if (isMobile) {
-              // On mobile, use click/tap to show/hide
               reference.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (tooltip.classList.contains('visible')) {
@@ -146,7 +141,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
                   show();
                 }
               });
-              // Optional: hide tooltip when tapping outside
+
               document.addEventListener('click', (e) => {
                 if (!wrapper.contains(e.target) && tooltip.classList.contains('visible')) {
                   hide();
@@ -154,11 +149,18 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               });
             } else {
               wrapper.addEventListener('mouseenter', show);
-              wrapper.addEventListener('focus', show);
               wrapper.addEventListener('mouseleave', hide);
-              wrapper.addEventListener('blur', hide);
               tooltip.addEventListener('mouseenter', show);
               tooltip.addEventListener('mouseleave', hide);
+
+              // 🧠 Improved focus handling for keyboard tab navigation
+              wrapper.addEventListener('focusin', show);
+              wrapper.addEventListener('focusout', (event) => {
+                const next = event.relatedTarget;
+                if (!wrapper.contains(next) && !tooltip.contains(next)) {
+                  hide();
+                }
+              });
             }
 
             document.addEventListener('keydown', (event) => {
@@ -171,7 +173,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for UUID "${uuid}":`, err);
 
-          // Check if user is authenticated
           const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
           if (isLoggedIn) {
             const missingSpan = document.createElement('span');
@@ -180,7 +181,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             missingSpan.textContent = link.textContent.trim();
             link.replaceWith(missingSpan);
           } else {
-            // Replace the link with just its text content for anonymous users
             const textNode = document.createTextNode(link.textContent.trim());
             link.replaceWith(textNode);
           }
