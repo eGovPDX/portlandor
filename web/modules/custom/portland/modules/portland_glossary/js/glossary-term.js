@@ -28,10 +28,10 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const seeAlsoLinks = Array.isArray(termData.see_also) && termData.see_also.length
             ? `<div class="term-see-also"><strong>See also:</strong> ` +
-                termData.see_also.map(item =>
-                  `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`
-                ).join('') +
-              ` </div>`
+            termData.see_also.map(item =>
+              `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`
+            ).join('') +
+            `</div>`
             : '';
 
           const tooltipId = `glossary-tooltip-${uuid}`;
@@ -44,58 +44,47 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             ? `<a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>`
             : '';
 
+          const closeButton = `
+            <button class="glossary-close" aria-label="Close tooltip" type="button" style="display: none;">
+              ×
+            </button>`;
+
           const wrapper = document.createElement('span');
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
+                ${closeButton}
                 <strong class="term-title">${termLabel}</strong>
                 ${pronunciationElement}
                 <p class="term-definition">${description}</p>
                 ${seeAlsoLinks}
                 ${learnMoreButton}
               </div>
+              <div class="popper-arrow" data-popper-arrow></div>
             </span>
           `;
 
           link.parentNode.insertBefore(wrapper, link);
           wrapper.appendChild(link);
 
-          // Detect mobile devices
-          function isMobileDevice() {
-            return (
-              window.matchMedia('(pointer: coarse)').matches ||
-              'ontouchstart' in window ||
-              /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            );
-          }
-          const isMobile = isMobileDevice();
-
-          let reference;
-          if (isMobile || !hasLongDefinition) {
-            reference = document.createElement('span');
-            reference.className = link.className;
-            reference.textContent = link.textContent;
-            reference.setAttribute('tabindex', '0');
-            Array.from(link.attributes).forEach(attr => {
-              if (attr.name.startsWith('data-')) {
-                reference.setAttribute(attr.name, attr.value);
-              }
-            });
-            link.replaceWith(reference);
-          } else {
-            reference = link;
-          }
-
+          const reference = link;
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
+          const closeBtn = tooltip.querySelector('.glossary-close');
           let hideTimeout;
 
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;
 
-          tooltip.offsetHeight;
+          // Detect mobile/touch device
+          const isMobileDevice = () =>
+            window.matchMedia('(pointer: coarse)').matches ||
+            'ontouchstart' in window ||
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+          const isMobile = isMobileDevice();
 
           requestAnimationFrame(() => {
             const popperInstance = createPopper(reference, tooltip, {
@@ -116,21 +105,32 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               clearTimeout(hideTimeout);
               tooltip.classList.add('visible');
               tooltip.setAttribute('aria-hidden', 'false');
-              tooltip.style.transform = 'scale(1)';
-              tooltip.offsetHeight;
+              tooltip.style.visibility = 'visible';
               popperInstance.update();
             }
 
             function hide() {
               hideTimeout = setTimeout(() => {
+                if (tooltip.contains(document.activeElement)) {
+                  reference.focus(); // Move focus back to the glossary term before hiding
+                }
                 tooltip.classList.remove('visible');
                 tooltip.setAttribute('aria-hidden', 'true');
-                reference.focus();
+                tooltip.style.visibility = 'hidden';
               }, 300);
+            }
+
+            if (isMobile && closeBtn) {
+              closeBtn.style.display = 'inline-block';
+              closeBtn.onclick = (e) => {
+                e.preventDefault();
+                hide();
+              };
             }
 
             tooltip.setAttribute('tabindex', '-1');
             tooltip.setAttribute('aria-hidden', 'true');
+            tooltip.style.visibility = 'hidden';
 
             if (isMobile) {
               reference.addEventListener('click', (e) => {
@@ -149,18 +149,15 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               });
             } else {
               wrapper.addEventListener('mouseenter', show);
-              wrapper.addEventListener('mouseleave', hide);
-              tooltip.addEventListener('mouseenter', show);
-              tooltip.addEventListener('mouseleave', hide);
-
-              // 🧠 Improved focus handling for keyboard tab navigation
               wrapper.addEventListener('focusin', show);
-              wrapper.addEventListener('focusout', (event) => {
-                const next = event.relatedTarget;
-                if (!wrapper.contains(next) && !tooltip.contains(next)) {
+              wrapper.addEventListener('mouseleave', hide);
+              wrapper.addEventListener('focusout', (e) => {
+                if (!wrapper.contains(e.relatedTarget)) {
                   hide();
                 }
               });
+              tooltip.addEventListener('mouseenter', show);
+              tooltip.addEventListener('mouseleave', hide);
             }
 
             document.addEventListener('keydown', (event) => {
@@ -172,8 +169,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         })
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for UUID "${uuid}":`, err);
-
-          const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
+          const isLoggedIn = drupalSettings.user?.uid && drupalSettings.user.uid !== 0;
           if (isLoggedIn) {
             const missingSpan = document.createElement('span');
             missingSpan.classList.add('glossary-term-missing');
@@ -188,3 +184,27 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
     });
   }
 };
+
+function hideGlossaryTooltip(event) {
+  event.preventDefault();
+  const button = event.currentTarget;
+  const tooltip = button.closest('.glossary-popper');
+  const wrapper = button.closest('.glossary-term-wrapper');
+  const reference = wrapper?.querySelector('a, span');
+
+  // First blur the close button to remove focus from hidden content
+  button.blur();
+
+  if (tooltip) {
+    tooltip.classList.remove('visible');
+
+    // Delay setting aria-hidden to allow blur to take effect
+    requestAnimationFrame(() => {
+      tooltip.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  if (reference) {
+    reference.focus();
+  }
+}
