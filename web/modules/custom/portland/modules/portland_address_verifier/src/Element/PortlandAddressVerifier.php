@@ -44,7 +44,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $element['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('Address'),
+      '#title' => t('Street Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
       '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. Do not include unit number.'),
@@ -82,13 +82,16 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#id' => 'unit_number',
       '#attributes' => ['autocomplete' => 'off'],
       '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
+      '#wrapper_attributes' => [
+        'class' => ['mb-0'],
+      ],
     ];
     $element['location_city'] = [
       '#type' => 'textfield',
       '#title' => t('City'),
       '#id' => 'location_city',
       '#wrapper_attributes' => [
-        'class' => ['webform-city'],
+        'class' => ['webform-city', 'mb-0'],
       ],
     ];
     $element['location_state'] = [
@@ -97,14 +100,14 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#options' => $state_codes,
       '#default_value' => 'OR',
       '#id' => 'location_state',
-      '#wrapper_attributes' => ['class' => ['webform-state']],
+      '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
     ];
     $element['location_zip'] = [
       '#type' => 'textfield',
       '#title' => t('ZIP Code'),
       '#id' => 'location_zip',
       '#attributes' => ['class' => ['webform-zip']],
-      '#wrapper_attributes' => ['class' => ['webform-zip']],
+      '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
     ];
     $element['location_jurisdiction'] = [
       '#type' => 'hidden',
@@ -166,9 +169,13 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     ];
     $element['location_verification_status'] = [
       '#type' => 'hidden',
-      '#title' => t('Verification Status'),
-      '#attributes' => [ 'id' => 'location_verification_status'],
-      '#required_error' => 'Please verify the address before continuing.'
+      '#title' => t('Address Verification'),
+      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hiddenx']],
+      '#required_error' => 'The address is not verified.',
+      '#title_display' => 'invisible',
+      '#wrapper_attributes' => [
+        'class' => ['mt-0', 'mb-0'],
+      ],
     ];
     $element['location_capture_field'] = [
       '#type' => 'hidden',

@@ -9,33 +9,100 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
+    this._suppressReset = false;
+    this._verificationRequired = false;
+    this._verificationRequiredRemedy = this.settings.verification_required_remedy;
 
-    this.$checkmark;
-    this.$status;
-    this.$button;
+    // this.$checkmark;
+    // this.$status;
+    // this.$button;
 }
 
 // globals /////////////////////////////
-var $element;
-var $input;
-var $suggestModal;
-var $statusModal;
+// var $element;
+// var $input;
+// var $suggestModal;
+// var $statusModal;
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
+const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
 const VERIFIED_MESSAGE = "Address is verified!";
-
+const INPUT_FIELDS = [
+    '#location_address',
+    '#location_city',
+    '#location_state',
+    '#location_zip'
+]; // these fields accept user input and need to be monitored for changes
+const HIDDEN_FIELDS = [
+    '#location_full_address',
+    '#location_address_street_number',
+    '#location_address_street_quadrant',
+    '#location_address_street_name',
+    '#location_address_street_type',
+    '#location_jurisdiction',
+    '#location_lat',
+    '#location_lon',
+    '#location_x',
+    '#location_y',
+    '#location_taxlot_id',
+    '#location_is_unincorporated',
+    '#location_verification_status',
+    '#location_data'
+]; // these fields are set programmatically and should be cleared when the user changes the address
+const IGNORE_FIELDS = [
+    '#unit_number',
+]; // these fields can be ignored for the purposes of address verification
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     var self = this; // preserve refernece to "this" for use inside functions.
+
+    this._checkIfVerificationRequired();
 
     if (this.settings && this.settings.address_suggest) {
         this._setUpVerifyButton();
         this._setUpInputFieldAndAutocomplete();
     }
     this._setUpUnitNumberField();
-
+    this._handlePostback();
 };
+
+AddressVerifierView.prototype._checkIfVerificationRequired = function () {
+    // check if the verification is required
+    if (this.$verificationStatus.attr('required') == "required") {
+        this._verificationRequired = true;
+    }
+}
+
+AddressVerifierView.prototype._handlePostback = function () {
+    var self = this;
+    // if the form fails validation, the validation indicators are removed on postback,
+    // even if the address is verified and the hidden field retains the "Verified" value.
+    // need to reset the visual indicators to match the hidden field value.
+    var verificationStatus = this.$verificationStatus.val();
+    if (verificationStatus == "Verified") {
+        this.isVerified = true;
+        this.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+        this.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+        this.$button.prop("disabled", "disabled");
+        this.$button.removeClass("button--primary");
+        this.$button.addClass("disabled button--info");
+
+        // add change handler to visible input fields
+        for (var i = 0; i < INPUT_FIELDS.length; i++) {
+            var field = INPUT_FIELDS[i];
+            this.$element.find(field).off('input change').on('input change', function () {
+                if (self.isVerified) {
+                    self._resetVerified(self.$checkmark, self.$button);
+                }
+            });
+        }
+    } else if (verificationStatus == "Unverified") {
+        this.isVerified = false;
+        this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+        this.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+    }
+}
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
     var self = this;
@@ -50,7 +117,7 @@ AddressVerifierView.prototype._setUpVerifyButton = function () {
 
         // display candidates in modal
         // NOTE: Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
-        var address = self.$input.val().replace("&", "and");
+        var address = self.$input.val().replace(/&/g, "and");
         if (address.length >= 3) {
             self._showSuggestions(address);
         } else {
@@ -86,7 +153,6 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
             item.displayAddress = item.street + (unit ? ", " + unit : "") + ", " + item.city;
             $locationData.val(JSON.stringify(item));
             self.$element.find('#location_full_address').val(item.fullAddress);
-            // self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
     });
 }
@@ -103,12 +169,6 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         }
     });
 
-    this.$input.on('input', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
-    });
-
     this.$input.autocomplete({
         source: function (request, response) {
             // Call the model method to fetch autocomplete items
@@ -119,7 +179,7 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
                 })
                 .fail(function (error) {
                     console.error('Error fetching autocomplete items:', error);
-                    response([]);
+                    // response([]);
                 });
         }.bind(this),
         minLength: 3,
@@ -169,7 +229,7 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     }
 
     // blur address field after setting
-    self.$element.find('#location_address').blur();
+    //self.$element.find('#location_address').blur();
 }
 
 AddressVerifierView.prototype._processSecondaryResults = function (results, view = this, capturePath, captureField, $) {
@@ -178,56 +238,77 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
     view.$element.find('#' + captureField).val(propertyValue).trigger('change');
 }
 
-// this is hte method that handles the location item once its data is complete.
-// it sets the location as verified and populates all relevant fields. this function
-// may get passed as a callback to the model if supplemental data is required, such
-// as city or taxlot ID.
+// this method is called when an address is selected in the autocomplete list or in the
+// list of options displayed by the Verify button. it does the following:
+// * clears all fields, both visible and hidden
+// * if invalid location, show error modal
+// * parses the location data sets the values of all fields
+// * adds change handlers to the visible user input fields (calls _resetVerified)
+// * makes the "verified" visual indicators visible
+// * sets the internal isVerified flag to true
 AddressVerifierView.prototype._setVerified = function (item, view = this) {
+    var self = this;
+    view.isVerified = false; // reset to false until we know it's verified
 
-    // first reset
-    view._resetVerified(view.$checkmark, view.$button);
+    // call _resetVerified to clear/refresh fields /////////////////////////
+    //view._suppressReset = true;
+    //view._resetVerified(view.$checkmark, view.$button);
 
-    // if configured, require only Portland addresses
-    if (view.settings.require_portland_city_limits  && item.city.toUpperCase() != "PORTLAND") {
+    // show error modal if invalid location /////////////////////////
+    if (view.settings.require_portland_city_limits && item.city.toUpperCase() != "PORTLAND") {
         view._showOutOfBoundsErrorModal(item.fullAddress);
         view.$element.find('#location_address').val('');
         return false;
     }
 
-    view.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
-    view.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
-
-    view.$button.prop("disabled", "disabled");
-    view.$button.removeClass("button--primary");
-    view.$button.addClass("disabled button--info");
-
-    // populate hidden sub-elements for address data
-    view.$element.find('#location_address').val(item.street).trigger('change');
-    //$element.find('#location_street').val(item.street);
-    view.$element.find('#location_full_address').val(item.fullAddress);
-    view.$element.find('#location_address_street_number').val(item.streetNumber);
-    view.$element.find('#location_address_street_quadrant').val(item.streetQuadrant);
-    view.$element.find('#location_address_street_name').val(item.streetName);
-    view.$element.find('#location_address_street_type').val(item.streetType);
-    view.$element.find('#location_city').val(item.city).trigger('change');
-    view.$element.find('#location_jurisdiction').val(item.jurisdiction);
+    // parse location data and set field values, add change handlers to visible input fields /////////////////////////
+    // visible input fields
+    view.$element.find('#location_address').off('input change').val(item.street.toUpperCase()).trigger('change').blur().on('input change', function () {
+        if (self.isVerified) {
+            self._resetVerified(self.$checkmark, self.$button);
+        }
+    });
+    view.$element.find('#location_city').off('input change').val(item.city.toUpperCase()).trigger('change').on('input change', function () {
+        if (self.isVerified) {
+            self._resetVerified(self.$checkmark, self.$button);
+        }
+    });
     view._setStateByLabel(view, item.state);
-    view.$element.find('#location_zip').val(item.zipCode).trigger('change');
+    view.$element.find('#location_zip').off('input change').val(item.zipCode).trigger('change').on('input change', function () {
+        if (self.isVerified) {
+            self._resetVerified(self.$checkmark, self.$button);
+        }
+    });
+    // hidden data fields
+    view.$element.find('#location_full_address').val(item.fullAddress.toUpperCase());
+    view.$element.find('#location_address_street_number').val(item.streetNumber);
+    view.$element.find('#location_address_street_quadrant').val(item.streetQuadrant.toUpperCase());
+    view.$element.find('#location_address_street_name').val(item.streetName.toUpperCase());
+    view.$element.find('#location_address_street_type').val(item.streetType.toUpperCase());
+    view.$element.find('#location_jurisdiction').val(item.jurisdiction.toUpperCase());
     view.$element.find('#location_lat').val(item.lat);
     view.$element.find('#location_lon').val(item.lon);
     view.$element.find('#location_x').val(item.x);
     view.$element.find('#location_y').val(item.y);
     view.$element.find('#location_taxlot_id').val(item.taxlotId);
-    // view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
-    // view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
-    // view.$element.find('#location_address_label_markup').removeClass('d-none');
-    view.$element.find('#location_verification_status').val("Verified").trigger('change');
     view.$element.find('#location_data').val(JSON.stringify(item));
+
+    // show visual "verified" indicators /////////////////////////
+    view.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+    view.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+    view.$button.prop("disabled", "disabled");
+    view.$button.removeClass("button--primary");
+    view.$button.addClass("disabled button--info");
+
+    // set internal isVerified flag to true /////////////////////////
     view.isVerified = true;
-    //console.log(JSON.stringify(item));
+    view.$element.find('#location_verification_status').val("Verified");
+    //view._suppressReset = false;
 }
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
+    var self = view;
+
     // Find the select element
     var element = view.$element.find('#location_state');
     // Find the option with the text matching the full state name
@@ -237,7 +318,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_state').val(value);
+    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { self._resetVerified(self.$checkmark, self.$button); });
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -318,6 +399,10 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
             class: 'btn-default',
             click: function () {
                 self.$notFoundModal.dialog('close');
+                // if verification is not required, set the status to "Forced"
+                if (!self._verificationRequired) {
+                    self._useUnverified();
+                }
             }
         }]
     }).showModal();
@@ -361,37 +446,34 @@ AddressVerifierView.prototype.testIsMatch = function ($element, item) {
     return item.fullAddress.toUpperCase().startsWith($element.find('#location_address').val().toUpperCase());
 }
 
+// this method is called when the user changes the value of any of the visible input fields
+// or prior to setting the fields and marking as verified. it does the following:
+// * clear values of hidden data fields
+// * remove change handlers from visible input fields
+// * hide the "verified" visual indicators
+// * set internal isVerified flag to false
 AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
+
+    // clear values of hidden data fields /////////////////////////
+    for (var i = 0; i < HIDDEN_FIELDS.length; i++) {
+        var field = HIDDEN_FIELDS[i];
+        this.$element.find(field).val("");
+    }
+
+    // remove change handlers from visible input fields /////////////////////////
+    for (var i = 0; i < INPUT_FIELDS.length; i++) {
+        var field = INPUT_FIELDS[i];
+        this.$element.find(field).off('input change');
+    }
+
+    // hide the "verified" visual indicators /////////////////////////
     $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
     this.$status.removeClass("verified unverified").addClass("invisible").text("");
     $button.prop('disabled', false);
     $button.removeClass("disabled button--info");
     $button.addClass("button--primary");
 
-    // clear hidden sub-elements for address data
-    var $element = this.$(this.element);
-    //this.$element.find('#location_address').val("");
-    this.$element.find('#location_full_address').val("");
-    this.$element.find('#location_address_street_number').val("");
-    this.$element.find('#location_address_street_quadrant').val("");
-    this.$element.find('#location_address_street_name').val("");
-    this.$element.find('#location_address_street_type').val("");
-    this.$element.find('#location_city').val("").trigger('change');
-    this.$element.find('#location_jurisdiction').val("");
-    this.$element.find('#location_state').val("").trigger('change');
-    this.$element.find('#location_zip').val("").trigger('change');
-    this.$element.find('#location_lat').val("");
-    this.$element.find('#location_lon').val("");
-    this.$element.find('#location_x').val("");
-    this.$element.find('#location_y').val("");
-    this.$element.find('#location_taxlot_id').val("");
-    this.$element.find('#location_is_unincorporated').val("");
-    // $element.find('#address_label').val("");
-    // $element.find('#location_address_label_markup').addClass('d-none');
-    this.$element.find('#location_verification_status').val("").trigger('change');
-    this.$element.find('#location_data').val("");
-    // this.$element.find('#container_unit').removeClass('d-none');
-    // this.$element.find('#location_address_label_markup').removeClass('d-none');
+    // set internal isVerified flag to false /////////////////////////
     this.isVerified = false;
 }
 
@@ -400,7 +482,8 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$checkmark.addClass("invisible");
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-    this.$status.removeClass("invisible").addClass("unverified").text(UNVERIFIED_WARNING_MESSAGE);
+    var unverifiedMessage = this._verificationRequired ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
+    this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
     // var input = this.$notFoundModal.find("#enteredAddress").val();
     // this.$input.val(input);
     this.$button.prop("disabled", "disabled");
@@ -412,18 +495,9 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.isVerified = true;
 }
 
-// AddressVerifierView.prototype.updateAddressUI = function (address) {
-//     // Update the UI with the verified address data
-//     alert('Putting the validated address in the UI');
-// };
-
-// AddressVerifierView.prototype._getTaxLotNumber = function (item) {
-//     var lat = item.lat;
-//     var lon = item.lon;
-//     this.model.getTaxLotId(lat, lon);
-// }
-
-// AddressVerifierView.prototype.handleTaxlotId = function (taxlotId, $element) {
-//     $element.find('#location_taxlot_id').val(taxlotId);
-//     // alert($element.find('#location_taxlot_id').val());
-// }
+AddressVerifierView.prototype._resetVerificationStatus = function (event) {
+    var varField = this.$element.find('#location_verification_status');
+    if (varField.val() !== "") {
+        varField.val('').trigger('change');
+    }
+};
