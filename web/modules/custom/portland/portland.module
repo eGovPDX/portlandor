@@ -821,7 +821,9 @@ const PAGE_SUBTYPE_SERVICE_TID = 1032;
  */
 function _hide_ppd_service_subtype(&$form, Node $node) {
   $user = \Drupal::currentUser();
-  if (array_key_exists('field_page_type', $form) && !in_array('glossary_editor', $user->getRoles())) {
+  $roles = $user->getRoles();
+  $is_allowed = in_array('glossary_editor', $roles) || in_array('administrator', $roles);
+  if (array_key_exists('field_page_type', $form) && !$is_allowed) {
     if ($node->get('field_page_type')->target_id === (string) PAGE_SUBTYPE_SERVICE_TID) {
       // if page type is Service, disable the field completely so they can't switch it back
       $form['field_page_type']['#disabled'] = true;
