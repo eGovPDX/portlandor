@@ -9,6 +9,7 @@ dependencies:
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 1
+    exclude_from_json: {  }
   honeypot:
     honeypot: true
     time_restriction: true
@@ -27,33 +28,19 @@ elements: |-
     '#type': webform_markup
     '#states':
       visible:
-        - ':input[name="session_status"]':
-            '!value': ''
-    '#markup': '<p>Testimony is no longer open for this session. Please go back to the <a href="/council/agenda"> main council agenda page.</a></p>'
-  markup_query_unpopulated:
-    '#type': webform_markup
-    '#states':
-      visible:
-        - ':input[name="session_id"]':
-            empty: true
-        - or
-        - ':input[name="agenda_items"]':
+        - ':input[name="doc_id"]':
             unchecked: true
-    '#markup': '<p>In order to register for testimony, please go to the <a href="/council/agenda">Council Agenda</a>.</p>'
+    '#markup': '<p>This item is no longer available to testify on. Please go back to the <a href="/council/agenda">main council agenda page.</a></p>'
   container_testimony:
     '#type': container
     '#states':
       visible:
-        ':input[name="session_id"]':
-          '!value': ''
-        ':input[name="session_status"]':
-          value: ''
-        ':input[name="agenda_items"]':
+        ':input[name="doc_id"]':
           checked: true
     '#states_clear': false
-    agenda_items:
+    doc_id:
       '#type': webform_entity_radios
-      '#title': 'Council Document'
+      '#title': 'Agenda item'
       '#description_display': before
       '#prepopulate': true
       '#required': true
@@ -63,8 +50,166 @@ elements: |-
       '#selection_settings':
         view:
           view_name: council_documents
-          display_name: entity_reference_council_document_for_verbal_testimony
+          display_name: entity_reference_council_document_for_testimony
           arguments: {  }
+    testimony_type:
+      '#type': radios
+      '#title': 'What would you like to do?'
+      '#options':
+        written: 'Submit written testimony'
+        verbal: 'Register for verbal testimony on <strong>[webform_submission:values:computed_latest_session_date]</strong> at <strong>[webform_submission:values:computed_committee_name]</strong>'
+      '#states':
+        visible:
+          ':input[name="computed_latest_agenda_item_id"]':
+            '!value': ''
+          ':input[name="computed_allows_written_testimony"]':
+            value: '1'
+    testimony_type_no_verbal:
+      '#type': radios
+      '#title': 'What would you like to do?'
+      '#options':
+        written: 'Submit written testimony'
+        verbal: 'Register for verbal testimony -- Verbal testimony is not available for this item.'
+      '#states':
+        visible:
+          ':input[name="computed_latest_agenda_item_id"]':
+            value: ''
+          ':input[name="computed_allows_written_testimony"]':
+            value: '1'
+      '#options__properties':
+        verbal:
+          '#disabled': true
+    testimony_type_no_written:
+      '#type': radios
+      '#title': 'What would you like to do?'
+      '#options':
+        verbal: 'Register for verbal testimony on <strong>[webform_submission:values:computed_latest_session_date]</strong> at <strong>[webform_submission:values:computed_committee_name]</strong>'
+        written: 'Submit written testimony -- Written testimony is not available for this item.'
+      '#states':
+        visible:
+          ':input[name="computed_latest_agenda_item_id"]':
+            '!value': ''
+          ':input[name="computed_allows_written_testimony"]':
+            value: '0'
+      '#options__properties':
+        written:
+          '#disabled': true
+  markup_written_testimony_link:
+    '#type': webform_markup
+    '#states':
+      visible:
+        - ':input[name="testimony_type"]':
+            value: written
+          ':input[name="computed_written_testimony_link"]':
+            '!value': ''
+        - or
+        - ':input[name="testimony_type_no_verbal"]':
+            value: written
+          ':input[name="computed_written_testimony_link"]':
+            '!value': ''
+    '#admin_title': 'External Written Testimony link'
+    '#markup': '<p><a class="btn btn-primary" href="[webform_submission:values:computed_written_testimony_link]">Submit written testimony</a></p>'
+  markup_verbal_testimony_link:
+    '#type': webform_markup
+    '#states':
+      visible:
+        - ':input[name="testimony_type"]':
+            value: verbal
+          ':input[name="computed_verbal_testimony_link"]':
+            '!value': ''
+        - or
+        - ':input[name="testimony_type_no_written"]':
+            value: verbal
+          ':input[name="computed_verbal_testimony_link"]':
+            '!value': ''
+    '#admin_title': 'External Verbal Testimony link'
+    '#markup': '<p><a class="btn btn-primary" href="[webform_submission:values:computed_verbal_testimony_link]">Register for verbal testimony</a></p>'
+  section_written_testimony:
+    '#type': webform_section
+    '#title': 'Submit written testimony'
+    '#states':
+      visible:
+        - ':input[name="testimony_type"]':
+            value: written
+          ':input[name="computed_written_testimony_link"]':
+            value: ''
+        - or
+        - ':input[name="testimony_type_no_verbal"]':
+            value: written
+          ':input[name="computed_written_testimony_link"]':
+            value: ''
+    markup_written_testimony:
+      '#type': webform_markup
+      '#markup': '<p>Written testimony will be added to the public record if received before Council votes unless otherwise stated during the meeting or on the agenda. Written testimony is not read out loud during the meeting.</p><p>To submit general comments or feedback to City Council unrelated to an agenda item, complete the <a href="/help/contact-elected-official">Contact an Elected Official form</a>.</p>'
+    written_testimony_position:
+      '#type': radios
+      '#title': Position
+      '#description_display': before
+      '#description': 'Select if you support or oppose the agenda item (optional).'
+      '#options':
+        Support: Support
+        'Support with changes': 'Support with changes'
+        Oppose: Oppose
+    written_testimony_comments:
+      '#type': textarea
+      '#title': Comments
+      '#maxlength': 4000
+      '#rows': 3
+    written_testimony_attachments:
+      '#type': managed_file
+      '#title': 'File upload'
+      '#multiple': 3
+      '#description_display': before
+      '#max_filesize': '10'
+      '#file_extensions': 'pdf jpg jpeg png'
+      '#sanitize': true
+    written_testimony_contact_name:
+      '#type': textfield
+      '#title': 'Name or Organization'
+      '#description_display': before
+      '#description': 'Enter your name, organization, or leave blank if you would like to remain anonymous.'
+    written_testimony_contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': 'Provide your email address should you need to be contacted about your testimony.'
+      '#description_display': before
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    written_testimony_public_records_statement:
+      '#type': webform_markup
+      '#markup': '<hr>The information you provide in this form is considered a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a> and is available to the public on request.'
+    written_testimony_actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+  section_verbal_testimony:
+    '#type': webform_section
+    '#title': 'Register for verbal testimony'
+    '#states':
+      visible:
+        - ':input[name="testimony_type"]':
+            value: verbal
+          ':input[name="computed_verbal_testimony_link"]':
+            value: ''
+        - or
+        - ':input[name="testimony_type_no_written"]':
+            value: verbal
+          ':input[name="computed_verbal_testimony_link"]':
+            value: ''
+    is_gt_1hr_before:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Greater than 1 hour before session'
+      '#title_display': none
+      '#display_on': form
+      '#template': |-
+        {% if data.computed_latest_session_date and data.computed_latest_session_date|date('U') - 'now'|date('U') < 3600%}
+        <div class="webform-alert alert alert--warning">
+        <p><strong>Virtual testimony registration is now closed. Complete the form below to testify in-person.</strong></p>
+        </div>
+        {% endif %}
+      '#whitespace': spaceless
+    markup_verbal_testimony:
+      '#type': webform_markup
+      '#markup': '<p>Members of the public must sign up in advance to provide verbal testimony during the meeting by completing the form below or by calling <a href="tel:+1-503-823-4000">311 (503-823-4000)</a>. Registration for virtual testimony closes one hour prior to the start of the meeting. In-person testifiers must sign up before the agenda item is heard.</p>'
     contact_first_name:
       '#type': textfield
       '#title': 'First Name'
@@ -90,18 +235,17 @@ elements: |-
           ':input[name="contact_no_email"]':
             checked: true
         optional:
-          ':input[name="contact_no_email"]':
-            checked: true
+          - ':input[name="contact_no_email"]':
+              checked: true
+          - or
+          - ':input[name="testimony_type"]':
+              value: written
+          - or
+          - ':input[name="testimony_type_no_verbal"]':
+              value: written
     contact_no_email:
       '#type': checkbox
       '#title': "I don't have an email"
-    markup_virtual_closed:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="is_gt_1hr_before"]':
-            value: 'false'
-      '#markup': '<p><strong>Virtual registration for this session is now closed</strong></p>'
     contact_phone:
       '#type': textfield
       '#title': 'Phone Number (optional)'
@@ -156,34 +300,76 @@ elements: |-
     race_ethnicity:
       '#type': webform_checkboxes_other
       '#title': 'Race and Ethnicity'
-      '#description': 'The Auditor&#39;s Office promotes and fosters a culture of racial equity, diversity, and inclusion. Basic demographic information is used only to identify and address issues of equitable access. Check all that apply:'
+      '#description': 'The Auditor&#39;s Office requests anonymous demographic information to identify and address issues of equitable access. Check all that apply:'
       '#description_display': before
       '#options': ethnicity
       '#other__option_label': 'Not listed above, please describe'
       '#other__placeholder': 'Please describe'
-    horizontal_rule:
-      '#type': webform_horizontal_rule
-    container_submit:
-      '#type': container
-      acknowledge_public_record:
-        '#type': checkbox
-        '#title': '<strong>I understand information entered in this form is public record.</strong>'
-        '#required': true
-      markup_accommodations:
-        '#type': webform_markup
-        '#markup': |-
-          <h2>Accommodations</h2>
-
-          <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. <a href="/311/ada-request">Request an accommodation online</a> or call <a href="tel:+1-503-823-4000">503-823-4000</a>. Please make your request at least 5 days in advance of the meeting.</p>
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
-  computed_agenda_items:
+    markup_accommodations:
+      '#type': webform_markup
+      '#markup': |-
+        <h2>Accommodations</h2>
+        <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. <a href="/311/ada-request">Request an accommodation online</a> or call <a href="tel:+1-503-823-4000">503-823-4000</a>. Please make your request at least 5 days in advance of the meeting.</p>
+    verbal_testimony_public_records_statement:
+      '#type': webform_markup
+      '#markup': '<hr>The information you provide in this form is considered a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a> and is available to the public on request.'
+    verbal_testimony_actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+  computed_council_document:
     '#type': webform_computed_twig
     '#title': 'Computed - Council Document'
     '#display_on': none
     '#mode': text
-    '#template': "{{ drupal_view('council_documents', 'block_latest_agenda_item_for_verbal_testimony', data.agenda_items)|render|striptags|trim }}"
+    '#template': "{{ drupal_field('field_document_number', 'node', data.doc_id ?? 0, { label: 'hidden' })|render|striptags|trim }}"
+    '#whitespace': trim
+  computed_allows_written_testimony:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Allows Written Testimony'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ drupal_field('field_allows_written_testimony', 'node', data.doc_id ?? 0, { label: 'hidden', settings: { 'format': 'boolean' } })|render|striptags|trim }}"
+    '#whitespace': trim
+  computed_committee_name:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Committee Name'
+    '#display_on': none
+    '#template': "{{ drupal_field('field_committee', 'node', data.doc_id ?? 0, { label: 'hidden' })|render|striptags|trim }}"
+    '#mode': text
+    '#whitespace': spaceless
+  computed_latest_agenda_item_id:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Latest Agenda Item ID for Verbal Testimony'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ drupal_view('council_documents', 'block_latest_agenda_item_for_verbal_testimony', data.doc_id)|render|striptags|trim }}"
+    '#whitespace': trim
+  computed_latest_session_date:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Latest Session Date for Verbal Testimony'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ drupal_view('council_documents', 'block_latest_council_session_for_verbal_testimony', data.doc_id)|render|striptags|trim }}"
+    '#whitespace': trim
+  computed_verbal_testimony_link:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Verbal Testimony Link'
+    '#display_on': form
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#mode': text
+    '#template': "{{ data.computed_latest_agenda_item_id ? drupal_field('field_verbal_testimony_link', 'relation', data.computed_latest_agenda_item_id, { label: 'hidden', type: 'string' })|render|striptags|trim : '' }}"
+    '#whitespace': trim
+  computed_written_testimony_link:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Written Testimony Link'
+    '#display_on': form
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#mode': text
+    '#template': "{{ drupal_field('field_written_testimony_link', 'node', data.doc_id ?? 0, { label: 'hidden', type: 'string' })|render|striptags|trim }}"
     '#whitespace': trim
   computed_location_lat:
     '#type': webform_computed_twig
@@ -197,41 +383,23 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{{ data.location.location_lon }}'
-  is_gt_1hr_before:
+  computed_confirmation_message:
     '#type': webform_computed_twig
-    '#title': 'Computed - Greater than 1 hour before session'
-    '#title_display': none
-    '#wrapper_attributes':
-      class:
-        - d-none
-    '#display_on': form
-    '#template': |-
-      {% if data.session_id %}
-      {% set session_start = drupal_field('field_session_start_datetime', 'relation', data.session_id, { label: 'hidden', type: 'datetime_custom', settings: { date_format: 'U' } })|render|striptags|trim %}
-      {{ session_start == "" ? "false" : (session_start - 'now'|date('U')) > 3600 ? 'true' : 'false' }}
-      {% endif %}
-    '#whitespace': spaceless
-  session_status:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Session Status'
-    '#title_display': none
-    '#wrapper_attributes':
-      class:
-        - d-none
-    '#display_on': form
-    '#template': "{{ drupal_field('field_session_status', 'relation', data.session_id ?? 0, { label: 'hidden' })|render|striptags|trim }}"
-    '#whitespace': spaceless
-  committee_name:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Committee Name'
+    '#title': 'Computed - Confirmation Message'
     '#display_on': none
-    '#template': "{{ drupal_field('field_committee', 'node', data.agenda_items ?? 0, { label: 'hidden' })|render|striptags|trim }}"
     '#mode': text
-    '#whitespace': spaceless
-  session_id:
-    '#type': hidden
-    '#title': 'Council Session ID'
-    '#prepopulate': true
+    '#template': |-
+      {% if data.testimony_type == 'written' or data.testimony_type_no_verbal == 'written' %}
+        <h2>Your testimony has been received</h2>
+        <a href="/council/written-testimony">View written testimony submitted for current agenda items</a>
+      {% else %}
+        <h2>Your registration has been received</h2>
+        Thank you for registering to testify at an upcoming Portland City Council meeting.
+        <br>
+        If you signed up for virtual testimony, your personalized Zoom invite will be emailed to you no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invite).
+        <br>
+        <a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a>
+      {% endif %}
 css: ''
 javascript: ''
 settings:
@@ -336,10 +504,10 @@ settings:
   draft_loaded_message: ''
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
-  confirmation_type: page
+  confirmation_type: inline
   confirmation_url: ''
-  confirmation_title: 'Your registration has been received'
-  confirmation_message: '<p>Thank you for registering to testify at an upcoming Portland City Council meeting.</p><p>If you signed up for virtual testimony, your personalized Zoom invite will be emailed to you no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invite).</p><hr><p><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p>'
+  confirmation_title: ''
+  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message:raw]</p>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -417,41 +585,64 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  smartsheet_add_row_to_existing_sheet:
+  smartsheet_written_testimony:
     id: smartsheet_add_row
-    handler_id: smartsheet_add_row_to_existing_sheet
-    label: 'Smartsheet: add row to existing sheet'
+    handler_id: smartsheet_written_testimony
+    label: 'Smartsheet: add row (written testimony)'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        -
+          ':input[name="testimony_type"]':
+            value: written
+        - or
+        -
+          ':input[name="testimony_type_no_verbal"]':
+            value: written
+    weight: -50
+    settings:
+      column_mappings:
+        3628542514122628: doc_id
+        7815207971671940: computed_council_document
+        2185708437458820: written_testimony_position
+        6689308064829316: written_testimony_comments
+        8941107878514564: written_testimony_contact_name
+        39461740040068: written_testimony_contact_email
+      sheet_id: '4089476049489796'
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      upload_attachments: '1'
+  smartsheet_verbal_testimony:
+    id: smartsheet_add_row
+    handler_id: smartsheet_verbal_testimony
+    label: 'Smartsheet: add row (verbal testimony)'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        -
+          ':input[name="testimony_type"]':
+            value: verbal
+        - or
+        -
+          ':input[name="testimony_type_no_written"]':
+            value: verbal
     weight: -49
     settings:
       column_mappings:
         6681077722965892: contact_first_name
         4963020357035908: contact_last_name
-        8932877536651140: computed_agenda_items
-        5586548498059140: ''
-        4429277909280644: ''
+        8932877536651140: computed_council_document
         2711220543350660: contact_email
-        6377472631197572: ''
-        2138213344667524: contact_phone
-        1030271051976580: ''
-        5184092882554756: ''
-        355999886036868: ''
+        6813766443552644: computed_committee_name
         1936696209002372: contact_name_pronunciation
+        2138213344667524: contact_phone
         136784514443140: computed_location_lat
         4640384141813636: computed_location_lng
         8865636012740484: contact_zip_code
-        3025163486449540: ''
-        7528763113820036: ''
-        4707236164095876: ''
-        1899263579606916: ''
-        6402863206977412: ''
-        708250556125060: ''
-        7739696225668996: ''
-        2110196691455876: ''
-        5211850183495556: ''
-        6813766443552644: committee_name
       sheet_id: '4217323172194180'
       multiple_rows_enable: null
       multiple_rows_field: ''
@@ -464,13 +655,19 @@ handlers:
     label: 'Add row to demographics Smartsheet'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        -
+          ':input[name="testimony_type"]':
+            value: verbal
+        - or
+        -
+          ':input[name="testimony_type_no_written"]':
+            value: verbal
     weight: -48
     settings:
       column_mappings:
-        1356927225253764: ''
         6566033213050756: race_ethnicity
-        8379364642082692: ''
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
@@ -486,6 +683,6 @@ handlers:
     conditions: {  }
     weight: -50
     settings:
-      element_id: agenda_items
-      error_message: 'The agenda item you selected is no longer available for testimony.'
+      element_id: doc_id
+      error_message: 'The item you selected is no longer available for testimony.'
 variants: {  }
