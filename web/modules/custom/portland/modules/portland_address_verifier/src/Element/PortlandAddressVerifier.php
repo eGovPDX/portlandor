@@ -170,7 +170,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_verification_status'] = [
       '#type' => 'textfield',
       '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hiddenx']],
+      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hidden']],
       '#required_error' => 'The address is not verified.',
       '#title_display' => 'invisible',
       '#wrapper_attributes' => [
