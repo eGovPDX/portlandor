@@ -1,8 +1,6 @@
 <?php
 
-use Drupal\group\Entity\Group;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\group\Entity\GroupRelationship;
 
 /**
  * Implements hook_token_info().
@@ -36,11 +34,6 @@ function portland_token_info()
   $info['tokens']['portland']['title'] = [
     'name' => t('Portland title'),
     'description' => 'A token to display standardized page titles for Portland.gov',
-  ];
-
-  $info['tokens']['portland']['group_name'] = [
-    'name' => t('Group name'),
-    'description' => 'The group name of the current page',
   ];
 
   return $info;
@@ -85,30 +78,7 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
               $replacements[$original] = $new_title;
             }
           }
-          break;
-        case 'group_name':
-          $route_match = \Drupal::routeMatch();
 
-          // get the view id from the path
-          $view_id = $route_match->getParameter('view_id');
-          $display_id = $route_match->getParameter('display_id');
-
-          $path = $route_match->getRouteObject()->getPath();
-          // If this is a group path, get the group ID from the path
-          if ($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0)) {
-            $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes a named group parameter is used in the path, othertimes it's a generic parameter
-          } elseif ($route_match->getParameter('view')) {
-            // When editing a view and previewing results, the group ID contextual filter 
-            // is buried in the 'view' parameter's executable args array
-            $group_id = $route_match->getParameter('view')->getExecutable()->args[0];
-          }
-          if (isset($group_id)) {
-            $group_entity = Group::load($group_id);
-            if (isset($group_entity)) {
-              $group_title = $group_entity->label();
-              $replacements[$original] = $group_title;
-            }
-          }
           break;
       }
     }
