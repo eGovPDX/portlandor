@@ -114,11 +114,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Jurisdiction'),
       '#id' => 'location_jurisdiction',
     ];
-    $element['suggestions_modal'] = [
+    $element['av_suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
+      '#markup' => '<div id="av_suggestions_modal" class="visually-hidden"></div>',
     ];
     $element['status_modal'] = [
       '#type' => 'markup',
@@ -170,7 +170,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_verification_status'] = [
       '#type' => 'textfield',
       '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hidden']],
+      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hiddenx']],
       '#required_error' => 'The address is not verified.',
       '#title_display' => 'invisible',
       '#wrapper_attributes' => [

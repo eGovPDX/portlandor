@@ -4,7 +4,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.settings = settings;
     this.$element = element;
     this.$input = element.find('#location_address');
-    this.$suggestModal = element.find('#suggestions_modal');
+    this.$suggestModal = element.find('#av_suggestions_modal');
     this.$statusModal = element.find('#status_modal');
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
@@ -301,6 +301,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
     // set internal isVerified flag to true /////////////////////////
     view.isVerified = true;
+    view.$element.find('#location_verification_status').val("Verified");
     view.$element.find('.invalid-feedback').addClass('d-none');
     
     // hide validation message
