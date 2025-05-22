@@ -11,7 +11,6 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.isVerified = false;
     this._suppressReset = false;
     this._verificationRequired = false;
-    this._verificationRequiredRemedy = this.settings.verification_required_remedy;
 
     // this.$checkmark;
     // this.$status;
@@ -302,8 +301,11 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
     // set internal isVerified flag to true /////////////////////////
     view.isVerified = true;
-    view.$element.find('#location_verification_status').val("Verified");
-    //view._suppressReset = false;
+    view.$element.find('.invalid-feedback').addClass('d-none');
+    
+    // hide validation message
+    view.$element.find('#location_address_label_markup').removeClass('d-none');
+    view.$element.find('.error').removeClass('error');
 }
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
@@ -390,8 +392,8 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
-    var inputVal = self.$input.val().trim();
-    this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${this.settings.not_verified_remedy}</p></p>`);
+    var remedyMessage = this._verificationRequired ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
+    this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{
