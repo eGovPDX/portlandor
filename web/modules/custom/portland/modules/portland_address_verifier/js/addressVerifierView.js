@@ -9,7 +9,6 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
-    this._suppressReset = false;
     this._verificationRequired = false;
 
     // this.$checkmark;
@@ -45,7 +44,6 @@ const HIDDEN_FIELDS = [
     '#location_y',
     '#location_taxlot_id',
     '#location_is_unincorporated',
-    '#location_verification_status',
     '#location_data'
 ]; // these fields are set programmatically and should be cleared when the user changes the address
 const IGNORE_FIELDS = [
@@ -63,7 +61,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         this._setUpInputFieldAndAutocomplete();
     }
     this._setUpUnitNumberField();
-    this._handlePostback();
+    // this._handlePostback();
 };
 
 AddressVerifierView.prototype._checkIfVerificationRequired = function () {
@@ -74,34 +72,36 @@ AddressVerifierView.prototype._checkIfVerificationRequired = function () {
 }
 
 AddressVerifierView.prototype._handlePostback = function () {
-    var self = this;
-    // if the form fails validation, the validation indicators are removed on postback,
-    // even if the address is verified and the hidden field retains the "Verified" value.
-    // need to reset the visual indicators to match the hidden field value.
-    var verificationStatus = this.$verificationStatus.val();
-    if (verificationStatus == "Verified") {
-        this.isVerified = true;
-        this.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
-        this.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
-        this.$button.prop("disabled", "disabled");
-        this.$button.removeClass("button--primary");
-        this.$button.addClass("disabled button--info");
+  var self = this;
 
-        // add change handler to visible input fields
-        for (var i = 0; i < INPUT_FIELDS.length; i++) {
-            var field = INPUT_FIELDS[i];
-            this.$element.find(field).off('input change').on('input change', function () {
-                if (self.isVerified) {
-                    self._resetVerified(self.$checkmark, self.$button);
-                }
-            });
-        }
-    } else if (verificationStatus == "Unverified") {
-        this.isVerified = false;
-        this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-        this.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+  requestAnimationFrame(function () {
+    const verificationStatus = self.$verificationStatus.val();
+
+    if (verificationStatus === "Verified") {
+      self.isVerified = true;
+
+      self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+      self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+      self.$button.prop("disabled", "disabled");
+      self.$button.removeClass("button--primary");
+      self.$button.addClass("disabled button--info");
+
+      // Bind handlers now that DOM and values are stable
+      for (let i = 0; i < INPUT_FIELDS.length; i++) {
+        const field = INPUT_FIELDS[i];
+        self.$element.find(field).off('input change').on('input change', function () {
+          if (self.isVerified) {
+            self._resetVerified(self.$checkmark, self.$button);
+          }
+        });
+      }
+    } else if (verificationStatus === "Unverified") {
+      self.isVerified = false;
+      self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+      self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
     }
-}
+  });
+};
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
     var self = this;
@@ -249,10 +249,6 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     var self = this;
     view.isVerified = false; // reset to false until we know it's verified
 
-    // call _resetVerified to clear/refresh fields /////////////////////////
-    //view._suppressReset = true;
-    //view._resetVerified(view.$checkmark, view.$button);
-
     // show error modal if invalid location /////////////////////////
     if (view.settings.require_portland_city_limits && item.city.toUpperCase() != "PORTLAND") {
         view._showOutOfBoundsErrorModal(item.fullAddress);
@@ -301,9 +297,9 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
     // set internal isVerified flag to true /////////////////////////
     view.isVerified = true;
-    view.$element.find('#location_verification_status').val("Verified");
+    view.$element.find('#location_verification_status').val("Verified").trigger('change');
     view.$element.find('.invalid-feedback').addClass('d-none');
-    
+
     // hide validation message
     view.$element.find('#location_address_label_markup').removeClass('d-none');
     view.$element.find('.error').removeClass('error');
@@ -463,6 +459,9 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
         this.$element.find(field).val("");
     }
 
+    // verification status field is handled separately
+    this.$element.find("#location_verification_status").val("").trigger('change');
+
     // remove change handlers from visible input fields /////////////////////////
     for (var i = 0; i < INPUT_FIELDS.length; i++) {
         var field = INPUT_FIELDS[i];
@@ -492,15 +491,9 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$button.prop("disabled", "disabled");
     this.$button.removeClass("button--primary");
     this.$button.addClass("disabled button--info");
-    this.$element.find('#location_verification_status').val("Forced");
+    this.$element.find('#location_verification_status').val("Forced").trigger('change');
     // this.$element.find('#container_unit').addClass('d-none');
     // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
 }
 
-AddressVerifierView.prototype._resetVerificationStatus = function (event) {
-    var varField = this.$element.find('#location_verification_status');
-    if (varField.val() !== "") {
-        varField.val('').trigger('change');
-    }
-};

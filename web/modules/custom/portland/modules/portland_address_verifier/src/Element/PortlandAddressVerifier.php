@@ -47,7 +47,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Street Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. Do not include unit number.'),
+      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
     ];
@@ -170,7 +170,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_verification_status'] = [
       '#type' => 'textfield',
       '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hidden']],
+      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hiddenx']],
       '#required_error' => 'The address is not verified.',
       '#title_display' => 'invisible',
       '#wrapper_attributes' => [
