@@ -1,38 +1,57 @@
 Drupal.behaviors.dynamicGlossaryTooltip = {
   attach(context, drupalSettings) {
-    once('dynamicGlossaryTooltip', '[data-entity-substitution="glossary_term"]', context).forEach(link => {
-      const uuid = link.getAttribute('data-entity-uuid');
-      if (!uuid) return;
+    const glossaryElements = once(
+      'dynamicGlossaryTooltip',
+      '[data-entity-substitution="glossary_term"]',
+      context,
+    );
+    const uuids = glossaryElements.map((el) => el.getAttribute('data-entity-uuid')).filter(Boolean);
+    if (uuids.length === 0) return;
 
-      const path = `/jsonapi/node/glossary_term/${encodeURIComponent(uuid)}`;
+    const path = `/api/glossary-term/${encodeURIComponent(uuids.join(','))}`;
 
-      fetch(path)
-        .then(res => {
-          const contentType = res.headers.get('content-type') || '';
-          if (!res.ok || !contentType.includes('application/json')) {
-            throw new Error(`Invalid JSON response for UUID "${uuid}"`);
+    fetch(path)
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data !== 'object') {
+          throw new Error('Invalid JSON data');
+        }
+
+        glossaryElements.forEach((link) => {
+          const uuid = link.getAttribute('data-entity-uuid');
+          const termData = data[uuid];
+          if (!termData) {
+            const isLoggedIn = drupalSettings.user?.uid && drupalSettings.user.uid !== 0;
+            if (isLoggedIn) {
+              const missingSpan = document.createElement('span');
+              missingSpan.classList.add('glossary-term-missing');
+              missingSpan.title = 'Glossary term missing';
+              missingSpan.textContent = link.textContent.trim();
+              link.replaceWith(missingSpan);
+            } else {
+              const textNode = document.createTextNode(link.textContent.trim());
+              link.replaceWith(textNode);
+            }
+
+            return;
           }
-          return res.json();
-        })
-        .then(data => {
-          if (!data || !Array.isArray(data) || data.length === 0) {
-            throw new Error(`No data found for UUID "${uuid}".`);
-          }
 
-          const termData = data[0];
           const termLabel = termData.title || 'Glossary Term';
           const pronunciation = termData.pronunciation || '';
           const description = termData.short_definition || 'No description available.';
           const url = termData.url || '#';
           const hasLongDefinition = !!termData.has_long_definition;
 
-          const seeAlsoLinks = Array.isArray(termData.see_also) && termData.see_also.length
-            ? `<div class="term-see-also"><strong>See also:</strong> ` +
-            termData.see_also.map(item =>
-              `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`
-            ).join('') +
-            `</div>`
-            : '';
+          const seeAlsoLinks =
+            Array.isArray(termData.see_also) && termData.see_also.length
+              ? `<div class="term-see-also"><strong>See also:</strong> ` +
+                termData.see_also
+                  .map(
+                    (item) => `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`,
+                  )
+                  .join('') +
+                `</div>`
+              : '';
 
           const tooltipId = `glossary-tooltip-${uuid}`;
 
@@ -46,17 +65,23 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const closeButton = `
             <button class="glossary-close" aria-label="Close tooltip" type="button" style="display: none;">
-              ×
+              <i class="fa-solid fa-close"></i>
             </button>`;
 
           const wrapper = document.createElement('span');
+          let unpublishedBadge = '';
+          if (!termData.published) {
+            unpublishedBadge = ' <span class="badge text-bg-danger ms-2">Unpublished</span>';
+            wrapper.classList.add('glossary-term-unpublished');
+          }
+
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
                 ${closeButton}
-                <strong class="term-title">${termLabel}</strong>
+                <strong class="term-title">${termLabel}${unpublishedBadge}</strong>
                 ${pronunciationElement}
                 <p class="term-definition">${description}</p>
                 ${seeAlsoLinks}
@@ -82,7 +107,9 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const isMobileDevice = () =>
             window.matchMedia('(pointer: coarse)').matches ||
             'ontouchstart' in window ||
-            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent,
+            );
 
           const isMobile = isMobileDevice();
 
@@ -97,8 +124,8 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               ],
             });
 
-            ['scroll', 'resize'].forEach(event =>
-              window.addEventListener(event, () => popperInstance.update(), { passive: true })
+            ['scroll', 'resize'].forEach((event) =>
+              window.addEventListener(event, () => popperInstance.update(), { passive: true }),
             );
 
             function show() {
@@ -166,45 +193,10 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               }
             });
           });
-        })
-        .catch(err => {
-          console.warn(`Glossary tooltip failed to load for UUID "${uuid}":`, err);
-          const isLoggedIn = drupalSettings.user?.uid && drupalSettings.user.uid !== 0;
-          if (isLoggedIn) {
-            const missingSpan = document.createElement('span');
-            missingSpan.classList.add('glossary-term-missing');
-            missingSpan.title = 'Glossary term missing';
-            missingSpan.textContent = link.textContent.trim();
-            link.replaceWith(missingSpan);
-          } else {
-            const textNode = document.createTextNode(link.textContent.trim());
-            link.replaceWith(textNode);
-          }
         });
-    });
-  }
+      })
+      .catch((err) => {
+        console.error(`Error during glossary lookup. UUIDs: ${uuids.join(', ')}`, err);
+      });
+  },
 };
-
-function hideGlossaryTooltip(event) {
-  event.preventDefault();
-  const button = event.currentTarget;
-  const tooltip = button.closest('.glossary-popper');
-  const wrapper = button.closest('.glossary-term-wrapper');
-  const reference = wrapper?.querySelector('a, span');
-
-  // First blur the close button to remove focus from hidden content
-  button.blur();
-
-  if (tooltip) {
-    tooltip.classList.remove('visible');
-
-    // Delay setting aria-hidden to allow blur to take effect
-    requestAnimationFrame(() => {
-      tooltip.setAttribute('aria-hidden', 'true');
-    });
-  }
-
-  if (reference) {
-    reference.focus();
-  }
-}

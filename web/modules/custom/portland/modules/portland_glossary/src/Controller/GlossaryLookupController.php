@@ -2,59 +2,57 @@
 
 namespace Drupal\portland_glossary\Controller;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Url;
 
 class GlossaryLookupController extends ControllerBase {
-
-  public function lookup($uuid) {
-    // Load the node by UUID.
-    $node = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->loadByProperties(['uuid' => $uuid, 'type' => 'glossary_term']);
-
-    if (empty($node)) {
-      throw new NotFoundHttpException("No glossary term found for UUID '$uuid'.");
+  public function lookup(string $uuids) {
+    $node_storage = $this->entityTypeManager()->getStorage('node');
+    // Load the nodes by UUID.
+    $query = $node_storage
+      ->getQuery()
+      // We'll do a manual access check since published is all we care about.
+      ->accessCheck(FALSE)
+      ->condition('type', 'glossary_term')
+      ->condition('uuid', explode(',', $uuids), 'IN');
+    // If the user is anonymous, only show published nodes.
+    if ($this->currentUser()->isAnonymous()) {
+      $query->condition('status', 1);
     }
 
-    // Get the first node (there should only be one).
-    $node = reset($node);
+    $nids = $query->execute();
+    $nodes = $nids ? $node_storage->loadMultiple($nids) : [];
 
-    // Ensure the node is loaded as a Node entity.
-    if (!$node instanceof Node) {
-      throw new NotFoundHttpException("The loaded entity is not a valid Node.");
+    $response = new CacheableJsonResponse();
+    // Results keyed by UUID.
+    $result = [];
+    foreach ($nodes as $node) {
+      // Ensure the node is loaded as a Node entity.
+      if (!$node instanceof Node) continue;
+
+      // Prepare see_also array.
+      $see_also = array_map(fn($ref_node) => [
+        'title' => $ref_node->label(),
+        'url' => $ref_node->toUrl()->toString(),
+      ], $node->get('field_see_also')->referencedEntities());
+
+      $result[$node->uuid()] = [
+        'nid' => $node->id(),
+        'title' => $node->label(),
+        'short_definition' => $node->get('field_summary')->value,
+        'url' => $node->toUrl()->toString(),
+        'pronunciation' => $node->get('field_english_pronunciation')->value,
+        'has_long_definition' => !empty($node->get('field_body_content')->value),
+        'see_also' => $see_also,
+        'published' => $node->isPublished(),
+      ];
+      $response->addCacheableDependency($node);
     }
 
-    // Prepare the result.
-    $definition = $node->get('field_body_content')->value;
-    $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
-
-    // Prepare see_also array.
-    $see_also = [];
-    if ($node->hasField('field_see_also') && !$node->get('field_see_also')->isEmpty()) {
-      foreach ($node->get('field_see_also')->referencedEntities() as $ref_node) {
-        $see_also[] = [
-          'title' => $ref_node->label(),
-          'url' => Url::fromRoute('entity.node.canonical', ['node' => $ref_node->id()], ['absolute' => TRUE])->toString(),
-        ];
-      }
-    }
-
-    $result = [
-      'nid' => $node->id(),
-      'title' => $node->label(),
-      // 'definition' => $definition, // Do not include the long definition in the JSON
-      'short_definition' => $node->get('field_summary')->value, // Updated to use field_summary
-      'url' => $url,
-      'pronunciation' => $node->get('field_english_pronunciation')->value,
-      'has_long_definition' => !empty($definition),
-      'see_also' => $see_also,
-    ];
-
-    return new JsonResponse([$result]);
+    $response->getCacheableMetadata()->addCacheContexts(['url.query_args:uuids', 'user.roles:authenticated']);
+    $response->setData($result);
+    return $response;
   }
 
 }
