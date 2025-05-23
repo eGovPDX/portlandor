@@ -47,12 +47,22 @@ elements: |-
       '#required': true
     report_supervisor_name:
       '#type': textfield
-      '#title': "Supervisor's name"
+      '#title': 'Supervisor Name'
       '#required': true
       '#states':
         visible:
           ':input[name="report_injury"]':
             value: 'Yes, I was injured and I called my supervisor'
+    report_supervisor_email:
+      '#type': textfield
+      '#title': 'Supervisor Email'
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#states':
+        visible:
+          ':input[name="report_injury"]':
+            value: 'Yes, I was injured and I called my supervisor'
+      '#required': true
     markup_urgent:
       '#type': webform_markup
       '#states':
@@ -632,7 +642,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -662,7 +672,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -682,9 +692,51 @@ handlers:
       ticket_form_id: '24762621756055'
       is_child_incident: ''
       parent_ticket_id_field: ''
-  email:
+  supervisor_notification:
     id: email
-    handler_id: email
+    handler_id: supervisor_notification
+    label: 'Email to Supervisor'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_injury"]':
+          value: 'Yes, I was injured and I called my supervisor'
+        ':input[name="report_supervisor_email"]':
+          filled: true
+    weight: 4
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:report_supervisor_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: '[webform_submission:values:contact_email:raw]'
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Park incident report - staff injury notification'
+      body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: true
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  requester_confirmation:
+    id: email
+    handler_id: requester_confirmation
     label: 'Email confirmation to requester'
     notes: ''
     status: true
@@ -692,7 +744,7 @@ handlers:
       enabled:
         ':input[name="contact_email"]':
           filled: true
-    weight: 2
+    weight: 4
     settings:
       states:
         - completed

@@ -160,6 +160,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy'] = $notVerifiedRemedy;
 
+    $notVerifiedRemedyRequired = array_key_exists('#not_verified_remedy_required', $element) ? $element['#not_verified_remedy_required'] : "A verified address is required. Please try again.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy_required'] = $notVerifiedRemedyRequired;
+
     $requirePortlandCityLimits = array_key_exists('#require_portland_city_limits', $element) && strtolower($element['#require_portland_city_limits']) == "1";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['require_portland_city_limits'] = $requirePortlandCityLimits;
 

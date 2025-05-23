@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland_smartsheet
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -18,30 +19,50 @@ categories:
 elements: |-
   verified_address:
     '#type': portland_address_verifier
-    '#title': 'Verified Address'
+    '#title': 'Address Verifier (verification required)'
+    '#description': '<p>Full verified address is required.</p>'
+    '#title_display': before
+    '#description_display': before
     '#required': true
+    '#location_address__required': true
+    '#location_city__required': true
+    '#location_state__required': true
+    '#location_verification_status__required': true
     '#find_unincorporated': 1
-  mailing_label:
-    '#type': webform_computed_twig
-    '#title': 'Mailing Label'
-    '#mode': html
-    '#template': |-
-      {{ data.verified_address.location_address }}
-      {% if data.verified_address.unit_number %}
-        {{ data.verified_address.unit_number }}
-      {% endif %}<br>
-      {{ data.verified_address.location_city }}, {{ data.verified_address.location_state }}  {{ data.verified_address.location_zip }}
-    '#whitespace': spaceless
-    '#ajax': true
+    '#not_verified_remedy': 'A verified address is required. Please try again.'
+  markup:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="verified_address[location_verification_status]"]':
+          value: Verified
+    '#markup': '<p><strong>Address is valid!</strong></p>'
   ajax_indicator:
     '#type': portland_ajax_indicator
     '#title': 'Ajax Indicator'
   verified_address_2:
     '#type': portland_address_verifier
-    '#title': 'Verified Address 2'
+    '#title': 'Address Verifier 2'
+    '#description': '<p>A full address is required, but it does not have to be verified. A warning message should be displayed, but the widget will allow an invalid or fake address to be submitted.</p>'
+    '#title_display': before
+    '#description_display': before
     '#required': true
+    '#location_address__required': true
+    '#location_city__required': true
+    '#location_state__required': true
+    '#location_zip__required': true
     '#find_unincorporated': 1
-    '#address_suggest': 0
+    '#address_suggest': 1
+  required_checkbox:
+    '#type': checkbox
+    '#title': 'Required checkbox'
+    '#required': true
+  report_location:
+    '#type': portland_location_picker
+    '#title': 'Test Location Picker'
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
 css: ''
 javascript: ''
 settings:
@@ -248,4 +269,31 @@ handlers:
       row_location: toTop
       sheet_id: '6181644901764996'
       upload_attachments: '1'
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'TEST: Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: ''
+      requester_email: contact_email
+      subject: 'Address Verifier test form submission'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'address_verify_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '4990038807319'
 variants: {  }
