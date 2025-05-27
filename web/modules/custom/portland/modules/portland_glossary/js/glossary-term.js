@@ -47,7 +47,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               ? `<div class="term-see-also"><strong>See also:</strong> ` +
                 termData.see_also
                   .map(
-                    (item) => `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`,
+                    (item) => `<a href="${item.url}">${item.title}</a>`,
                   )
                   .join('') +
                 `</div>`
@@ -60,7 +60,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             : '';
 
           const learnMoreButton = hasLongDefinition
-            ? `<a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>`
+            ? `<a class="learn-more button button--primary" href="${url}" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>`
             : '';
 
           const closeButton = `
