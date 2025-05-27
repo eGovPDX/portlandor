@@ -76,7 +76,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           }
 
           wrapper.classList.add('glossary-term-wrapper');
-          wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
@@ -92,7 +91,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           `;
 
           link.parentNode.insertBefore(wrapper, link);
-          wrapper.appendChild(link);
+          wrapper.prepend(link);
 
           const reference = link;
           const tooltip = wrapper.querySelector('.glossary-popper');
@@ -138,9 +137,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
             function hide() {
               hideTimeout = setTimeout(() => {
-                if (tooltip.contains(document.activeElement)) {
-                  reference.focus(); // Move focus back to the glossary term before hiding
-                }
                 tooltip.classList.remove('visible');
                 tooltip.setAttribute('aria-hidden', 'true');
                 tooltip.style.visibility = 'hidden';
