@@ -259,7 +259,7 @@
           initializeSearchAutocomplete();
 
           // Set up pick links //////////////////////////////////
-          $(document).on('click', 'a.pick', function (e) {
+          $(document).on('click', '#suggestions_modal a.pick', function (e) {
             e.preventDefault();
             const candidate = JSON.parse($(this).data('candidate'));
             // now that the user has made a selection, pass back the single candidate
@@ -1422,7 +1422,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
-          $('#location_address').val(description).trigger('change');
+          $('#location_address.location-picker-address').val(description).trigger('change');
         }
 
         function hideVerifiedLocation() {
