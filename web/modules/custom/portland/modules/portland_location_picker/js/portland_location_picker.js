@@ -17,10 +17,7 @@
    */
   Drupal.behaviors.portland_location_picker = {
     attach: function (context) {
-
-      var test = $('main');
-
-      $(once('location_picker', 'fieldset.portland-location-picker--wrapper', context)).each(function () {
+      once('location_picker', 'fieldset.portland-location-picker--wrapper', context).forEach(function (locationPickerEl) {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
@@ -262,7 +259,7 @@
           initializeSearchAutocomplete();
 
           // Set up pick links //////////////////////////////////
-          $(document).on('click', 'a.pick', function (e) {
+          $(document).on('click', '#suggestions_modal a.pick', function (e) {
             e.preventDefault();
             const candidate = JSON.parse($(this).data('candidate'));
             // now that the user has made a selection, pass back the single candidate
@@ -1357,6 +1354,9 @@
           }
 
           setLocationDetails(data);
+
+          const event = new Event("location-picked");
+          locationPickerEl.dispatchEvent(event);
         }
 
         function doClickQuery(latlng) {
@@ -1422,7 +1422,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
-          $('#location_address').val(description).trigger('change');
+          $('#location_address.location-picker-address').val(description).trigger('change');
         }
 
         function hideVerifiedLocation() {
