@@ -15,7 +15,8 @@ class GlossaryLookupController extends ControllerBase {
       // We'll do a manual access check since published is all we care about.
       ->accessCheck(FALSE)
       ->condition('type', 'content_fragment')
-      ->condition('uuid', explode(',', $uuids), 'IN');
+      ->condition('uuid', explode(',', $uuids), 'IN')
+      ->condition('field_fragment_type.entity:name', 'Glossary Term');
     // If the user is anonymous, only show published nodes.
     if ($this->currentUser()->isAnonymous()) {
       $query->condition('status', 1);
