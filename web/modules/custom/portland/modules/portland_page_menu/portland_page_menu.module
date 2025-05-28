@@ -1,0 +1,128 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Url;
+use Drupal\node\Entity\Node;
+
+include "portland_page_menu.tokens.inc";
+
+/**
+ * Implements hook_theme().
+ */
+function portland_page_menu_theme() {
+  return [
+    'portland_entity_reference_hierarchy_nav_links' => [
+      'variables' => [
+        'prev_url' => null,
+        'next_url' => null,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ *
+ * Adds max menu depth validation constraint to the page bundle.
+ */
+function portland_page_menu_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
+  if ($entity_type->id() === 'node' && $bundle === 'page') {
+    if (isset($fields['field_menu'])) {
+      $fields['field_menu']->addConstraint('EntityReferenceHierarchyMaxDepth', ['max_depth' => 1]);
+    }
+  }
+}
+
+/**
+ * Updates the field_parent of all children in the menu.
+ */
+function _update_menu_children(EntityInterface $entity) {
+  if ($entity->bundle() === "page") {
+    // we only want to run on the top-level page
+    if ($entity->field_parent->count() > 0) return;
+
+    $prev_menu_children_nodes = $entity->original->field_menu->referencedEntities();
+    $menu_children_nodes = $entity->field_menu->referencedEntities();
+    $menu_children_nids = array_map(fn($node) => $node->id(), $menu_children_nodes);
+    // Find nodes that were removed from the menu field, clear their parent reference, and regenerate URL alias
+    foreach ($prev_menu_children_nodes as $prev_node) {
+      if (!in_array($prev_node->id(), $menu_children_nids)) {
+        $prev_node->set('field_parent', null);
+        $prev_node->save();
+        \Drupal::service('pathauto.generator')->updateEntityAlias($prev_node, 'update');
+      }
+    }
+
+    // Find newly added nodes, set their parent reference, and regenerate URL alias
+    foreach ($menu_children_nodes as $menu_child_node) {
+      if ($menu_child_node && $menu_child_node->field_parent->target_id != $entity->id()) {
+        $menu_child_node->set('field_parent', $entity->id());
+        $menu_child_node->save();
+        \Drupal::service('pathauto.generator')->updateEntityAlias($menu_child_node, 'update');
+      }
+    }
+
+    // Regenerate alias for all children nodes if the menu link text has changed
+    if ($entity->field_menu_link_text->value !== $entity->original->field_menu_link_text->value) {
+      foreach ($menu_children_nodes as $menu_child_node) {
+        \Drupal::service('pathauto.generator')->updateEntityAlias($menu_child_node, 'update');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ */
+function portland_page_menu_node_update($entity) {
+  _update_menu_children($entity);
+}
+
+/**
+ * If the field_parent is set (should only happen on new entity creation), add the child to the parent's menu.
+ */
+function _add_child_to_parent(EntityInterface $entity) {
+  if ($entity->bundle() === "page" && $entity->field_parent->entity) {
+    $parent = $entity->field_parent->entity;
+    $parent->field_menu->appendItem([
+      'target_id' => $entity->id(),
+      'depth' => 0,
+    ]);
+    $parent->save();
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function portland_page_menu_node_insert($entity) {
+  _add_child_to_parent($entity);
+}
+
+function _hide_menu_if_parent(&$form, Node $node) {
+  if ($node->bundle() === 'page') {
+    // Parent field is always read-only.
+    $form['field_parent']['#disabled'] = true;
+    if ($node->field_parent->target_id) {
+      // If the page is a child, hide the menu field and add a warning.
+      $form['field_menu']['#access'] = false;
+      $form['field_parent']['#suffix'] = t("This page is part of a parent menu. To edit the menu, please <a href=\":edit_url\">edit the parent</a>.", [
+        ':edit_url' => Url::fromRoute('entity.node.edit_form', ['node' => $node->field_parent->target_id])->toString() . '#edit-group-menu',
+      ]);
+    } else {
+      // If the page is a parent, hide the parent field but leave it in the HTML for conditional logic to use.
+      $form['field_parent']['#attributes']['style'] = 'display: none;';
+    }
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * - Override the node edit form to hide the Menu field on Pages when they are already part of a parent menu.
+ */
+function portland_page_menu_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  _hide_menu_if_parent($form, $node);
+}

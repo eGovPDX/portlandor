@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Attaches glossary_term library to the body content field if it contains a glossary term link.
+ */
+function portland_glossary_preprocess_field__field_body_content(&$variables) {
+  if (array_key_exists('#items', $variables['element'])) {
+    /** @var \Drupal\Core\Field\FieldItemListInterface $items */
+    $items = $variables['element']['#items'];
+    if ($items->isEmpty()) return;
+
+    $body_content = $items->first()->value;
+    if (str_contains($body_content, 'data-entity-substitution="glossary_term"')) {
+      $variables['#attached']['library'][] = 'portland_glossary/glossary_term';
+    }
+  }
+}
