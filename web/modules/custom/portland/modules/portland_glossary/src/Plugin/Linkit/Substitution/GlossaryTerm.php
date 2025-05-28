@@ -28,7 +28,7 @@ class GlossaryTerm extends PluginBase implements SubstitutionInterface {
    * {@inheritdoc}
    */
   public static function isApplicable(EntityTypeInterface $entity_type) {
-    return $entity_type->hasLinkTemplate('canonical');
+    return TRUE;// $entity_type->hasLinkTemplate('canonical');
   }
 
 }
