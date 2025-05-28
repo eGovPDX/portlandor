@@ -85,6 +85,16 @@ class GlossaryTermMatcher extends MatcherBase
 
         return $suggestions;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSummary() {
+        return [
+            $this->t('This custom matcher provides glossary term suggestions from published content fragments of sub-type "Glossary Term."'),
+            $this->t('Metadata: [node:url:relative]'),
+        ];
+    }
 }
 
 // original file
