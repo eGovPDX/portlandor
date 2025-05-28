@@ -36,15 +36,15 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             return;
           }
 
-          const termLabel = termData.title || 'Glossary Term';
+          const termLabel = termData.title || Drupal.t('Glossary Term');
           const pronunciation = termData.pronunciation || '';
-          const description = termData.short_definition || 'No description available.';
+          const description = termData.short_definition || Drupal.t('No description available.');
           const url = termData.url || '#';
           const hasLongDefinition = !!termData.has_long_definition;
 
           const seeAlsoLinks =
             Array.isArray(termData.see_also) && termData.see_also.length
-              ? `<div class="term-see-also"><strong>See also:</strong> ` +
+              ? `<div class="term-see-also"><strong>${Drupal.t('See also:')}</strong> ` +
                 termData.see_also
                   .map(
                     (item) => `<a href="${item.url}">${item.title}</a>`,
@@ -56,15 +56,15 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const tooltipId = `glossary-tooltip-${uuid}`;
 
           const pronunciationElement = pronunciation
-            ? `<p class="term-pronunciation">${pronunciation}</p>`
+            ? `<p class="term-pronunciation"><span class="visually-hidden">${Drupal.t('English Pronunciation')}</span> ${pronunciation}</p>`
             : '';
 
           const learnMoreButton = hasLongDefinition
-            ? `<a class="learn-more button button--primary" href="${url}" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>`
+            ? `<a class="learn-more button button--primary" href="${url}" aria-label="${Drupal.t('Learn more about glossary term @term', { '@term': termLabel })}">${Drupal.t('Learn more')}</a>`
             : '';
 
           const closeButton = `
-            <button class="glossary-close" aria-label="Close tooltip" type="button" style="display: none;">
+            <button class="glossary-close" aria-label="${Drupal.t('Close tooltip')}" type="button" style="display: none;">
               <i class="fa-solid fa-close"></i>
             </button>`;
 
@@ -91,6 +91,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           `;
 
           link.parentNode.insertBefore(wrapper, link);
+          link.setAttribute('aria-details', tooltipId);
           wrapper.prepend(link);
 
           const reference = link;
