@@ -1353,11 +1353,11 @@ elements: |-
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        '!pattern': lineMarkings|trafficSignals
+                        '!pattern': lineMarkings|busLines|trafficSignals
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: lineMarkings|busLines
                     ':input[name="complex_permit_lanes_affected"]':
                       value:
                         less_equal: 1
@@ -1366,7 +1366,24 @@ elements: |-
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: lineMarkings|busLines
+                    ':input[name="complex_permit_lanes_affected"]':
+                      value: ''
+                    ':input[name="complex_permit_closure_type[street]"]':
+                      unchecked: true
+                  - or
+                  - ':input[name="hidden_location_busy"]':
+                      value:
+                        pattern: trafficSignals
+                    ':input[name="complex_permit_lanes_affected"]':
+                      value:
+                        less_equal: 0
+                    ':input[name="complex_permit_closure_type[street]"]':
+                      unchecked: true
+                  - or
+                  - ':input[name="hidden_location_busy"]':
+                      value:
+                        pattern: trafficSignals
                     ':input[name="complex_permit_lanes_affected"]':
                       value: ''
                     ':input[name="complex_permit_closure_type[street]"]':
@@ -1374,18 +1391,27 @@ elements: |-
                 visible:
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: lineMarkings|busLines
                     ':input[name="complex_permit_lanes_affected"]':
                       value:
                         greater: 1
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: trafficSignals
+                        pattern: lineMarkings|busLines
+                    ':input[name="complex_permit_closure_type[street]"]':
+                      checked: true
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: trafficSignals
+                    ':input[name="complex_permit_lanes_affected"]':
+                      value:
+                        greater: 0
+                  - or
+                  - ':input[name="hidden_location_busy"]':
+                      value:
+                        pattern: trafficSignals
                     ':input[name="complex_permit_closure_type[street]"]':
                       checked: true
               '#options':
@@ -1419,35 +1445,53 @@ elements: |-
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: lineMarkings|busLines
                     ':input[name="complex_permit_lanes_affected"]':
                       value:
                         greater: 1
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: trafficSignals
+                        pattern: lineMarkings|busLines
+                    ':input[name="complex_permit_closure_type[street]"]':
+                      checked: true
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: trafficSignals
+                    ':input[name="complex_permit_lanes_affected"]':
+                      value:
+                        greater: 0
+                  - or
+                  - ':input[name="hidden_location_busy"]':
+                      value:
+                        pattern: trafficSignals
                     ':input[name="complex_permit_closure_type[street]"]':
                       checked: true
                 invisible:
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: lineMarkings|busLines
                     ':input[name="complex_permit_lanes_affected"]':
                       value:
                         greater: 1
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: trafficSignals
+                        pattern: lineMarkings|busLines
+                    ':input[name="complex_permit_closure_type[street]"]':
+                      checked: true
                   - or
                   - ':input[name="hidden_location_busy"]':
                       value:
-                        pattern: lineMarkings
+                        pattern: trafficSignals
+                    ':input[name="complex_permit_lanes_affected"]':
+                      value:
+                        greater: 0
+                  - or
+                  - ':input[name="hidden_location_busy"]':
+                      value:
+                        pattern: trafficSignals
                     ':input[name="complex_permit_closure_type[street]"]':
                       checked: true
               '#required': true
@@ -1908,8 +1952,11 @@ elements: |-
         22193428346135_{{ day }}
       {% endfor %}
 
-      {# add tag based on applicant type and city work type #}
+      {# add tag based on applicant type if permit type matches (fun, cbn, sidewalk_repair) #}
+      {% if data.permit_type == data.contact_applicant_type %}
       {{ data.contact_applicant_type }}
+      {% endif %}
+
       {{ data.contact_city_work_type }}
 
       {% if data.hidden_moratorium_details %}
@@ -2191,6 +2238,9 @@ elements: |-
           {% if data.complex_permit_closure_type %}
           <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
           <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) ?: '0' }}</strong></li>
+          <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
+          {% elseif data.wizard_permit_need == "parking" %}
+          <li>Type of closure(s): <strong>Parking</strong></li>
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
           {% endif %}
           {% if data.complex_permit_document_choice_tcp_required %}<li>TCP choice: <strong>{{ webform_token('[webform_submission:values:complex_permit_document_choice_tcp_required]', webform_submission) }}</strong></li>{% endif %}
@@ -2627,7 +2677,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
       recipient: tsup@portlandoregon.gov
@@ -2659,7 +2709,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
       recipient: tsup@portlandoregon.gov
