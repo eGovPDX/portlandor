@@ -7,12 +7,22 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
   STR_EXPAND_ALL: Drupal.t("Expand all"),
   STR_COLLAPSE_ALL: Drupal.t("Collapse all"),
 
-  attach(context) {
+  attach(context, drupalSettings) {
+    const minRows = drupalSettings?.portland?.cloudyExpandAllAccordion?.minRows ?? 0;
     window.addEventListener("DOMContentLoaded", () => {
       once("cloudyExpandAllAccordion", "div.aria-accordion", context).forEach((accordion) => {
         const accordionPanelIds = Array.from(
           accordion.querySelectorAll("div.aria-accordion__panel"),
         ).map((el) => el.getAttribute("id"));
+        if (accordionPanelIds.length < minRows) {
+          // Collapse first row if there aren't enough rows to enable this feature
+          accordion
+            .querySelector(".aria-accordion__heading > button")
+            .setAttribute("aria-expanded", "false");
+          accordion.querySelector(".aria-accordion__panel").setAttribute("hidden", "");
+          return;
+        }
+
         accordion.insertAdjacentHTML(
           "afterbegin",
           `
