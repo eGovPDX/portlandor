@@ -1,11 +1,14 @@
 <?php
 
 use Drupal\taxonomy\Entity\Term;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 
 /**
  * Implements hook_install().
  */
-function portland_glossary_install() {
+function portland_glossary_install()
+{
   $vocabulary_id = 'content_fragment_type';
   $term_name = 'Glossary Term';
 
@@ -24,22 +27,79 @@ function portland_glossary_install() {
 }
 
 /**
- * Add 'Glossary Term' to content_fragment_type if missing.
+ * Create "Glossary Term" term and patch conditional fields TIDs in form display.
  */
 function portland_glossary_update_9001() {
   $vocabulary_id = 'content_fragment_type';
   $term_name = 'Glossary Term';
 
-  $tids = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->getQuery()
+  // Step 1: Ensure the term exists and get its TID.
+  $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  $tids = $term_storage->getQuery()
     ->accessCheck(TRUE)
     ->condition('vid', $vocabulary_id)
     ->condition('name', $term_name)
     ->execute();
 
-  if (empty($tids)) {
-    \Drupal\taxonomy\Entity\Term::create([
+  if (!empty($tids)) {
+    $tid = reset($tids);
+  }
+  else {
+    $term = Term::create([
       'vid' => $vocabulary_id,
       'name' => $term_name,
-    ])->save();
+    ]);
+    $term->save();
+    $tid = $term->id();
   }
+
+  // Step 2: Load the form display config.
+  $form_display = EntityFormDisplay::load('node.content_fragment.default');
+  if (!$form_display) {
+    \Drupal::logger('portland_glossary')->error('Form display node.content_fragment.default not found.');
+    return;
+  }
+
+  $updated = 0;
+  $components = $form_display->getComponents();
+
+  foreach ($components as $field_name => $component) {
+    if (empty($component['third_party_settings']['conditional_fields'])) {
+      continue;
+    }
+
+    $conditions = &$component['third_party_settings']['conditional_fields'];
+    $changed = FALSE;
+
+    foreach ($conditions as &$condition) {
+      if (
+        isset($condition['dependee']) &&
+        $condition['dependee'] === 'field_fragment_type' &&
+        isset($condition['settings']['value_form'][0]['target_id']) &&
+        $condition['settings']['value_form'][0]['target_id'] != $tid
+      ) {
+        $condition['settings']['value_form'][0]['target_id'] = $tid;
+        $changed = TRUE;
+      }
+    }
+
+    if ($changed) {
+      $form_display->setComponent($field_name, $component);
+      $updated++;
+    }
+  }
+
+  if ($updated > 0) {
+    $form_display->save();
+    \Drupal::logger('portland_glossary')->notice('Patched @count form display fields with correct TID @tid.', [
+      '@count' => $updated,
+      '@tid' => $tid,
+    ]);
+  }
+  else {
+    \Drupal::logger('portland_glossary')->notice('No form display fields needed patching.');
+  }
+
+  \Drupal::service('cache.render')->invalidateAll();
 }
+
