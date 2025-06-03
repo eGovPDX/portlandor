@@ -1,14 +1,11 @@
 <?php
 
 use Drupal\taxonomy\Entity\Term;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\Core\Entity\Entity\EntityFormDisplay;
 
 /**
  * Implements hook_install().
  */
-function portland_glossary_install()
-{
+function portland_glossary_install() {
   $vocabulary_id = 'content_fragment_type';
   $term_name = 'Glossary Term';
 
@@ -19,10 +16,34 @@ function portland_glossary_install()
     ->execute();
 
   if (empty($tids)) {
-    \Drupal::logger('portland_glossary')->notice('Created Glossary Term term in Content Fragement Type vocabulary.');
     Term::create([
       'vid' => $vocabulary_id,
       'name' => $term_name,
     ])->save();
+
+    \Drupal::logger('portland_glossary')->notice('Created "Glossary Term" in Content Fragment Type vocabulary.');
+  }
+}
+
+/**
+ * Create "Glossary Term" term if missing.
+ */
+function portland_glossary_update_9004() {
+  $vocabulary_id = 'content_fragment_type';
+  $term_name = 'Glossary Term';
+
+  $tids = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->getQuery()
+    ->accessCheck(TRUE)
+    ->condition('vid', $vocabulary_id)
+    ->condition('name', $term_name)
+    ->execute();
+
+  if (empty($tids)) {
+    Term::create([
+      'vid' => $vocabulary_id,
+      'name' => $term_name,
+    ])->save();
+
+    \Drupal::logger('portland_glossary')->notice('Created "Glossary Term" in Content Fragment Type vocabulary.');
   }
 }
