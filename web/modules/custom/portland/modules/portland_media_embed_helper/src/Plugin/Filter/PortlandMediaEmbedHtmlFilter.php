@@ -31,27 +31,28 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
     // it cleans up empty DOM elements, nested empty elements, elements with non-breaking spaces, etc.,
     // but ignores elements with legitimate content. it also leaves the following self-closed elements: img, br, hr, drupal-entity
     // and the following table elements: td, th
-    $query = "//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
+    $query = "//*[not(normalize-space(translate(., '\xC2\xA0', '')))
                 and
-                  not(descendant-or-self::*[self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
-                  ]
-                  [not(ancestor::*
-                          [count(.| //*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
-                                      and
-                                        not(descendant-or-self::*
-                                                [self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
-                                        ]
-                                  )
-                          =
-                            count(//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
-                                    and
-                                      not(descendant-or-self::*
-                                              [self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
-                                      ]
-                                )
+                  not(descendant-or-self::*[
+                    self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity or (self::a and @id)
+                  ])
+                ]
+                [not(ancestor::*[
+                  count(.| //*[not(normalize-space(translate(., '\xC2\xA0', '')))
+                            and
+                              not(descendant-or-self::*[
+                                self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity or (self::a and @id)
+                              ])
+                          ]
+                  ) = count(//*[not(normalize-space(translate(., '\xC2\xA0', '')))
+                              and
+                                not(descendant-or-self::*[
+                                  self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity or (self::a and @id)
+                                ])
                             ]
-                        )
-                  ]";
+                  )
+                ])
+              ]";
 
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
