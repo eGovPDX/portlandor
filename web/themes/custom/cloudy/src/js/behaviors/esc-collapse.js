@@ -13,8 +13,8 @@ Drupal.behaviors.cloudyEscCollapse = {
         elements.forEach((el) => {
           const collapse = Collapse.getInstance(el);
           if (
-            el.matches(":focus-within") ||
-            collapse._triggerArray?.[0]?.matches(":focus-within")
+            collapse &&
+            (el.matches(":focus-within") || collapse._triggerArray?.[0]?.matches(":focus-within"))
           ) {
             collapse._triggerArray?.[0]?.focus();
 

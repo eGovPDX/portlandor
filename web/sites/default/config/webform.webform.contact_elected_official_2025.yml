@@ -71,9 +71,9 @@ elements: |-
       '#title': 'What would you like to do?'
       '#prepopulate': true
       '#options':
+        'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to the Mayor, Auditor, or a specific City Councilor'
         "Provide comment or feedback to my district's City Council members": "Provide comment or feedback to my district's City Council members"
-        'Provide comment or feedback to the Mayor and full City Council': 'Provide comment or feedback to the Mayor and full City Council'
-        'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to a specific elected official'
+        'Provide comment or feedback to the full City Council': 'Provide comment or feedback to the full City Council'
         'Request a meeting/event participation': 'Request a meeting/event participation'
         'Submit a media inquiry': 'Submit a media inquiry'
         provide_testimony: 'Provide testimony on an agenda item'
@@ -155,6 +155,7 @@ elements: |-
       '#place_name__access': false
       '#location_details__access': false
       '#location_region_id__required': true
+      '#location_region_id__required_error': 'Please select a district.'
       '#display_boundary': false
       '#require_boundary': true
       '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
@@ -439,7 +440,7 @@ elements: |-
             value: "Provide comment or feedback to my district's City Council members"
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to the Mayor and full City Council'
+            value: 'Provide comment or feedback to the full City Council'
         - or
         - ':input[name="request_purpose"]':
             value: 'Provide comment or feedback to a specific elected official'
@@ -460,6 +461,7 @@ elements: |-
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
+      '#required': true
     request_comment:
       '#type': textarea
       '#title': 'What is your comment or feedback?'
@@ -468,7 +470,7 @@ elements: |-
       '#required': true
     request_has_attachments:
       '#type': radios
-      '#title': 'Would you like to attach images or documents?'
+      '#title': 'Would you like to attach files?'
       '#options': yes_no
       '#options_display': side_by_side
     request_attachments:
@@ -479,8 +481,27 @@ elements: |-
         visible:
           ':input[name="request_has_attachments"]':
             value: 'Yes'
+          ':input[name="request_recipient"]':
+            '!value': 'Mayor Keith Wilson'
       '#max_filesize': '10'
       '#file_extensions': 'jpg jpeg png pdf doc docx xls xlsx'
+      '#sanitize': true
+    request_image_attachments:
+      '#type': managed_file
+      '#title': 'Attach up to 3 images'
+      '#multiple': 3
+      '#description': '<p>Due to safety and security concerns, we can only accept image uploads.</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="request_has_attachments"]':
+            value: 'Yes'
+          ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to a specific elected official'
+          ':input[name="request_recipient"]':
+            value: 'Mayor Keith Wilson'
+      '#max_filesize': '10'
+      '#file_extensions': 'jpg jpeg png'
       '#sanitize': true
   container_not_mayor_meeting:
     '#type': container
@@ -779,7 +800,7 @@ elements: |-
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
-        '#required': true
+        '#location_verification_status__required': true
       computed_venue_address:
         '#type': webform_computed_twig
         '#title': 'Computed Venue Address'
@@ -923,10 +944,11 @@ elements: |-
               value: 'Mayor Keith Wilson'
     meeting_attachments:
       '#type': managed_file
-      '#title': 'File Upload'
+      '#title': 'Image Upload'
       '#multiple': 5
-      '#description': '<p>Please attach any supplemental documentation or images that might help us better understand the request.</p>'
-      '#file_extensions': 'gif jpg png txt rtf pdf doc docx ppt pptx xls xlsx avi mov zip'
+      '#description': '<p>Please attach any supplemental images that might help us better understand the request. Due to safety and security concerns, we can only accept image files.</p>'
+      '#description_display': before
+      '#file_extensions': 'jpg jpeg png'
       '#sanitize': true
   container_submit:
     '#type': container
@@ -1060,8 +1082,8 @@ elements: |-
           {% set subject = "Feedback for District " ~ data.request_district %}  
         {% endif %}
 
-      {% elseif data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}
-        {% set subject = "Feedback for Mayor and City Council" %}
+      {% elseif data.request_purpose == "Provide comment or feedback to the full City Council" %}
+        {% set subject = "Feedback for City Council" %}
         
       {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback" %}
         {% set subject = "Feedback for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
@@ -1100,7 +1122,7 @@ elements: |-
     '#title': 'Computed Send to Mayor'
     '#display_on': none
     '#mode': text
-    '#template': '{% if data.recipient == "Mayor Keith Wilson" or data.request_recipient == "Mayor Keith Wilson" or data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}Yes{% endif %}'
+    '#template': '{% if data.recipient == "Mayor Keith Wilson" or data.request_recipient == "Mayor Keith Wilson" %}Yes{% endif %}'
   computed_send_to_auditor:
     '#type': webform_computed_twig
     '#title': 'Computed Send to Auditor'
@@ -1120,7 +1142,7 @@ elements: |-
           data.request_recipient == "Councilor Jamie Dunphy" or
           data.recipient == "Councilor Loretta Smith" or
           data.request_recipient == "Councilor Loretta Smith" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 1 or
           data.report_location.location_region_id == 1 %}Yes{% endif %}
     '#whitespace': trim
@@ -1136,7 +1158,7 @@ elements: |-
           data.request_recipient == "Councilor Elana Pirtle-Guiney" or
           data.recipient == "Councilor Sameer Kanal" or
           data.request_recipient == "Councilor Sameer Kanal" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 2 or
           data.report_location.location_region_id == 2 %}Yes{% endif %}
     '#whitespace': trim
@@ -1152,7 +1174,7 @@ elements: |-
           data.request_recipient == "Councilor Steve Novick" or
           data.recipient == "Councilor Tiffany Koyama Lane" or
           data.request_recipient == "Councilor Tiffany Koyama Lane" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 3 or
           data.report_location.location_region_id == 3 %}Yes{% endif %}
     '#whitespace': trim
@@ -1168,7 +1190,7 @@ elements: |-
           data.request_recipient == "Councilor Mitch Green" or
           data.recipient == "Councilor Olivia Clark" or
           data.request_recipient == "Councilor Olivia Clark" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 4 or
           data.report_location.location_region_id == 4 %}Yes{% endif %}
     '#whitespace': trim
@@ -1178,8 +1200,8 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      {% if data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}
-      <p class="mb-5"><strong>This message has been sent to the Mayor and all Council Districts.</strong><br><br></p>
+      {% if data.request_purpose == "Provide comment or feedback to the full City Council" %}
+      <p class="mb-5"><strong>This message has been sent to all Council Districts.</strong><br><br></p>
       {% endif %}
     '#whitespace': spaceless
   request_ticket_id:
