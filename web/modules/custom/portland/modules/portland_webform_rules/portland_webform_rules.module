@@ -1,3 +1,41 @@
 <?php
 
+/**
+ * Implements hook_entity_view().
+ */
+function portland_webform_rules_entity_view(
+    array &$build,
+    \Drupal\Core\Entity\EntityInterface $entity,
+    \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display,
+    $view_mode
+) {
+    if (
+        $entity instanceof \Drupal\Core\Entity\ContentEntityInterface &&
+        $entity->getEntityTypeId() === 'node' &&
+        $entity->bundle() === 'content_fragment' &&
+        $entity->hasField('field_rules_json') &&
+        !$entity->get('field_rules_json')->isEmpty()
+    ) {
+        $json = $entity->get('field_rules_json')->value;
+        $decoded = json_decode($json, TRUE);
 
+        if (is_null($decoded)) {
+            echo "Error decoding JSON: " . json_last_error_msg();
+        } else {
+            echo "Decoded successfully:\n";
+            print_r(array_keys($decoded));  // should show ['permit_type', 'questions', 'documents', 'rules']
+        }
+
+
+        $pretty_json = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        unset($build['field_rules_json']);
+
+        $build['field_rules_json'] = [
+            '#type' => 'inline_template',
+            '#template' => '<pre>{{ json|raw }}</pre>',
+            '#context' => ['json' => $pretty_json],
+            '#weight' => 100,
+        ];
+    }
+}

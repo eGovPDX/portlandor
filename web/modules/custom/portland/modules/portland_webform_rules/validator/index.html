@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rules Validation Tool</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      padding: 1rem;
+    }
+    .layout {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .form-section, .results-section {
+      flex: 1;
+      min-width: 300px;
+      max-width: 600px;
+    }
+    .document-card {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h2>Paste JSON Schema</h2>
+  <textarea id="schema-input" placeholder="Paste your JSON here..."></textarea>
+  <button onclick="loadSchema()">Load Schema</button>
+
+  <div class="layout">
+    <div class="form-section">
+      <h2>Answer Questions</h2>
+      <form id="question-form"></form>
+    </div>
+
+    <div class="results-section">
+      <h2>Required Documents</h2>
+      <div id="results"></div>
+    </div>
+  </div>
+
+  <script>
+    let schema = null;
+
+    const form = document.getElementById("question-form");
+    const resultsDiv = document.getElementById("results");
+
+    function loadSchema() {
+      const input = document.getElementById("schema-input").value;
+      try {
+        schema = JSON.parse(input);
+        form.innerHTML = "";
+        resultsDiv.innerHTML = "";
+        buildForm();
+      } catch (e) {
+        alert("Invalid JSON: " + e.message);
+      }
+    }
+
+    function buildForm() {
+      if (!schema || !schema.questions) return;
+
+      schema.questions.forEach(q => {
+        const wrapper = document.createElement("div");
+        wrapper.style.marginBottom = "1.5rem";
+
+        const label = document.createElement("label");
+        label.textContent = q.label;
+        wrapper.appendChild(label);
+
+        const options = q.options.split(',').map(o => o.trim());
+
+        if (q.type.toLowerCase() === "select") {
+          const select = document.createElement("select");
+          select.name = q.id;
+          select.id = q.id;
+
+          const defaultOption = document.createElement("option");
+          defaultOption.value = "";
+          defaultOption.textContent = "-- Select --";
+          select.appendChild(defaultOption);
+
+          options.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.textContent = opt;
+            select.appendChild(option);
+          });
+
+          select.addEventListener("change", evaluateRules);
+          wrapper.appendChild(select);
+        } else if (q.type.toLowerCase() === "radios") {
+          options.forEach(opt => {
+            const div = document.createElement("div");
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = q.id;
+            input.value = opt;
+            input.id = `${q.id}_${opt}`;
+
+            const radioLabel = document.createElement("label");
+            radioLabel.textContent = opt;
+            radioLabel.htmlFor = input.id;
+
+            input.addEventListener("change", evaluateRules);
+            div.appendChild(input);
+            div.appendChild(radioLabel);
+            wrapper.appendChild(div);
+          });
+        }
+
+        form.appendChild(wrapper);
+      });
+    }
+
+    function evaluateRules() {
+      const formValues = {};
+      if (!schema || !schema.questions) return;
+
+      schema.questions.forEach(q => {
+        const elements = form.elements[q.id];
+        if (!elements) return;
+
+        if (elements.length && elements[0].type === "radio") {
+          for (const el of elements) {
+            if (el.checked) {
+              formValues[q.id] = el.value;
+              break;
+            }
+          }
+        } else {
+          formValues[q.id] = elements.value;
+        }
+      });
+
+      const matchedDocs = new Set();
+
+      schema.rules.forEach(rule => {
+        const matches = rule.conditions.every(cond => {
+          const userVal = formValues[cond.question_id];
+          switch (cond.operator) {
+            case "=": return userVal === cond.value;
+            case "!=": return userVal !== cond.value;
+            default: return false;
+          }
+        });
+        if (matches) {
+          matchedDocs.add(rule.document_id);
+        }
+      });
+
+      displayResults([...matchedDocs]);
+    }
+
+    function displayResults(docIds) {
+      resultsDiv.innerHTML = "";
+      if (!schema || !schema.documents || docIds.length === 0) {
+        resultsDiv.textContent = "No documents required based on your answers.";
+        return;
+      }
+      docIds.forEach(docId => {
+        const doc = schema.documents[docId];
+        if (!doc) return;
+
+        const card = document.createElement("div");
+        card.className = "document-card";
+
+        const title = document.createElement("h3");
+        title.textContent = doc.title;
+
+        const summary = document.createElement("p");
+        summary.textContent = doc.summary;
+
+        const link = document.createElement("a");
+        link.href = doc.link;
+        link.textContent = "Download";
+        link.target = "_blank";
+
+        card.appendChild(title);
+        card.appendChild(summary);
+        card.appendChild(link);
+
+        resultsDiv.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
