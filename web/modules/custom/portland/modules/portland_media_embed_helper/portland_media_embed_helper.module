@@ -23,7 +23,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     'image' => ['data-align', 'data-caption'],
     'map' => ['data-align', 'data-caption'],
     'video' => ['data-align', 'data-caption', 'data-start-cue'],
-    'content_fragment' => ['sub-type'],
+    'content_fragment' => [],
   ];
   $attributes_enabled = $attributes_enabled_by_bundle[$entity->bundle()];
 
@@ -199,4 +199,32 @@ function portland_media_embed_helper_media_presave($media) {
       ! empty($media->field_preview_image->target_id)) {
     $media->thumbnail->target_id = $media->field_preview_image->target_id;
   }
+}
+
+/**
+ * Implements hook_entity_browser_info().
+ */
+function portland_media_embed_helper_entity_browser_info() {
+  \Drupal::logger('portland')->notice('Entity browser hook ran');
+
+  $browsers = [];
+
+  $browsers['content_fragment_browser'] = [
+    'label' => t('Content Fragment Browser (Embed)'),
+    'description' => t('Embeds content fragments with field_fragment_type = Content Component.'),
+    'plugin' => 'modal',
+    'target_entity_type' => 'node',
+    'widget_selector' => 'single',
+    'selection_display' => 'view',
+    'usages' => ['entity_embed'],
+    'weight' => 0,
+    // Let it be overridden by config.
+    'configurable' => TRUE,
+  ];
+
+  return $browsers;
+}
+
+function portland_media_embed_helper_entity_browser_info_alter(array &$browsers) {
+  \Drupal::logger('debug')->notice('Plugin-level browser detected: ' . implode(', ', array_keys($browsers)));
 }
