@@ -1,6 +1,7 @@
 {# node--content-fragment--embedded.html.twig #}
 
 {% set fragment_type = node.field_fragment_type.entity.label ?? '' %}
+{% set margin = margin|default('2') %}
 {%
   set classes = [
     'embedded-content-fragment',
@@ -9,26 +10,50 @@
     view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
   ]
 %}
+{%
+  set badge_classes = badge_classes|default([
+    'badge',
+    'bg-danger',
+    'mb-' ~ margin,
+  ])
+%}
 
 {{ attach_library('classy/node') }}
-<div{{ attributes.addClass(classes) }}>
-  {# Display title/label if not Content Component sub-type #}
-  {% if fragment_type != 'Content Component' %}
-    <h2 class="embedded-fragment-title">{{ label }}</h2>
-  {% endif %}
 
-  {# Display Glossary Term specific fields #}
+{% apply spaceless %}
 
-    {% if content.field_english_pronunciation %}
-      {{ content.field_english_pronunciation }}
-    {% endif %}
+  <div{{ attributes.addClass(classes) }}>
 
-    {% if content.field_summary %}
-      {{ content.field_summary }}
-    {% endif %}
+    {% block status %}
+      {% if not node.isPublished() %}
+        {% set published_attributes = create_attribute() %}
+        <span{{ published_attributes.addClass(badge_classes) }}>{{ 'unpublished'|t|capitalize }}</span>
+      {% endif %}
+    {% endblock %}
 
-  {% if content.field_body_content %}
-    {{ content.field_body_content }}
-  {% endif %}
+    {% block content %}
 
-</div>
+      {# Display title/label if not Content Component sub-type #}
+      {% if fragment_type != 'Content Component' %}
+        <h2 class="embedded-fragment-title">{{ label }}</h2>
+      {% endif %}
+
+      {# Display Glossary Term specific fields #}
+
+        {% if content.field_english_pronunciation %}
+          {{ content.field_english_pronunciation }}
+        {% endif %}
+
+        {% if content.field_summary %}
+          {{ content.field_summary }}
+        {% endif %}
+
+      {% if content.field_body_content %}
+        {{ content.field_body_content }}
+      {% endif %}
+
+    {% endblock %}
+
+  </div>
+
+{% endapply %}
