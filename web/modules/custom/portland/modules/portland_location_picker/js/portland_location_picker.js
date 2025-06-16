@@ -198,6 +198,7 @@
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
             zoom: DEFAULT_ZOOM,
+            maxZoom: 21,
             gestureHandling: true
           });
           drupalSettings.webform.portland_location_picker.lMap = map;
