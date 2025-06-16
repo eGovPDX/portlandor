@@ -245,6 +245,7 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 // * adds change handlers to the visible user input fields (calls _resetVerified)
 // * makes the "verified" visual indicators visible
 // * sets the internal isVerified flag to true
+// * if secondary_queries are configured, run them at the end of this method
 AddressVerifierView.prototype._setVerified = function (item, view = this) {
     var self = this;
     view.isVerified = false; // reset to false until we know it's verified
@@ -303,6 +304,55 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // hide validation message
     view.$element.find('#location_address_label_markup').removeClass('d-none');
     view.$element.find('.error').removeClass('error');
+
+    if (view.settings.secondary_queries) {
+        view._runSecondaryQueries(item);
+    }
+}
+
+AddressVerifierView.prototype._runSecondaryQueries = function (item) {
+    var self = this;
+    
+    for (var i = 0; i < this.settings.secondary_queries.length; i++) {
+        var query = this.settings.secondary_queries[i];
+
+        if (query.api) {
+            // new method using array of secondary queries
+            var queryUrl = query.api + "?format=json";
+            for (const arg of query.api_args) {
+                const [key, value] = Object.entries(arg)[0];
+
+                switch (key) {
+                    case 'geometry':
+                        queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
+                        break;
+                    case 'detail_id':
+                        queryUrl += "&detail_id" + item.taxlotId;
+                        break;
+                    default:
+                        queryUrl += "&" + key + "=" + value;
+                }
+            }
+
+            var test = queryUrl;
+
+            this.$.ajax({
+                url: queryUrl,
+                success: function (results) {
+                    self._processSecondaryResults(results, self, query.capture_property, query.capture_field, self.$);
+                },
+                error: function (e) {
+                    console.error(e);
+                }
+            });
+
+        } else {
+            // old method using single secondary query settings
+            if (query.url && query.capture_property && query.capture_field) {
+                this.model.callSecondaryQuery(query.url, self.$element.find('#location_x').val(), self.$element.find('#location_y').val(), self._processSecondaryResults, self, query.capture_property, query.capture_field, this.$);
+            }
+        }
+    }
 }
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
@@ -495,5 +545,46 @@ AddressVerifierView.prototype._useUnverified = function () {
     // this.$element.find('#container_unit').addClass('d-none');
     // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
+}
+
+function doClickQuery(latlng) {
+    var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(latlng.lat, latlng.lng));
+    var x = sphericalMerc.x;
+    var y = sphericalMerc.y;
+    var url = clickQueryUrl.replace('{{x}}', x).replace('{{y}}', y);
+
+    $.ajax({
+        url: url,
+        success: function (results) {
+            // get the property specified by clickQueryPropertyPath
+            var newValue = getPropertyByPath(results, clickQueryPropertyPath);
+
+            $('#' + clickQueryDestinationField).val(newValue).trigger('change');
+        },
+        error: function (e) {
+            $('#' + clickQueryDestinationField).val('').trigger('change');
+            // Handle any error cases
+            console.error(e);
+        }
+    });
+}
+
+function getPropertyByPath(jsonObject, path) {
+    const keys = path.split('.');
+
+    return keys.reduce((obj, key) => {
+        if (!obj) return undefined;
+
+        // Check if the key includes an array index, like 'features[0]'
+        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+        if (arrayIndexMatch) {
+            const arrayKey = arrayIndexMatch[1];
+            const index = arrayIndexMatch[2];
+            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+        } else {
+            return obj[key] !== undefined ? obj[key] : undefined;
+        }
+    }, jsonObject);
 }
 

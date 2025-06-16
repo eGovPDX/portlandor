@@ -169,6 +169,10 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The address you provided is outside of the Portland city limits. Please try a different address.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['out_of_bounds_message'] = $outOfBoundsMessage;
 
+    $secondaryQueries = array_key_exists('#secondary_queries', $element) ? $element['#secondary_queries'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_queries'] = $secondaryQueries;
+
+
   }
 
 }

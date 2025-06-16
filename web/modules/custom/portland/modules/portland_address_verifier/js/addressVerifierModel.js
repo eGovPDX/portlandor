@@ -106,22 +106,6 @@ AddressVerifierModel.buildFullAddress = function (address, city, state, zip, uni
     return fullAddress;
 }
 
-// AddressVerifierModel.buildFullAddressX = function (item, $element) {
-//     var streetAddress = item.address + (item.unit ? " " + item.unit : "");
-//     return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
-//         .filter(Boolean)
-//         .join(', ')
-//         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
-// }
-
-// AddressVerifierModel.updateFullAddress = function (item) {
-//     var streetAddress = item.street + (item.unit ? " " + item.unit : "");
-//     return [streetAddress, item.city ? item.city + ', ' + item.state : '']
-//         .filter(Boolean)
-//         .join(', ')
-//         + (item.zip ? ' ' + item.attributes.zip_code : '');
-// }
-
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
     var lineBreak = useHtml ? "<br>" : "\r\n";
     var unit = $element.find('#unit_number').val();
@@ -193,4 +177,3 @@ AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
         }
     }, jsonObject);
 };
-
