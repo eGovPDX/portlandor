@@ -1,5 +1,10 @@
 <?php
 
+use Drupal\Core\Access\AccessResult;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Session\AccountInterface;
+
+
 /**
  * Implements hook_preprocess_HOOK().
  *
@@ -47,3 +52,24 @@ function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $no
     $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 3;
   }
 }
+
+/**
+ * Implements hook_node_access().
+ * 
+ * Restricts access to glossary terms in content fragments. This is handled manually because the
+ * plugin architecture of Rabbit Hole is changing in v2.0, and it's unclear when we'll be migrating
+ * to that version. v1.0 plugin architecture is deprecated. This is a temporary solution.
+ */
+function portland_glossary_node_access(NodeInterface $node, $op, AccountInterface $account) {
+  if ($op === 'view' && $node->bundle() === 'content_fragment') {
+    if ($node->hasField('field_fragment_type') && !$node->get('field_fragment_type')->isEmpty()) {
+      $term = $node->get('field_fragment_type')->entity;
+      if ($term && $term->label() !== 'Glossary Term') {
+        return AccessResult::forbidden()->addCacheableDependency($node);
+      }
+    }
+  }
+
+  return AccessResult::neutral();
+}
+
