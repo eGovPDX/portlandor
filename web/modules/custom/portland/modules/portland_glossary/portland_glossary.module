@@ -56,15 +56,16 @@ function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $no
 /**
  * Implements hook_node_access().
  * 
- * Restricts access to glossary terms in content fragments. This is handled manually because the
- * plugin architecture of Rabbit Hole is changing in v2.0, and it's unclear when we'll be migrating
- * to that version. v1.0 plugin architecture is deprecated. This is a temporary solution.
+ * Restricts access to certain types of content fragments by returning a 302 response for
+ * anonymous uses. 302 is sent instead of 404 because the latter is more complicated to implement
+ * from here, and this is just meant to be a temporary solution until we can implement the Rabbit Hole 
+ * 2.0's plugin architecture.
  */
 function portland_glossary_node_access(NodeInterface $node, $op, AccountInterface $account) {
   if ($op === 'view' && $node->bundle() === 'content_fragment') {
     if ($node->hasField('field_fragment_type') && !$node->get('field_fragment_type')->isEmpty()) {
       $term = $node->get('field_fragment_type')->entity;
-      if ($term && $term->label() !== 'Glossary Term') {
+      if ($term && $term->label() !== 'Glossary Term' && $account->isAnonymous()) {
         return AccessResult::forbidden()->addCacheableDependency($node);
       }
     }
