@@ -155,25 +155,33 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     });
 }
 
-AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
-    const keys = path.split('.');
+AddressVerifierModel.getPropertyByPath = function (obj, path) {
+    const parts = path.split('.');
 
-    return keys.reduce((obj, key) => {
-        // Automatically use the first element if the current object is an array
-        if (Array.isArray(obj)) {
-            obj = obj[0];
+    function extract(o, keys) {
+        if (keys.length === 0) return o;
+
+        const [first, ...rest] = keys;
+        const match = first.match(/^(.+)\[(\d*)\]$/);
+
+        if (match) {
+            const [, key, index] = match;
+            const arr = o?.[key];
+
+            if (!Array.isArray(arr)) return undefined;
+
+            if (index === '') {
+                return arr.map(item => extract(item, rest));
+            } else {
+                return extract(arr[Number(index)], rest);
+            }
         }
 
-        if (!obj) return undefined;
-        // Check if the key includes an array index, like 'features[0]'
-        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+        return extract(o?.[first], rest);
+    }
 
-        if (arrayIndexMatch) {
-            const arrayKey = arrayIndexMatch[1];
-            const index = parseInt(arrayIndexMatch[2], 10);
-            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
-        } else {
-            return obj[key] !== undefined ? obj[key] : undefined;
-        }
-    }, jsonObject);
+    var retVal = extract(obj, parts);
+
+    return JSON.stringify(retVal);
 };
+

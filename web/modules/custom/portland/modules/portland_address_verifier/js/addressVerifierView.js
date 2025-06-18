@@ -72,35 +72,35 @@ AddressVerifierView.prototype._checkIfVerificationRequired = function () {
 }
 
 AddressVerifierView.prototype._handlePostback = function () {
-  var self = this;
+    var self = this;
 
-  requestAnimationFrame(function () {
-    const verificationStatus = self.$verificationStatus.val();
+    requestAnimationFrame(function () {
+        const verificationStatus = self.$verificationStatus.val();
 
-    if (verificationStatus === "Verified") {
-      self.isVerified = true;
+        if (verificationStatus === "Verified") {
+            self.isVerified = true;
 
-      self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
-      self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
-      self.$button.prop("disabled", "disabled");
-      self.$button.removeClass("button--primary");
-      self.$button.addClass("disabled button--info");
+            self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+            self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+            self.$button.prop("disabled", "disabled");
+            self.$button.removeClass("button--primary");
+            self.$button.addClass("disabled button--info");
 
-      // Bind handlers now that DOM and values are stable
-      for (let i = 0; i < INPUT_FIELDS.length; i++) {
-        const field = INPUT_FIELDS[i];
-        self.$element.find(field).off('input change').on('input change', function () {
-          if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-          }
-        });
-      }
-    } else if (verificationStatus === "Unverified") {
-      self.isVerified = false;
-      self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-      self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
-    }
-  });
+            // Bind handlers now that DOM and values are stable
+            for (let i = 0; i < INPUT_FIELDS.length; i++) {
+                const field = INPUT_FIELDS[i];
+                self.$element.find(field).off('input change').on('input change', function () {
+                    if (self.isVerified) {
+                        self._resetVerified(self.$checkmark, self.$button);
+                    }
+                });
+            }
+        } else if (verificationStatus === "Unverified") {
+            self.isVerified = false;
+            self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+            self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+        }
+    });
 };
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
@@ -237,6 +237,15 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
     view.$element.find('#' + captureField).val(propertyValue).trigger('change');
 }
 
+AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
+    for (var i = 0; i < query.capture.length; i++) {
+        let field = query.capture[i].field;
+        let path = query.capture[i].path;
+        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path);
+        view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+    }
+}
+
 // this method is called when an address is selected in the autocomplete list or in the
 // list of options displayed by the Verify button. it does the following:
 // * clears all fields, both visible and hidden
@@ -312,7 +321,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
 AddressVerifierView.prototype._runSecondaryQueries = function (item) {
     var self = this;
-    
+
     for (var i = 0; i < this.settings.secondary_queries.length; i++) {
         var query = this.settings.secondary_queries[i];
 
@@ -339,7 +348,7 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
             this.$.ajax({
                 url: queryUrl,
                 success: function (results) {
-                    self._processSecondaryResults(results, self, query.capture_property, query.capture_field, self.$);
+                    self._processSecondaryResultsNew(results, self, query);
                 },
                 error: function (e) {
                     console.error(e);
@@ -569,22 +578,51 @@ function doClickQuery(latlng) {
     });
 }
 
-function getPropertyByPath(jsonObject, path) {
-    const keys = path.split('.');
+// function getPropertyByPath(jsonObject, path) {
+//     const keys = path.split('.');
 
-    return keys.reduce((obj, key) => {
-        if (!obj) return undefined;
+//     return keys.reduce((obj, key) => {
+//         if (!obj) return undefined;
 
-        // Check if the key includes an array index, like 'features[0]'
-        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+//         // Check if the key includes an array index, like 'features[0]'
+//         const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
 
-        if (arrayIndexMatch) {
-            const arrayKey = arrayIndexMatch[1];
-            const index = arrayIndexMatch[2];
-            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
-        } else {
-            return obj[key] !== undefined ? obj[key] : undefined;
-        }
-    }, jsonObject);
-}
+//         if (arrayIndexMatch) {
+//             const arrayKey = arrayIndexMatch[1];
+//             const index = arrayIndexMatch[2];
+//             return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+//         } else {
+//             return obj[key] !== undefined ? obj[key] : undefined;
+//         }
+//     }, jsonObject);
+// }
 
+// function getPropertyByPath(obj, path) {
+//     const parts = path.split('.');
+
+//     function extract(o, keys) {
+//         console.log("Extracting from:", o, "Keys left:", keys);
+
+//         if (keys.length === 0) return o;
+
+//         const [first, ...rest] = keys;
+//         const match = first.match(/^(.+)\[(\d*)\]$/);
+
+//         if (match) {
+//             const [, key, index] = match;
+//             const arr = o?.[key];
+
+//             if (!Array.isArray(arr)) return undefined;
+
+//             if (index === '') {
+//                 return arr.map(item => extract(item, rest));
+//             } else {
+//                 return extract(arr[Number(index)], rest);
+//             }
+//         }
+
+//         return extract(o?.[first], rest);
+//     }
+
+//     return extract(obj, parts);
+// }

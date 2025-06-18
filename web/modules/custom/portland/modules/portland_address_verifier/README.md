@@ -96,18 +96,14 @@ An array of queries to run when an address suggestion is selected or when an add
       - sections: zoning
       - geometry: '{"x":${x}, "y":${y}}'
     capture:
-      - path: 'zoning.overlay'
-        type: array
-        field: 'hidden_zoning_overlay'
-      - path: 'zoning.national_register_district'
-        type: array
-        field: 'hidden_national_register_district'
-      - path: 'zoning.conservation_district'
-        type: array
-        field: 'hidden_conservation_district'
-      - path: 'zoning.historic_district'
-        type: array
+      - path: 'zoning.overlay[].code'
+        field: 'hidden_zoning_overlays'
+      - path: 'zoning.historic_district[].code'
         field: 'hidden_historic_district'
+      - path: 'zoning.national_register_district[].code'
+        field: 'hidden_national_register_district'
+      - path: 'zoning.conservation_district[].code'
+        field: 'hidden_conservation_district'
   - api: 'https://dev.portlandmaps.com/api/detail/'
     detail_type: zoning
     sections: zoning
