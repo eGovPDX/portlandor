@@ -1258,6 +1258,18 @@ elements: |-
               - ':input[name="wizard_permit_need"]':
                   value: parking
           '#required': true
+        complex_permit_parking_operation_hours:
+          '#type': textfield
+          '#title': 'Hours of operation for parking'
+          '#placeholder': "e.g. 7am-4pm"
+          '#states':
+            visible:
+              - ':input[name="complex_permit_closure_type[parking]"]':
+                  checked: true
+              - or
+              - ':input[name="wizard_permit_need"]':
+                  value: parking
+          '#required': true
         complex_permit_bds_associated:
           '#type': webform_radios_other
           '#title': 'Is this request associated with a permit issued by Portland Permitting & Development (i.e. building permit, trade permit, etc)?'
@@ -1986,6 +1998,11 @@ elements: |-
         30554467339031_parking
       {% endif %}
 
+      {# this controls the "Location is Busy" ZD field (32905487970839) #}
+      {% if data.hidden_location_busy %}
+        location_busy
+      {% endif %}
+
       {% if 'busLines' in data.hidden_location_busy %}
         bus_line
       {% endif %}
@@ -2244,10 +2261,14 @@ elements: |-
           {% if data.complex_permit_closure_type %}
           <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
           <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) ?: '0' }}</strong></li>
+          {% if "parking" in data.complex_permit_closure_type %}
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
+          <li>Hours of operation for parking: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_operation_hours]', webform_submission) }}</strong></li>
+          {% endif %}
           {% elseif data.wizard_permit_need == "parking" %}
           <li>Type of closure(s): <strong>Parking</strong></li>
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
+          <li>Hours of operation for parking: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_operation_hours]', webform_submission) }}</strong></li>
           {% endif %}
           {% if data.complex_permit_parking_description %}<li>Exact location of parking: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_description]', webform_submission) }}</strong></li>{% endif %}
           {% if data.complex_permit_document_choice_tcp_required %}<li>TCP choice: <strong>{{ webform_token('[webform_submission:values:complex_permit_document_choice_tcp_required]', webform_submission) }}</strong></li>{% endif %}
@@ -2682,7 +2703,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'\r\n32904985601047: ['[webform_submission:values:complex_permit_parking_operation_hours]', 'complex_permit_parking_operation_hours']\r\n32905012684695: ['[webform_submission:values:complex_permit_billing_info]', 'complex_permit_billing_info']\r\n32905012809879: ['[webform_submission:values:complex_permit_job_number]', 'complex_permit_job_number']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
       recipient: tsup@portlandoregon.gov
@@ -2714,7 +2735,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']\r\n30554509777303: ['[webform_submission:values:complex_permit_lanes_affected]', 'complex_permit_lanes_affected']\r\n32462681370135: '32462681370135_[webform_submission:values:complex_permit_street_side:raw:clear][webform_submission:values:simple_permit_street_side:raw:clear]'\r\n32904985601047: ['[webform_submission:values:complex_permit_parking_operation_hours]', 'complex_permit_parking_operation_hours']\r\n32905012684695: ['[webform_submission:values:complex_permit_billing_info]', 'complex_permit_billing_info']\r\n32905012809879: ['[webform_submission:values:complex_permit_job_number]', 'complex_permit_job_number']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
       recipient: tsup@portlandoregon.gov
