@@ -10,8 +10,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\group\Entity\GroupRelationship;
 use Drupal\group\Entity\GroupInterface;
 
-use GuzzleHttp\Exception\RequestException;
-
 function setGroupVariables($group, &$variables) {
   $shortname_or_acronym = $group->field_shortname_or_acronym->value;
   $variables['attributes']['class'][] = 'group-page';
@@ -80,7 +78,6 @@ function cloudy_preprocess_html(&$variables) {
  * Implements hook_preprocess_HOOK()
  *
  * - Unset page title on Bureau/Office Homepages and move display to content for custom layouts
- * - Trigger Dark Visitors API call to track pageviews
  */
 function cloudy_preprocess_page(&$variables) {
   if($group = \Drupal::routeMatch()->getParameter('group')) {
@@ -90,55 +87,7 @@ function cloudy_preprocess_page(&$variables) {
       unset($variables['page']['content']['cloudy_page_title']);
     }
   }
-
-  // Track pageview in Dark Visitors via their Server Analytics Visits API
-  // https://darkvisitors.com/docs/analytics#3-set-up-server-analytics
-  $url = 'https://api.darkvisitors.com/visits';
-  $headers = \Drupal::request()->headers->all();
-  // Filter out potentially sensitive HTTP headers
-  unset($headers['cookie']);
-  unset($headers['authorization']);
-  unset($headers['proxy-authorization']);
-  unset($headers['x-csrf-token']);
-  $json = [
-    'request_path' => \Drupal::request()->getUri(),
-    'request_method' => \Drupal::request()->getMethod(),
-    'request_headers' => $headers,
-  ];
-  $auth_token = readSecretKey('darkvisitors');
-  try {
-    $response = \Drupal::httpClient()->post($url, [
-      'json' => $json,
-      'headers' => [
-        'Authorization' => "Bearer $auth_token",
-      ]
-    ]);
-  }
-  catch (RequestException $e) {
-    \Drupal::logger('dark_visitors')->warning('Server Analytics API error: %error', ['%error' => $e->getMessage()]);
-  }
 }
-
-/**
- * Get a secret from a key file.
- */
-function readSecretKey($key) {
-  $keyFile = $_ENV['FILEMOUNT'] . '/private/' . $key . '.key';
-  
-  if (!file_exists($keyFile)) {
-    \Drupal::logger('dark_visitors')->warning('Key file not found: %file', ['%file' => "$key.key"]);
-    return;
-  }
-  
-  $secret = file_get_contents($keyFile);
-  if (trim($secret) == '') {
-    \Drupal::logger('dark_visitors')->warning('No value in key file: %file', ['%file' => "$key.key"]);
-    return;  
-  }
-
-  return $secret;
-}
-
 
 /**
  * Implements hook_form_FORM_ID_alter().
