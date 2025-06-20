@@ -1,0 +1,344 @@
+uuid: 6acf0a52-3fa6-42dd-a23a-1ee25d7bf9bd
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: find_tree_planting_programs
+title: 'Find Tree Planting Programs'
+description: 'UF Tree Navigation Form'
+categories:
+  - Utility
+elements: |-
+  apply_planting_location:
+    '#type': select
+    '#title': 'I would like my free trees planted in a...'
+    '#options':
+      'Planting Strip': 'Planting Strip (right-of-way or street)'
+      'Front Yard': 'Front Yard (private property)'
+      'Back Yard': 'Back Yard (private property)'
+      'Apartment complex/Industrial/Commercial': 'Apartment complex/Industrial/Commercial'
+      'School yard': 'School yard'
+    '#required': true
+  apply_address:
+    '#type': portland_address_verifier
+    '#title': 'Planting Address'
+    '#states':
+      visible:
+        - ':input[name="apply_planting_location"]':
+            value: 'Planting Strip'
+        - or
+        - ':input[name="apply_planting_location"]':
+            value: 'Front Yard'
+    '#location_address__title': 'What is the address where you want your free trees planted?'
+    '#location_address__description': |
+      Begin typing to see a list of possible address matches in the Portland metro area, then select one. Do not include unit number.
+
+      <strong>This information is only used to identify your neighborhood and is not stored.</strong>
+    '#unit_number__access': false
+    '#location_capture_field__title': 'Your neighborhood is:'
+    '#location_capture_field__type': textfield
+    '#secondary_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/11/query?where=1=1&f=json&outFields=MAPLABEL&geometryType=esriGeometryPoint&returnGeometry=false'
+    '#secondary_query_capture_property': features.attributes.MAPLABEL
+    '#secondary_query_capture_field': location_capture_field
+    '#require_portland_city_limits': 1
+    '#out_of_bounds_message': 'This address is not within the City of Portland limits and therefore is ineligible for any of the programs offered by Urban Forestry.'
+    '#location_capture_field__readonly': true
+    '#location_capture_field__states':
+      visible:
+        ':input[name="apply_address[location_verification_status]"]':
+          value: Verified
+  markup_might_qualify:
+    '#type': webform_markup
+    '#states':
+      invisible:
+        - ':input[name="apply_planting_location"]':
+            value: ''
+        - or
+        - ':input[name="apply_planting_location"]':
+            value: 'Planting Strip'
+          ':input[name="apply_address[location_capture_field]"]':
+            value:
+              '!pattern': "Arbor Lodge|Brentwood-Darlington|Brooklyn|Cathedral Park|Concordia|Creston-Kenilworth|Foster-Powell|Hosford-Abernethy|Kenton|Madison South|North Tabor|Pleasant Valley|Reed|Rose City Park|Roseway|Sullivan's Gulch|University Park|Vernon|Wilkes|Woodstock|Centennial|Glenfair|Hazelwood|Lents|Powellhurst-Gilbert|Mill Park|Montavilla|Parkrose|Parkrose Heights|Argay Terrace|Boise|Eliot|Buckman|East Columbia|Humboldt|Kerns|King|Lloyd|Piedmont|Portsmouth|Russell|St. Johns|Woodlawn"
+        - or
+        - ':input[name="apply_planting_location"]':
+            value: 'Front Yard'
+          ':input[name="apply_address[location_capture_field]"]':
+            value: ''
+    '#markup': '<hr><p><strong>You might qualify for the following programs:</strong></p>'
+  message_school:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="apply_planting_location"]':
+          value: 'School yard'
+    '#admin_title': 'School Yard - Learning Landscapes'
+    '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for Schools</h2><p>Students of all ages can get their hands dirty planting trees with Urban Forestry at their schools! Schools receive planning, free trees, planting, and three years of water and care through the Learning Landscapes program. Applications are accepted year-round and tree plantings occur in the fall and winter.</p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/trees-schools">Learning Landscapes</a></p></div></div>'
+  markup_ytg:
+    '#type': webform_markup
+    '#states':
+      visible:
+        - ':input[name="apply_planting_location"]':
+            value: 'Front Yard'
+          ':input[name="apply_address[location_capture_field]"]':
+            '!value': ''
+        - or
+        - ':input[name="apply_planting_location"]':
+            value: 'Back Yard'
+    '#admin_title': 'Yard Tree Giveaway'
+    '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for your Yard</h2><p>Portlanders can receive up to three free trees for their yards! Choose from evergreens, flowering trees, nut-bearing, and trees rich with autumn colors. Trees must be planted on private property (not in planting strips) and cared for by the recipient. While we hold giveaway events in neighborhoods with the greatest need for tree cover, all Portland residents are able to participate. Registration opens each September for fall pick-up locations across the city. </p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/find-your-free-trees/trees-your-yard">Yard Tree Giveaway</a></p></div></div>'
+  message_apt:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="apply_planting_location"]':
+          value: 'Apartment complex/Industrial/Commercial'
+    '#admin_title': 'Apartment/Commerical - PPT, Yard Tree Giveaway'
+    '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for Apartment Complexes and Businesses</h2><p>Own or manage a large property? Industrial, Commercial, or multi-family housing sites can sign up to have free trees planted. These trees come with three years of watering and care—so they’re low-maintenance for you and set up for a healthy future. We focus on bringing shade and beauty to properties with space for many trees.</p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/trees-apartment-complexes-and-businesses">Private Property Trees</a></p></div></div><div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for your Yard</h2><p>Portlanders can receive up to three free trees for their yards! Choose from evergreens, flowering trees, nut-bearing, and trees rich with autumn colors. Trees must be planted on private property (not in planting strips) and cared for by the recipient. While we hold giveaway events in neighborhoods with the greatest need for tree cover, all Portland residents are able to participate. Registration opens each September for fall pick-up locations across the city. </p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/find-your-free-trees/trees-your-yard">Yard Tree Giveaway</a></p></div></div>'
+  container_neighborhood_based:
+    '#type': container
+    markup_planting_strip_ineligible:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_planting_location"]':
+            value: 'Planting Strip'
+          ':input[name="apply_address[location_capture_field]"]':
+            value:
+              '!pattern': "^$|Arbor Lodge|Brentwood-Darlington|Brooklyn|Cathedral Park|Concordia|Creston-Kenilworth|Foster-Powell|Hosford-Abernethy|Kenton|Madison South|North Tabor|Pleasant Valley|Reed|Rose City Park|Roseway|Sullivan's Gulch|University Park|Vernon|Wilkes|Woodstock|Centennial|Glenfair|Hazelwood|Lents|Powellhurst-Gilbert|Mill Park|Montavilla|Parkrose|Parkrose Heights|Argay Terrace|Boise|Eliot|Buckman|East Columbia|Humboldt|Kerns|King|Lloyd|Piedmont|Portsmouth|Russell|St. Johns|Woodlawn"
+      '#admin_title': 'Planting Strip - Neighborhood Ineligible'
+      '#markup': '<hr><div class="webform-alert alert alert--info"><h2>Currently this neighborhood does not qualify</h2><p>At this time we do not have a program working in your neighborhood for planting strip planting. Email <a href="mailto:freetrees@portlandoregon.gov">freetrees@portlandoregon.gov</a> to join our waitlist and be notified when we come to your neighborhood. Or, if you have room on your private property, consider signing up for a tree from <a href="https://www.portland.gov/trees/tree-planting/find-your-free-trees/trees-your-yard">Yard Tree Giveaway</a>.</p></div>'
+    markup_fst_irow:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_planting_location"]':
+            value: 'Planting Strip'
+          ':input[name="apply_address[location_capture_field]"]':
+            value:
+              pattern: "Arbor Lodge|Brentwood-Darlington|Brooklyn|Cathedral Park|Concordia|Creston-Kenilworth|Foster-Powell|Hosford-Abernethy|Kenton|Madison South|North Tabor|Pleasant Valley|Reed|Rose City Park|Roseway|Sullivan's Gulch|University Park|Vernon|Wilkes|Woodstock"
+      '#admin_title': 'FST IROW'
+      '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for Planting Strips</h2><p>Each year, we plant free street trees in neighborhoods with the fewest trees. If your planting strip—the space between the sidewalk and the street—is at least four feet wide, your property may be eligible. No need to sign up—City staff will contact eligible property owners directly. This program provides the tree, planting, and three years of watering, all for free.</p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/find-your-free-trees/trees-planting-strips">Free Street Trees&nbsp;</a></p></div></div>'
+    markup_fst_urow:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_planting_location"]':
+            value:
+              pattern: 'Planting Strip|Front Yard'
+          ':input[name="apply_address[location_capture_field]"]':
+            value:
+              pattern: 'Brentwood-Darlington|Centennial|Glenfair|Hazelwood|Lents|Powellhurst-Gilbert|Mill Park|Montavilla|Parkrose|Parkrose Heights'
+      '#admin_title': 'FST UROW'
+      '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees for Residential Streets</h2><p>Need more shade in your neighborhood? Residents can sign up to have free trees planted along the street or in their front yards. These trees come with three years of watering and care—so they’re low-maintenance for you and set up for a healthy future. We focus on neighborhoods with the highest need for tree canopy and on streets that lack curbs or sidewalks. Registration opens in June each year for winter planting.</p><p><a class="btn-cta-outline" href="https://www.portland.gov/trees/tree-planting/find-your-free-trees/trees-residential-streets">Trees for Residential Streets</a></p></div></div>'
+    markup_fot:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_planting_location"]':
+            value:
+              pattern: 'Planting Strip|Front Yard'
+          ':input[name="apply_address[location_capture_field]"]':
+            value:
+              pattern: 'Argay Terrace|Boise|Eliot|Buckman|Centennial|East Columbia|Glenfair|Hazelwood|Humboldt|Kenton|Kerns|King|Lloyd|Mill Park|Montavilla|Parkrose|Parkrose Heights|Piedmont|Portsmouth|Powellhurst-Gilbert|Russell|St. Johns|Wilkes|Woodlawn'
+      '#admin_title': 'FOT Sole Source'
+      '#markup': '<div class="card mb-4"><div class="card-body"><h2 class="card-title mt-0">Trees from Friends of Trees</h2><p><drupal-entity data-align="right" data-entity-type="media" data-entity-uuid="e6e93891-5cec-46cb-bd29-fe061c04f0c6" data-embed-button="image_browser" data-entity-embed-display="view_mode:media.embedded"></drupal-entity></p><p>Urban Forestry partners with Friends of Trees to plant free trees in select Portland neighborhoods. Trees can be planted along the street or on private property. Street trees receive three years of watering and care. Visit the Friends of Trees website to sign up and for more information.</p><p><a class="btn-cta-outline" href="https://friendsoftrees.org/get-a-tree/">Friends of Trees</a></p></div></div>'
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#submit_hide': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers: {  }
+variants: {  }
