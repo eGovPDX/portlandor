@@ -241,7 +241,20 @@ AddressVerifierView.prototype._processSecondaryResultsNew = function (results, v
     for (var i = 0; i < query.capture.length; i++) {
         let field = query.capture[i].field;
         let path = query.capture[i].path;
-        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path);
+        let parse = query.capture[i].parse;
+        let omit_nulls = query.capture[i].omit_null_properties;
+
+        // this returns non-stringified JSON object or empty string
+        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
+
+        // // instead of stringifying, convert into name value pairs for easier parsing in twig, if not a string
+        // if (
+        //     (typeof propertyValue !== 'string' && !(propertyValue instanceof String)) &&
+        //     (typeof propertyValue !== 'number' && !(propertyValue instanceof Number))
+        // ) {
+        //     propertyValue = AddressVerifierModel.flattenObjectToDelimitedString(propertyValue);
+        // }
+
         view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
     }
 }
@@ -322,12 +335,12 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 AddressVerifierView.prototype._runSecondaryQueries = function (item) {
     var self = this;
 
-    for (var i = 0; i < this.settings.secondary_queries.length; i++) {
-        var query = this.settings.secondary_queries[i];
+    for (let i = 0; i < this.settings.secondary_queries.length; i++) {
+        let query = this.settings.secondary_queries[i];
 
         if (query.api) {
             // new method using array of secondary queries
-            var queryUrl = query.api + "?format=json";
+            let queryUrl = query.api + "?format=json";
             for (const arg of query.api_args) {
                 const [key, value] = Object.entries(arg)[0];
 
@@ -342,8 +355,6 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                         queryUrl += "&" + key + "=" + value;
                 }
             }
-
-            var test = queryUrl;
 
             this.$.ajax({
                 url: queryUrl,

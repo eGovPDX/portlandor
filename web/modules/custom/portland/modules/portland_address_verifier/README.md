@@ -89,7 +89,8 @@ Default value: "A verified address is required. Please try again."
 
 **secondary_queries**<br>
 An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either a detail_id (taxlotId) or geometry (x, y) must be passed. See the examples below. 
-<pre>secondary_queries:
+<pre>
+secondary_queries:
   - api: 'https://dev.portlandmaps.com/api/detail/'
     api_args:
       - detail_type: zoning
@@ -98,18 +99,26 @@ An array of queries to run when an address suggestion is selected or when an add
     capture:
       - path: 'zoning.overlay[].code'
         field: 'hidden_zoning_overlays'
+        parse: stringify
       - path: 'zoning.historic_district[].code'
         field: 'hidden_historic_district'
+        parse: stringify
       - path: 'zoning.national_register_district[].code'
         field: 'hidden_national_register_district'
+        parse: stringify
       - path: 'zoning.conservation_district[].code'
         field: 'hidden_conservation_district'
+        parse: stringify
+      - path: 'historic_resource'
+        field: 'hidden_historic_resource'
+        parse: flatten
+        omit_null_properties: true
   - api: 'https://dev.portlandmaps.com/api/detail/'
-    detail_type: zoning
-    sections: zoning
-    detail_id: '${taxlotId}'
+    api_args:
+      - detail_type: environmental-percent-slope
+      - sections: general
+      - geometry: '{"x":${x}, "y":${y}}'
     capture:
-        - path: 'historic_resource'
-          type: array
-          field: 'hidden_historic_resource'
+      - path: 'general.percent_slope'
+        field: 'hidden_percent_slope'
 </pre>

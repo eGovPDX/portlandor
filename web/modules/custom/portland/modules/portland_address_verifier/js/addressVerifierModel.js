@@ -155,33 +155,103 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     });
 }
 
-AddressVerifierModel.getPropertyByPath = function (obj, path) {
-    const parts = path.split('.');
+AddressVerifierModel.getPropertyByPath = function (obj, path, parse = "stringify", omit_nulls = false) {
+  const parts = path.split('.');
 
-    function extract(o, keys) {
-        if (keys.length === 0) return o;
+  function extract(o, keys) {
+    if (keys.length === 0) return o;
 
-        const [first, ...rest] = keys;
-        const match = first.match(/^(.+)\[(\d*)\]$/);
+    const [first, ...rest] = keys;
+    const match = first.match(/^(.+)\[(\d*)\]$/);
 
-        if (match) {
-            const [, key, index] = match;
-            const arr = o?.[key];
+    if (match) {
+      const [, key, index] = match;
+      const arr = o?.[key];
 
-            if (!Array.isArray(arr)) return undefined;
+      if (!Array.isArray(arr)) return undefined;
 
-            if (index === '') {
-                return arr.map(item => extract(item, rest));
-            } else {
-                return extract(arr[Number(index)], rest);
-            }
-        }
-
-        return extract(o?.[first], rest);
+      if (index === '') {
+        return arr.map(item => extract(item, rest));
+      } else {
+        return extract(arr[Number(index)], rest);
+      }
     }
 
-    var retVal = extract(obj, parts);
+    return extract(o?.[first], rest);
+  }
 
-    return JSON.stringify(retVal);
+  function pruneNulls(value) {
+    if (value === null || value === undefined) return undefined;
+
+    if (Array.isArray(value)) {
+      const cleaned = value.map(pruneNulls).filter(v => v !== undefined);
+      return cleaned.length > 0 ? cleaned : undefined;
+    }
+
+    if (typeof value === 'object') {
+      const cleaned = Object.entries(value).reduce((acc, [key, val]) => {
+        const pruned = pruneNulls(val);
+        if (pruned !== undefined) acc[key] = pruned;
+        return acc;
+      }, {});
+      return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+    }
+
+    return value;
+  }
+
+  let retVal = extract(obj, parts);
+
+  if (omit_nulls) {
+    retVal = pruneNulls(retVal);
+  }
+
+  const isEmptyArray = Array.isArray(retVal) && retVal.length === 0;
+  const isEmptyObject = typeof retVal === 'object' && retVal !== null && Object.keys(retVal).length === 0;
+
+  if (isEmptyArray || isEmptyObject) {
+    return "";
+  }
+
+  let result;
+
+  if (parse === "flatten" && typeof retVal === 'object' && retVal !== null) {
+    result = AddressVerifierModel.flattenObjectToDelimitedString(retVal);
+  } else if (parse === "stringify") {
+    result = JSON.stringify(retVal);
+  } else {
+    result = retVal;
+  }
+
+  return result;
 };
 
+AddressVerifierModel.flattenObjectToDelimitedString = function (obj) {
+  const entries = Object.entries(obj);
+  const parts = [];
+
+  for (let [key, value] of entries) {
+    let stringValue;
+
+    if (value === null) {
+      stringValue = 'null';
+    } else if (value === undefined) {
+      stringValue = 'undefined';
+    } else if (typeof value !== 'string' && typeof value !== 'number') {
+      stringValue = JSON.stringify(value);
+    } else {
+      stringValue = String(value);
+    }
+
+    // Escape if necessary
+    if (/[=|]/.test(stringValue)) {
+      stringValue = `"${stringValue.replace(/"/g, '\\"')}"`;
+    }
+
+    const part = `${key}=${stringValue}`;
+    parts.push(part);
+  }
+
+  const result = parts.join('|');
+  return result;
+};
