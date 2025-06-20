@@ -72,35 +72,35 @@ AddressVerifierView.prototype._checkIfVerificationRequired = function () {
 }
 
 AddressVerifierView.prototype._handlePostback = function () {
-  var self = this;
+    var self = this;
 
-  requestAnimationFrame(function () {
-    const verificationStatus = self.$verificationStatus.val();
+    requestAnimationFrame(function () {
+        const verificationStatus = self.$verificationStatus.val();
 
-    if (verificationStatus === "Verified") {
-      self.isVerified = true;
+        if (verificationStatus === "Verified") {
+            self.isVerified = true;
 
-      self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
-      self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
-      self.$button.prop("disabled", "disabled");
-      self.$button.removeClass("button--primary");
-      self.$button.addClass("disabled button--info");
+            self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+            self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+            self.$button.prop("disabled", "disabled");
+            self.$button.removeClass("button--primary");
+            self.$button.addClass("disabled button--info");
 
-      // Bind handlers now that DOM and values are stable
-      for (let i = 0; i < INPUT_FIELDS.length; i++) {
-        const field = INPUT_FIELDS[i];
-        self.$element.find(field).off('input change').on('input change', function () {
-          if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-          }
-        });
-      }
-    } else if (verificationStatus === "Unverified") {
-      self.isVerified = false;
-      self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-      self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
-    }
-  });
+            // Bind handlers now that DOM and values are stable
+            for (let i = 0; i < INPUT_FIELDS.length; i++) {
+                const field = INPUT_FIELDS[i];
+                self.$element.find(field).off('input change').on('input change', function () {
+                    if (self.isVerified) {
+                        self._resetVerified(self.$checkmark, self.$button);
+                    }
+                });
+            }
+        } else if (verificationStatus === "Unverified") {
+            self.isVerified = false;
+            self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+            self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+        }
+    });
 };
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
@@ -237,6 +237,28 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
     view.$element.find('#' + captureField).val(propertyValue).trigger('change');
 }
 
+AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
+    for (var i = 0; i < query.capture.length; i++) {
+        let field = query.capture[i].field;
+        let path = query.capture[i].path;
+        let parse = query.capture[i].parse;
+        let omit_nulls = query.capture[i].omit_null_properties;
+
+        // this returns non-stringified JSON object or empty string
+        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
+
+        // // instead of stringifying, convert into name value pairs for easier parsing in twig, if not a string
+        // if (
+        //     (typeof propertyValue !== 'string' && !(propertyValue instanceof String)) &&
+        //     (typeof propertyValue !== 'number' && !(propertyValue instanceof Number))
+        // ) {
+        //     propertyValue = AddressVerifierModel.flattenObjectToDelimitedString(propertyValue);
+        // }
+
+        view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+    }
+}
+
 // this method is called when an address is selected in the autocomplete list or in the
 // list of options displayed by the Verify button. it does the following:
 // * clears all fields, both visible and hidden
@@ -245,6 +267,7 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 // * adds change handlers to the visible user input fields (calls _resetVerified)
 // * makes the "verified" visual indicators visible
 // * sets the internal isVerified flag to true
+// * if secondary_queries are configured, run them at the end of this method
 AddressVerifierView.prototype._setVerified = function (item, view = this) {
     var self = this;
     view.isVerified = false; // reset to false until we know it's verified
@@ -303,6 +326,53 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // hide validation message
     view.$element.find('#location_address_label_markup').removeClass('d-none');
     view.$element.find('.error').removeClass('error');
+
+    if (view.settings.secondary_queries) {
+        view._runSecondaryQueries(item);
+    }
+}
+
+AddressVerifierView.prototype._runSecondaryQueries = function (item) {
+    var self = this;
+
+    for (let i = 0; i < this.settings.secondary_queries.length; i++) {
+        let query = this.settings.secondary_queries[i];
+
+        if (query.api) {
+            // new method using array of secondary queries
+            let queryUrl = query.api + "?format=json";
+            for (const arg of query.api_args) {
+                const [key, value] = Object.entries(arg)[0];
+
+                switch (key) {
+                    case 'geometry':
+                        queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
+                        break;
+                    case 'detail_id':
+                        queryUrl += "&detail_id" + item.taxlotId;
+                        break;
+                    default:
+                        queryUrl += "&" + key + "=" + value;
+                }
+            }
+
+            this.$.ajax({
+                url: queryUrl,
+                success: function (results) {
+                    self._processSecondaryResultsNew(results, self, query);
+                },
+                error: function (e) {
+                    console.error(e);
+                }
+            });
+
+        } else {
+            // old method using single secondary query settings
+            if (query.url && query.capture_property && query.capture_field) {
+                this.model.callSecondaryQuery(query.url, self.$element.find('#location_x').val(), self.$element.find('#location_y').val(), self._processSecondaryResults, self, query.capture_property, query.capture_field, this.$);
+            }
+        }
+    }
 }
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
@@ -497,3 +567,73 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.isVerified = true;
 }
 
+function doClickQuery(latlng) {
+    var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(latlng.lat, latlng.lng));
+    var x = sphericalMerc.x;
+    var y = sphericalMerc.y;
+    var url = clickQueryUrl.replace('{{x}}', x).replace('{{y}}', y);
+
+    $.ajax({
+        url: url,
+        success: function (results) {
+            // get the property specified by clickQueryPropertyPath
+            var newValue = getPropertyByPath(results, clickQueryPropertyPath);
+
+            $('#' + clickQueryDestinationField).val(newValue).trigger('change');
+        },
+        error: function (e) {
+            $('#' + clickQueryDestinationField).val('').trigger('change');
+            // Handle any error cases
+            console.error(e);
+        }
+    });
+}
+
+// function getPropertyByPath(jsonObject, path) {
+//     const keys = path.split('.');
+
+//     return keys.reduce((obj, key) => {
+//         if (!obj) return undefined;
+
+//         // Check if the key includes an array index, like 'features[0]'
+//         const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+//         if (arrayIndexMatch) {
+//             const arrayKey = arrayIndexMatch[1];
+//             const index = arrayIndexMatch[2];
+//             return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+//         } else {
+//             return obj[key] !== undefined ? obj[key] : undefined;
+//         }
+//     }, jsonObject);
+// }
+
+// function getPropertyByPath(obj, path) {
+//     const parts = path.split('.');
+
+//     function extract(o, keys) {
+//         console.log("Extracting from:", o, "Keys left:", keys);
+
+//         if (keys.length === 0) return o;
+
+//         const [first, ...rest] = keys;
+//         const match = first.match(/^(.+)\[(\d*)\]$/);
+
+//         if (match) {
+//             const [, key, index] = match;
+//             const arr = o?.[key];
+
+//             if (!Array.isArray(arr)) return undefined;
+
+//             if (index === '') {
+//                 return arr.map(item => extract(item, rest));
+//             } else {
+//                 return extract(arr[Number(index)], rest);
+//             }
+//         }
+
+//         return extract(o?.[first], rest);
+//     }
+
+//     return extract(obj, parts);
+// }
