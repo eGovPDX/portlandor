@@ -91,7 +91,7 @@ Default value: "A verified address is required. Please try again."
 An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either a detail_id (taxlotId) or geometry (x, y) must be passed. See the examples below. 
 <pre>
 secondary_queries:
-  - api: 'https://portlandmaps.com/api/detail/'
+  - api: 'https://www.portlandmaps.com/api/detail/'
     api_args:
       - detail_type: zoning
       - sections: zoning
@@ -114,7 +114,7 @@ secondary_queries:
         field: 'hidden_historic_resource'
         parse: flatten
         omit_null_properties: true
-  - api: 'https://dev.portlandmaps.com/api/detail/'
+  - api: 'https://www.portlandmaps.com/api/detail/'
     api_args:
       - detail_type: environmental-percent-slope
       - sections: general
