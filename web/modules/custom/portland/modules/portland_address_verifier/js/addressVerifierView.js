@@ -25,6 +25,7 @@ const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial addre
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
 const VERIFIED_MESSAGE = "Address is verified!";
+const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the Portland.gov homepage for maintenance or outage alerts, or try again later.";
 const INPUT_FIELDS = [
     '#location_address',
     '#location_city',
@@ -247,14 +248,6 @@ AddressVerifierView.prototype._processSecondaryResultsNew = function (results, v
         // this returns non-stringified JSON object or empty string
         let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
 
-        // // instead of stringifying, convert into name value pairs for easier parsing in twig, if not a string
-        // if (
-        //     (typeof propertyValue !== 'string' && !(propertyValue instanceof String)) &&
-        //     (typeof propertyValue !== 'number' && !(propertyValue instanceof Number))
-        // ) {
-        //     propertyValue = AddressVerifierModel.flattenObjectToDelimitedString(propertyValue);
-        // }
-
         view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
     }
 }
@@ -269,7 +262,6 @@ AddressVerifierView.prototype._processSecondaryResultsNew = function (results, v
 // * sets the internal isVerified flag to true
 // * if secondary_queries are configured, run them at the end of this method
 AddressVerifierView.prototype._setVerified = function (item, view = this) {
-    var self = this;
     view.isVerified = false; // reset to false until we know it's verified
 
     // show error modal if invalid location /////////////////////////
@@ -282,21 +274,16 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // parse location data and set field values, add change handlers to visible input fields /////////////////////////
     // visible input fields
     view.$element.find('#location_address').off('input change').val(item.street.toUpperCase()).trigger('change').blur().on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
     view.$element.find('#location_city').off('input change').val(item.city.toUpperCase()).trigger('change').on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
     view._setStateByLabel(view, item.state);
     view.$element.find('#location_zip').off('input change').val(item.zipCode).trigger('change').on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
+
     // hidden data fields
     view.$element.find('#location_full_address').val(item.fullAddress.toUpperCase());
     view.$element.find('#location_address_street_number').val(item.streetNumber);
@@ -356,13 +343,21 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                 }
             }
 
+            // TODO: This call belongs in the model, not the view
             this.$.ajax({
                 url: queryUrl,
-                success: function (results) {
-                    self._processSecondaryResultsNew(results, self, query);
+                success: function (results, textStatus, jqXHR) {
+                    if (textStatus == "success" && results.status && results.status == "success") {
+                        self._processSecondaryResultsNew(results, self, query);
+                    } else {
+                        self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
+                        console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+                    }
                 },
-                error: function (e) {
-                    console.error(e);
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error('Error! Status code:', jqXHR.status);
+                    console.error('Error text:', textStatus);
+                    console.error('Thrown error:', errorThrown);
                 }
             });
 
@@ -387,7 +382,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { self._resetVerified(self.$checkmark, self.$button); });
+    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { view._resetVerified(view.$checkmark, view.$button); });
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -410,9 +405,7 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
 
                         // user has clicked a suggestion in the modal dialog.......
                         self._selectAddress(item);
-                        // now that the user has made a selection, pass back the single candidate
-                        // self.$input.val(item.fullAddress);
-                        // self._setVerified(self.$checkmark, self.$button, self.$element, item);
+
                         self.$suggestModal.dialog('close');
                     });
                     list.append(listItem);
