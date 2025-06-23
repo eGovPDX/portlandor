@@ -9,13 +9,18 @@ use Drupal\Core\Controller\ControllerBase;
 class GlossaryLookupController extends ControllerBase {
   public function lookup(string $uuids) {
     $node_storage = $this->entityTypeManager()->getStorage('node');
-    // Load the nodes by UUID.
+
+    // Get the term IDs for "Glossary Term".
+    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+    $terms = $term_storage->loadByProperties(['name' => 'Glossary Term']);
+    $term_ids = array_keys($terms);
+
     $query = $node_storage
       ->getQuery()
-      // We'll do a manual access check since published is all we care about.
       ->accessCheck(FALSE)
       ->condition('type', 'content_fragment')
-      ->condition('uuid', explode(',', $uuids), 'IN');
+      ->condition('uuid', explode(',', $uuids), 'IN')
+      ->condition('field_fragment_type', $term_ids, 'IN');
     // If the user is anonymous, only show published nodes.
     if ($this->currentUser()->isAnonymous()) {
       $query->condition('status', 1);

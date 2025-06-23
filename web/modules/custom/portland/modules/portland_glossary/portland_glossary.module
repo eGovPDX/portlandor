@@ -17,3 +17,33 @@ function portland_glossary_preprocess_field__field_body_content(&$variables) {
     }
   }
 }
+
+/**
+ * Implements hook_linkit_suggestions_alter().
+ */
+function portland_glossary_linkit_suggestions_alter(array &$suggestions, \Drupal\linkit\ProfileInterface $profile, $search_string) {
+  foreach ($suggestions as &$suggestion) {
+    if (!empty($suggestion['label']) && mb_strlen($suggestion['label']) > 90) {
+      $suggestion['label'] = mb_substr($suggestion['label'], 0, 87) . '…';
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ *
+ * For lack of a better place to put this, we modify the accordion behavior on PP&D pages using the new design.
+ * - Collapse all rows by default.
+ * - Only show expand all/collapse all starting at 3 rows.
+ * TODO: Remove this if we decide to expand behavior to all pages.
+ */
+function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $node, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode !== 'full') {
+    return;
+  }
+
+  // Page must be using new design if Page subtype == Service or it has a parent page.
+  if (($node->bundle() === 'page' && $node->field_page_type->target_id === "1032") || ($node->hasField('field_parent') && $node->field_parent->count() > 0)) {
+    $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 3;
+  }
+}
