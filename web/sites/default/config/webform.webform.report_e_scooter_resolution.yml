@@ -120,6 +120,18 @@ elements: |-
     '#title': 'Original Submission Key'
     '#prepopulate': true
     '#wrapper_attributes': {  }
+  computed_confirmation_recipient:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation Recipient'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_company == "Lime" %}
+      help-portland@li.me
+      {% elseif data.report_company == "Lyft" %}
+      portland-escalations@lyft.com
+      {% endif %}
+    '#whitespace': trim
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -362,7 +374,7 @@ handlers:
       enabled:
         ':input[name="issue_resolution[radios]"]':
           value: 'Incorrect e-scooter company selected by community member'
-    weight: -48
+    weight: -47
     settings:
       requester_name: ''
       requester_email: ''
@@ -389,4 +401,44 @@ handlers:
     conditions: {  }
     weight: -50
     settings: {  }
+  email:
+    id: email
+    handler_id: email
+    label: 'Resolution confirmation to company'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="issue_resolution[radios]"]':
+          '!value': 'Incorrect e-scooter company selected by community member'
+    weight: -48
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_confirmation_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Portland E-scooter Report RESOLUTION [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
+      body: '<p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:values:<span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(35, 36, 41);display:inline !important;float:none;font-family:BlinkMacSystemFont, -apple-system, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">company_rep_id</span>]</p><p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
