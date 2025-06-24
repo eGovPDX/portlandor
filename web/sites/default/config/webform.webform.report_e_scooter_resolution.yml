@@ -110,6 +110,11 @@ elements: |-
     '#readonly': true
     '#prepopulate': true
     '#required': true
+  request_urgency:
+    '#type': textfield
+    '#title': Urgency
+    '#disabled': true
+    '#prepopulate': true
   company_rep_id:
     '#type': textfield
     '#title': 'Company Rep'
@@ -132,6 +137,11 @@ elements: |-
       portland-escalations@lyft.com
       {% endif %}
     '#whitespace': trim
+  report_urgency:
+    '#type': textfield
+    '#title': Urgency
+    '#disabled': true
+    '#prepopulate': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -364,34 +374,6 @@ handlers:
       group_id: ''
       ticket_form_id: ''
       skip_attachments: false
-  reroute_ticket:
-    id: zendesk_update_ticket
-    handler_id: reroute_ticket
-    label: 'Reroute request'
-    notes: 'Reroutes a request to a different company if the incorrect company was selected by community member.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="issue_resolution[radios]"]':
-          value: 'Incorrect e-scooter company selected by community member'
-    weight: -47
-    settings:
-      requester_name: ''
-      requester_email: ''
-      subject: ''
-      comment: "The e-scooter company in this report was incorrectly identified. According to the representative who responded, the e-scooter belongs to the [webform_submission:values:report_company:raw] company. This message with the original report details has been forwarded to them.<br><br>\r\n\r\n<div style=\"padding: 15px; background-color: #dddddd;\"><strong>[webform_submission:values:report_company:raw] representative, once this issue has been resolved, please reply to this message with a short description of the action that was taken (scooter was moved, scooter was fixed, etc.).</strong></div>"
-      tags: ''
-      priority: ''
-      status: pending
-      assignee_id: ''
-      type: ''
-      collaborators: '[webform_submission:values:computed_recipient]'
-      custom_fields: "1500012801542: '[webform_submission:values:report_asset_id]'\r\n1900004448785: '[webform_submission:values:report_company:raw]'"
-      ticket_id_field: report_ticket_id
-      comment_private: 0
-      group_id: ''
-      ticket_form_id: ''
-      skip_attachments: false
   zendesk_ticket_validator:
     id: ticket_validation
     handler_id: zendesk_ticket_validator
@@ -430,6 +412,74 @@ handlers:
       sender_name: ''
       subject: 'Portland E-scooter Report RESOLUTION [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
       body: '<p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:values:<span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(35, 36, 41);display:inline !important;float:none;font-family:BlinkMacSystemFont, -apple-system, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">company_rep_id</span>]</p><p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  update_ticket_rerouted:
+    id: zendesk_update_ticket
+    handler_id: update_ticket_rerouted
+    label: 'Update ticket with reroute request'
+    notes: 'Updates a ticket if the incorrect company was selected by community member.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="issue_resolution[radios]"]':
+          value: 'Incorrect e-scooter company selected by community member'
+    weight: -46
+    settings:
+      requester_name: ''
+      requester_email: ''
+      subject: ''
+      comment: "The e-scooter company in this report was incorrectly identified. According to the representative who responded, the e-scooter belongs to the [webform_submission:values:report_company:raw] company. This message with the original report details has been forwarded to them.<br><br>\r\n\r\n<div style=\"padding: 15px; background-color: #dddddd;\"><strong>[webform_submission:values:report_company:raw] representative, once this issue has been resolved, please reply to this message with a short description of the action that was taken (scooter was moved, scooter was fixed, etc.).</strong></div>"
+      tags: ''
+      priority: ''
+      status: pending
+      assignee_id: ''
+      type: ''
+      collaborators: '[webform_submission:values:computed_recipient]'
+      custom_fields: "1500012801542: '[webform_submission:values:report_asset_id]'\r\n1900004448785: '[webform_submission:values:report_company:raw]'"
+      ticket_id_field: report_ticket_id
+      comment_private: 0
+      group_id: ''
+      ticket_form_id: ''
+      skip_attachments: 0
+  ticket_rerouted_notification_to_company:
+    id: email
+    handler_id: ticket_rerouted_notification_to_company
+    label: 'Ticket rerouted notification to company'
+    notes: 'Sends an email notification to the appropriate scooter company if the company was originally mis-identified in the report. Notification includes all report details and the resolution link.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="issue_resolution[radios]"]':
+          value: 'Incorrect e-scooter company selected by community member'
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_confirmation_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Re-routed Portland e-scooter report: [webform_submission:values:report_issue]'
+      body: '<p><strong>The scooter company was incorrectly identified in the original report. It''s been re-routed to you for resolution</strong></p><p>[webform_submission:values:html]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[current-page:url:absolute]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
