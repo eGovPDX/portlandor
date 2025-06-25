@@ -24,8 +24,8 @@ categories:
   - Resolution
 elements: |-
   section_location_details:
-    '#type': webform_section
-    '#title': Location
+    '#type': container
+    '#title_display': invisible
     '#attributes':
       class:
         - border
@@ -34,6 +34,7 @@ elements: |-
     '#title_attributes':
       class:
         - h4
+    '#title_tag': ''
     location_address:
       '#type': hidden
       '#title': 'Location Address'
@@ -61,7 +62,7 @@ elements: |-
       '#wrapper_attributes':
         class:
           - mb-0
-      '#display_on': form
+          - mt-0
       '#template': |-
         <p><strong>Approximate address:</strong> <a href="https://www.google.com/maps/place/{{ data.location_address }}">{{ data.location_address }}</a></p>
         <p><strong>Lat/lon:</strong> <a href="https://www.google.com/maps/place/{{ data.location_lat }},{{ data.location_lon }}">{{ data.location_lat }},{{ data.location_lon }}</a></p>
@@ -182,6 +183,17 @@ elements: |-
     '#title': Urgency
     '#disabled': true
     '#prepopulate': true
+  computed_resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Computed Resolution URL'
+    '#display_on': none
+    '#template': |
+      {% if data.report_issue != "riding on sidewalk" %}
+      {{ webform_token('[site:url]', webform_submission, [], options) }}form/report-e-scooter-resolution?report_issue={{ data.report_issue }}&report_issue_other={{ data.report_issue_other }}&report_company={{ data.report_company }}&report_asset_id={{ data.report_asset_id }}&report_ticket_id={{ data.report_ticket_id }}&company_sla={{ data.company_sla }}&report_blocking={{ data.report_blocking}}&report_private_property={{ data.report_private_property }}&report_urgency={{ (data.computed_urgency ? data.computed_urgency ~ "-- " : "") ~ (data.company_sla and data.company_sla != "NA" ? "SLA is " ~ data.company_sla ~ " hours" : "NA")}}&original_submission_key={{ data.original_submission_key }}&location_address={{ data.location_address|url_encode }}&location_lat={{ data.location_lat }}&location_lon={{ data.location_lon }}&location_details={{ data.location_details|url_encode }}&place_name={{ data.place_name|url_encode }}
+      {% else %}
+      #
+      {% endif %}
+    '#whitespace': trim
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -478,18 +490,18 @@ handlers:
       requester_name: ''
       requester_email: ''
       subject: ''
-      comment: "The e-scooter company in this report was incorrectly identified. According to the representative who responded, the e-scooter belongs to the [webform_submission:values:report_company:raw] company. This message with the original report details has been forwarded to them.<br><br>\r\n\r\n<div style=\"padding: 15px; background-color: #dddddd;\"><strong>[webform_submission:values:report_company:raw] representative, once this issue has been resolved, please reply to this message with a short description of the action that was taken (scooter was moved, scooter was fixed, etc.).</strong></div>"
+      comment: 'The e-scooter company in this report was incorrectly identified. According to the representative who responded, the e-scooter belongs to the [webform_submission:values:report_company:raw] company. This message with the original report details has been forwarded to them.'
       tags: ''
       priority: ''
-      status: pending
+      status: open
       assignee_id: ''
       type: ''
       collaborators: '[webform_submission:values:computed_recipient]'
       custom_fields: "1500012801542: '[webform_submission:values:report_asset_id]'\r\n1900004448785: '[webform_submission:values:report_company:raw]'"
       ticket_id_field: report_ticket_id
-      comment_private: 0
+      comment_private: 1
       group_id: ''
-      ticket_form_id: ''
+      ticket_form_id: '1500003352322'
       skip_attachments: 0
   ticket_rerouted_notification_to_company:
     id: email
@@ -519,14 +531,16 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Re-routed Portland e-scooter report: [webform_submission:values:report_issue]'
-      body: '<p><strong>The scooter company was incorrectly identified in the original report. It''s been re-routed to you for resolution</strong></p><p>[webform_submission:values:html]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[current-page:url:absolute]"><strong>Report resolution of this issue</strong></a></p></div>'
+      body: '<p><strong>The scooter company was incorrectly identified in the original report. It''s been re-routed to you for resolution</strong></p><p>[webform_submission:values:computed_location_details:html]</p><p>[webform_submission:values:html]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements:
         location_address: location_address
         location_lat: location_lat
         location_lon: location_lon
         location_details: location_details
         place_name: place_name
-        request_urgency: request_urgency
+        computed_location_details: computed_location_details
+        original_submission_key: original_submission_key
+        computed_resolution_url: computed_resolution_url
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
