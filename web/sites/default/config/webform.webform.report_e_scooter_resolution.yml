@@ -23,6 +23,51 @@ description: 'Used by scooter company agents to report the resolution of issues 
 categories:
   - Resolution
 elements: |-
+  section_location_details:
+    '#type': webform_section
+    '#title': Location
+    '#attributes':
+      class:
+        - border
+        - border-danger
+        - p-3
+    '#title_attributes':
+      class:
+        - h4
+    location_address:
+      '#type': hidden
+      '#title': 'Location Address'
+      '#prepopulate': true
+    location_lat:
+      '#type': hidden
+      '#title': 'Location Lat'
+      '#prepopulate': true
+    location_lon:
+      '#type': hidden
+      '#title': 'Location Lon'
+      '#prepopulate': true
+    location_details:
+      '#type': hidden
+      '#title': 'Location Details'
+      '#prepopulate': true
+    place_name:
+      '#type': hidden
+      '#title': 'Place Name'
+      '#prepopulate': true
+    computed_location_details:
+      '#type': webform_computed_twig
+      '#title': 'Location Details'
+      '#title_display': none
+      '#wrapper_attributes':
+        class:
+          - mb-0
+      '#display_on': form
+      '#template': |-
+        <p><strong>Approximate address:</strong> <a href="https://www.google.com/maps/place/{{ data.location_address }}">{{ data.location_address }}</a></p>
+        <p><strong>Lat/lon:</strong> <a href="https://www.google.com/maps/place/{{ data.location_lat }},{{ data.location_lon }}">{{ data.location_lat }},{{ data.location_lon }}</a></p>
+        <p><strong>Place name:</strong> {{ data.place_name }}</p>
+        <p class="mb-0"><strong>Additional details:</strong> {{ data.location_details }}</p>
+      '#ajax': true
   report_issue:
     '#type': webform_radios_other
     '#title': 'What is the issue with the e-scooter?'
@@ -110,11 +155,6 @@ elements: |-
     '#readonly': true
     '#prepopulate': true
     '#required': true
-  request_urgency:
-    '#type': textfield
-    '#title': Urgency
-    '#disabled': true
-    '#prepopulate': true
   company_rep_id:
     '#type': textfield
     '#title': 'Company Rep'
@@ -411,7 +451,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Portland E-scooter Report RESOLUTION [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: '<p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:values:<span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(35, 36, 41);display:inline !important;float:none;font-family:BlinkMacSystemFont, -apple-system, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">company_rep_id</span>]</p><p>[webform_submission:values:html]</p>'
+      body: '<p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:values:company_rep_id]</p><p>[webform_submission:values:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -480,13 +520,19 @@ handlers:
       sender_name: ''
       subject: 'Re-routed Portland e-scooter report: [webform_submission:values:report_issue]'
       body: '<p><strong>The scooter company was incorrectly identified in the original report. It''s been re-routed to you for resolution</strong></p><p>[webform_submission:values:html]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[current-page:url:absolute]"><strong>Report resolution of this issue</strong></a></p></div>'
-      excluded_elements: {  }
+      excluded_elements:
+        location_address: location_address
+        location_lat: location_lat
+        location_lon: location_lon
+        location_details: location_details
+        place_name: place_name
+        request_urgency: request_urgency
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
       exclude_attachments: false
       html: true
-      attachments: false
+      attachments: true
       twig: false
       theme_name: ''
       parameters: {  }
