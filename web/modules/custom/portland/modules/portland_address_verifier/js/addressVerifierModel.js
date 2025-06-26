@@ -106,22 +106,6 @@ AddressVerifierModel.buildFullAddress = function (address, city, state, zip, uni
     return fullAddress;
 }
 
-// AddressVerifierModel.buildFullAddressX = function (item, $element) {
-//     var streetAddress = item.address + (item.unit ? " " + item.unit : "");
-//     return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
-//         .filter(Boolean)
-//         .join(', ')
-//         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
-// }
-
-// AddressVerifierModel.updateFullAddress = function (item) {
-//     var streetAddress = item.street + (item.unit ? " " + item.unit : "");
-//     return [streetAddress, item.city ? item.city + ', ' + item.state : '']
-//         .filter(Boolean)
-//         .join(', ')
-//         + (item.zip ? ' ' + item.attributes.zip_code : '');
-// }
-
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
     var lineBreak = useHtml ? "<br>" : "\r\n";
     var unit = $element.find('#unit_number').val();
@@ -171,26 +155,103 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     });
 }
 
-AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
-    const keys = path.split('.');
+AddressVerifierModel.getPropertyByPath = function (obj, path, parse = "stringify", omit_nulls = false) {
+  const parts = path.split('.');
 
-    return keys.reduce((obj, key) => {
-        // Automatically use the first element if the current object is an array
-        if (Array.isArray(obj)) {
-            obj = obj[0];
-        }
+  function extract(o, keys) {
+    if (keys.length === 0) return o;
 
-        if (!obj) return undefined;
-        // Check if the key includes an array index, like 'features[0]'
-        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+    const [first, ...rest] = keys;
+    const match = first.match(/^(.+)\[(\d*)\]$/);
 
-        if (arrayIndexMatch) {
-            const arrayKey = arrayIndexMatch[1];
-            const index = parseInt(arrayIndexMatch[2], 10);
-            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
-        } else {
-            return obj[key] !== undefined ? obj[key] : undefined;
-        }
-    }, jsonObject);
+    if (match) {
+      const [, key, index] = match;
+      const arr = o?.[key];
+
+      if (!Array.isArray(arr)) return undefined;
+
+      if (index === '') {
+        return arr.map(item => extract(item, rest));
+      } else {
+        return extract(arr[Number(index)], rest);
+      }
+    }
+
+    return extract(o?.[first], rest);
+  }
+
+  function pruneNulls(value) {
+    if (value === null || value === undefined) return undefined;
+
+    if (Array.isArray(value)) {
+      const cleaned = value.map(pruneNulls).filter(v => v !== undefined);
+      return cleaned.length > 0 ? cleaned : undefined;
+    }
+
+    if (typeof value === 'object') {
+      const cleaned = Object.entries(value).reduce((acc, [key, val]) => {
+        const pruned = pruneNulls(val);
+        if (pruned !== undefined) acc[key] = pruned;
+        return acc;
+      }, {});
+      return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+    }
+
+    return value;
+  }
+
+  let retVal = extract(obj, parts);
+
+  if (omit_nulls) {
+    retVal = pruneNulls(retVal);
+  }
+
+  const isEmptyArray = Array.isArray(retVal) && retVal.length === 0;
+  const isEmptyObject = typeof retVal === 'object' && retVal !== null && Object.keys(retVal).length === 0;
+
+  if (isEmptyArray || isEmptyObject) {
+    return "";
+  }
+
+  let result;
+
+  if (parse === "flatten" && typeof retVal === 'object' && retVal !== null) {
+    result = AddressVerifierModel.flattenObjectToDelimitedString(retVal);
+  } else if (parse === "stringify") {
+    result = JSON.stringify(retVal);
+  } else {
+    result = retVal;
+  }
+
+  return result;
 };
 
+AddressVerifierModel.flattenObjectToDelimitedString = function (obj) {
+  const entries = Object.entries(obj);
+  const parts = [];
+
+  for (let [key, value] of entries) {
+    let stringValue;
+
+    if (value === null) {
+      stringValue = 'null';
+    } else if (value === undefined) {
+      stringValue = 'undefined';
+    } else if (typeof value !== 'string' && typeof value !== 'number') {
+      stringValue = JSON.stringify(value);
+    } else {
+      stringValue = String(value);
+    }
+
+    // Escape if necessary
+    if (/[=|]/.test(stringValue)) {
+      stringValue = `"${stringValue.replace(/"/g, '\\"')}"`;
+    }
+
+    const part = `${key}=${stringValue}`;
+    parts.push(part);
+  }
+
+  const result = parts.join('|');
+  return result;
+};
