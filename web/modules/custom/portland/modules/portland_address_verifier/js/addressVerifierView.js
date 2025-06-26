@@ -10,6 +10,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
     this._verificationRequired = false;
+    this._serverError = false;
 
     // this.$checkmark;
     // this.$status;
@@ -25,7 +26,7 @@ const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial addre
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
 const VERIFIED_MESSAGE = "Address is verified!";
-const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the Portland.gov homepage for maintenance or outage alerts, or try again later.";
+const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for maintenance or outage alerts, or try again later.";
 const INPUT_FIELDS = [
     '#location_address',
     '#location_city',
@@ -347,16 +348,26 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
             this.$.ajax({
                 url: queryUrl,
                 success: function (results, textStatus, jqXHR) {
-                    if (textStatus == "success" && results.status && results.status == "success") {
+                    if (textStatus == "success" && results.status && results.status == "success" && !self.settings.error_test) {
                         self._processSecondaryResultsNew(results, self, query);
                     } else {
-                        self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-                        console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+                        // TODO: Put this in its own function
+                        if (!self._serverError) {
+                            self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                            self._resetVerified(self.$checkmark, self.$button);
+                            console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results?.status, results?.message);
+                            self._serverError = 1;
+                        }
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+                    // TODO: Put this in its own function
+                    if (!self._serverError) {
+                        self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                        self._resetVerified(self.$checkmark, self.$button);
+                        console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, textStatus, errorThrown);
+                        self._serverError = 1;
+                    }
                 }
             });
 
@@ -522,6 +533,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     }
 
     // verification status field is handled separately
+    // if a status is passed to this method, use it in the status field
     this.$element.find("#location_verification_status").val("").trigger('change');
 
     // remove change handlers from visible input fields /////////////////////////

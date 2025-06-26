@@ -28,7 +28,7 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
     this.unit = "";
 }
 
-const REVERSE_GEOCODE_URL = 'https://dev.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
+const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
 
 function AddressVerifierModel(jQuery, element, apiKey) {
     this.$ = jQuery;
@@ -40,7 +40,7 @@ function AddressVerifierModel(jQuery, element, apiKey) {
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
     var self = this;
     const apiKey = this.apiKey;
-    var apiUrl = `https://dev.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
+    var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
     return this.$.ajax({
         url: apiUrl,
@@ -51,6 +51,7 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
                 response &&
                 response.candidates &&
                 Array.isArray(response.candidates)
+                && !self.view.settings.error_test
             ) {
                 if (response.candidates.length > 1) {
                     return response.candidates.map(candidate =>
@@ -64,15 +65,23 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
                     return [];
                 }
             } else {
-                self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'} ${response?.status || ''}`);
-                console.error(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, response?.status);
-                return [];
+                if (!self._serverError) {
+                    self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    self.view._resetVerified(self.view.$checkmark, self.view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                    return false;
+                }
             }
         },
         function (jqXHR, textStatus, errorThrown) {
-            self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${textStatus}`);
-            console.error(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, textStatus);
-            return [];
+            if (!self._serverError) {
+                self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                self.view._resetVerified(self.view.$checkmark, self.view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+                return false;
+            }
         }
     );
 };
@@ -129,19 +138,27 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
 
     this.$.ajax({
         url: url, success: function (results, textStatus, jqXHR) {
-            if (textStatus == "success" && results.status && results.status == "success") {
+            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
                 item.taxlotId = results.detail.taxlot[0].property_id;
                 item.city = results.detail.zipcode[0].name;
                 item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode);
                 callback(item, view);
             } else {
-                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+                if (!self._serverError) {
+                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    view._resetVerified(view.$checkmark, view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                }
             }
         },
-        error: function (e) {
-            view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-            console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+        error: function (jqXHR, textStatus, errorThrown) {
+            if (!self._serverError) {
+                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                view._resetVerified(view.$checkmark, view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+            }
         }
     });
 }
@@ -150,16 +167,24 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     url = url + "&geometry=" + x + "," + y;
     this.$.ajax({
         url: url, success: function (response) {
-            if (textStatus == "success" && results.status && results.status == "success") {
+            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
                 callback(response, view, capturePath, captureField, $);
             } else {
-                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+                if (!self._serverError) {
+                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    view._resetVerified(view.$checkmark, view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                }
             }
         },
-        error: function (e) {
-            view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR.status} ${results.status}`);
-            console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results.status);
+        error: function (jqXHR, textStatus, errorThrown) {
+            if (!self._serverError) {
+                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                view._resetVerified(view.$checkmark, view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+            }
         }
     });
 }
