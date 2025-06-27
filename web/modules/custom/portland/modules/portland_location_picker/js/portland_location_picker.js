@@ -47,6 +47,9 @@
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?where=1%3D1&f=geojson";
+        const SERVER_ERROR_MESSAGE_HARD = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for a service alert, or try again later.";
+        const SERVER_ERROR_MESSAGE_SOFT = "There was an problem connecting to some of our location services. If you have problems with this form, please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for a service alert, or try again later.";
+
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -94,11 +97,7 @@
         var clickedMarker;
         var suggestionsModal;
         var statusModal;
-        var baseLayer;
-        var aerialLayer;
         var currentView = "base";
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var verifyHidden = false;
@@ -134,6 +133,30 @@
 
         var locationType;
         var locationTextBlock;
+
+        // flags for server error handling
+        var generalServerError = false;
+        var baseLayerError = false;
+        var aerialLayerError = false;
+
+        // instantiate base layer and aerial layer, and set up error handling
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        baseLayer.on('tileerror', function (event) {
+          if (!baseLayerError && !generalServerError) {
+            baseLayerError = true; generalServerError = true;
+            console.error('Tile error', event);
+            makeMapInoperable();
+            showStatusModal(SERVER_ERROR_MESSAGE_HARD); // widget is unusable without tiles
+          }
+        });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        baseLayer.on('tileerror', function (event) {
+          if (!aerialLayerError && !generalServerError) {
+            aerialLayerError = true; generalServerError = true;
+            console.error('Tile error', event);
+            showStatusModal(SERVER_ERROR_MESSAGE_HARD);
+          }
+        });
 
         var cityLimitsStyle = {
           color: 'red',
@@ -284,6 +307,19 @@
           restoreLocationFromPostback();
         }
 
+        function makeMapInoperable(errorText = SERVER_ERROR_MESSAGE_HARD) {
+          const container = map.getContainer();
+          const parent = container.parentNode;
+
+          map.remove();
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'map-error-message';
+          errorDiv.innerHTML = errorText;
+
+          // 4. Replace the map container with the error message
+          parent.replaceChild(errorDiv, container);
+        }
+
         function restoreLocationFromPostback() {
           var verifiedAddress = addressVerify ? $('input[name=' + elementId + '\\[location_address\\]]').val() : undefined;
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
@@ -326,7 +362,7 @@
           $('#location_search').autocomplete({
             source: function (request, response) {
               const searchTerm = encodeURIComponent(request.term);
-              var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
+              var apiUrl = `https:asdfasdfasfd//www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
 
               $.ajax({
                 url: apiUrl,
@@ -336,7 +372,12 @@
                 },
                 error: function (e) {
                   // Handle any error cases
-                  console.error(e);
+                  if (!generalServerError) {
+                    generalServerError = true;
+                    console.error("Status:", e.status, e.statusText);
+                    makeMapInoperable();
+                    showStatusModal(SERVER_ERROR_MESSAGE_HARD);
+                  }
                 }
               });
             },
@@ -405,10 +446,9 @@
               },
               error: function (e) {
                 // if the PortlandMaps API is down, this is where we'll get stuck.
-                // any way to fail the location lookup gracefull and still let folks submit?
-                // at least display an error message.
-                console.error(e);
-                showErrorModal("An error occurred while attemping to load the boundary layer.");
+                // this displays a soft error message but still lets the user submit the form.
+                console.error("Status:", e.status, e.statusText);
+                showStatusModal(SERVER_ERROR_MESSAGE_SOFT);
               }
             });
           }
@@ -466,6 +506,12 @@
                       // not associated with assets. these will be in the incidentsFeatures array. any with associated
                       // assets have been spliced out of the array and the incident data copied to the asset element.
                       initIncidentsLayer(incidentsFeatures, incidentsLayer);
+                    }, error: function (e) {
+                      if (!generalServerError) {
+                        console.error("Status:", e.status, e.statusText);
+                        // don't need to make the map inoperable for the incidents layer, this is a soft error
+                        showStatusModal(SERVER_ERROR_MESSAGE_SOFT);
+                      }
                     }
                   });
                 } else {
@@ -487,14 +533,24 @@
                       hideLoader();
                     },
                     error: function (e) {
-                      // if the PortlandMaps API is down, this is where we'll get stuck.
-                      // any way to fail the location lookup gracefull and still let folks submit?
-                      // at least display an error message.
-                      console.error(e);
-                      showErrorModal("An error occurred while attemping to load the regions layer.");
-                      hideLoader();
+                      if (!generalServerError) {
+                        console.error("Status:", e.status, e.statusText);
+                        // don't need to make the map inoperable for the incidents layer, this is a soft error
+                        showStatusModal(SERVER_ERROR_MESSAGE_SOFT);
+                      }
                     }
                   });
+                }
+              }, error: function (e) {
+                // show hard error if primary layer behavior is selection or selection-only, otherwise soft error
+                if (!generalServerError) {
+                  if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection || primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    makeMapInoperable(SERVER_ERROR_MESSAGE_HARD);
+                    showStatusModal(SERVER_ERROR_MESSAGE_HARD);
+                  } else {
+                    showStatusModal(SERVER_ERROR_MESSAGE_SOFT);
+                  }
+                  console.error("Status:", e.status, e.statusText);
                 }
               }
             });
@@ -823,11 +879,11 @@
         }
 
         function showLoader() {
-          $('.loader-container').css("display","flex");
+          $('.loader-container').css("display", "flex");
         }
 
         function hideLoader() {
-          $('.loader-container').css("display","none");
+          $('.loader-container').css("display", "none");
         }
 
         function checkRegion(latlng) {
