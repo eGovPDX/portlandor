@@ -9,6 +9,7 @@
 
         const model = new AddressVerifierModel($, $element, apiKey);
         const view = new AddressVerifierView($, $element, model, drupalSettings.webform.portland_address_verifier[elementId]);
+        model.view = view;
         const controller = new AddressVerifierController($element, model, view);
         controller.init();
 
