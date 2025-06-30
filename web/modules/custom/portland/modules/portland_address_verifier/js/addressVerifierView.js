@@ -75,6 +75,74 @@ AddressVerifierView.prototype._checkIfVerificationRequired = function () {
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
 
+    // if address fields are populated on postback, automatically activate verification action
+    const $locationAddress = this.$element.find('#location_address');
+    const $locationState = this.$element.find('#location_city');
+    const $locationCity = this.$element.find('#location_state');
+    const $locationZip = this.$element.find('#location_zip');
+
+    if ($locationAddress.val() && $locationCity.val() && $locationState.val() && $locationZip.val()) {
+        this.model.fetchAutocompleteItems($locationAddress.val())
+            .done(function (locationItems) {
+                if (locationItems.length == 1) {
+                    // if single item, auto verify
+                    const item = locationItems[0];
+                    self._selectAddress(item);
+                } else if (locationItems.length > 1) {
+                    self.showSuggestionListInModal(locationItems);
+                } else {
+                    // no results, show not found modal
+                    self._showNotFoundModal();
+                }
+
+            });
+    }
+
+    AddressVerifierView.prototype.showSuggestionListInModal = function (locationItems) {
+        var self = this;
+
+        var list = self.$("<ul></ul>");
+        locationItems.map(function (item) {
+            var strData = JSON.stringify(item);
+            var listItem = self.$(`<li><a href=\"#\" class="pick btn btn-primary"
+                        data-item='${strData}'>${item.fullAddress}</a></li>`);
+            listItem.find('a.pick').on('click', function (e) {
+                e.preventDefault();
+                var item = self.$(this).data('item');
+
+                // user has clicked a suggestion in the modal dialog.......
+                self._selectAddress(item);
+
+                self.$suggestModal.dialog('close');
+            });
+            list.append(listItem);
+        });
+        var listInfo = self.$('<p><em>Select one of the verified addresses below.</em></p>');
+        self.$suggestModal.append(listInfo);
+        var notFound = self.$(`<li><a href=\"#\" class="pick-not-found btn btn-secondary not-found"
+                    data-item=''>My address is not listed</a></li>`);
+        notFound.find('a.pick-not-found').on('click', function (e) {
+            e.preventDefault();
+            self.$suggestModal.dialog('close');
+            self._showNotFoundModal();
+        });
+        list.append(notFound);
+        self.$suggestModal.append(list);
+        Drupal.dialog(self.$suggestModal, {
+            title: 'Possible matches found',
+            width: '600px',
+            buttons: [{
+                text: 'Close',
+                class: 'btn-primary',
+                click: function () {
+                    self.$(this).dialog('close');
+                }
+            }]
+        }).showModal();
+        self.$suggestModal.removeClass('visually-hidden');
+
+    }
+
     requestAnimationFrame(function () {
         const verificationStatus = self.$verificationStatus.val();
 
@@ -393,7 +461,6 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
         .done(function (locationItems) {
 
             if (locationItems.length > 0) {
-                // Pass the locationItems to the response callback
                 var list = self.$("<ul></ul>");
                 locationItems.map(function (item) {
                     var strData = JSON.stringify(item);
