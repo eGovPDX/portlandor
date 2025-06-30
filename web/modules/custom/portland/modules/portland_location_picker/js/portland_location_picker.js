@@ -147,22 +147,13 @@
         var serverErrorSoft = false;
 
         // instantiate base layer and aerial layer, and set up error handling
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/xxx/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
         baseLayer.on('tileerror', function (event) {
-          if (!baseLayerError && !generalServerError) {
-            baseLayerError = true; generalServerError = true;
-            console.error('Tile error', event);
-            makeMapInoperable();
-            showStatusModal(SERVER_ERROR_MESSAGE_HARD); // widget is unusable without tiles
-          }
+          throwHardServerError(event);
         });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/xxx/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
         baseLayer.on('tileerror', function (event) {
-          if (!aerialLayerError && !generalServerError) {
-            aerialLayerError = true; generalServerError = true;
-            console.error('Tile error', event);
-            showStatusModal(SERVER_ERROR_MESSAGE_HARD);
-          }
+          throwHardServerError(event);
         });
 
         var cityLimitsStyle = {
