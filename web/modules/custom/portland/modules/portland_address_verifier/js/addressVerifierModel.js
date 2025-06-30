@@ -74,11 +74,6 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
 };
 
 AddressVerifierModel.prototype.fetchPropertyDetails = function (addrSearch, $element) {
-  // this function is typically called by the widget in a postback state, when the address has
-  // been prepopulated in the URL. we need to hit Portland Maps to get the property details.
-  // this will typically return only one result, which we'll accept as the verified address.
-  // in the rare case that multiples are returned, the user will need to select.
-
   const apiKey = this.apiKey;
   var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
@@ -86,17 +81,22 @@ AddressVerifierModel.prototype.fetchPropertyDetails = function (addrSearch, $ele
     url: apiUrl,
     method: 'GET'
   }).then(function (response) {
-    if (response.candidates.length == 1) {
-      return response.candidates.map(function (candidate) {
-        var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
-        return retItem;
-      });
-    } else if (response.candidates.length > 1) {
-      return response.candidates.map(function (candidate) {
-        var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
-        return retItem;
-      });
+    if (response && response.candidates && Array.isArray(response.candidates)) {
+      if (response.candidates.length == 1) {
+        return response.candidates.map(function (candidate) {
+          var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
+          return retItem;
+        });
+      } else if (response.candidates.length > 1) {
+        return response.candidates.map(function (candidate) {
+          var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
+          return retItem;
+        });
+      } else {
+        return [];
+      }
     } else {
+      console.error('Unexpected response format:', response);
       return [];
     }
   });
@@ -148,7 +148,7 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
 
 AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon, item, callback, view) {
   var xy = this._getSphericalMercCoords(lat, lon);
-  url = REVERSE_GEOCODE_URL;
+  let url = REVERSE_GEOCODE_URL;
   url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
   // var self = this;
 
