@@ -542,8 +542,11 @@
                   });
                 }
               }, error: function (e) {
-                // primary layer is typically critical to the widget functionality, so this is a hard error.
-                throwHardServerError(e);
+                if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Information) {
+                  throwSoftServerError(e);
+                } else {
+                  throwHardServerError(e);
+                }
               }
             });
           }
