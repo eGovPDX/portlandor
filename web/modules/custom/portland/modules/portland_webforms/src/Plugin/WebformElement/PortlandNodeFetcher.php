@@ -15,7 +15,7 @@ use Drupal\Core\Render\Markup;
  *   id = "portland_node_fetcher",
  *   label = @Translation("Portland Node Fetcher"),
  *   description = @Translation("Displays a configured node alias path."),
- *   category = @Translation("Custom")
+ *   category = @Translation("Portland elements"),
  * )
  */
 class PortlandNodeFetcher extends WebformElementBase
@@ -43,7 +43,7 @@ class PortlandNodeFetcher extends WebformElementBase
         $form['node_alias_path'] = [
             '#type' => 'textfield',
             '#title' => $this->t('Node alias path'),
-            '#default_value' => $element['#node_alias_path'],
+            '#default_value' => array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "",
             '#description' => $this->t('Enter a path like /about-us.'),
             '#required' => TRUE,
         ];
