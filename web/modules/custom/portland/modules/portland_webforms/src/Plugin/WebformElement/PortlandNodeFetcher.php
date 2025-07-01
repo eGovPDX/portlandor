@@ -7,6 +7,9 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Markup;
+use Drupal\Core\Url;
+use Drupal\redirect\Entity\Redirect;
+
 
 /**
  * Provides a 'portland_node_fetcher' webform element.
@@ -83,7 +86,9 @@ class PortlandNodeFetcher extends WebformElementBase
         $alias = $element['#node_alias_path'] ?? NULL;
 
         if ($alias) {
-            $internal_path = \Drupal::service('path_alias.manager')->getPathByAlias($alias);
+
+            $internal_path = $this->resolveCanonicalPathFromAlias($alias);
+
             if (preg_match('/^\/node\/(\d+)$/', $internal_path, $matches)) {
                 $nid = $matches[1];
                 $node = Node::load($nid);
@@ -108,7 +113,9 @@ class PortlandNodeFetcher extends WebformElementBase
 
                     // Add to submission data, available in Twig via `data.fetch_node`.
                     if ($webform_submission) {
-                        $webform_submission->setData(['fetch_node' => $values] + $webform_submission->getData());
+                        $data = $webform_submission->getData();
+                        $data[$element['#webform_key']] = $values;
+                        $webform_submission->setData($data);
                     }
                 }
             }
@@ -116,7 +123,38 @@ class PortlandNodeFetcher extends WebformElementBase
 
         // Suppress output in form.
         $element['#markup'] = Markup::create('');
+        // Uncomment the line below to display the node title and body content in the form for testing
+        //$element['#markup'] = Markup::create('<h2>' . $values['title'] . '</h2> ' . $values['field_body_content']);
 
         parent::prepare($element, $webform_submission);
+    }
+
+    /**
+     * Resolves a canonical path from a potentially redirected alias.
+     *
+     * @param string $alias
+     *   The user-provided alias, like /foo or /bar/page.
+     *
+     * @param int $max_depth
+     *   Maximum redirect hops to follow (default: 5).
+     *
+     * @return string
+     *   The resolved canonical system path (e.g., /node/123), or the fallback path.
+     */
+    protected function resolveCanonicalPathFromAlias(string $alias, int $depth = 0): ?string
+    {
+        if ($depth > 5) {
+            \Drupal::logger('portland_webforms')->warning('Redirect recursion exceeded for alias: @alias', ['@alias' => $alias]);
+            return NULL;
+        }
+
+        $alias_trimmed = ltrim($alias, '/');
+        $redirect = \Drupal::service('redirect.repository')->findMatchingRedirect($alias_trimmed);
+
+        if ($redirect) {
+            return $this->resolveCanonicalPathFromAlias($redirect->getRedirectDestination(), $depth + 1);
+        }
+
+        return \Drupal::service('path_alias.manager')->getPathByAlias($alias);
     }
 }
