@@ -147,11 +147,11 @@
         var serverErrorSoft = false;
 
         // instantiate base layer and aerial layer, and set up error handling
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/xxx/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
         baseLayer.on('tileerror', function (event) {
           throwHardServerError(event);
         });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/xxx/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
         baseLayer.on('tileerror', function (event) {
           throwHardServerError(event);
         });
