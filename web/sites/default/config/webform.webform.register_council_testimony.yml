@@ -420,14 +420,33 @@ elements: |-
     '#template': |-
       {% if data.testimony_type == 'written' or data.testimony_type_no_verbal == 'written' %}
         <h2>Your testimony has been received</h2>
-        <a href="/node/{{ data.doc_id }}/testimony">View all testimony submitted for <strong>Council Document {{ data.computed_council_document }}</strong></a>
+        <p><a href="/node/{{ data.doc_id }}/testimony">View all testimony submitted for <strong>Council Document {{ data.computed_council_document }}</strong></a></p>
       {% else %}
+        {% set session_id = drupal_field('field_council_session', 'relation', data.computed_latest_agenda_item_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
+        {% set agenda_id = drupal_field('field_council_agenda', 'relation', session_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
         <h2>Your registration has been received</h2>
-        Thank you for registering to testify at an upcoming Portland City Council meeting.
-        <br>
-        If you signed up for virtual testimony, your personalized Zoom invite will be emailed to you no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invite).
-        <br>
-        <a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a>
+        <p><strong>Document: </strong> <strong><a href="/node/{{ data.doc_id }}">{{ data.computed_council_document }}</a></strong> - {{ drupal_field('field_full_document_title', 'node', data.doc_id ?? 0, { 'label': 'hidden' })|render|striptags|trim }}</p>
+        <hr>
+        <h3>{{ data.computed_committee_name }} meeting</h3>
+        <p><strong>Date/time: </strong>{{ data.computed_latest_session_date }}</p>
+        <p><a class="btn-cta-outline" href="{{ drupal_url('node/' ~ agenda_id, { 'fragment': 'relation-' ~ data.computed_latest_agenda_item_id }) }}">View agenda for {{ data.computed_committee_name }}</a></p>
+        <hr>
+        <h3>How to testify</h3>
+        <p>The Council Clerk will call your name when it's your turn to testify. You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. State your name for the record when testifying during the meeting.</p>
+        <p>If you are a lobbyist appearing on behalf of a lobbying entity, you must also declare which lobbying entity you are authorized to represent in your testimony. (The City's lobbying regulations can be found in <a href="/code/2/12">City Code Chapter 2.12</a>.)</p>
+        <h4>Testifying virtually</h4>
+        {% if data.contact_email %}
+        <p>Testifiers have the option to participate in-person or virtually. Since you provided your email address, you will receive information to participate in the meeting and a Zoom link no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invitation).</p>
+        {% else %}
+        <p>Testifiers have the option to participate in-person or virtually. Since you didn't provide an email address, you cannot testify virtually. Please see the instructions below to testify in-person, or register again with your email address.</p>
+        {% endif %}
+        <h4>Testifying in-person</h4>
+        <p>Council meetings are held at City Hall, in the Council Chambers on the second floor. The address is <strong>1221 SW Fourth Avenue, Portland, OR 97204</strong> <a href="https://www.google.com/maps/dir//1221%20SW%20Fourth%20Avenue,%20Portland,%20OR%2097204">(get directions)</a>.</p>
+        <p>Wheelchair access is available via the Fourth Avenue entrance; there are two lobby elevators to access chambers on the second floor.</p>
+        <p>Council Chambers open 15 minutes before the meeting starts.</p>
+        <p><a href="/auditor/council-clerk/city-hall">Learn more about visiting City Hall to attend a Council meeting</a></p>
+        <hr>
+        <p><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p>
       {% endif %}
 css: ''
 javascript: ''
@@ -669,7 +688,6 @@ handlers:
         6813766443552644: computed_committee_name
         1936696209002372: contact_name_pronunciation
         2138213344667524: contact_phone
-        8865636012740484: contact_zip_code
       sheet_id: '4217323172194180'
       multiple_rows_enable: null
       multiple_rows_field: ''
@@ -696,6 +714,7 @@ handlers:
       column_mappings:
         6566033213050756: race_ethnicity
         6905347031388036: computed_council_district
+        3960429690441604: contact_zip_code
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
