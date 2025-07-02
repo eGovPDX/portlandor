@@ -124,6 +124,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $machine_name = "edit-" . $key . "--wrapper";
     $machine_name = str_replace("_", "-", $machine_name);
 
+    $errorTest = array_key_exists('#error_test', $element) && strtolower($element['#error_test']) == "1" ? 1 : 0;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['error_test'] = $errorTest;
+
     $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_type'] = $addressType;
 
@@ -168,6 +171,10 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The address you provided is outside of the Portland city limits. Please try a different address.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['out_of_bounds_message'] = $outOfBoundsMessage;
+
+    $secondaryQueries = array_key_exists('#secondary_queries', $element) ? $element['#secondary_queries'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_queries'] = $secondaryQueries;
+
 
   }
 
