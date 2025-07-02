@@ -340,7 +340,7 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                         queryUrl += "&detail_id" + item.taxlotId;
                         break;
                     default:
-                        queryUrl += "&" + key + "=" + value;
+                        queryUrl += "&" + key + "=" + encodeURIComponent(value);
                 }
             }
 
@@ -569,26 +569,4 @@ AddressVerifierView.prototype._useUnverified = function () {
     // this.$element.find('#container_unit').addClass('d-none');
     // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
-}
-
-function doClickQuery(latlng) {
-    var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(latlng.lat, latlng.lng));
-    var x = sphericalMerc.x;
-    var y = sphericalMerc.y;
-    var url = clickQueryUrl.replace('{{x}}', x).replace('{{y}}', y);
-
-    $.ajax({
-        url: url,
-        success: function (results) {
-            // get the property specified by clickQueryPropertyPath
-            var newValue = getPropertyByPath(results, clickQueryPropertyPath);
-
-            $('#' + clickQueryDestinationField).val(newValue).trigger('change');
-        },
-        error: function (e) {
-            $('#' + clickQueryDestinationField).val('').trigger('change');
-            // Handle any error cases
-            console.error(e);
-        }
-    });
 }

@@ -1460,7 +1460,7 @@
 
           // if verify mode, also put location description in address field, but only the street
           if (addressVerify) {
-            $('#location_search').val(data.describe);
+            $('#location_search').val(description);
           };
 
           if (isVerifiedAddress) setVerified();
@@ -1500,7 +1500,7 @@
           // so let's split it by comma and only extract the first part which will be the address alone.
           const address = c.address.split(',')[0];
 
-          return [address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
+          return [address, c.attributes.city ? c.attributes.city : '']
             .filter(Boolean)
             .join(', ')
             + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
