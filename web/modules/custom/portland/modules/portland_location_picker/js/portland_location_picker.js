@@ -23,6 +23,8 @@
         const DEFAULT_LATITUDE = 45.54;
         const DEFAULT_LONGITUDE = -122.65;
         const DEFAULT_ZOOM = 11;
+        const MAX_ZOOM_LIMIT = 21; // base layer can go to 23, but aerial layer only goes to 21.
+        const DEFAULT_MAX_ZOOM = 18;
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
         const FEATURE_LAYER_VISIBLE_ZOOM = 16;
@@ -47,6 +49,9 @@
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?where=1%3D1&f=geojson";
+        const SERVER_ERROR_MESSAGE_HARD = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for a service alert, or try again later.";
+        const SERVER_ERROR_MESSAGE_SOFT = "There was an problem loading one or more informational map layers. If you have problems submitting the form, please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for a service alert, or try again later.";
+
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -94,11 +99,7 @@
         var clickedMarker;
         var suggestionsModal;
         var statusModal;
-        var baseLayer;
-        var aerialLayer;
         var currentView = "base";
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var verifyHidden = false;
@@ -130,10 +131,30 @@
         var clickQueryPropertyPath = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_property_path : "";
         var clickQueryDestinationField = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_destination_field : "";
 
+        var maxZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.max_zoom ? drupalSettings.webform.portland_location_picker.max_zoom : DEFAULT_MAX_ZOOM;
+        // zoom has a hard limit of 21
+        if (maxZoom > MAX_ZOOM_LIMIT) {
+          maxZoom = MAX_ZOOM_LIMIT;
+        }
+
         var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
         var locationTextBlock;
+
+        // flags for server error handling
+        var serverErrorHard = false;
+        var serverErrorSoft = false;
+
+        // instantiate base layer and aerial layer, and set up error handling
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        baseLayer.on('tileerror', function (event) {
+          throwHardServerError(event);
+        });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        baseLayer.on('tileerror', function (event) {
+          throwHardServerError(event);
+        });
 
         var cityLimitsStyle = {
           color: 'red',
@@ -195,6 +216,7 @@
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
             zoom: DEFAULT_ZOOM,
+            maxZoom: maxZoom,
             gestureHandling: true
           });
           drupalSettings.webform.portland_location_picker.lMap = map;
@@ -284,6 +306,19 @@
           restoreLocationFromPostback();
         }
 
+        function makeMapInoperable(errorText = SERVER_ERROR_MESSAGE_HARD) {
+          const container = map.getContainer();
+          const parent = container.parentNode;
+
+          map.remove();
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'map-error-message';
+          errorDiv.innerHTML = errorText;
+
+          // 4. Replace the map container with the error message
+          parent.replaceChild(errorDiv, container);
+        }
+
         function restoreLocationFromPostback() {
           var verifiedAddress = addressVerify ? $('input[name=' + elementId + '\\[location_address\\]]').val() : undefined;
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
@@ -335,8 +370,8 @@
                   response(results.candidates);
                 },
                 error: function (e) {
-                  // Handle any error cases
-                  console.error(e);
+                  // this is critical functionalty; throw hard error
+                  throwHardServerError(e);
                 }
               });
             },
@@ -404,11 +439,12 @@
                 console.log("Boundary layer loaded.");
               },
               error: function (e) {
-                // if the PortlandMaps API is down, this is where we'll get stuck.
-                // any way to fail the location lookup gracefull and still let folks submit?
-                // at least display an error message.
-                console.error(e);
-                showErrorModal("An error occurred while attemping to load the boundary layer.");
+                // if boundary is unavailable, the map might still be usable, so throw soft error
+                var message = SERVER_ERROR_MESSAGE_SOFT;
+                if (requireCityLimits || requireCityLimitsPlusParks) {
+                  var message = "This form only accepts locations within the City of Portland, but there was a problem loading the city limits boundary layer. Your submission may be rejected if you choose a location outside the city.";
+                }
+                throwSoftServerError(e, message);
               }
             });
           }
@@ -466,6 +502,9 @@
                       // not associated with assets. these will be in the incidentsFeatures array. any with associated
                       // assets have been spliced out of the array and the incident data copied to the asset element.
                       initIncidentsLayer(incidentsFeatures, incidentsLayer);
+                    }, error: function (e) {
+                      // incidents layer is infomrational, so this is a soft error
+                      throwSoftServerError(e);
                     }
                   });
                 } else {
@@ -487,14 +526,17 @@
                       hideLoader();
                     },
                     error: function (e) {
-                      // if the PortlandMaps API is down, this is where we'll get stuck.
-                      // any way to fail the location lookup gracefull and still let folks submit?
-                      // at least display an error message.
-                      console.error(e);
-                      showErrorModal("An error occurred while attemping to load the regions layer.");
-                      hideLoader();
+                      // regions are typically more than just informational; we usually need to capture the
+                      // region ID, so this would be a hard error.
+                      throwHardServerError(e);
                     }
                   });
+                }
+              }, error: function (e) {
+                if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Information) {
+                  throwSoftServerError(e);
+                } else {
+                  throwHardServerError(e);
                 }
               }
             });
@@ -823,11 +865,11 @@
         }
 
         function showLoader() {
-          $('.loader-container').css("display","flex");
+          $('.loader-container').css("display", "flex");
         }
 
         function hideLoader() {
-          $('.loader-container').css("display","none");
+          $('.loader-container').css("display", "none");
         }
 
         function checkRegion(latlng) {
@@ -1062,6 +1104,9 @@
                 return false;
               }
               processLocationData(response.candidates);
+            }, error: function (e) {
+              // if this fails, it breaks the verificaiton process, so this is a hard error.
+              throwHardServerError(e);
             }
           });
 
@@ -1245,18 +1290,11 @@
 
           $.ajax({
             url: url, success: function (response) {
-              // if (response.length < 1 || !response.address || !response.location) {
-              //   // location data not available, how to handle?
-              //   console.log('Location not found');
-              // }
               processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter, verifiedAddress);
             },
             error: function (e) {
-              // if the PortlandMaps API is down, this is where we'll get stuck.
-              // any way to fail the location lookup gracefull and still let folks submit?
-              // at least display an error message.
-              console.error(e);
-              showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
+              // this is critical functionality, so throw a hard error here.
+              throwHardServerError(e);
             }
 
           });
@@ -1328,6 +1366,9 @@
             if (addressVerify && !data.taxlot) {
               showStatusModal("The location you selected does not have an address. Please try again.");
               isVerifiedAddress = false;
+              $('#location_search').val("");
+              $('#location-text-value').text("");
+              return false;
             }
 
             if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly && isWithinBounds && isVerifiedAddress) {
@@ -1344,9 +1385,9 @@
 
           // if in address verify mode, use the verified address from suggest API
           // rather than the "described" address that is less accurate
-          var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
+          var description = addressVerify && verifiedAddress ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
-          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
+          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data);
 
           // if park, set location name
           if (data.park) {
@@ -1374,9 +1415,10 @@
               $('#' + clickQueryDestinationField).val(newValue).trigger('change');
             },
             error: function (e) {
+              // clear clickquery field if error
               $('#' + clickQueryDestinationField).val('').trigger('change');
-              // Handle any error cases
-              console.error(e);
+              // this is a hard error because click queries are only added if they are required.
+              throwHardServerError(e);
             }
           });
         }
@@ -1400,7 +1442,7 @@
           }, jsonObject);
         }
 
-        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress) {
+        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data) {
           $('#verified_location_text').text(description);
 
           if (!locationTextBlock.map) locationTextBlock.addTo(map);
@@ -1416,7 +1458,7 @@
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
 
-          // if verify mode, also put location description in address field
+          // if verify mode, also put location description in address field, but only the street
           if (addressVerify) {
             $('#location_search').val(description);
           };
@@ -1458,10 +1500,27 @@
           // so let's split it by comma and only extract the first part which will be the address alone.
           const address = c.address.split(',')[0];
 
-          return [address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
+          return [address, c.attributes.city ? c.attributes.city : '']
             .filter(Boolean)
             .join(', ')
             + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
+        }
+
+        function throwHardServerError(e, message = SERVER_ERROR_MESSAGE_HARD) {
+          if (!serverErrorHard) {
+            makeMapInoperable(message);
+            showStatusModal(message);
+            console.error("Status:", e.status, e.statusText);
+            serverErrorHard = true;
+          }
+        }
+
+        function throwSoftServerError(e, message = SERVER_ERROR_MESSAGE_SOFT) {
+          if (!serverErrorSoft) {
+            showStatusModal(message);
+            console.error("Status:", e.status, e.statusText);
+            serverErrorSoft = true;
+          }
         }
 
         function showStatusModal(message) {
