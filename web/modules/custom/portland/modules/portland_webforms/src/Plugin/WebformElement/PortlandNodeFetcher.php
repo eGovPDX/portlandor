@@ -7,9 +7,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Markup;
-use Drupal\Core\Url;
-use Drupal\redirect\Entity\Redirect;
-
 
 /**
  * Provides a 'portland_node_fetcher' webform element.
