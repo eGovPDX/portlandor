@@ -260,36 +260,63 @@ elements: |-
             value: Virtually
     container_location:
       '#type': container
-      in_portland_metro:
+      council_district:
         '#type': radios
-        '#title': 'Do you live within the Portland metro area?'
-        '#options': yes_no
+        '#title': 'What is your Council district?'
+        '#options':
+          1: 'District 1'
+          2: 'District 2'
+          3: 'District 3'
+          4: 'District 4'
+          unknown: "I don't know my district"
+          out_of_bounds: "I don't live within Portland"
         '#required': true
-      location:
+      contact_location:
         '#type': portland_location_picker
         '#title': Location
         '#required': true
         '#states':
           visible:
-            ':input[name="in_portland_metro"]':
-              value: 'Yes'
-        '#location_search__title': Location
+            ':input[name="council_district"]':
+              value: unknown
+        '#location_search__title': 'Where do you live?'
         '#location_search__description': |-
-          <p>Please select your location. You can search by address or zoom in and find your location on the map.</p>
+          <p>You can search by address or zoom in and find your location on the map.</p>
           <br>
-          <p>To preserve your privacy, you may select a nearby landmark or park instead of an address to indicate the general area/neighborhood where you live. We collect location information to learn which neighborhoods are represented in public testimony.</p>
-        '#location_address__required': true
+          <p>To preserve your privacy, your location will not be stored. This information is only used to look up your Council district.</p>
+        '#location_search__attributes':
+          form: none
+          class:
+            - location-picker-address
+          autocomplete: 'off'
+        '#location_address__attributes':
+          form: none
+        '#location_taxlot_id__attributes':
+          form: none
+        '#location_lat__attributes':
+          form: none
+        '#location_lon__attributes':
+          form: none
+        '#location_x__attributes':
+          form: none
+        '#location_y__attributes':
+          form: none
+        '#location_attributes__attributes':
+          form: none
+        '#location_zipcode__attributes':
+          form: none
         '#location_type__access': false
         '#location_private_owner__access': false
         '#suggestions_modal__access': false
         '#place_name__access': false
         '#location_details__access': false
         '#location_asset_id__access': false
-        '#location_region_id__access': false
         '#location_municipality_name__access': false
         '#location_is_portland__access': false
         '#precision_text__access': false
         '#location_park_container__access': false
+        '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=DISTRICT&f=geojson'
+        '#click_query_property_path': 'features[0].properties.DISTRICT'
       contact_zip_code:
         '#type': textfield
         '#title': 'Zip/Postal Code'
@@ -297,8 +324,14 @@ elements: |-
         '#required': true
         '#states':
           visible:
-            ':input[name="in_portland_metro"]':
-              value: 'No'
+            ':input[name="council_district"]':
+              value: out_of_bounds
+      computed_council_district:
+        '#type': webform_computed_twig
+        '#title': 'Computed - Council District'
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.council_district == "unknown" ? data.contact_location.location_region_id : data.council_district }}'
     race_ethnicity:
       '#type': webform_checkboxes_other
       '#title': 'Race and Ethnicity'
@@ -379,18 +412,6 @@ elements: |-
     '#mode': text
     '#template': "{{ drupal_field('field_written_testimony_link', 'node', data.doc_id ?? 0, { label: 'hidden', type: 'string' })|render|striptags|trim }}"
     '#whitespace': trim
-  computed_location_lat:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Location Lat'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ data.location.location_lat }}'
-  computed_location_lng:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Location Lng'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ data.location.location_lon }}'
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed - Confirmation Message'
@@ -399,14 +420,33 @@ elements: |-
     '#template': |-
       {% if data.testimony_type == 'written' or data.testimony_type_no_verbal == 'written' %}
         <h2>Your testimony has been received</h2>
-        <a href="/council/written-testimony">View written testimony submitted for current agenda items</a>
+        <p><a href="/node/{{ data.doc_id }}/testimony">View all testimony submitted for <strong>Council Document {{ data.computed_council_document }}</strong></a></p>
       {% else %}
+        {% set session_id = drupal_field('field_council_session', 'relation', data.computed_latest_agenda_item_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
+        {% set agenda_id = drupal_field('field_council_agenda', 'relation', session_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
         <h2>Your registration has been received</h2>
-        Thank you for registering to testify at an upcoming Portland City Council meeting.
-        <br>
-        If you signed up for virtual testimony, your personalized Zoom invite will be emailed to you no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invite).
-        <br>
-        <a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a>
+        <p><strong>Document: </strong> <strong><a href="/node/{{ data.doc_id }}">{{ data.computed_council_document }}</a></strong> - {{ drupal_field('field_full_document_title', 'node', data.doc_id ?? 0, { 'label': 'hidden' })|render|striptags|trim }}</p>
+        <hr>
+        <h3>{{ data.computed_committee_name }} meeting</h3>
+        <p><strong>Date/time: </strong>{{ data.computed_latest_session_date }}</p>
+        <p><a class="btn-cta-outline" href="{{ drupal_url('node/' ~ agenda_id, { 'fragment': 'relation-' ~ data.computed_latest_agenda_item_id }) }}">View agenda for {{ data.computed_committee_name }}</a></p>
+        <hr>
+        <h3>How to testify</h3>
+        <p>The Council Clerk will call your name when it's your turn to testify. You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. State your name for the record when testifying during the meeting.</p>
+        <p>If you are a lobbyist appearing on behalf of a lobbying entity, you must also declare which lobbying entity you are authorized to represent in your testimony. (The City's lobbying regulations can be found in <a href="/code/2/12">City Code Chapter 2.12</a>.)</p>
+        <h4>Testifying virtually</h4>
+        {% if data.contact_email %}
+        <p>Testifiers have the option to participate in-person or virtually. Since you provided your email address, you will receive information to participate in the meeting and a Zoom link no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invitation).</p>
+        {% else %}
+        <p>Testifiers have the option to participate in-person or virtually. Since you didn't provide an email address, you cannot testify virtually. Please see the instructions below to testify in-person, or register again with your email address.</p>
+        {% endif %}
+        <h4>Testifying in-person</h4>
+        <p>Council meetings are held at City Hall, in the Council Chambers on the second floor. The address is <strong>1221 SW Fourth Avenue, Portland, OR 97204</strong> <a href="https://www.google.com/maps/dir//1221%20SW%20Fourth%20Avenue,%20Portland,%20OR%2097204">(get directions)</a>.</p>
+        <p>Wheelchair access is available via the Fourth Avenue entrance; there are two lobby elevators to access chambers on the second floor.</p>
+        <p>Council Chambers open 15 minutes before the meeting starts.</p>
+        <p><a href="/auditor/council-clerk/city-hall">Learn more about visiting City Hall to attend a Council meeting</a></p>
+        <hr>
+        <p><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p>
       {% endif %}
 css: ''
 javascript: ''
@@ -512,7 +552,7 @@ settings:
   draft_loaded_message: ''
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
-  confirmation_type: inline
+  confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
   confirmation_message: '<p>[webform_submission:values:computed_confirmation_message:raw]</p>'
@@ -538,7 +578,7 @@ settings:
   entity_limit_user_interval: null
   purge: all
   purge_days: 14
-  results_disabled: true
+  results_disabled: false
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -648,9 +688,6 @@ handlers:
         6813766443552644: computed_committee_name
         1936696209002372: contact_name_pronunciation
         2138213344667524: contact_phone
-        136784514443140: computed_location_lat
-        4640384141813636: computed_location_lng
-        8865636012740484: contact_zip_code
       sheet_id: '4217323172194180'
       multiple_rows_enable: null
       multiple_rows_field: ''
@@ -676,6 +713,8 @@ handlers:
     settings:
       column_mappings:
         6566033213050756: race_ethnicity
+        6905347031388036: computed_council_district
+        3960429690441604: contact_zip_code
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
