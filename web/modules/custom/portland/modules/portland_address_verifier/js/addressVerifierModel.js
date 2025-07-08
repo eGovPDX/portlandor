@@ -30,7 +30,6 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
 
 const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
 
-
 function AddressVerifierModel(jQuery, element, apiKey) {
   this.$ = jQuery;
   this.element = element;
@@ -39,67 +38,52 @@ function AddressVerifierModel(jQuery, element, apiKey) {
 }
 
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
-  const apiKey = this.apiKey;
-  var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
+    var self = this;
+    const apiKey = this.apiKey;
+    var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
-  return this.$.ajax({
-    url: apiUrl,
-    method: 'GET'
-  }).then(function (response) {
-    if (response && response.candidates && Array.isArray(response.candidates)) {
-      // KLUDGE: There's an issue with the PortlandMaps suggests API where the data is
-      // formatted differently when there is only a single candidate returned, as opposed
-      // to multiple candidates. The locationItem object constructor avoids this issue
-      // by always assembling the address from its component parts if we send the isSingleton flag.
-
-      if (response.candidates.length > 1) {
-        return response.candidates.map(function (candidate) {
-          var retItem = new AddressVerifierModel.locationItem(candidate, $element);
-          return retItem;
-        });
-      } else if (response.candidates.length == 1) {
-        return response.candidates.map(function (candidate) {
-          var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
-          return retItem;
-        });
-      } else {
-        return [];
-      }
-    } else {
-      // Handle the case where the response is not in the expected format
-      console.error('Unexpected response format:', response);
-      return [];
-    }
-  });
-};
-
-AddressVerifierModel.prototype.fetchPropertyDetails = function (addrSearch, $element) {
-  const apiKey = this.apiKey;
-  var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
-
-  return this.$.ajax({
-    url: apiUrl,
-    method: 'GET'
-  }).then(function (response) {
-    if (response && response.candidates && Array.isArray(response.candidates)) {
-      if (response.candidates.length == 1) {
-        return response.candidates.map(function (candidate) {
-          var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
-          return retItem;
-        });
-      } else if (response.candidates.length > 1) {
-        return response.candidates.map(function (candidate) {
-          var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
-          return retItem;
-        });
-      } else {
-        return [];
-      }
-    } else {
-      console.error('Unexpected response format:', response);
-      return [];
-    }
-  });
+    return this.$.ajax({
+        url: apiUrl,
+        method: 'GET'
+    }).then(
+        function (response, textStatus, jqXHR) {
+            if (textStatus === "success" &&
+                response &&
+                response.candidates &&
+                Array.isArray(response.candidates)
+                && !self.view.settings.error_test
+            ) {
+                if (response.candidates.length > 1) {
+                    return response.candidates.map(candidate =>
+                        new AddressVerifierModel.locationItem(candidate, $element)
+                    );
+                } else if (response.candidates.length === 1) {
+                    return response.candidates.map(candidate =>
+                        new AddressVerifierModel.locationItem(candidate, $element, true)
+                    );
+                } else {
+                    return [];
+                }
+            } else {
+                if (!self._serverError) {
+                    self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    self.view._resetVerified(self.view.$checkmark, self.view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                    return false;
+                }
+            }
+        },
+        function (jqXHR, textStatus, errorThrown) {
+            if (!self._serverError) {
+                self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                self.view._resetVerified(self.view.$checkmark, self.view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+                return false;
+            }
+        }
+    );
 };
 
 AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
@@ -152,135 +136,156 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
   url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
   // var self = this;
 
-  this.$.ajax({
-    url: url, success: function (response) {
-      item.taxlotId = response.detail.taxlot[0].property_id;
-      item.city = response.detail.zipcode[0].name;
-      item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode);
-      callback(item, view);
-    },
-    error: function (e) {
-      // if the PortlandMaps API is down, this is where we'll get stuck.
-      // any way to fail the location lookup gracefull and still let folks submit?
-      // at least display an error message.
-      console.error(e);
-      //showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
-    }
-  });
+    this.$.ajax({
+        url: url, success: function (results, textStatus, jqXHR) {
+            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
+                item.taxlotId = results.detail.taxlot[0].property_id;
+                item.city = results.detail.zipcode[0].name;
+                item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode);
+                callback(item, view);
+            } else {
+                if (!self._serverError) {
+                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    view._resetVerified(view.$checkmark, view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                }
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            if (!self._serverError) {
+                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                view._resetVerified(view.$checkmark, view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+            }
+        }
+    });
 }
 
 AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
-  url = url + "&geometry=" + x + "," + y;
-  this.$.ajax({
-    url: url, success: function (response) {
-      callback(response, view, capturePath, captureField, $);
-    },
-    error: function (e) {
-      // if the PortlandMaps API is down, this is where we'll get stuck.
-      // any way to fail the location lookup gracefull and still let folks submit?
-      // at least display an error message.
-      console.error(e);
-    }
-  });
+    url = url + "&geometry=" + x + "," + y;
+    this.$.ajax({
+        url: url, success: function (response) {
+            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
+                callback(response, view, capturePath, captureField, $);
+            } else {
+                if (!self._serverError) {
+                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                    view._resetVerified(view.$checkmark, view.$button);
+                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
+                    self._serverError = 1;
+                }
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            if (!self._serverError) {
+                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
+                view._resetVerified(view.$checkmark, view.$button);
+                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
+                self._serverError = 1;
+            }
+        }
+    });
 }
 
 AddressVerifierModel.getPropertyByPath = function (obj, path, parse = "stringify", omit_nulls = false) {
-  const parts = path.split('.');
+    const parts = path.split('.');
 
-  function extract(o, keys) {
-    if (keys.length === 0) return o;
+    function extract(o, keys) {
+        if (keys.length === 0) return o;
 
-    const [first, ...rest] = keys;
-    const match = first.match(/^(.+)\[(\d*)\]$/);
+        const [first, ...rest] = keys;
+        const match = first.match(/^(.+)\[(\d*)\]$/);
 
-    if (match) {
-      const [, key, index] = match;
-      const arr = o?.[key];
+        if (match) {
+            const [, key, index] = match;
+            const arr = o?.[key];
 
-      if (!Array.isArray(arr)) return undefined;
+            if (!Array.isArray(arr)) return undefined;
 
-      if (index === '') {
-        return arr.map(item => extract(item, rest));
-      } else {
-        return extract(arr[Number(index)], rest);
-      }
+            if (index === '') {
+                return arr.map(item => extract(item, rest));
+            } else {
+                return extract(arr[Number(index)], rest);
+            }
+        }
+
+        return extract(o?.[first], rest);
     }
 
-    return extract(o?.[first], rest);
-  }
+    function pruneNulls(value) {
+        if (value === null || value === undefined) return undefined;
 
-  function pruneNulls(value) {
-    if (value === null || value === undefined) return undefined;
+        if (Array.isArray(value)) {
+            const cleaned = value.map(pruneNulls).filter(v => v !== undefined);
+            return cleaned.length > 0 ? cleaned : undefined;
+        }
 
-    if (Array.isArray(value)) {
-      const cleaned = value.map(pruneNulls).filter(v => v !== undefined);
-      return cleaned.length > 0 ? cleaned : undefined;
+        if (typeof value === 'object') {
+            const cleaned = Object.entries(value).reduce((acc, [key, val]) => {
+                const pruned = pruneNulls(val);
+                if (pruned !== undefined) acc[key] = pruned;
+                return acc;
+            }, {});
+            return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+        }
+
+        return value;
     }
 
-    if (typeof value === 'object') {
-      const cleaned = Object.entries(value).reduce((acc, [key, val]) => {
-        const pruned = pruneNulls(val);
-        if (pruned !== undefined) acc[key] = pruned;
-        return acc;
-      }, {});
-      return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+    let retVal = extract(obj, parts);
+
+    if (omit_nulls) {
+        retVal = pruneNulls(retVal);
     }
 
-    return value;
-  }
+    const isEmptyArray = Array.isArray(retVal) && retVal.length === 0;
+    const isEmptyObject = typeof retVal === 'object' && retVal !== null && Object.keys(retVal).length === 0;
 
-  let retVal = extract(obj, parts);
+    if (isEmptyArray || isEmptyObject) {
+        return "";
+    }
 
-  if (omit_nulls) {
-    retVal = pruneNulls(retVal);
-  }
+    let result;
 
-  const isEmptyArray = Array.isArray(retVal) && retVal.length === 0;
-  const isEmptyObject = typeof retVal === 'object' && retVal !== null && Object.keys(retVal).length === 0;
+    if (parse === "flatten" && typeof retVal === 'object' && retVal !== null) {
+        result = AddressVerifierModel.flattenObjectToDelimitedString(retVal);
+    } else if (parse === "stringify") {
+        result = JSON.stringify(retVal);
+    } else {
+        result = retVal;
+    }
 
-  if (isEmptyArray || isEmptyObject) {
-    return "";
-  }
-
-  let result;
-
-  if (parse === "flatten" && typeof retVal === 'object' && retVal !== null) {
-    result = AddressVerifierModel.flattenObjectToDelimitedString(retVal);
-  } else if (parse === "stringify") {
-    result = JSON.stringify(retVal);
-  } else {
-    result = retVal;
-  }
-
-  return result;
+    return result;
 };
 
 AddressVerifierModel.flattenObjectToDelimitedString = function (obj) {
-  const entries = Object.entries(obj);
-  const parts = [];
+    const entries = Object.entries(obj);
+    const parts = [];
 
-  for (let [key, value] of entries) {
-    let stringValue;
+    for (let [key, value] of entries) {
+        let stringValue;
 
-    if (value === null) {
-      stringValue = 'null';
-    } else if (value === undefined) {
-      stringValue = 'undefined';
-    } else if (typeof value !== 'string' && typeof value !== 'number') {
-      stringValue = JSON.stringify(value);
-    } else {
-      stringValue = String(value);
+        if (value === null) {
+            stringValue = 'null';
+        } else if (value === undefined) {
+            stringValue = 'undefined';
+        } else if (typeof value !== 'string' && typeof value !== 'number') {
+            stringValue = JSON.stringify(value);
+        } else {
+            stringValue = String(value);
+        }
+
+        // Escape if necessary
+        if (/[=|]/.test(stringValue)) {
+            stringValue = `"${stringValue.replace(/"/g, '\\"')}"`;
+        }
+
+        const part = `${key}=${stringValue}`;
+        parts.push(part);
     }
 
-    // Escape if necessary
-    if (/[=|]/.test(stringValue)) {
-      stringValue = `"${stringValue.replace(/"/g, '\\"')}"`;
-    }
-
-    const part = `${key}=${stringValue}`;
-    parts.push(part);
-  }
-
-  const result = parts.join('|');
-  return result;
+    const result = parts.join('|');
+    return result;
 };

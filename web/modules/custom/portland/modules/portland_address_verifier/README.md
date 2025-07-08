@@ -18,6 +18,11 @@ This widget handles both street addresses and mailing addresses, though unit num
 
 These custom properties are set in the Advanced tab of the element configuration panel.
 
+**error_test**<br>
+When enabled, causes API calls to error out so that error handling can be tested.
+Allowed values: 1|0
+Default value: 0
+
 **verify_button_text**<br>
 Allows custom text to be used in the address verify button.
 Allowed values: [any text]
