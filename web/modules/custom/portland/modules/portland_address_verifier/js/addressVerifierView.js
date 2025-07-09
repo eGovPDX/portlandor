@@ -308,7 +308,7 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 }
 
 AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
-    if (query.capture && query.capture.length == 0) {
+    if (query.capture && query.capture.length > 0) {
         for (var i = 0; i < query.capture.length; i++) {
             let field = query.capture[i].field;
             let path = query.capture[i].path;
