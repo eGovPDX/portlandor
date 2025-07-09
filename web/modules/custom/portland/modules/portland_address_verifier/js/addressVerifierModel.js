@@ -112,6 +112,22 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) 
 
 // static functions
 
+AddressVerifierModel.logClientErrorToDrupal = function (errorMessage, fileName, lineNumber, stackTrace = '') {
+  fetch('/log-api-error', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': drupalSettings.ajaxPageState.csrfToken
+    },
+    body: JSON.stringify({
+      message: errorMessage,
+      file: fileName,
+      line: lineNumber,
+      stack: stackTrace
+    })
+  });
+}
+
 AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
   var fullAddress = address;
   fullAddress += unit ? ", " + unit : "";

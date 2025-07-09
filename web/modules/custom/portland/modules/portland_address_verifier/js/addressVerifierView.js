@@ -308,16 +308,18 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 }
 
 AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
-    for (var i = 0; i < query.capture.length; i++) {
-        let field = query.capture[i].field;
-        let path = query.capture[i].path;
-        let parse = query.capture[i].parse;
-        let omit_nulls = query.capture[i].omit_null_properties;
+    if (query.capture && query.capture.length == 0) {
+        for (var i = 0; i < query.capture.length; i++) {
+            let field = query.capture[i].field;
+            let path = query.capture[i].path;
+            let parse = query.capture[i].parse;
+            let omit_nulls = query.capture[i].omit_null_properties;
 
-        // this returns non-stringified JSON object or empty string
-        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
+            // this returns non-stringified JSON object or empty string
+            let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
 
-        view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+            view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+        }
     }
 }
 
@@ -396,19 +398,22 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
 
         if (query.api) {
             // new method using array of secondary queries
+            // there may not be args or captures, just a URL we need to hit, such as for testing error codes or health checks
             let queryUrl = query.api + "?format=json";
-            for (const arg of query.api_args) {
-                const [key, value] = Object.entries(arg)[0];
+            if (query.api_args && query.api_args.length > 0) {
+                for (const arg of query.api_args) {
+                    const [key, value] = Object.entries(arg)[0];
 
-                switch (key) {
-                    case 'geometry':
-                        queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
-                        break;
-                    case 'detail_id':
-                        queryUrl += "&detail_id" + item.taxlotId;
-                        break;
-                    default:
-                        queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    switch (key) {
+                        case 'geometry':
+                            queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
+                            break;
+                        case 'detail_id':
+                            queryUrl += "&detail_id" + item.taxlotId;
+                            break;
+                        default:
+                            queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    }
                 }
             }
 
@@ -419,23 +424,17 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                     if (textStatus == "success" && results.status && results.status == "success" && !self.settings.error_test) {
                         self._processSecondaryResultsNew(results, self, query);
                     } else {
-                        // TODO: Put this in its own function
-                        if (!self._serverError) {
-                            self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                            self._resetVerified(self.$checkmark, self.$button);
-                            console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results?.status, results?.message);
-                            self._serverError = 1;
-                        }
+                        const message = "API call failed";
+                        const error = new Error();
+                        self._logError(jqXHR, SERVER_ERROR_MESSAGE, results?.status || message, error);
+                        self._displayError(self, jqXHR, SERVER_ERROR_MESSAGE, results?.status || message);
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    // TODO: Put this in its own function
-                    if (!self._serverError) {
-                        self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                        self._resetVerified(self.$checkmark, self.$button);
-                        console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, textStatus, errorThrown);
-                        self._serverError = 1;
-                    }
+                    const message = "API call failed";
+                    const error = new Error(); // captures accurate stack location
+                    self._logError(jqXHR, textStatus, jqXHR?.responseText, error);
+                    self._displayError(self, jqXHR, textStatus, jqXHR?.responseText);
                 }
             });
 
@@ -447,6 +446,41 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
         }
     }
 }
+
+AddressVerifierView.prototype._displayError = function (view, jqXHR, textStatus, errorThrown) {
+    var statusCode = jqXHR ? jqXHR.status : '';
+    textStatus = textStatus == "error" ? "Unknown error" : textStatus;
+    var message = (statusCode ? statusCode + " " : "") + (errorThrown ? errorThrown : textStatus ? textStatus : "Unknown error");
+    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${message}</p>`, "Close");
+    view._resetVerified(view.$checkmark, view.$button);
+    view._serverError = 1;
+}
+
+AddressVerifierView.prototype._logError = function (jqXHR, textStatus, message, errorObj) {
+    let file = 'unknown';
+    let line = 0;
+    const stack = errorObj?.stack || '';
+
+    // Try to extract file and line number from second stack frame
+    const match = stack.split('\n')[1]?.match(/(https?:\/\/[^\s:]+):(\d+):(\d+)/);
+    if (match) {
+        file = match[1];
+        line = parseInt(match[2]);
+    }
+
+    const status = jqXHR?.status || 'Unknown';
+    const statusText = jqXHR?.statusText || 'No status text';
+    const responseText = jqXHR?.responseText || '';
+
+    const fullMessage = `${message} (${status} ${statusText}): ${textStatus}`;
+
+    AddressVerifierModel.logClientErrorToDrupal(
+        fullMessage,
+        file,
+        line,
+        "Response:\n" + responseText
+    );
+};
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     var self = view;
