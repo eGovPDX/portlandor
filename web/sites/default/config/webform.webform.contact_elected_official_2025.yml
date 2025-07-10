@@ -448,15 +448,20 @@ elements: |-
         - ':input[name="request_purpose_individual"]':
             value: 'Provide comment or feedback'
     feedback_topics_entity:
-      '#type': checkboxes
-      '#title': 'Chose one or more topics'
-      '#options': feedback_topics
+      '#type': webform_entity_checkboxes
+      '#title': 'Choose one or more topics'
       '#options_display': two_columns
-      '#other__option_label': 'Something else...'
-      '#other__placeholder': 'Please describe...'
+      '#target_type': taxonomy_term
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: topics
+          display_name: entity_reference_1
+          arguments: {  }
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
+      '#required': true
     request_comment:
       '#type': textarea
       '#title': 'What is your comment or feedback?'
@@ -1202,87 +1207,6 @@ elements: |-
   request_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket ID'
-  computed_description:
-    '#type': webform_computed_twig
-    '#title': 'Computed Description'
-    '#display_on': none
-    '#mode': html
-    '#template': |
-      {% if data.request_purpose and data.request_purpose is not iterable and (data.request_purpose == "Provide comment or feedback to my district's City Council members" or data.request_purpose == "Provide comment or feedback to the full City Council" or data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback") %}
-
-        {% set topics = (data.feedback_topics_entity|default([]))|merge([data.feedback_topic_other])|filter(v => v) %}
-        {% if topics|length > 0 %}
-          <p><strong>Topic(s): </strong> {{ topics|join(', ') }}</p>
-        {% endif %}
-        <p><strong>Feedback: </strong> {{ data.request_comment }}</p>
-        
-        <p><strong>Recipient: </strong>
-        
-        {% if data.request_purpose == "Provide comment or feedback to the full City Council" %}
-          Full City Council
-          
-        {% elseif data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
-          District {{ data.request_district and data.request_district != "Not sure..." ? data.request_district : data.report_location.location_region_id }} council members
-        
-        {% else %}
-          {{ data.request_recipient }}
-        
-        {% endif %}</p>
-
-      {% elseif data.request_purpose and data.request_purpose is not iterable and (data.request_purpose == "Request a meeting/event participation" or data.request_purpose_individual == "Request a meeting") %}
-
-        {% if data.request_recipient == "Mayor Keith Wilson" %}
-        
-          <p><strong>Event name:</strong> {{ data.meeting_event_name }}
-          <br><strong>Event date/time:</strong> {{ data.meeting_event_date|date("m/d/Y") }}, {{ data.meeting_start_time|date("h:i a") }} - {{ data.meeting_end_time|date("h:i a") }}
-          <br><strong>Flexible date and time?</strong> {{ data.meeting_flexible_datetime and data.meeting_flexible_datetime is not iterable ? data.meeting_flexible_datetime : "" }}
-          <br><strong>Meeting purpose:</strong> {{ data.meeting_purpose }}</p>
-          
-          <p><strong>Event organizer/sponsor:</strong> {{ data.meeting_organization }}
-          {% if data.meeting_organization_website %}<br><strong>Organization website:</strong> {{ data.meeting_organization_website }}{% endif %}
-          {% if data.meeting_organization_social_media %}<br><strong>Social media handles and links:</strong><br>{{ data.meeting_organization_social_media|nl2br|raw }}{% endif %}
-          {% if data.meeting_event_schedule %}<br><strong>Event schedule:</strong><br>{{ data.meeting_event_schedule|nl2br|raw }}{% endif %}
-          <br><strong>Number of attendees:</strong> {{ data.meeting_estimated_attendees }}
-          <br><strong>Who will be in attendance?</strong> {{ data.meeting_who_attendees }}
-          {% if data.meeting_has_vips is not iterable and data.meeting_has_vips == "Yes" %}<br><strong>VIPs, special guests, other elected officials:</strong> {{ data.meeting_vip_list }}{% endif %}
-          <br><strong>Will the media be invited?</strong> {{ data.meeting_media_invited and data.meeting_media_invited is not iterable ? data.meeting_media_invited : "" }}</p>
-          
-          <p><strong>In-person or virtual?</strong> {{ data.meeting_inperson_or_virtual and data.meeting_inperson_or_virtual is not iterable ? data.meeting_inperson_or_virtual : "" }}
-          {% if data.meeting_location_name %}<br><strong>Location name:</strong> {{ data.meeting_location_name }}{% endif %}
-          {% if data.computed_venue_address %}<br><strong>Venue address:</strong> {{ data.computed_venue_address }}{% endif %}
-          {% if data.meeting_venue_type and data.meeting_venue_type is not iterable %}<br><strong>Venue set-up:</strong> {{ data.meeting_venue_type }}{% endif %}
-          {% if data.meeting_parking_information %}<br><strong>Parking information:</strong> {{ data.meeting_parking_information }}{% endif %}
-          {% if data.meeting_has_microphone and data.meeting_has_microphone is not iterable  %}<br><strong>Will there be a microphone?</strong> {{ data.meeting_has_microphone }}{% endif %}
-          {% if data.meeting_has_podium and data.meeting_has_podium is not iterable %}<br><strong>Will there be a podium?</strong> {{ data.meeting_has_podium }}{% endif %}
-          {% if data.meeting_has_stage and data.meeting_has_stage is not iterable %}<br><strong>Will there be a stage?</strong> {{ data.meeting_has_stage }}{% endif %}
-          {% if data.meeting_virtual_preferred_service and data.meeting_virtual_preferred_service is not iterable %}<br><strong>Preferred video conferencing service:</strong> {{ data.meeting_virtual_preferred_service }}{% endif %}</p>
-          
-          <p>{% if data.meeting_mayor_role and data.meeting_mayor_role is not iterable %}<strong>Mayor's role during event:</strong> {{ data.meeting_mayor_role }}{% endif %}
-          {% if data.meeting_speaking_length and data.meeting_speaking_length is not iterable %}<br><strong>Speaking duration:</strong> {{ data.meeting_speaking_length }}{% endif %}
-          {% if data.meeting_topics and data.meeting_topics is not iterable %}<br><strong>Requested topics:</strong> {{ data.meeting_topics }}{% endif %}
-          {% if data.meeting_mayor_being_introduced and data.meeting_mayor_being_introduced is not iterable %}<br><strong>Is someone introducing the Mayor?</strong> {{ data.meeting_mayor_being_introduced }}{% endif %}
-          {% if data.meeting_mayor_introducing_someone and data.meeting_mayor_introducing_someone is not iterable %}<br><strong>Would you like the Mayor to introduce someone?</strong> {{ data.meeting_mayor_introducing_someone }}{% endif %}</p>
-        
-        {% else %}
-          <p>{% if data.meeting_event_type and data.meeting_event_type is not iterable %}<strong>Event type:</strong> {{ data.meeting_event_type }}{% endif %}
-          {% if data.meeting_title %}<br><strong>Event title:</strong> {{ data.meeting_title }}{% endif %}
-          {% if data.meeting_description %}<br><strong>Description:</strong> {{ data.meeting_description }}{% endif %}
-          {% if data.meeting_preferred_datetime and data.meeting_preferred_datetime is not iterable %}<br><strong>Preferred date and time:</strong> {{ data.meeting_preferred_datetime|date("m/d/Y h:i a") }}{% endif %}
-          {% if data.meeting_alternate_datetime and data.meeting_alternate_datetime is not iterable %}<br><strong>Alternate date and time:</strong> {{ data.meeting_alternate_datetime|date("m/d/Y h:i a") }}{% endif %}
-          {% if data.meeting_duration %}<br><strong>Requested duration:</strong> {{ data.meeting_duration }}{% endif %}</p>
-        
-        {% endif %}
-          
-      {% endif %}
-
-      <p><strong>From: </strong> {{ data.contact_name }}<br>
-      {% if data.contact_company %}<strong>Company: </strong> {{ data.contact_company }}<br>{% endif %}
-      <strong>Email: </strong> {{ data.contact_email_address }}<br>
-      {% if data.contact_country %}<strong>Country: </strong> {{ data.contact_country }}<br>{% endif %}
-      {% if data.contact_phone %}<strong>Phone: </strong> {{ data.contact_phone }}<br>{% endif %}
-      {% if data.your_address.location_address %}<strong>Address: </strong> {{ data.contact_international_address ? data.contact_international_address : data.computed_domestic_address }}<br>{% endif %}
-      </p>
-    '#whitespace': spaceless
 css: ''
 javascript: "(($, Drupal) => {\r\n\r\nDrupal.behaviors.councilDistrictBoundaries = {\r\n  attach() {\r\n    const districtColors = {\r\n      1: \"#7CB195\",\r\n      2: \"#9AC4EA\",\r\n      3: \"#FBD986\",\r\n      4: \"#C08FA4\",\r\n    };\r\n    const { lMap } = drupalSettings.webform.portland_location_picker;\r\n    let districtLayer; // Track the layer\r\n\r\n    fetch(\r\n      \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n    )\r\n      .then((res) => res.json())\r\n      .then(({ features }) => {\r\n        // Check if the layer is already added\r\n        if (districtLayer && lMap.hasLayer(districtLayer)) {\r\n          return; // Do nothing if the layer is already on the map\r\n        }\r\n\r\n        districtLayer = L.geoJson(features, {\r\n          coordsToLatLng(coords) {\r\n            return new L.LatLng(coords[1], coords[0]);\r\n          },\r\n          onEachFeature(feature, layer) {\r\n            const district = feature.properties.DISTRICT;\r\n\r\n            lMap.openTooltip(\r\n              Drupal.t(\"District @num\", { \"@num\": district }),\r\n              layer.getBounds().getCenter(),\r\n              {\r\n                className: \"fs-6\",\r\n                permanent: true,\r\n                direction: \"center\",\r\n                opacity: 1,\r\n              },\r\n            );\r\n            layer.setStyle({\r\n              color: \"#383838\",\r\n              fillColor: districtColors[district],\r\n              fillOpacity: 0.15,\r\n              weight: 1,\r\n            });\r\n          },\r\n        });\r\n\r\n        districtLayer.addTo(lMap);\r\n      });\r\n  },\r\n};\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -1530,7 +1454,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:computed_description:html]</p>'
+      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
       excluded_elements:
         prepopulate: prepopulate
         card: card
@@ -1560,6 +1484,7 @@ handlers:
         your_address: your_address
         public_records_statement_text: public_records_statement_text
         computed_subject: computed_subject
+        computed_recipient: computed_recipient
         computed_confirmation_message: computed_confirmation_message
         computed_send_to_mayor: computed_send_to_mayor
         computed_send_to_auditor: computed_send_to_auditor
@@ -1568,7 +1493,6 @@ handlers:
         computed_send_to_district3: computed_send_to_district3
         computed_send_to_district4: computed_send_to_district4
         computed_sent_to_all_message: computed_sent_to_all_message
-        computed_description: computed_description
       ignore_access: true
       exclude_empty: true
       exclude_empty_checkbox: true
@@ -1596,7 +1520,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1606,7 +1530,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1628,7 +1552,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1638,7 +1562,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1660,7 +1584,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1670,7 +1594,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1692,7 +1616,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1702,7 +1626,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1724,7 +1648,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1734,7 +1658,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1754,7 +1678,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1764,7 +1688,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'contact_elected_official'"
+      custom_fields: ''
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
