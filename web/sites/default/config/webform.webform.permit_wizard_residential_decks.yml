@@ -23,7 +23,6 @@ elements: |-
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
-    '#prepopulate': true
   welcome_back:
     '#type': webform_section
     '#title': 'Welcome back!'
@@ -34,18 +33,28 @@ elements: |-
     '#attributes':
       class:
         - mb-10
+        - bg-info
+        - p-3
+    '#title_attributes':
+      class:
+        - mt-0
     markup_welcome_back:
       '#type': webform_markup
-      '#markup': '<p>Please review your previous answers and re-submit to view your project plan. If you change your responses and want an updated link, provide your email address again.</p>'
-    actions_01:
-      '#type': webform_actions
-      '#title': 'See my guide'
+      '#markup': '<p class="mb-0">This guide was created based on project details you previously provided.</p>'
+    action_edit_details:
+      '#type': checkboxes
+      '#title': 'Edit my project'
+      '#title_display': none
+      '#options':
+        'Edit my project': 'Edit my project'
+      '#options_display': buttons_horizontal
       '#states':
-        visible:
-          ':input[name="returning_user"]':
-            filled: true
-      '#submit__label': Submit
-      '#reset_hide': true
+        invisible:
+          ':input[name="action_edit_details[Edit my project]"]':
+            checked: true
+      '#wrapper_attributes':
+        class:
+          - mb-0
   markup:
     '#type': webform_markup
     '#states':
@@ -53,353 +62,378 @@ elements: |-
         ':input[name="returning_user"]':
           empty: true
     '#markup': "<p>Share information about your project, and we'll give you a list of requirements needed by the City of Portland in order to get your permit.</p>"
-  section_location:
-    '#type': webform_section
-    '#title': Location
-    '#attributes':
-      class:
-        - mb-10
-    q1_project_address:
-      '#type': portland_address_verifier
-      '#title': Address
-      '#required': true
-      '#location_address__required': true
-      '#location_city__required': true
-      '#location_state__required': true
-      '#location_zip__required': true
-      '#find_unincorporated': 1
-      '#require_portland_city_limits': 1
-      '#not_verified_remedy': 'A verified address is required. Please try again.'
-      '#lookup_taxlot': 1
-      '#secondary_queries':
-        - api: 'https://www.portlandmaps.com/api/detail/'
-          api_args:
-            - detail_type: zoning
-            - sections: zoning
-            - geometry: '{"x":${x}, "y":${y}}'
-            - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
-          capture:
-            - path: 'zoning.overlay[].code'
-              field: hidden_zoning_overlays
-              parse: stringify
-            - path: 'zoning.historic_district[].code'
-              field: hidden_historic_district
-              parse: stringify
-            - path: 'zoning.national_register_district[].code'
-              field: hidden_national_register_district
-              parse: stringify
-            - path: 'zoning.conservation_district[].code'
-              field: hidden_conservation_district
-              parse: stringify
-            - path: historic_resource
-              field: hidden_historic_resource
-              parse: flatten
-              omit_null_properties: true
-        - api: 'https://www.portlandmaps.com/api/detail/'
-          api_args:
-            - detail_type: environmental-percent-slope
-            - sections: general
-            - geometry: '{"x":${x}, "y":${y}}'
-            - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
-          capture:
-            - path: general.percent_slope
-              field: hidden_percent_slope
-    hidden_zoning_overlays:
-      '#type': hidden
-      '#title': 'Hidden Zoning Overlays'
-    hidden_historic_district:
-      '#type': hidden
-      '#title': 'Hidden Historic District'
-    hidden_national_register_district:
-      '#type': hidden
-      '#title': 'Hidden National Register District'
-    hidden_conservation_district:
-      '#type': hidden
-      '#title': 'Hidden Conservation District'
-    hidden_historic_resource:
-      '#type': hidden
-      '#title': 'Hidden Historic Resource'
-    hidden_percent_slope:
-      '#type': hidden
-      '#title': 'Hidden Percent Slope'
-    markup_01:
-      '#type': webform_markup
+  container_project_details:
+    '#type': container
+    '#states':
+      invisible:
+        ':input[name="returning_user"]':
+          filled: true
+        ':input[name="action_edit_details[Edit my project]"]':
+          unchecked: true
+    section_location:
+      '#type': webform_section
+      '#title': Location
+      '#attributes':
+        class:
+          - mb-10
+      q1_project_address:
+        '#type': portland_address_verifier
+        '#title': Address
+        '#required': true
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+        '#find_unincorporated': 1
+        '#require_portland_city_limits': 1
+        '#not_verified_remedy': 'A verified address is required. Please try again.'
+        '#lookup_taxlot': 1
+        '#secondary_queries':
+          - api: 'https://www.portlandmaps.com/api/detail/'
+            api_args:
+              - detail_type: zoning
+              - sections: zoning
+              - geometry: '{"x":${x}, "y":${y}}'
+              - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+            capture:
+              - path: 'zoning.overlay[].code'
+                field: hidden_zoning_overlays
+                parse: stringify
+              - path: 'zoning.historic_district[].code'
+                field: hidden_historic_district
+                parse: stringify
+              - path: 'zoning.national_register_district[].code'
+                field: hidden_national_register_district
+                parse: stringify
+              - path: 'zoning.conservation_district[].code'
+                field: hidden_conservation_district
+                parse: stringify
+              - path: historic_resource
+                field: hidden_historic_resource
+                parse: flatten
+                omit_null_properties: true
+          - api: 'https://www.portlandmaps.com/api/detail/'
+            api_args:
+              - detail_type: environmental-percent-slope
+              - sections: general
+              - geometry: '{"x":${x}, "y":${y}}'
+              - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+            capture:
+              - path: general.percent_slope
+                field: hidden_percent_slope
+      hidden_zoning_overlays:
+        '#type': hidden
+        '#title': 'Hidden Zoning Overlays'
+      hidden_historic_district:
+        '#type': hidden
+        '#title': 'Hidden Historic District'
+      hidden_national_register_district:
+        '#type': hidden
+        '#title': 'Hidden National Register District'
+      hidden_conservation_district:
+        '#type': hidden
+        '#title': 'Hidden Conservation District'
+      hidden_historic_resource:
+        '#type': hidden
+        '#title': 'Hidden Historic Resource'
+      hidden_percent_slope:
+        '#type': hidden
+        '#title': 'Hidden Percent Slope'
+      markup_01:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="q1_project_address[location_verification_status]"]':
+              empty: true
+            ':input[name="action_edit_details[Edit my project]"]':
+              unchecked: true
+        '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
+      markup_02:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="q1_project_address[location_verification_status]"]':
+              empty: true
+            ':input[name="action_edit_details[Edit my project]"]':
+              checked: true
+        '#markup': "<p><strong>We want to make sure it's you. Please re-verify your address to continue.</strong></p>"
+    section_property_details:
+      '#type': webform_section
+      '#title': 'Property Details'
+      '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
+      '#states':
+        invisible:
+          ':input[name="q1_project_address[location_verification_status]"]':
+            empty: true
+      '#attributes':
+        class:
+          - mb-10
+      property_id:
+        '#type': webform_computed_twig
+        '#title': 'Property ID'
+        '#title_display': inline
+        '#display_on': form
+        '#template': |-
+          {{ data.q1_project_address.location_taxlot_id
+           }}
+        '#whitespace': trim
+        '#ajax': true
+      q1_1_environmental_overlay_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the site in an environmental overlay zone?'
+        '#title_display': inline
+        '#display_on': form
+        '#mode': text
+        '#template': |-
+          {% set value = data.hidden_zoning_overlays %}
+          {% if 'c' in value or 'p' in value %}Yes{% else %}No{% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      q1_2_greenway_overlay_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the site in a greenway overlay zone?'
+        '#title_display': inline
+        '#display_on': form
+        '#mode': text
+        '#template': |-
+          {% set value = data.hidden_zoning_overlays %}
+          {% if 'g' in value  %}Yes{% else %}No{% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      q1_3_historic_landmark:
+        '#type': webform_computed_twig
+        '#title': 'Is the property a historic/conservation landmark or in a historic district?'
+        '#title_display': inline
+        '#display_on': form
+        '#mode': text
+        '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
+        '#whitespace': trim
+        '#ajax': true
+      q4_project_deck_site_slope:
+        '#type': webform_computed_twig
+        '#title': 'What is the slope of the property?'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': '{{ data.hidden_percent_slope }}'
+        '#whitespace': trim
+        '#ajax': true
+      slope_display:
+        '#type': webform_computed_twig
+        '#title': 'What is the slope of the property?'
+        '#title_display': inline
+        '#display_on': form
+        '#template': '{{ data.hidden_percent_slope }}%'
+        '#ajax': true
+    section_project_details:
+      '#type': webform_section
+      '#title': 'Project Details'
+      '#states':
+        invisible:
+          ':input[name="q1_project_address[location_verification_status]"]':
+            empty: true
+      '#attributes':
+        class:
+          - mb-10
+      q2_project_deck_height:
+        '#type': number
+        '#title': 'How high off the ground will the deck be at its highest edge?'
+        '#description': '<p>Measure (in inches) from the ground next to the deck — where the drop is biggest. This is called “adjacent grade.” If your yard slopes, use the lowest point next to the edge of the deck.</p>'
+        '#description_display': before
+        '#field_suffix': inches
+        '#required': true
+        '#prepopulate': true
+      q3_project_deck_builder:
+        '#type': radios
+        '#title': 'Who will be doing the construction?'
+        '#options':
+          'The property owner': 'The property owner'
+          'A hired contractor': 'A hired contractor'
+        '#required': true
+        '#prepopulate': true
+      q5_project_deck_near_waterbody:
+        '#type': radios
+        '#title': 'Is there a wetland or waterbody near the worksite?'
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q6_project_waterbody_distance:
+        '#type': number
+        '#title': 'How far away is the wetland or waterbody from the worksite?'
+        '#description': '<p>Enter the distance (in feet) of the wetland or water body from the worksite.</p>'
+        '#field_suffix': feet
+        '#prepopulate': true
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="q5_project_deck_near_waterbody"]':
+              value: 'Yes'
+      q7_project_using_powered_machinery:
+        '#type': radios
+        '#title': 'Will you be using powered machinery to disturb the ground?'
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q8_project_deck_single_level:
+        '#type': radios
+        '#title': 'Are you building a single-level deck?'
+        '#description': "<p>A single-level deck is one flat surface, usually connected to the house. If your deck will have multiple sections at different heights, it's not single-level.</p>"
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q9_project_deck_connected_to_house:
+        '#type': radios
+        '#title': 'Will the deck connect to the outside wall of the house?'
+        '#description': '<p>This means the deck will be physically attached to the house, not free-standing. It helps determine what kind of permit or inspection might be needed.</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q10_project_deck_finish:
+        '#type': radios
+        '#title': 'Will you add tile, concrete, or other finish materials on top of the deck?'
+        '#description': '<p>Some decks are designed to hold finish materials like tile or concrete. These materials add extra weight, so your deck may need special design or permits.</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q11_project_deck_rectangular:
+        '#type': radios
+        '#title': 'Will the deck be rectangular in shape?'
+        '#description': '<p>This means your deck is shaped like a rectangle — not an L-shape, hexagon, or something more complex.</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q12_project_deck_one_row_posts:
+        '#type': radios
+        '#title': 'Will the deck have just one row of posts supporting the outer edge?'
+        '#description': '<p>This means the joists (the boards under the deck that support the surface) run straight from the house to a single beam (a heavy board that rests on posts). This is called a single-span deck, and the joists may cantilever (stick out a little past the beam).</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q13_project_deck_heavy:
+        '#type': radios
+        '#title': 'Will the deck need to hold something very heavy, like a hot tub?'
+        '#description': '<p>Will the deck need to hold something very heavy, like a hot tub?</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q14_project_deck_manufactured_handrails:
+        '#type': radios
+        '#title': 'Will the deck have manufactured handrails made of glass, cable, aluminum, or steel?'
+        '#description': '<p>This refers to handrail systems that are pre-made by a company, often called proprietary handrails.</p>'
+        '#description_display': before
+        '#prepopulate': true
+        '#options': yes_no_not_sure
+        '#required': true
+      q15_project_large_impervious_surface:
+        '#type': radios
+        '#title': 'Will the project add more than 500 square feet of impervious surface?'
+        '#description': '<p>Impervious surfaces are things like concrete, asphalt, or decks that stop water from soaking into the ground. We use this to understand how your project affects rainwater drainage.</p>'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q16_project_deck_has_roof:
+        '#type': radios
+        '#title': 'Will the deck have a solid, covered roof?'
+        '#description_display': before
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q17_project_deck_roof_over_200_sqft:
+        '#type': radios
+        '#title': 'Will the solid, covered roof be more than 200 square feet?'
+        '#description_display': before
+        '#prepopulate': true
+        '#options': yes_no_not_sure
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="q16_project_deck_has_roof"]':
+              value: 'Yes'
+      q18_project_septic_on_property:
+        '#type': radios
+        '#title': 'Is there a septic system or cesspool on the property?'
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q19_project_deck_septic_distance:
+        '#type': number
+        '#title': 'How far is the septic system or cesspool from the deck?'
+        '#description': '<p>Enter the distance (in feet) that the septic system or cesspool is away from the deck.</p>'
+        '#description_display': before
+        '#field_suffix': feet
+        '#prepopulate': true
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="q18_project_septic_on_property"]':
+              value: 'Yes'
+      q20_project_deck_large_trees:
+        '#type': radios
+        '#title': 'Are there trees measuring more than 8” in diameter near the worksite?'
+        '#options': yes_no_not_sure
+        '#required': true
+        '#prepopulate': true
+      q21_project_deck_trees_distance:
+        '#type': number
+        '#title': 'How far are the trees from the worksite?'
+        '#description': '<p>Enter the distance (in feet) that the trees are away from the project.</p>'
+        '#description_display': before
+        '#field_suffix': feet
+        '#prepopulate': true
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="q20_project_deck_large_trees"]':
+              value: 'Yes'
+      q22_project_deck_trees_near_row:
+        '#type': radios
+        '#title': 'Do any of these trees come close to a public right-of-way?'
+        '#description': '<p>Public right-of-way are things like sidewalks, planting strips, road shoulders, street medians, alleys, etc.</p>'
+        '#description_display': before
+        '#prepopulate': true
+        '#options': yes_no_not_sure
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="q20_project_deck_large_trees"]':
+              value: 'Yes'
+    section_send_link:
+      '#type': webform_section
+      '#title': 'Send a link?'
+      '#description': "<p>If you'd like us to send a link back to this project, please provide an email address. It will only be used to send this one email and won't be used for any other purpose.</p>"
       '#states':
         visible:
           ':input[name="q1_project_address[location_verification_status]"]':
-            empty: true
-      '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
-  section_property_details:
-    '#type': webform_section
-    '#title': 'Property Details'
-    '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
-    '#states':
-      invisible:
-        ':input[name="q1_project_address[location_verification_status]"]':
-          empty: true
-    '#attributes':
-      class:
-        - mb-10
-    property_id:
-      '#type': webform_computed_twig
-      '#title': 'Property ID'
-      '#title_display': inline
-      '#display_on': form
-      '#template': |-
-        {{ data.q1_project_address.location_taxlot_id
-         }}
-      '#whitespace': trim
-      '#ajax': true
-    q1_1_environmental_overlay_zone:
-      '#type': webform_computed_twig
-      '#title': 'Is the site in an environmental overlay zone?'
-      '#title_display': inline
-      '#display_on': form
-      '#mode': text
-      '#template': |-
-        {% set value = data.hidden_zoning_overlays %}
-        {% if 'c' in value or 'p' in value %}Yes{% else %}No{% endif %}
-      '#whitespace': trim
-      '#ajax': true
-    q1_2_greenway_overlay_zone:
-      '#type': webform_computed_twig
-      '#title': 'Is the site in a greenway overlay zone?'
-      '#title_display': inline
-      '#display_on': form
-      '#mode': text
-      '#template': |-
-        {% set value = data.hidden_zoning_overlays %}
-        {% if 'g' in value  %}Yes{% else %}No{% endif %}
-      '#whitespace': trim
-      '#ajax': true
-    q1_3_historic_landmark:
-      '#type': webform_computed_twig
-      '#title': 'Is the property a historic/conservation landmark or in a historic district?'
-      '#title_display': inline
-      '#display_on': form
-      '#mode': text
-      '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
-      '#whitespace': trim
-      '#ajax': true
-    q4_project_deck_site_slope:
-      '#type': webform_computed_twig
-      '#title': 'What is the slope of the property?'
-      '#wrapper_attributes':
+            filled: true
+      '#attributes':
         class:
-          - d-none
-      '#display_on': form
-      '#mode': text
-      '#template': '{{ data.hidden_percent_slope }}'
-      '#whitespace': trim
-      '#ajax': true
-    slope_display:
-      '#type': webform_computed_twig
-      '#title': 'What is the slope of the property?'
-      '#title_display': inline
-      '#display_on': form
-      '#template': '{{ data.hidden_percent_slope }}%'
-      '#ajax': true
-  section_project_details:
-    '#type': webform_section
-    '#title': 'Project Details'
-    '#states':
-      invisible:
-        ':input[name="q1_project_address[location_verification_status]"]':
-          empty: true
-    '#attributes':
-      class:
-        - mb-10
-    q2_project_deck_height:
-      '#type': number
-      '#title': 'How high off the ground will the deck be at its highest edge?'
-      '#description': '<p>Measure (in inches) from the ground next to the deck — where the drop is biggest. This is called “adjacent grade.” If your yard slopes, use the lowest point next to the edge of the deck.</p>'
-      '#description_display': before
-      '#field_suffix': inches
-      '#required': true
-      '#prepopulate': true
-    q3_project_deck_builder:
-      '#type': radios
-      '#title': 'Who will be doing the construction?'
-      '#options':
-        'The property owner': 'The property owner'
-        'A hired contractor': 'A hired contractor'
-      '#required': true
-      '#prepopulate': true
-    q5_project_deck_near_waterbody:
-      '#type': radios
-      '#title': 'Is there a wetland or waterbody near the worksite?'
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q6_project_waterbody_distance:
-      '#type': number
-      '#title': 'How far away is the wetland or waterbody from the worksite?'
-      '#description': '<p>Enter the distance (in feet) of the wetland or water body from the worksite.</p>'
-      '#field_suffix': feet
-      '#prepopulate': true
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="q5_project_deck_near_waterbody"]':
-            value: 'Yes'
-    q7_project_using_powered_machinery:
-      '#type': radios
-      '#title': 'Will you be using powered machinery to disturb the ground?'
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q8_project_deck_single_level:
-      '#type': radios
-      '#title': 'Are you building a single-level deck?'
-      '#description': "<p>A single-level deck is one flat surface, usually connected to the house. If your deck will have multiple sections at different heights, it's not single-level.</p>"
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q9_project_deck_connected_to_house:
-      '#type': radios
-      '#title': 'Will the deck connect to the outside wall of the house?'
-      '#description': '<p>This means the deck will be physically attached to the house, not free-standing. It helps determine what kind of permit or inspection might be needed.</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q10_project_deck_finish:
-      '#type': radios
-      '#title': 'Will you add tile, concrete, or other finish materials on top of the deck?'
-      '#description': '<p>Some decks are designed to hold finish materials like tile or concrete. These materials add extra weight, so your deck may need special design or permits.</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q11_project_deck_rectangular:
-      '#type': radios
-      '#title': 'Will the deck be rectangular in shape?'
-      '#description': '<p>This means your deck is shaped like a rectangle — not an L-shape, hexagon, or something more complex.</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q12_project_deck_one_row_posts:
-      '#type': radios
-      '#title': 'Will the deck have just one row of posts supporting the outer edge?'
-      '#description': '<p>This means the joists (the boards under the deck that support the surface) run straight from the house to a single beam (a heavy board that rests on posts). This is called a single-span deck, and the joists may cantilever (stick out a little past the beam).</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q13_project_deck_heavy:
-      '#type': radios
-      '#title': 'Will the deck need to hold something very heavy, like a hot tub?'
-      '#description': '<p>Will the deck need to hold something very heavy, like a hot tub?</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q14_project_deck_manufactured_handrails:
-      '#type': radios
-      '#title': 'Will the deck have manufactured handrails made of glass, cable, aluminum, or steel?'
-      '#description': '<p>This refers to handrail systems that are pre-made by a company, often called proprietary handrails.</p>'
-      '#description_display': before
-      '#prepopulate': true
-      '#options': yes_no_not_sure
-      '#required': true
-    q15_project_large_impervious_surface:
-      '#type': radios
-      '#title': 'Will the project add more than 500 square feet of impervious surface?'
-      '#description': '<p>Impervious surfaces are things like concrete, asphalt, or decks that stop water from soaking into the ground. We use this to understand how your project affects rainwater drainage.</p>'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q16_project_deck_has_roof:
-      '#type': radios
-      '#title': 'Will the deck have a solid, covered roof?'
-      '#description_display': before
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q17_project_deck_roof_over_200_sqft:
-      '#type': radios
-      '#title': 'Will the solid, covered roof be more than 200 square feet?'
-      '#description_display': before
-      '#prepopulate': true
-      '#options': yes_no_not_sure
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="q16_project_deck_has_roof"]':
-            value: 'Yes'
-    q18_project_septic_on_property:
-      '#type': radios
-      '#title': 'Is there a septic system or cesspool on the property?'
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q19_project_deck_septic_distance:
-      '#type': number
-      '#title': 'How far is the septic system or cesspool from the deck?'
-      '#description': '<p>Enter the distance (in feet) that the septic system or cesspool is away from the deck.</p>'
-      '#description_display': before
-      '#field_suffix': feet
-      '#prepopulate': true
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="q18_project_septic_on_property"]':
-            value: 'Yes'
-    q20_project_deck_large_trees:
-      '#type': radios
-      '#title': 'Are there trees measuring more than 8” in diameter near the worksite?'
-      '#options': yes_no_not_sure
-      '#required': true
-      '#prepopulate': true
-    q21_project_deck_trees_distance:
-      '#type': number
-      '#title': 'How far are the trees from the worksite?'
-      '#description': '<p>Enter the distance (in feet) that the trees are away from the project.</p>'
-      '#description_display': before
-      '#field_suffix': feet
-      '#prepopulate': true
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="q20_project_deck_large_trees"]':
-            value: 'Yes'
-    q22_project_deck_trees_near_row:
-      '#type': radios
-      '#title': 'Do any of these trees come close to a public right-of-way?'
-      '#description': '<p>Public right-of-way are things like sidewalks, planting strips, road shoulders, street medians, alleys, etc.</p>'
-      '#description_display': before
-      '#prepopulate': true
-      '#options': yes_no_not_sure
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="q20_project_deck_large_trees"]':
-            value: 'Yes'
-  section_send_link:
-    '#type': webform_section
-    '#title': 'Send a link?'
-    '#description': "<p>If you'd like us to send a link back to this project, please provide an email address. It will only be stored long enough to send this one email and won't be used for any other purpose.</p>"
-    '#states':
-      visible:
-        ':input[name="q1_project_address[location_verification_status]"]':
-          filled: true
-    '#attributes':
-      class:
-        - mb-10
-    email_address_optional:
-      '#type': textfield
-      '#title': 'Email address (optional)'
+          - mb-10
+      email_address_optional:
+        '#type': textfield
+        '#title': 'Email address (optional)'
   computed_results:
     '#type': webform_computed_twig
     '#title': 'Computed Results'
     '#title_display': none
+    '#states':
+      visible:
+        ':input[name="returning_user"]':
+          filled: true
+        ':input[name="action_edit_details[Edit my project]"]':
+          unchecked: true
     '#display_on': form
     '#mode': html
     '#template': |-
-      <h2>Your permitting guide</h2>
+      <h2>Your project guide</h2>
       <p>We've created a plan to help you follow the City of Portland's building rules based on the details you provided about your project.</p>
       <p>Print this page or save it as a PDF for reference. If you provided an email address in the previous screen, we'll send you a link to your filled-out form that you can reference anytime.</p>
       <hr>
@@ -758,8 +792,15 @@ elements: |-
     '#title': 'Submit button(s)'
     '#states':
       invisible:
-        ':input[name="q1_project_address[location_verification_status]"]':
-          empty: true
+        - ':input[name="q1_project_address[location_verification_status]"]':
+            empty: true
+        - or
+        - ':input[name="q1_project_address[location_verification_status]"]':
+            empty: false
+          ':input[name="action_edit_details[Edit my project]"]':
+            unchecked: true
+          ':input[name="returning_user"]':
+            empty: false
 css: ''
 javascript: ''
 settings:
