@@ -206,7 +206,30 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     });
 }
 
-AddressVerifierModel.getPropertyByPath = function (obj, path, parse = "stringify", omit_nulls = false) {
+AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
+    const keys = path.split('.');
+
+    return keys.reduce((obj, key) => {
+        // Automatically use the first element if the current object is an array
+        if (Array.isArray(obj)) {
+            obj = obj[0];
+        }
+
+        if (!obj) return undefined;
+        // Check if the key includes an array index, like 'features[0]'
+        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+        if (arrayIndexMatch) {
+            const arrayKey = arrayIndexMatch[1];
+            const index = parseInt(arrayIndexMatch[2], 10);
+            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+        } else {
+            return obj[key] !== undefined ? obj[key] : undefined;
+        }
+    }, jsonObject);
+};
+
+AddressVerifierModel.getPropertyByPathNew = function (obj, path, parse = "stringify", omit_nulls = false) {
     const parts = path.split('.');
 
     function extract(o, keys) {

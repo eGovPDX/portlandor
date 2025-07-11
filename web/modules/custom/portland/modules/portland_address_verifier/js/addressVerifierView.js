@@ -316,7 +316,7 @@ AddressVerifierView.prototype._processSecondaryResultsNew = function (results, v
             let omit_nulls = query.capture[i].omit_null_properties;
 
             // this returns non-stringified JSON object or empty string
-            let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
+            let propertyValue = AddressVerifierModel.getPropertyByPathNew(results, path, parse, omit_nulls);
 
             view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
         }
