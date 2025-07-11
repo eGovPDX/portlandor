@@ -21,12 +21,13 @@ trait PortlandViewsSelectTrait {
       $view = Views::getView($view_id);
       if ($view && $view->access($display_id)) {
         $view->setDisplay($display_id);
-        $view->execute();
+        $view->preExecute();
+        $view->render();
         $label_field_handler = $view->field[$label_field];
         $value_field_handler = $view->field[$value_field];
-        foreach ($view->result as $row) {
-          $label = $label_field_handler->getValue($row);
-          $value = $value_field_handler->getValue($row);
+        foreach ($view->result as $row_index => $row) {
+          $label = str_replace("\n", '', $label_field_handler->tokenizeValue((string) $label_field_handler->render($row), $row_index));
+          $value = html_entity_decode($value_field_handler->tokenizeValue((string) $value_field_handler->render($row), $row_index));
           if ($value !== '') {
             $options[$value] = $label;
           }
