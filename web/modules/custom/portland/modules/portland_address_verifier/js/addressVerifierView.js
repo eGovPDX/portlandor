@@ -348,7 +348,7 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
             this.$.ajax({
                 url: queryUrl,
                 success: function (results, textStatus, jqXHR) {
-                    if (textStatus == "success" && results.status && results.status == "success" && !self.settings.error_test) {
+                    if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !view.settings.error_test)) {
                         self._processSecondaryResultsNew(results, self, query);
                     } else {
                         // TODO: Put this in its own function

@@ -166,9 +166,10 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
 AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
     url = url + "&geometry=" + x + "," + y;
     this.$.ajax({
-        url: url, success: function (response) {
-            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
-                callback(response, view, capturePath, captureField, $);
+        url: url, success: function (results, textStatus, jqXHR) {
+            // some secondary queries return a status object, some do not, so check for the existence of results.status.
+            if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !view.settings.error_test)) {
+                callback(results, view, capturePath, captureField, $);
             } else {
                 if (!self._serverError) {
                     view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
