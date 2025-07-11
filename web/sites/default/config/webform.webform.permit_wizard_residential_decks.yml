@@ -20,6 +20,9 @@ description: ''
 categories:
   - 'Permit Wizard'
 elements: |-
+  test:
+    '#type': hidden
+    '#title': 'Test mode'
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
@@ -427,6 +430,12 @@ elements: |-
         <p>We've created a plan to help you follow the City of Portland's building rules based on the details you provided about your project. Print this page or save it as a PDF for reference. If you provided an email address in the project details, we'll send you a link to your filled-out form that you can reference anytime.</p>
         <hr>
 
+        {% if data.test %}
+        <div class="bg-info p-3 mb-5">
+          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
+        </div>
+        {% endif %}
+
         <ol class="process-list">
           <!--<li>
             <h3>Review your project details</h3>
@@ -447,7 +456,7 @@ elements: |-
             <p>You'll need to complete these forms, waivers, and other requirements to get a permit. Additional forms or waivers may be needed depending on the type of project, but this is the starting point:</p>
             
             <!-- Building permit application -->
-            {% if data.q2_project_deck_height > 30 %}
+            {% if data.q2_project_deck_height > 30 or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -474,12 +483,12 @@ elements: |-
             {% endif %}
             
             <!-- (Pre-Approved) Residential Deck Plans -->
-            {% if (data.q8_project_deck_single_level == "Yes" or data.q8_project_deck_single_level == "Not sure") and 
+            {% if ((data.q8_project_deck_single_level == "Yes" or data.q8_project_deck_single_level == "Not sure") and 
                (data.q9_project_deck_connected_to_house == "Yes" or data.q9_project_deck_connected_to_house == "Not sure") and 
                (data.q10_project_deck_finish == "No" or data.q10_project_deck_finish == "Not sure") and 
                (data.q11_project_deck_rectangular == "Yes" or data.q11_project_deck_rectangular == "Not sure") and 
                (data.q12_project_deck_one_row_posts == "Yes" or data.q12_project_deck_one_row_posts == "Not sure") and 
-               (data.q13_project_deck_heavy == "No" or data.q13_project_deck_heavy == "Not sure") %}
+               (data.q13_project_deck_heavy == "No" or data.q13_project_deck_heavy == "Not sure")) or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -495,19 +504,19 @@ elements: |-
                   <a href="/bcd/permit-services/Documents/permit-ready-deck.pdf" class="btn btn-primary rounded-1" aria-label="Download pre-approved residential deck plans">Download</a>
                 </div>
               </div>
-              {% if (data.q8_project_deck_single_level == "Not sure") or 
+              {% if ((data.q8_project_deck_single_level == "Not sure") or 
                     (data.q9_project_deck_connected_to_house == "Not sure") or 
                     (data.q10_project_deck_finish == "Not sure") or 
                     (data.q11_project_deck_rectangular == "Not sure") or 
                     (data.q12_project_deck_one_row_posts == "Not sure") or 
-                    (data.q13_project_deck_heavy == "Not sure") %}
+                    (data.q13_project_deck_heavy == "Not sure")) or data.test == "true" %}
                 <p class="mt-4 mb-0"><strong>NOTE:</strong> You answered "Not sure" on one or more question, so you may not be able to use a pre-approved deck plan.</p>
               {% endif %}
             </div>
             {% endif %}
 
             <!-- Simple Site Erosion Control Plan -->
-            {% if (data.q7_project_using_powered_machinery == "Yes" or data.q7_project_using_powered_machinery == "Not sure") and data.q4_project_deck_site_slope < 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q5_project_deck_near_waterbody == "Not sure" or data.q6_project_waterbody_distance > 50) %}
+            {% if ((data.q7_project_using_powered_machinery == "Yes" or data.q7_project_using_powered_machinery == "Not sure") and data.q4_project_deck_site_slope < 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q5_project_deck_near_waterbody == "Not sure" or data.q6_project_waterbody_distance > 50)) or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -525,7 +534,7 @@ elements: |-
             {% endif %}
 
             <!-- Stormwater Mitigation Plan -->
-            {% if data.q15_project_large_impervious_surface == "Yes" %}
+            {% if data.q15_project_large_impervious_surface == "Yes" or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -540,7 +549,7 @@ elements: |-
             {% endif %}
 
             <!-- Residential Deck Plans -->
-            {% if data.q8_project_deck_single_level == "No" or data.q9_project_deck_connected_to_house == "No" or data.q10_project_deck_finish == "Yes" or data.q11_project_deck_rectangular == "No" or data.q12_project_deck_one_row_posts == "No" or data.q13_project_deck_heavy == "Yes" %}
+            {% if (data.q8_project_deck_single_level == "No" or data.q9_project_deck_connected_to_house == "No" or data.q10_project_deck_finish == "Yes" or data.q11_project_deck_rectangular == "No" or data.q12_project_deck_one_row_posts == "No" or data.q13_project_deck_heavy == "Yes") or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -555,7 +564,7 @@ elements: |-
             {% endif %}
 
             <!-- “Owner doing work” form -->
-            {% if data.q3_project_deck_builder == "The property owner" %}
+            {% if data.q3_project_deck_builder == "The property owner" or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -570,7 +579,7 @@ elements: |-
             {% endif %}
 
             <!-- Erosion control plan -->
-            {% if (data.q7_project_using_powered_machinery == "Yes") and (data.q4_project_deck_site_slope >= 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50)) %}
+            {% if ((data.q7_project_using_powered_machinery == "Yes") and (data.q4_project_deck_site_slope >= 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50))) or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -585,7 +594,7 @@ elements: |-
             {% endif %}
 
             <!-- Disclaimer for existing on-site sewage system -->
-            {% if data.q18_project_septic_on_property == "Yes" or data.q18_project_septic_on_property == "Not sure" %}
+            {% if data.q18_project_septic_on_property == "Yes" or data.q18_project_septic_on_property == "Not sure" or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -605,7 +614,7 @@ elements: |-
             {% endif %}
 
             <!-- Land use review application -->
-            {% if data.q1_3_historic_landmark == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" %}
+            {% if data.q1_3_historic_landmark == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test == "true" %}
             <div class="text-body rounded border border-3 p-4 mb-4">
               <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 <div class="flex-grow-1">
@@ -833,7 +842,6 @@ elements: |-
           </tr>
           {% endif %}
         {% endif %}
-
         </table>
       '#whitespace': spaceless
       '#ajax': true
@@ -859,7 +867,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': '<a href="{{ data.return_link|replace({''returning_user=1&'':''''}) }}#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">Edit project details</a>'
+      '#template': "<a href=\"{{ data.return_link|replace({'returning_user=1&':''}) }}#body-content\" class=\"btn btn-outline-primary ms-auto rounded rounded-1 border-2\">{{ 'Edit project details'|t }}</a>"
       '#whitespace': trim
   actions:
     '#type': webform_actions
