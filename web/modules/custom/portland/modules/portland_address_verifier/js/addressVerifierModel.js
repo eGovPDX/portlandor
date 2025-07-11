@@ -1,40 +1,40 @@
 AddressVerifierModel.locationItem = function (data, $element = null, isSingleton = false) {
 
-    // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
-    // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
-    if (isSingleton) {
-        var arrAddress = data.address.split(', ');
-        data.address = arrAddress[0];
-    }
-    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.attributes.city, data.attributes.state, data.attributes.zip_code, data.unit).toUpperCase();
-    this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
-    this.street = data.address.toUpperCase();
-    this.streetNumber = data.attributes.address_number;
-    this.streetQuadrant = data.attributes.street_direction;
-    this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
-    this.streetName = data.attributes.street_name;
-    this.streetType = data.attributes.street_type;
-    if (this.streetDirectionSuffix) {
-        this.streetType += " " + this.streetDirectionSuffix;
-    }
-    this.city = data.attributes.city;
-    this.jurisdiction = data.attributes.jurisdiction;
-    this.state = data.attributes.state ? data.attributes.state.toUpperCase() : "";
-    this.zipCode = data.attributes.zip_code;
-    this.lat = data.attributes.lat;
-    this.lon = data.attributes.lon;
-    this.x = data.location.x;
-    this.y = data.location.y;
-    this.unit = "";
+  // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
+  // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
+  if (isSingleton) {
+    var arrAddress = data.address.split(', ');
+    data.address = arrAddress[0];
+  }
+  this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.attributes.city, data.attributes.state, data.attributes.zip_code, data.unit).toUpperCase();
+  this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
+  this.street = data.address.toUpperCase();
+  this.streetNumber = data.attributes.address_number;
+  this.streetQuadrant = data.attributes.street_direction;
+  this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
+  this.streetName = data.attributes.street_name;
+  this.streetType = data.attributes.street_type;
+  if (this.streetDirectionSuffix) {
+    this.streetType += " " + this.streetDirectionSuffix;
+  }
+  this.city = data.attributes.city;
+  this.jurisdiction = data.attributes.jurisdiction;
+  this.state = data.attributes.state ? data.attributes.state.toUpperCase() : "";
+  this.zipCode = data.attributes.zip_code;
+  this.lat = data.attributes.lat;
+  this.lon = data.attributes.lon;
+  this.x = data.location.x;
+  this.y = data.location.y;
+  this.unit = "";
 }
 
 const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
 
 function AddressVerifierModel(jQuery, element, apiKey) {
-    this.$ = jQuery;
-    this.element = element;
-    this.apiKey = apiKey;
-    this.intersectsLocation = null;
+  this.$ = jQuery;
+  this.element = element;
+  this.apiKey = apiKey;
+  this.intersectsLocation = null;
 }
 
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
@@ -87,54 +87,70 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
 };
 
 AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
-    // Radius of the Earth in meters
-    const R = 6378137;
+  // Radius of the Earth in meters
+  const R = 6378137;
 
-    // Convert the longitude from degrees to radians
-    const x = lon * (Math.PI / 180) * R;
+  // Convert the longitude from degrees to radians
+  const x = lon * (Math.PI / 180) * R;
 
-    // Convert the latitude from degrees to radians
-    const latRad = lat * (Math.PI / 180);
+  // Convert the latitude from degrees to radians
+  const latRad = lat * (Math.PI / 180);
 
-    // Calculate the y value using the Mercator projection formula
-    const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
+  // Calculate the y value using the Mercator projection formula
+  const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
 
-    return { x, y };
+  return { x, y };
 }
 
 AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) {
-    // Assuming street is in the format "1234 NW Main St"
-    const streetParts = street.split(' ');
-    this.streetNumber = streetParts.shift();
-    this.streetQuadrant = streetParts.shift();
-    this.streetName = streetParts.join(' ');
+  // Assuming street is in the format "1234 NW Main St"
+  const streetParts = street.split(' ');
+  this.streetNumber = streetParts.shift();
+  this.streetQuadrant = streetParts.shift();
+  this.streetName = streetParts.join(' ');
 };
 
 // static functions
 
+AddressVerifierModel.logClientErrorToDrupal = function (errorMessage, fileName, lineNumber, stackTrace = '') {
+  fetch('/log-api-error', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': drupalSettings.ajaxPageState.csrfToken
+    },
+    body: JSON.stringify({
+      message: errorMessage,
+      file: fileName,
+      line: lineNumber,
+      stack: stackTrace
+    })
+  });
+}
+
 AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
-    var fullAddress = address;
-    fullAddress += unit ? ", " + unit : "";
-    fullAddress += ", " + city + ", " + state + " " + zip;
-    return fullAddress;
+  var fullAddress = address;
+  fullAddress += unit ? ", " + unit : "";
+  fullAddress += ", " + city + ", " + state + " " + zip;
+  return fullAddress;
 }
 
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
-    var lineBreak = useHtml ? "<br>" : "\r\n";
-    var unit = $element.find('#unit_number').val();
-    var label = item.street;
-    if (item.unit) {
-        label += " " + unit.toUpperCase();
-    }
-    label += lineBreak + item.city + ", " + item.state + " " + item.zipCode;
-    return label;
+  var lineBreak = useHtml ? "<br>" : "\r\n";
+  var unit = $element.find('#unit_number').val();
+  var label = item.street;
+  if (item.unit) {
+    label += " " + unit.toUpperCase();
+  }
+  label += lineBreak + item.city + ", " + item.state + " " + item.zipCode;
+  return label;
 }
 
 AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon, item, callback, view) {
-    var xy = this._getSphericalMercCoords(lat, lon);
-    url = REVERSE_GEOCODE_URL;
-    url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
-    // var self = this;
+  var xy = this._getSphericalMercCoords(lat, lon);
+  let url = REVERSE_GEOCODE_URL;
+  url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
+  // var self = this;
 
     this.$.ajax({
         url: url, success: function (results, textStatus, jqXHR) {
@@ -166,9 +182,10 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
 AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
     url = url + "&geometry=" + x + "," + y;
     this.$.ajax({
-        url: url, success: function (response) {
-            if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
-                callback(response, view, capturePath, captureField, $);
+        url: url, success: function (results, textStatus, jqXHR) {
+            // some secondary queries return a status object, some do not, so check for the existence of results.status.
+            if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !view.settings.error_test)) {
+                callback(results, view, capturePath, captureField, $);
             } else {
                 if (!self._serverError) {
                     view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
@@ -189,7 +206,30 @@ AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callbac
     });
 }
 
-AddressVerifierModel.getPropertyByPath = function (obj, path, parse = "stringify", omit_nulls = false) {
+AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
+    const keys = path.split('.');
+
+    return keys.reduce((obj, key) => {
+        // Automatically use the first element if the current object is an array
+        if (Array.isArray(obj)) {
+            obj = obj[0];
+        }
+
+        if (!obj) return undefined;
+        // Check if the key includes an array index, like 'features[0]'
+        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+        if (arrayIndexMatch) {
+            const arrayKey = arrayIndexMatch[1];
+            const index = parseInt(arrayIndexMatch[2], 10);
+            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+        } else {
+            return obj[key] !== undefined ? obj[key] : undefined;
+        }
+    }, jsonObject);
+};
+
+AddressVerifierModel.getPropertyByPathNew = function (obj, path, parse = "stringify", omit_nulls = false) {
     const parts = path.split('.');
 
     function extract(o, keys) {
