@@ -67,7 +67,16 @@ Default value: 0
 When populated, a second API call is made to the specified API URL with the x/y coordinates passed in the geometry parameter. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
 **secondary_query_capture_property**<br>
-The path of the property to capture from the JSON returned by the secondary_query_url. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
+A dot-notated string that defines the property path to retrieve a value from a nested JSON object. Supports:
+
+- **Nested properties** using dot syntax  
+  _Example:_ `zoning.base.0.code` or `features.1.attributes.name`
+
+- **Array access** using numeric indices directly in the path  
+  _Example:_ `features.0.attributes.name`
+
+The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
+This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
 **secondary_query_capture_field**<br>
 The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
@@ -94,6 +103,15 @@ Default value: "A verified address is required. Please try again."
 
 **secondary_queries**<br>
 An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either a detail_id (taxlotId) or geometry (x, y) must be passed. See the examples below. 
+
+The path property is dot-notated string that defines the property path to retrieve a value from a nested JSON object. The path must exactly match the structure of the JSON object. If any part of the path is invalid or missing, the function will return `undefined`. Supports:
+- **Nested properties** using dot syntax  
+  _Example:_ `zoning.base[0].code`
+- **Array indexing** with bracket notation  
+  _Example:_ `features[2].attributes.name`
+- **Mapping over arrays** using empty brackets `[]`, which returns an array of values from each element  
+  _Example:_ `features[].attributes.name`
+
 <pre>
 secondary_queries:
   - api: 'https://www.portlandmaps.com/api/detail/'
