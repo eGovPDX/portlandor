@@ -52,15 +52,22 @@ elements: |-
     '#default_value': now
     '#date_date_format': ''
     '#date_time_format': ''
+  contact_name:
+    '#type': textfield
+    '#title': 'Your name'
+    '#description': '<p>Optional</p>'
   contact_email:
     '#type': textfield
-    '#title': 'Your email'
-    '#description': '<section data-drupal-selector="edit-section-contact" id="edit-section-contact">We will use your email to respond if needed.</section>'
+    '#title': Email
+    '#description': '<section data-drupal-selector="edit-section-contact" id="edit-section-contact"><p>We will use your email to respond only if needed</p></section>'
     '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
+    '#wrapper_attributes':
+      class:
+        - d-none
     '#access_create_roles':
       - authenticated
     '#access_update_roles':
@@ -69,7 +76,37 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#employee_notes_panel__access': false
     '#escalate_issue__access': false
+    '#test_submission__access': false
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>
+      {% if data.report_location.place_name %}<strong>Location name:</strong> {{ data.report_location.place_name }}<br>{% endif %}
+      {% if data.report_location.location_address %}<strong>Address:</strong> {{ data.report_location.location_address }}<br>{% endif %}
+      {% if data.report_location.location_lat %}<strong>Lat/lng:</strong> <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lng }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lng }}</a><br>{% endif %}
+      {% if data.report_location.location_municipality_name %}<strong>Municipality:</strong> {{ data.report_location.location_municipality_name }}<br>{% endif %}
+      {% if data.report_location.location_zipcode %}<strong>Zipcode:</strong> {{ data.report_location.location_zipcode }}{% endif %}
+      </p>
+
+      {% if data.report_phone_service %}<p><strong>What telephone service are you using to dial 3-1-1?</strong> {{ data.report_phone_service }}</p>{% endif %}
+
+      {% if data.report_phone_type %}<p><strong>What type of phone are you using?</strong> {{ data.report_phone_type }}</p>{% endif %}
+
+      {% if data.report_datetime %}<p><strong>When did you attempt to place the call?</strong> {{ data.report_datetime }}</p>{% endif %}
+
+      {% if data.contact_name %}<p><strong>Your name:</strong> {{ data.contact_name }}</p>{% endif %}
+
+      {% if data.contact_email %}<p><strong>Email:</strong> {{ data.contact_email }}</p>{% endif %}
+
+      {% if data.support_agent_use_only.employee_email %}<p><strong>Form submitted by:</strong> {{ data.support_agent_use_only.employee_email }}</p>{% endif %}
 css: ''
 javascript: ''
 settings:
@@ -267,68 +304,31 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_to_311_by_email:
-    id: email
-    handler_id: submit_to_311_by_email
-    label: 'Submit to 311 by email'
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
     notes: ''
     status: true
-    conditions:
-      disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
+    conditions: {  }
     weight: 0
     settings:
-      states:
-        - completed
-      to_mail: 311@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: ''
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: 3_1_1_regional_testing</p>"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  zendesk_update_customer_support_interaction_request:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_customer_support_interaction_request
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: 0
-    settings:
-      comment: "<h1>3-1-1 Regional Testing Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Webform submission from: Report a Problem Calling 311'
+      comment: "\r\n[webform_submission:values:computed_description:html]\r\n"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: 311@portlandoregon.gov
+      group_id: '360006087813'
       assignee_id: ''
-      type: ''
+      type: incident
+      is_child_incident: 0
       collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
+      custom_fields: "6353388345367: '3_1_1_regional_testing'"
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '9791802547607'
 variants: {  }

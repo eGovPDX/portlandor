@@ -1,0 +1,80 @@
+# Github action to deploy to Pantheon
+name: Deploy to Pantheon Test and Live
+
+on:
+  release:
+    types: [published]  # Trigger when a release is published
+
+jobs:
+  deploy-to-test:
+    environment: Test
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}  # Checkout the release tag (e.g., v1.0.0)
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.PANTHEON_MACHINE_TOKEN }}
+          disable-cache: true
+
+      - name: Prepare deployment message
+        run: |
+          RELEASE_BODY=$(echo "${{ github.event.release.body }}")
+          echo "DEPLOY_TEST_MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$RELEASE_BODY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Trigger Test Deploy
+        run: |          
+          terminus env:deploy ${{ secrets.PANTHEON_SITE_NAME }}.test --note "${{ env.DEPLOY_TEST_MESSAGE }}"
+
+  deploy-to-live:
+    environment: Live # This environment requries manual approval
+    needs: deploy-to-test
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}  # Checkout the release tag (e.g., v1.0.0)
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.PANTHEON_MACHINE_TOKEN }}
+          disable-cache: true
+
+      - name: Prepare deployment message
+        run: |
+          RELEASE_BODY=$(echo "${{ github.event.release.body }}")
+          echo "DEPLOY_TEST_MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$RELEASE_BODY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Deploy to Live
+        run: |
+          terminus env:deploy ${{ secrets.PANTHEON_SITE_NAME }}.live --note "${{ env.DEPLOY_TEST_MESSAGE }}"

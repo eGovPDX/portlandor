@@ -71,9 +71,9 @@ elements: |-
       '#title': 'What would you like to do?'
       '#prepopulate': true
       '#options':
+        'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to the Mayor, Auditor, or a specific City Councilor'
         "Provide comment or feedback to my district's City Council members": "Provide comment or feedback to my district's City Council members"
-        'Provide comment or feedback to the Mayor and full City Council': 'Provide comment or feedback to the Mayor and full City Council'
-        'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to a specific elected official'
+        'Provide comment or feedback to the full City Council': 'Provide comment or feedback to the full City Council'
         'Request a meeting/event participation': 'Request a meeting/event participation'
         'Submit a media inquiry': 'Submit a media inquiry'
         provide_testimony: 'Provide testimony on an agenda item'
@@ -155,6 +155,7 @@ elements: |-
       '#place_name__access': false
       '#location_details__access': false
       '#location_region_id__required': true
+      '#location_region_id__required_error': 'Please select a district.'
       '#display_boundary': false
       '#require_boundary': true
       '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
@@ -439,7 +440,7 @@ elements: |-
             value: "Provide comment or feedback to my district's City Council members"
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to the Mayor and full City Council'
+            value: 'Provide comment or feedback to the full City Council'
         - or
         - ':input[name="request_purpose"]':
             value: 'Provide comment or feedback to a specific elected official'
@@ -447,16 +448,12 @@ elements: |-
         - ':input[name="request_purpose_individual"]':
             value: 'Provide comment or feedback'
     feedback_topics_entity:
-      '#type': webform_entity_checkboxes
-      '#title': 'Choose one or more topics'
+      '#type': checkboxes
+      '#title': 'Chose one or more topics'
+      '#options': feedback_topics
       '#options_display': two_columns
-      '#target_type': taxonomy_term
-      '#selection_handler': views
-      '#selection_settings':
-        view:
-          view_name: topics
-          display_name: entity_reference_1
-          arguments: {  }
+      '#other__option_label': 'Something else...'
+      '#other__placeholder': 'Please describe...'
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
@@ -468,7 +465,7 @@ elements: |-
       '#required': true
     request_has_attachments:
       '#type': radios
-      '#title': 'Would you like to attach images or documents?'
+      '#title': 'Would you like to attach files?'
       '#options': yes_no
       '#options_display': side_by_side
     request_attachments:
@@ -479,8 +476,27 @@ elements: |-
         visible:
           ':input[name="request_has_attachments"]':
             value: 'Yes'
+          ':input[name="request_recipient"]':
+            '!value': 'Mayor Keith Wilson'
       '#max_filesize': '10'
       '#file_extensions': 'jpg jpeg png pdf doc docx xls xlsx'
+      '#sanitize': true
+    request_image_attachments:
+      '#type': managed_file
+      '#title': 'Attach up to 3 images'
+      '#multiple': 3
+      '#description': '<p>Due to safety and security concerns, we can only accept image uploads.</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="request_has_attachments"]':
+            value: 'Yes'
+          ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to a specific elected official'
+          ':input[name="request_recipient"]':
+            value: 'Mayor Keith Wilson'
+      '#max_filesize': '10'
+      '#file_extensions': 'jpg jpeg png'
       '#sanitize': true
   container_not_mayor_meeting:
     '#type': container
@@ -779,7 +795,7 @@ elements: |-
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
-        '#required': true
+        '#location_verification_status__required': true
       computed_venue_address:
         '#type': webform_computed_twig
         '#title': 'Computed Venue Address'
@@ -923,10 +939,11 @@ elements: |-
               value: 'Mayor Keith Wilson'
     meeting_attachments:
       '#type': managed_file
-      '#title': 'File Upload'
+      '#title': 'Image Upload'
       '#multiple': 5
-      '#description': '<p>Please attach any supplemental documentation or images that might help us better understand the request.</p>'
-      '#file_extensions': 'gif jpg png txt rtf pdf doc docx ppt pptx xls xlsx avi mov zip'
+      '#description': '<p>Please attach any supplemental images that might help us better understand the request. Due to safety and security concerns, we can only accept image files.</p>'
+      '#description_display': before
+      '#file_extensions': 'jpg jpeg png'
       '#sanitize': true
   container_submit:
     '#type': container
@@ -1060,8 +1077,8 @@ elements: |-
           {% set subject = "Feedback for District " ~ data.request_district %}  
         {% endif %}
 
-      {% elseif data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}
-        {% set subject = "Feedback for Mayor and City Council" %}
+      {% elseif data.request_purpose == "Provide comment or feedback to the full City Council" %}
+        {% set subject = "Feedback for City Council" %}
         
       {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback" %}
         {% set subject = "Feedback for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
@@ -1100,7 +1117,7 @@ elements: |-
     '#title': 'Computed Send to Mayor'
     '#display_on': none
     '#mode': text
-    '#template': '{% if data.recipient == "Mayor Keith Wilson" or data.request_recipient == "Mayor Keith Wilson" or data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}Yes{% endif %}'
+    '#template': '{% if data.recipient == "Mayor Keith Wilson" or data.request_recipient == "Mayor Keith Wilson" %}Yes{% endif %}'
   computed_send_to_auditor:
     '#type': webform_computed_twig
     '#title': 'Computed Send to Auditor'
@@ -1120,7 +1137,7 @@ elements: |-
           data.request_recipient == "Councilor Jamie Dunphy" or
           data.recipient == "Councilor Loretta Smith" or
           data.request_recipient == "Councilor Loretta Smith" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 1 or
           data.report_location.location_region_id == 1 %}Yes{% endif %}
     '#whitespace': trim
@@ -1136,7 +1153,7 @@ elements: |-
           data.request_recipient == "Councilor Elana Pirtle-Guiney" or
           data.recipient == "Councilor Sameer Kanal" or
           data.request_recipient == "Councilor Sameer Kanal" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 2 or
           data.report_location.location_region_id == 2 %}Yes{% endif %}
     '#whitespace': trim
@@ -1152,7 +1169,7 @@ elements: |-
           data.request_recipient == "Councilor Steve Novick" or
           data.recipient == "Councilor Tiffany Koyama Lane" or
           data.request_recipient == "Councilor Tiffany Koyama Lane" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 3 or
           data.report_location.location_region_id == 3 %}Yes{% endif %}
     '#whitespace': trim
@@ -1168,7 +1185,7 @@ elements: |-
           data.request_recipient == "Councilor Mitch Green" or
           data.recipient == "Councilor Olivia Clark" or
           data.request_recipient == "Councilor Olivia Clark" or 
-          data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" or
+          data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 4 or
           data.report_location.location_region_id == 4 %}Yes{% endif %}
     '#whitespace': trim
@@ -1178,13 +1195,94 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      {% if data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}
-      <p class="mb-5"><strong>This message has been sent to the Mayor and all Council Districts.</strong><br><br></p>
+      {% if data.request_purpose == "Provide comment or feedback to the full City Council" %}
+      <p class="mb-5"><strong>This message has been sent to all Council Districts.</strong><br><br></p>
       {% endif %}
     '#whitespace': spaceless
   request_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket ID'
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |
+      {% if data.request_purpose and data.request_purpose is not iterable and (data.request_purpose == "Provide comment or feedback to my district's City Council members" or data.request_purpose == "Provide comment or feedback to the full City Council" or data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback") %}
+
+        {% set topics = (data.feedback_topics_entity|default([]))|merge([data.feedback_topic_other])|filter(v => v) %}
+        {% if topics|length > 0 %}
+          <p><strong>Topic(s): </strong> {{ topics|join(', ') }}</p>
+        {% endif %}
+        <p><strong>Feedback: </strong> {{ data.request_comment }}</p>
+        
+        <p><strong>Recipient: </strong>
+        
+        {% if data.request_purpose == "Provide comment or feedback to the full City Council" %}
+          Full City Council
+          
+        {% elseif data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
+          District {{ data.request_district and data.request_district != "Not sure..." ? data.request_district : data.report_location.location_region_id }} council members
+        
+        {% else %}
+          {{ data.request_recipient }}
+        
+        {% endif %}</p>
+
+      {% elseif data.request_purpose and data.request_purpose is not iterable and (data.request_purpose == "Request a meeting/event participation" or data.request_purpose_individual == "Request a meeting") %}
+
+        {% if data.request_recipient == "Mayor Keith Wilson" %}
+        
+          <p><strong>Event name:</strong> {{ data.meeting_event_name }}
+          <br><strong>Event date/time:</strong> {{ data.meeting_event_date|date("m/d/Y") }}, {{ data.meeting_start_time|date("h:i a") }} - {{ data.meeting_end_time|date("h:i a") }}
+          <br><strong>Flexible date and time?</strong> {{ data.meeting_flexible_datetime and data.meeting_flexible_datetime is not iterable ? data.meeting_flexible_datetime : "" }}
+          <br><strong>Meeting purpose:</strong> {{ data.meeting_purpose }}</p>
+          
+          <p><strong>Event organizer/sponsor:</strong> {{ data.meeting_organization }}
+          {% if data.meeting_organization_website %}<br><strong>Organization website:</strong> {{ data.meeting_organization_website }}{% endif %}
+          {% if data.meeting_organization_social_media %}<br><strong>Social media handles and links:</strong><br>{{ data.meeting_organization_social_media|nl2br|raw }}{% endif %}
+          {% if data.meeting_event_schedule %}<br><strong>Event schedule:</strong><br>{{ data.meeting_event_schedule|nl2br|raw }}{% endif %}
+          <br><strong>Number of attendees:</strong> {{ data.meeting_estimated_attendees }}
+          <br><strong>Who will be in attendance?</strong> {{ data.meeting_who_attendees }}
+          {% if data.meeting_has_vips is not iterable and data.meeting_has_vips == "Yes" %}<br><strong>VIPs, special guests, other elected officials:</strong> {{ data.meeting_vip_list }}{% endif %}
+          <br><strong>Will the media be invited?</strong> {{ data.meeting_media_invited and data.meeting_media_invited is not iterable ? data.meeting_media_invited : "" }}</p>
+          
+          <p><strong>In-person or virtual?</strong> {{ data.meeting_inperson_or_virtual and data.meeting_inperson_or_virtual is not iterable ? data.meeting_inperson_or_virtual : "" }}
+          {% if data.meeting_location_name %}<br><strong>Location name:</strong> {{ data.meeting_location_name }}{% endif %}
+          {% if data.computed_venue_address %}<br><strong>Venue address:</strong> {{ data.computed_venue_address }}{% endif %}
+          {% if data.meeting_venue_type and data.meeting_venue_type is not iterable %}<br><strong>Venue set-up:</strong> {{ data.meeting_venue_type }}{% endif %}
+          {% if data.meeting_parking_information %}<br><strong>Parking information:</strong> {{ data.meeting_parking_information }}{% endif %}
+          {% if data.meeting_has_microphone and data.meeting_has_microphone is not iterable  %}<br><strong>Will there be a microphone?</strong> {{ data.meeting_has_microphone }}{% endif %}
+          {% if data.meeting_has_podium and data.meeting_has_podium is not iterable %}<br><strong>Will there be a podium?</strong> {{ data.meeting_has_podium }}{% endif %}
+          {% if data.meeting_has_stage and data.meeting_has_stage is not iterable %}<br><strong>Will there be a stage?</strong> {{ data.meeting_has_stage }}{% endif %}
+          {% if data.meeting_virtual_preferred_service and data.meeting_virtual_preferred_service is not iterable %}<br><strong>Preferred video conferencing service:</strong> {{ data.meeting_virtual_preferred_service }}{% endif %}</p>
+          
+          <p>{% if data.meeting_mayor_role and data.meeting_mayor_role is not iterable %}<strong>Mayor's role during event:</strong> {{ data.meeting_mayor_role }}{% endif %}
+          {% if data.meeting_speaking_length and data.meeting_speaking_length is not iterable %}<br><strong>Speaking duration:</strong> {{ data.meeting_speaking_length }}{% endif %}
+          {% if data.meeting_topics and data.meeting_topics is not iterable %}<br><strong>Requested topics:</strong> {{ data.meeting_topics }}{% endif %}
+          {% if data.meeting_mayor_being_introduced and data.meeting_mayor_being_introduced is not iterable %}<br><strong>Is someone introducing the Mayor?</strong> {{ data.meeting_mayor_being_introduced }}{% endif %}
+          {% if data.meeting_mayor_introducing_someone and data.meeting_mayor_introducing_someone is not iterable %}<br><strong>Would you like the Mayor to introduce someone?</strong> {{ data.meeting_mayor_introducing_someone }}{% endif %}</p>
+        
+        {% else %}
+          <p>{% if data.meeting_event_type and data.meeting_event_type is not iterable %}<strong>Event type:</strong> {{ data.meeting_event_type }}{% endif %}
+          {% if data.meeting_title %}<br><strong>Event title:</strong> {{ data.meeting_title }}{% endif %}
+          {% if data.meeting_description %}<br><strong>Description:</strong> {{ data.meeting_description }}{% endif %}
+          {% if data.meeting_preferred_datetime and data.meeting_preferred_datetime is not iterable %}<br><strong>Preferred date and time:</strong> {{ data.meeting_preferred_datetime|date("m/d/Y h:i a") }}{% endif %}
+          {% if data.meeting_alternate_datetime and data.meeting_alternate_datetime is not iterable %}<br><strong>Alternate date and time:</strong> {{ data.meeting_alternate_datetime|date("m/d/Y h:i a") }}{% endif %}
+          {% if data.meeting_duration %}<br><strong>Requested duration:</strong> {{ data.meeting_duration }}{% endif %}</p>
+        
+        {% endif %}
+          
+      {% endif %}
+
+      <p><strong>From: </strong> {{ data.contact_name }}<br>
+      {% if data.contact_company %}<strong>Company: </strong> {{ data.contact_company }}<br>{% endif %}
+      <strong>Email: </strong> {{ data.contact_email_address }}<br>
+      {% if data.contact_country %}<strong>Country: </strong> {{ data.contact_country }}<br>{% endif %}
+      {% if data.contact_phone %}<strong>Phone: </strong> {{ data.contact_phone }}<br>{% endif %}
+      {% if data.your_address.location_address %}<strong>Address: </strong> {{ data.contact_international_address ? data.contact_international_address : data.computed_domestic_address }}<br>{% endif %}
+      </p>
+    '#whitespace': spaceless
 css: ''
 javascript: "(($, Drupal) => {\r\n\r\nDrupal.behaviors.councilDistrictBoundaries = {\r\n  attach() {\r\n    const districtColors = {\r\n      1: \"#7CB195\",\r\n      2: \"#9AC4EA\",\r\n      3: \"#FBD986\",\r\n      4: \"#C08FA4\",\r\n    };\r\n    const { lMap } = drupalSettings.webform.portland_location_picker;\r\n    let districtLayer; // Track the layer\r\n\r\n    fetch(\r\n      \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n    )\r\n      .then((res) => res.json())\r\n      .then(({ features }) => {\r\n        // Check if the layer is already added\r\n        if (districtLayer && lMap.hasLayer(districtLayer)) {\r\n          return; // Do nothing if the layer is already on the map\r\n        }\r\n\r\n        districtLayer = L.geoJson(features, {\r\n          coordsToLatLng(coords) {\r\n            return new L.LatLng(coords[1], coords[0]);\r\n          },\r\n          onEachFeature(feature, layer) {\r\n            const district = feature.properties.DISTRICT;\r\n\r\n            lMap.openTooltip(\r\n              Drupal.t(\"District @num\", { \"@num\": district }),\r\n              layer.getBounds().getCenter(),\r\n              {\r\n                className: \"fs-6\",\r\n                permanent: true,\r\n                direction: \"center\",\r\n                opacity: 1,\r\n              },\r\n            );\r\n            layer.setStyle({\r\n              color: \"#383838\",\r\n              fillColor: districtColors[district],\r\n              fillOpacity: 0.15,\r\n              weight: 1,\r\n            });\r\n          },\r\n        });\r\n\r\n        districtLayer.addTo(lMap);\r\n      });\r\n  },\r\n};\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -1432,7 +1530,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
+      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:computed_description:html]</p>'
       excluded_elements:
         prepopulate: prepopulate
         card: card
@@ -1462,7 +1560,6 @@ handlers:
         your_address: your_address
         public_records_statement_text: public_records_statement_text
         computed_subject: computed_subject
-        computed_recipient: computed_recipient
         computed_confirmation_message: computed_confirmation_message
         computed_send_to_mayor: computed_send_to_mayor
         computed_send_to_auditor: computed_send_to_auditor
@@ -1471,6 +1568,7 @@ handlers:
         computed_send_to_district3: computed_send_to_district3
         computed_send_to_district4: computed_send_to_district4
         computed_sent_to_all_message: computed_sent_to_all_message
+        computed_description: computed_description
       ignore_access: true
       exclude_empty: true
       exclude_empty_checkbox: true
@@ -1498,17 +1596,17 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
-      recipient: ''
+      recipient: mayor@portlandoregon.gov
       group_id: '28461402652823'
       assignee_id: ''
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1530,17 +1628,17 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
-      recipient: ''
+      recipient: councildistrict1@portlandoregon.gov
       group_id: '28343058534167'
       assignee_id: ''
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1562,17 +1660,17 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
-      recipient: ''
+      recipient: councildistrict2@portlandoregon.gov
       group_id: '28343102272279'
       assignee_id: ''
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1594,17 +1692,17 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
-      recipient: ''
+      recipient: councildistrict3@portlandoregon.gov
       group_id: '28343081455127'
       assignee_id: ''
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1626,17 +1724,17 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
-      recipient: ''
+      recipient: councildistrict4@portlandoregon.gov
       group_id: '28343098474391'
       assignee_id: ''
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
@@ -1656,7 +1754,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -1666,7 +1764,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'contact_elected_official'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''

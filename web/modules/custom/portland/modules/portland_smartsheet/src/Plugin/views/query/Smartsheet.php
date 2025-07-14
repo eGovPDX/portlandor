@@ -10,6 +10,20 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
 
+enum SmartsheetPagingStrategy: string {
+  /**
+   * Uses the built-in pagination from the Smartsheet API.
+   * (more performant, but sort is per-page rather than global, and filters cannot be dynamic)
+   */
+  case API = 'api';
+  /**
+   * Loads all rows from the sheet and builds pages in memory.
+   * (less performant, but allows for global sort and dynamic filters)
+   * NOTE: limited to 10,000 rows.
+   */
+  case IN_MEMORY = 'in_memory';
+}
+
 /**
  * Smartsheet views query plugin which exposes sheet columns.
  *
@@ -20,6 +34,7 @@ use Drupal\Core\Ajax\HtmlCommand;
  * )
  */
 class Smartsheet extends QueryPluginBase {
+  private $filters = [];
   private $sorts = [];
   private $whereRowId = [];
 
@@ -28,6 +43,22 @@ class Smartsheet extends QueryPluginBase {
    */
   public function build(ViewExecutable $view) {
     $view->initPager();
+  }
+
+  private function shouldFilterOutRow(array $row) {
+    // Filter according to any added filter plugins
+    foreach ($this->filters as $column_id => $filter) {
+      $value = $row[$column_id]->displayValue ?? $row[$column_id]->value ?? NULL;
+      switch ($filter['op']) {
+        case 'equals':
+          if ($value != $filter['value']) return true;
+          break;
+        default:
+          return false; // Keep the row by default if op not found
+      }
+    }
+
+    return false;
   }
 
   private function doSort(&$rows) {
@@ -50,21 +81,31 @@ class Smartsheet extends QueryPluginBase {
    * {@inheritdoc}
    */
   public function execute(ViewExecutable $view) {
-    $sheet_id = $view->query->options['sheet_id'];
+    $paging_strategy = SmartsheetPagingStrategy::from($this->options['paging_strategy']);
+    $sheet_id = $this->options['sheet_id'];
     if ($sheet_id === "") return;
 
     try {
       $client = new SmartsheetClient($sheet_id);
+      $current_page = $view->pager->getCurrentPage();
       $items_per_page = $view->pager->getItemsPerPage();
       $sheet = $client->getSheet([
         'exclude' => 'filteredOutRows',
         'filterId' => $this->options['filter_id'],
         'include' => 'attachments',
-        'page' => $view->pager->getCurrentPage() + 1,
-        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page,
+        // smartsheet pages are 1-indexed
+        'page' => $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY ? 1 : $current_page + 1,
+        // if in-mem, load API max of 10,000 rows
+        'pageSize' => ($items_per_page === 0 || $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) ? 10000 : $items_per_page,
         'rowIds' => join(',', $this->whereRowId),
       ]);
-      $sheet_raw_rows = array_slice($sheet->rows, $view->pager->getOffset());
+      $pager_offset = $view->pager->getOffset();
+      $sheet_raw_rows = $sheet->rows;
+      // only apply offset if set using API paging. if in-memory, it's applied after filtering/sorting
+      if ($pager_offset !== 0 && $paging_strategy === SmartsheetPagingStrategy::API) {
+        array_splice($sheet_raw_rows, 0, $pager_offset);
+      }
+
       $rows = [];
       foreach ($sheet_raw_rows as $sheet_row) {
         $row_to_add = array_column($sheet_row->cells, NULL, 'columnId');
@@ -73,10 +114,24 @@ class Smartsheet extends QueryPluginBase {
         unset($sheet_row->cells);
         $row_to_add['_data'] = $sheet_row;
 
-        $rows[] = $row_to_add;
+        if (!$this->shouldFilterOutRow($row_to_add)) $rows[] = $row_to_add;
       }
 
       $this->doSort($rows);
+
+      if (empty($this->whereRowId) && $paging_strategy === SmartsheetPagingStrategy::API) {
+        $view->total_rows = $sheet->filteredRowCount ?? $sheet->totalRowCount;
+      } else {
+        // If a rowIds filter is applied in the query string, or we use in-memory paging, the totalRowCount will be incorrect, so do a manual count
+        $view->total_rows = count($rows);
+      }
+
+      $view->total_rows -= $pager_offset;
+
+      // if using in-memory pagination, apply paging after filtering
+      if ($paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) {
+        $rows = array_slice($rows, $items_per_page * $current_page + $pager_offset, $items_per_page);
+      }
 
       // Add final filtered/sorted rows to view
       $view->result = array_map(
@@ -88,13 +143,6 @@ class Smartsheet extends QueryPluginBase {
         $rows
       );
 
-      if (empty($this->whereRowId)) {
-        $view->total_rows = $sheet->filteredRowCount ?? $sheet->totalRowCount;
-      } else {
-        // If a rowIds filter is applied in the query string, the totalRowCount is incorrect
-        $view->total_rows = count($rows);
-      }
-
       $view->pager->total_items = $view->total_rows;
       $view->pager->updatePageInfo();
     } catch (\Exception $e) {
@@ -102,7 +150,14 @@ class Smartsheet extends QueryPluginBase {
     }
   }
 
-  public function addSort($column_id, $direction) {
+  public function addFilter(int $column_id, string $op, string|int $value) {
+    $this->filters[$column_id] = [
+      'op' => $op,
+      'value' => $value,
+    ];
+  }
+
+  public function addSort(int $column_id, string $direction) {
     $this->sorts[$column_id] = strtolower($direction) === 'asc' ? SORT_ASC : SORT_DESC;
   }
 
@@ -116,6 +171,9 @@ class Smartsheet extends QueryPluginBase {
   protected function defineOptions() {
     $options = parent::defineOptions();
     $options['filter_id'] = ['default' => ''];
+    $options['paging_strategy'] = [
+      'default' => SmartsheetPagingStrategy::API->value,
+    ];
     $options['sheet_id'] = ['default' => ''];
     return $options;
   }
@@ -174,15 +232,30 @@ class Smartsheet extends QueryPluginBase {
       '#required' => TRUE,
       '#ajax' => [
         'callback' => [static::class, 'ajaxFetchSheetInfo'],
-        'event' => 'change'
-      ]
+        'event' => 'change',
+      ],
     ];
     $form['filter_id'] = [
       '#type' => 'select',
       '#title' => $this->t('Filter to use'),
       '#default_value' => $this->options['filter_id'],
       '#description' => $this->t('Smartsheet filter to use for query'),
-      '#options' => self::getSheetFilters($this->options['sheet_id'])
+      '#options' => self::getSheetFilters($this->options['sheet_id']),
+    ];
+    $form['paging_strategy'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Paging Strategy'),
+      '#default_value' => $this->options['paging_strategy'],
+      '#options' => [
+        SmartsheetPagingStrategy::API->value => $this->t('API'),
+        SmartsheetPagingStrategy::IN_MEMORY->value => $this->t('In Memory'),
+      ],
+      SmartsheetPagingStrategy::API->value => [
+        '#description' => '<strong>Recommended for simple views with no filtering or sorting.</strong> Uses the built-in pagination from the Smartsheet API. More performant, but sort is per-page rather than global, and filters cannot be dynamic.',
+      ],
+      SmartsheetPagingStrategy::IN_MEMORY->value => [
+        '#description' => '<strong>Required for views with column-based filters or global sorting.</strong> Loads all rows from the sheet and builds pages in memory. Less performant, but allows for global sort and dynamic filters. <strong>NOTE: limited to 10,000 rows.</strong>',
+      ],
     ];
 
     parent::buildOptionsForm($form, $form_state);

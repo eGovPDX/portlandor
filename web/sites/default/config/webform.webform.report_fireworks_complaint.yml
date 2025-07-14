@@ -1,0 +1,404 @@
+uuid: 03739673-3414-4961-b6dc-a2e693abe1ae
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland_zendesk
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: report_fireworks_complaint
+title: 'Report Fireworks Complaint'
+description: ''
+categories: {  }
+elements: |-
+  report_acknowledgement:
+    '#type': webform_section
+    '#title': Acknowledgement
+    '#title_display': invisible
+    report_confirm_non_emergency:
+      '#type': radios
+      '#title': 'Is this an urgent, life-threatening issue where someone is hurt or there is an active fire?'
+      '#description_display': before
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+    markup_urgent_public:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_confirm_non_emergency"]':
+            value: 'Yes'
+      '#markup': '<div class="alert alert--warning next-steps"><p><strong>Please stop filling out this form and call 911.</strong></p></div>'
+    markup_01:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_confirm_non_emergency"]':
+            unchecked: true
+      '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
+  after_verifier_form_container:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_confirm_non_emergency"]':
+          value: 'No'
+    markup:
+      '#type': webform_markup
+      '#markup': '<p><em><span data-teams="true"><strong>During high volume times of the year law enforcement does not have resources to respond to all non-emergency calls. Fire Investigators will be investigating all fires that have a connection to fireworks and violators will be held responsible.</strong></span></em></p>'
+    report_location_of_reporter:
+      '#type': portland_address_verifier
+      '#title': 'Location of Reporter'
+      '#location_address__title': 'Please share your location when hearing the fireworks'
+      '#location_address__description': 'For example, your home address'
+    report_confirm_known_location:
+      '#type': radios
+      '#title': 'Do you know the location where the fireworks are being set off from?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+    report_incident_location:
+      '#type': webform_section
+      '#title': 'Incident Location'
+      '#states':
+        visible:
+          ':input[name="report_confirm_known_location"]':
+            value: 'Yes'
+      report_location:
+        '#type': portland_location_picker
+        '#title': 'Location of Incident'
+        '#place_name__access': false
+    report_incident_specifics:
+      '#type': webform_section
+      '#title': 'Incident Specifics'
+      '#title_display': invisible
+      '#states':
+        visible:
+          ':input[name="report_confirm_known_location"]':
+            checked: true
+      report_date:
+        '#type': date
+        '#title': 'Date of Incident'
+        '#default_value': '[current-date:html_date]'
+      report_time:
+        '#type': webform_time
+        '#title': 'Approximate Time of Incident'
+        '#time_format': 'g:i A'
+      report_incident_description:
+        '#type': textarea
+        '#title': 'Provide any helpful description of the incident'
+        '#description': '<p>For example: house color, owner, vehicles associated, if you have videos or media of the incident. If necessary, someone will contact you with instructions on how to submit photos or videos.</p>'
+        '#description_display': before
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      '#description': '<p>Please note: Due to limited resources, you should NOT expect a response to this report.</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="report_confirm_known_location"]':
+            checked: true
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#description_display': before
+      contact_email:
+        '#type': email
+        '#title': Email
+        '#description': '<p>We will use your email to confirm your submission.</p>'
+        '#description_display': before
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#description_display': before
+        '#input_mask': '(999) 999-9999'
+    section_confidentiality:
+      '#type': webform_section
+      '#title': Confidentiality
+      '#states':
+        visible:
+          ':input[name="report_confirm_known_location"]':
+            checked: true
+      confidentiality_waiver:
+        '#type': radios
+        '#title': 'Confidentiality Waiver'
+        '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+        '#description_display': before
+        '#options':
+          'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+          'I waive confidentiality': 'I choose to waive confidentiality.'
+        '#required': true
+        '#default_value': 'I do not waive confidentiality'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#access_create_roles':
+        - authenticated
+      '#employee_notes_panel__access': false
+      '#escalate_issue__access': false
+      '#test_submission__access': false
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#states':
+      visible:
+        ':input[name="report_confirm_known_location"]':
+          checked: true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: 'Thank you for submitting a complaint!'
+  confirmation_message: '<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p><p>During high volume times of the year law enforcement does not have resources to respond to all non-emergency calls. While resources are not available to respond to most complaints about fireworks, we are gathering information for ongoing efforts to achieve compliance with the Fireworks Ban. You should NOT expect a call back regarding this report.</p><p>Fire Investigators will be investigating all fires that have a connection to fireworks and violators will be held responsible.</p><p>If a fireworks situation involves someone being hurt or something is on fire, call 911.</p>'
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Create Zendesk ticket'
+    notes: "Creates a new solved Zendesk ticket in the 311 group. These tickets are meant for reporting purposes only. They won't be worked by an agent."
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Fireworks Complaint'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform fireworks_complaint'
+      priority: normal
+      status: solved
+      recipient: ''
+      group_id: '360006087813'
+      assignee_id: '378631802594'
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6353388345367: 'report_fireworks_complaint'"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '9791802547607'
+  email:
+    id: email
+    handler_id: email
+    label: 'Email to community member'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Firework Complaint Received'
+      body: '<h2>Thank you for submitting a complaint!</h2><p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p><p>During high volume times of the year law enforcement does not have resources to respond to all non-emergency calls. While resources are not available to respond to most complaints about fireworks, we are gathering information for ongoing efforts to achieve compliance with the Fireworks Ban. You should NOT expect a call back regarding this report.</p><p>Fire Investigators will be investigating all fires that have a connection to fireworks and violators will be held responsible.</p><p>If a fireworks situation involves someone being hurt or something is on fire, call 911.</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+variants: {  }

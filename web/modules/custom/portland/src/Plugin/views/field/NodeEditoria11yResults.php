@@ -50,6 +50,10 @@ class NodeEditoria11yResults extends FieldPluginBase implements ContainerFactory
           'field' => 'page_language',
           'value' => 'en',
         ],
+        [
+          'field' => 'route_name',
+          'value' => "entity.{$this->configuration['entity_type']}.canonical",
+        ],
       ],
     ];
     /** @var \Drupal\views\Plugin\views\join\Standard $join */
