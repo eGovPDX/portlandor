@@ -59,13 +59,14 @@ function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $no
  * Restricts access to certain types of content fragments by returning a 302 response for
  * anonymous uses. 302 is sent instead of 404 because the latter is more complicated to implement
  * from here, and this is just meant to be a temporary solution until we can implement the Rabbit Hole 
- * 2.0's plugin architecture.
+ * 2.0's plugin architecture. We need to allow Content Component and Glossary Term fragments to be
+ * accessible to anonymous users, but restrict access to Webform Ruleset fragments.
  */
 function portland_glossary_node_access(NodeInterface $node, $op, AccountInterface $account) {
   if ($op === 'view' && $node->bundle() === 'content_fragment') {
     if ($node->hasField('field_fragment_type') && !$node->get('field_fragment_type')->isEmpty()) {
       $term = $node->get('field_fragment_type')->entity;
-      if ($term && $term->label() !== 'Glossary Term' && $account->isAnonymous()) {
+      if ($term && $term->label() == 'Webform Ruleset' && $account->isAnonymous()) {
         return AccessResult::forbidden()->addCacheableDependency($node);
       }
     }
