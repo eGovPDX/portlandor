@@ -58,7 +58,7 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
             '#markup' => Html::escape($label) . ($published ? '' : ' <span class="badge text-bg-danger">Unpublished</strong>')
           ],
           '#url' => $uri,
-          '#options' => $uri->getOptions(),
+          '#options' => $uri->getOptions() + [ 'fragment' => 'body-content' ],
           '#attributes' => [
             'aria-current' => $is_active ? 'page' : NULL,
             'class' => ['nav-link', $is_active ? 'active' : ''],
