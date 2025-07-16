@@ -7,12 +7,12 @@ use Drupal\filter\FilterProcessResult;
 use Drupal\filter\Plugin\FilterBase;
 
 /**
- * Provides a filter to process data-aspect-ratio.
+ * Provides a filter to modify accordion headings.
  *
  * @Filter(
  *   id = "filter_accordion_headings",
- *   title = @Translation("Modify accordion headings to maintain hierarchy"),
- *   description = @Translation("Modify accordion headings for accessibility. Must run after CKEditor Accordion filter."),
+ *   title = @Translation("Modify accordion headings to maintain heading hierarchy"),
+ *   description = @Translation("Modify accordion headings for accessibility. Must run after the CKEditor Accordion filter."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_TRANSFORM_IRREVERSIBLE,
  * )
  */
