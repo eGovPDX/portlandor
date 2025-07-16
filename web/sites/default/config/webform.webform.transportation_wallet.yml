@@ -300,6 +300,21 @@ elements: |-
               value: 27985321767319_honored_citizen_hop_card
         '#attributes':
           inputmode: numeric
+      apply_hop_card_is_virtual:
+        '#type': webform_computed_twig
+        '#title': 'Hop Card Is Virtual'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% set number = data.apply_hop_card_number %}
+          {% set prefix = number|slice(0, 2) %}
+          {% if prefix == '31' %}
+            Yes
+          {% else %}
+            No
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
       apply_hop_card_number_opt_2:
         '#type': textfield
         '#title': 'Please enter your 16-digit Hop card number'
@@ -364,6 +379,37 @@ elements: |-
         '#date_date_min': '120 years ago'
         '#date_date_max': '18 years ago'
         '#date_date_format': m/d/Y
+      apply_age_65:
+        '#type': webform_computed_twig
+        '#title': 'Is 65 or over'
+        '#states':
+          invisible:
+            - ':input[name="apply_hop_card_needed"]':
+                value: 27985321767319_honored_citizen_hop_card
+            - or
+            - ':input[name="apply_hop_card_needed_opt_2_3"]':
+                value: 27985321767319_honored_citizen_hop_card
+            - or
+            - ':input[name="apply_next_steps_choice"]':
+                value: 'I want to start over and select Option 2 ($200 Hop card, BIKETOWN for All, and $75 prepaid Visa card).'
+            - or
+            - ':input[name="apply_trimet_lift_is_yes"]':
+                value: 'I want to start over and select Option 2. We can load the $200 on your TriMet LIFT Hop card.'
+            - or
+            - ':input[name="apply_adult_hop_is_yes"]':
+                value: 'I want to start over and select Option 2.'
+        '#mode': text
+        '#template': |-
+          {% if data.apply_date_of_birth %}
+          {% set birthdate = data.apply_date_of_birth|date('U') %}
+          {% set today = "now"|date('U') %}
+          {% set age = ((today - birthdate) / 31556952)|round(0, 'floor') %}
+          {{ age >= 65 ? 'Yes' : 'No' }}
+          {% else %}
+          NA
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
       apply_date_of_birth_hc:
         '#type': date
         '#title': 'What is your date of birth? (MM/DD/YYYY)'
@@ -381,6 +427,28 @@ elements: |-
         '#date_date_min': '120 years ago'
         '#date_date_max': '65 years ago'
         '#date_date_format': m/d/Y
+      apply_age_65_hc:
+        '#type': webform_computed_twig
+        '#title': 'Is 65 or over (HC)'
+        '#states':
+          visible:
+            - ':input[name="apply_hop_card_needed"]':
+                value: 27985321767319_honored_citizen_hop_card
+            - or
+            - ':input[name="apply_hop_card_needed_opt_2_3"]':
+                value: 27985321767319_honored_citizen_hop_card
+        '#mode': text
+        '#template': |-
+          {% if data.apply_date_of_birth_hc %}
+          {% set birthdate = data.apply_date_of_birth_hc|date('U') %}
+          {% set today = "now"|date('U') %}
+          {% set age = ((today - birthdate) / 31556952)|round(0, 'floor') %}
+          {{ age >= 65 ? 'Yes' : 'No' }}
+          {% else %}
+          NA
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
       computed_hop_card_number:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Number'
@@ -415,6 +483,39 @@ elements: |-
             {% endif %}
           {% endif %}
         '#whitespace': trim
+      apply_hop_card_is_virtual_opt_2:
+        '#type': webform_computed_twig
+        '#title': 'Hop Card Is Virtual Opt 2'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% set number = data.apply_hop_card_number_opt_2 %}
+          {% set prefix = number|slice(0, 2) %}
+          {% if prefix == '31' %}
+            Yes
+          {% else %}
+            No
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      apply_hop_card_is_virtual_opt_3:
+        '#type': webform_computed_twig
+        '#title': 'Hop Card Is Virtual Opt 3'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% set number = data.apply_hop_card_number_opt_3 %}
+          {% set prefix = number|slice(0, 2) %}
+          {% if prefix == '31' %}
+            Yes
+          {% else %}
+            No
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      markup_01:
+        '#type': webform_markup
+        '#markup': '<p>The number you have entered indicates that you have a Virtual Hop Card. We are not able to load funds onto this card. If you have a physical hop card, please replace the above card number with the number from the back of the physical Hop Card. If you do not have one, please obtain one from TriMet. Check the box below so we can send you a reminder in your confirmation email.</p>'
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -499,6 +600,21 @@ elements: |-
             visible:
               ':input[name="has_hop_card_2"]':
                 value: 'Yes'
+        hop_card_is_virtual_member_2:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card Is Virtual Member 2'
+          '#display_on': none
+          '#mode': text
+          '#template': |-
+            {% set number = data.hop_card_number_2 %}
+            {% set prefix = number|slice(0, 2) %}
+            {% if prefix == '31' %}
+              Yes
+            {% else %}
+              No
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
         date_of_birth_member_2:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -616,6 +732,21 @@ elements: |-
             visible:
               ':input[name="has_hop_card_3"]':
                 value: 'Yes'
+        hop_card_is_virtual_member_3:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card Is Virtual Member 3'
+          '#display_on': none
+          '#mode': text
+          '#template': |-
+            {% set number = data.hop_card_number_3 %}
+            {% set prefix = number|slice(0, 2) %}
+            {% if prefix == '31' %}
+              Yes
+            {% else %}
+              No
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
         date_of_birth_member_3:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -733,6 +864,21 @@ elements: |-
             visible:
               ':input[name="has_hop_card_4"]':
                 value: 'Yes'
+        hop_card_is_virtual_member_4:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card Is Virtual Member 4'
+          '#display_on': none
+          '#mode': text
+          '#template': |-
+            {% set number = data.hop_card_number_4 %}
+            {% set prefix = number|slice(0, 2) %}
+            {% if prefix == '31' %}
+              Yes
+            {% else %}
+              No
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
         date_of_birth_member_4:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -850,6 +996,21 @@ elements: |-
             visible:
               ':input[name="has_hop_card_5"]':
                 value: 'Yes'
+        hop_card_is_virtual_member_5:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card Is Virtual Member 5'
+          '#display_on': none
+          '#mode': text
+          '#template': |-
+            {% set number = data.hop_card_number_5 %}
+            {% set prefix = number|slice(0, 2) %}
+            {% if prefix == '31' %}
+              Yes
+            {% else %}
+              No
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
         date_of_birth_member_5:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
