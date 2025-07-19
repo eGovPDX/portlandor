@@ -300,21 +300,6 @@ elements: |-
               value: 27985321767319_honored_citizen_hop_card
         '#attributes':
           inputmode: numeric
-      apply_hop_card_is_virtual:
-        '#type': webform_computed_twig
-        '#title': 'Hop Card Is Virtual'
-        '#display_on': none
-        '#mode': text
-        '#template': |-
-          {% set number = data.apply_hop_card_number %}
-          {% set prefix = number|slice(0, 2) %}
-          {% if prefix == '31' %}
-            Yes
-          {% else %}
-            No
-          {% endif %}
-        '#whitespace': trim
-        '#ajax': true
       apply_hop_card_number_opt_2:
         '#type': textfield
         '#title': 'Please enter your 16-digit Hop card number'
@@ -379,37 +364,42 @@ elements: |-
         '#date_date_min': '120 years ago'
         '#date_date_max': '18 years ago'
         '#date_date_format': m/d/Y
-      apply_age_65:
-        '#type': webform_computed_twig
-        '#title': 'Is 65 or over'
+      apply_applicant_age:
+        '#type': textfield
+        '#title': 'Applicant Age'
+      markup_next_steps_virtual:
+        '#type': webform_markup
         '#states':
-          invisible:
-            - ':input[name="apply_hop_card_needed"]':
-                value: 27985321767319_honored_citizen_hop_card
-            - or
-            - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                value: 27985321767319_honored_citizen_hop_card
-            - or
-            - ':input[name="apply_next_steps_choice"]':
-                value: 'I want to start over and select Option 2 ($200 Hop card, BIKETOWN for All, and $75 prepaid Visa card).'
-            - or
-            - ':input[name="apply_trimet_lift_is_yes"]':
-                value: 'I want to start over and select Option 2. We can load the $200 on your TriMet LIFT Hop card.'
-            - or
-            - ':input[name="apply_adult_hop_is_yes"]':
-                value: 'I want to start over and select Option 2.'
-        '#mode': text
-        '#template': |-
-          {% if data.apply_date_of_birth %}
-          {% set birthdate = data.apply_date_of_birth|date('U') %}
-          {% set today = "now"|date('U') %}
-          {% set age = ((today - birthdate) / 31556952)|round(0, 'floor') %}
-          {{ age >= 65 ? 'Yes' : 'No' }}
-          {% else %}
-          NA
-          {% endif %}
-        '#whitespace': trim
-        '#ajax': true
+          visible:
+            ':input[name="apply_applicant_age"]':
+              value:
+                less: '65'
+            ':input[name="apply_hop_card_number"]':
+              value:
+                pattern: ^31
+        '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps 1</h2><p class="mb-0">The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical hop card, please use that number instead.&nbsp;If you don''t have a physical card, please get one from TriMet. Check the box below so we can send you a reminder in your confirmation email.</p></div>'
+      apply_send_reminder:
+        '#type': checkbox
+        '#title': "I'll get a physical Hop card from TriMet and reply to my confirmation email with my new card number."
+        '#states':
+          visible:
+            ':input[name="apply_applicant_age"]':
+              value:
+                less: '65'
+            ':input[name="apply_hop_card_number"]':
+              value:
+                pattern: ^31
+      markup_next_steps_virtual_hc:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_applicant_age_hc"]':
+              value:
+                greater_equal: '65'
+            ':input[name="apply_hop_card_number"]':
+              value:
+                pattern: ^31
+        '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps***</h2><p class="mb-0">The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical hop card, please use that number instead.&nbsp;If you don''t have a physical card, check the box below and we''ll send you a non-photo ID Hop card as part of your packet.</p></div>'
       apply_date_of_birth_hc:
         '#type': date
         '#title': 'What is your date of birth? (MM/DD/YYYY)'
@@ -427,39 +417,20 @@ elements: |-
         '#date_date_min': '120 years ago'
         '#date_date_max': '65 years ago'
         '#date_date_format': m/d/Y
-      apply_age_65_hc:
-        '#type': webform_computed_twig
-        '#title': 'Is 65 or over (HC)'
-        '#states':
-          visible:
-            - ':input[name="apply_hop_card_needed"]':
-                value: 27985321767319_honored_citizen_hop_card
-            - or
-            - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                value: 27985321767319_honored_citizen_hop_card
-        '#mode': text
-        '#template': |-
-          {% if data.apply_date_of_birth_hc %}
-          {% set birthdate = data.apply_date_of_birth_hc|date('U') %}
-          {% set today = "now"|date('U') %}
-          {% set age = ((today - birthdate) / 31556952)|round(0, 'floor') %}
-          {{ age >= 65 ? 'Yes' : 'No' }}
-          {% else %}
-          NA
-          {% endif %}
-        '#whitespace': trim
-        '#ajax': true
+      apply_applicant_age_hc:
+        '#type': textfield
+        '#title': 'Applicant Age (HC)'
       computed_hop_card_number:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Number'
         '#display_on': view
         '#mode': text
         '#template': |-
-          {% if data.apply_wallet_package	== "wallet_option_1" and data.apply_hop_card_number %}
+          {% if data.apply_wallet_package == "wallet_option_1" and data.apply_hop_card_number %}
             {{ data.apply_hop_card_number }}
-          {% elseif data.apply_wallet_package	== "wallet_option_2" and data.apply_hop_card_number_opt_2 %}
+          {% elseif data.apply_wallet_package == "wallet_option_2" and data.apply_hop_card_number_opt_2 %}
             {{ data.apply_hop_card_number_opt_2 }}
-          {% elseif data.apply_wallet_package	== "wallet_option_3" and data.apply_hop_card_number_opt_3 %}
+          {% elseif data.apply_wallet_package == "wallet_option_3" and data.apply_hop_card_number_opt_3 %}
             {{ data.apply_hop_card_number_opt_3 }}
           {% endif %}
         '#whitespace': trim
@@ -483,39 +454,42 @@ elements: |-
             {% endif %}
           {% endif %}
         '#whitespace': trim
-      apply_hop_card_is_virtual_opt_2:
-        '#type': webform_computed_twig
-        '#title': 'Hop Card Is Virtual Opt 2'
-        '#display_on': none
-        '#mode': text
-        '#template': |-
-          {% set number = data.apply_hop_card_number_opt_2 %}
-          {% set prefix = number|slice(0, 2) %}
-          {% if prefix == '31' %}
-            Yes
-          {% else %}
-            No
-          {% endif %}
-        '#whitespace': trim
-        '#ajax': true
-      apply_hop_card_is_virtual_opt_3:
-        '#type': webform_computed_twig
-        '#title': 'Hop Card Is Virtual Opt 3'
-        '#display_on': none
-        '#mode': text
-        '#template': |-
-          {% set number = data.apply_hop_card_number_opt_3 %}
-          {% set prefix = number|slice(0, 2) %}
-          {% if prefix == '31' %}
-            Yes
-          {% else %}
-            No
-          {% endif %}
-        '#whitespace': trim
-        '#ajax': true
-      markup_01:
+      markup_next_steps_virtual_opt_2_3:
         '#type': webform_markup
-        '#markup': '<p>The number you have entered indicates that you have a Virtual Hop Card. We are not able to load funds onto this card. If you have a physical hop card, please replace the above card number with the number from the back of the physical Hop Card. If you do not have one, please obtain one from TriMet. Check the box below so we can send you a reminder in your confirmation email.</p>'
+        '#states':
+          visible:
+            - ':input[name="apply_applicant_age_hc"]':
+                value: 'Yes'
+              ':input[name="apply_hop_card_number"]':
+                value:
+                  pattern: ^31
+            - or
+            - ':input[name="apply_hop_card_number_opt_2"]':
+                value:
+                  pattern: ^31
+            - or
+            - ':input[name="apply_hop_card_number_opt_3"]':
+                value:
+                  pattern: ^31
+        '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical hop card, please use that number instead. If you''d like us to issue a physical Hop card, check the box below.</p></div>'
+      apply_send_physical_card:
+        '#type': checkbox
+        '#title': 'Send me a new non-photo Hop card with funds loaded on it.'
+        '#states':
+          visible:
+            - ':input[name="apply_applicant_age_hc"]':
+                value: 'Yes'
+              ':input[name="apply_hop_card_number"]':
+                value:
+                  pattern: ^31
+            - or
+            - ':input[name="apply_hop_card_number_opt_2"]':
+                value:
+                  pattern: ^31
+            - or
+            - ':input[name="apply_hop_card_number_opt_3"]':
+                value:
+                  pattern: ^31
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -600,21 +574,6 @@ elements: |-
             visible:
               ':input[name="has_hop_card_2"]':
                 value: 'Yes'
-        hop_card_is_virtual_member_2:
-          '#type': webform_computed_twig
-          '#title': 'Hop Card Is Virtual Member 2'
-          '#display_on': none
-          '#mode': text
-          '#template': |-
-            {% set number = data.hop_card_number_2 %}
-            {% set prefix = number|slice(0, 2) %}
-            {% if prefix == '31' %}
-              Yes
-            {% else %}
-              No
-            {% endif %}
-          '#whitespace': trim
-          '#ajax': true
         date_of_birth_member_2:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -662,6 +621,51 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        age_member_2:
+          '#type': textfield
+          '#title': 'Age Member 2'
+        markup_member2_next_steps_virtual_under65:
+          '#type': webform_markup
+          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical hop card, please use that number instead.&nbsp;If you don''t have a physical card, please get one from TriMet. Check the box below so we can send you a reminder in your confirmation email.</p></div>'
+        apply_send_reminder_member2:
+          '#type': checkbox
+          '#title': "I'll get a physical Hop card from TriMet and reply to my confirmation email with my new card number."
+          '#states':
+            visible:
+              - ':input[name="apply_applicant_age_hc"]':
+                  value: 'Yes'
+                ':input[name="apply_hop_card_number"]':
+                  value:
+                    pattern: ^31
+              - or
+              - ':input[name="apply_hop_card_number_opt_2"]':
+                  value:
+                    pattern: ^31
+              - or
+              - ':input[name="apply_hop_card_number_opt_3"]':
+                  value:
+                    pattern: ^31
+        markup_member2_next_steps_virtual_over65:
+          '#type': webform_markup
+          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical hop card, please use that number instead.&nbsp;If you don''t have a physical card, check the box below and we''ll send you a non-photo ID Hop card as part of your packet.</p></div>'
+        apply_send_physical_card_member2:
+          '#type': checkbox
+          '#title': 'Send me a new non-photo Hop card with funds loaded on it.'
+          '#states':
+            visible:
+              - ':input[name="apply_applicant_age_hc"]':
+                  value: 'Yes'
+                ':input[name="apply_hop_card_number"]':
+                  value:
+                    pattern: ^31
+              - or
+              - ':input[name="apply_hop_card_number_opt_2"]':
+                  value:
+                    pattern: ^31
+              - or
+              - ':input[name="apply_hop_card_number_opt_3"]':
+                  value:
+                    pattern: ^31
       section_household_member_3:
         '#type': webform_section
         '#title': 'Household Member 3'
@@ -732,21 +736,6 @@ elements: |-
             visible:
               ':input[name="has_hop_card_3"]':
                 value: 'Yes'
-        hop_card_is_virtual_member_3:
-          '#type': webform_computed_twig
-          '#title': 'Hop Card Is Virtual Member 3'
-          '#display_on': none
-          '#mode': text
-          '#template': |-
-            {% set number = data.hop_card_number_3 %}
-            {% set prefix = number|slice(0, 2) %}
-            {% if prefix == '31' %}
-              Yes
-            {% else %}
-              No
-            {% endif %}
-          '#whitespace': trim
-          '#ajax': true
         date_of_birth_member_3:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -794,6 +783,9 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        age_member_3:
+          '#type': textfield
+          '#title': 'Age Member 3'
       section_household_member_4:
         '#type': webform_section
         '#title': 'Household Member 4'
@@ -864,21 +856,6 @@ elements: |-
             visible:
               ':input[name="has_hop_card_4"]':
                 value: 'Yes'
-        hop_card_is_virtual_member_4:
-          '#type': webform_computed_twig
-          '#title': 'Hop Card Is Virtual Member 4'
-          '#display_on': none
-          '#mode': text
-          '#template': |-
-            {% set number = data.hop_card_number_4 %}
-            {% set prefix = number|slice(0, 2) %}
-            {% if prefix == '31' %}
-              Yes
-            {% else %}
-              No
-            {% endif %}
-          '#whitespace': trim
-          '#ajax': true
         date_of_birth_member_4:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -926,6 +903,9 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        age_member_4:
+          '#type': textfield
+          '#title': 'Age Member 4'
       section_household_member_5:
         '#type': webform_section
         '#title': 'Household Member 5'
@@ -996,21 +976,6 @@ elements: |-
             visible:
               ':input[name="has_hop_card_5"]':
                 value: 'Yes'
-        hop_card_is_virtual_member_5:
-          '#type': webform_computed_twig
-          '#title': 'Hop Card Is Virtual Member 5'
-          '#display_on': none
-          '#mode': text
-          '#template': |-
-            {% set number = data.hop_card_number_5 %}
-            {% set prefix = number|slice(0, 2) %}
-            {% if prefix == '31' %}
-              Yes
-            {% else %}
-              No
-            {% endif %}
-          '#whitespace': trim
-          '#ajax': true
         date_of_birth_member_5:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -1058,6 +1023,9 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        age_member_5:
+          '#type': textfield
+          '#title': 'Age Member 5'
     computed_household_total_funds:
       '#type': webform_computed_twig
       '#title': 'Available Funds'
@@ -2387,7 +2355,7 @@ elements: |-
     '#template': "{{ webform_token('[current-page:url:absolute]', webform_submission, [], options) }}{% if webform_token('[current-page:query:organization_name]', webform_submission, [], options) %}?organization_url={{ webform_token('[current-page:query:organization_name]', webform_submission, [], options)|default('')|render|url_encode }}{% endif %}"
     '#whitespace': trim
 css: ".webform-multiple-table table {\r\n    width: inherit !important;\r\n}\r\n\r\n.webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit !important;\r\n}\r\n\r\n.webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}\r\n\r\n.card-header.card-header-opt-1 {\r\n    background: rgba(240, 92, 73, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-2 {\r\n    background: rgba(124, 66, 118, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-3 {\r\n    background: rgba(0, 160, 174, 0.33);\r\n}\r\n\r\n#member_2_container, #member_3_container, #member_4_container, #member_5_container {\r\n  border: 1px solid black;\r\n  padding: 15px 15px 0 15px;\r\n  margin-bottom: 5px;\r\n}\r\n\r\ndiv.form-disabled input[type=submit] { \r\n  color: white; cursor: not-allowed; \r\n}\r\n\r\n.webform-submission-transportation-wallet-form .form-text {\r\n  display: inline-block;\r\n}\r\n\r\n#calculator-submit-button input:disabled {\r\n  background-color: #ccc; /* Light gray background */\r\n  color: #666;           /* Darker gray text */\r\n  border-color: #999;    /* Match the gray theme for the border */\r\n  cursor: not-allowed;   /* Indicate that the button is disabled */\r\n  opacity: 0.6;          /* Optional: Make it semi-transparent */\r\n}\r\n\r\n#remaining-amt, #allocated-amt, #allocated-over {\r\n  font-weight: bold !important;\r\n}"
-javascript: "(function ($, Drupal, once) {\r\n  Drupal.behaviors.updateSubmitButtonState = {\r\n    attach: function (context) {\r\n      \r\n      var $wizardPage = once('funds-distribution-handler', '[data-webform-key=\"page_funds_distribution\"]', context);\r\n      \r\n      if ($wizardPage.length) {\r\n      \r\n        // find the input field\r\n        var $field1 = $(context).find('[name=\"funds_member_1\"], [name=\"funds_member_2\"], [name=\"funds_member_3\"], [name=\"funds_member_4\"], [name=\"funds_member_5\"]');\r\n        \r\n        // get the available amount and number of members values\r\n        var funds = $(context).find('#available-funds').text();\r\n        var members = $(context).find('#household-members').text();\r\n        \r\n        // Ensure the event listener is only attached once\r\n        $field1.off('input change').on('input change', function () {\r\n          \r\n          // hide all messages\r\n          var $messageRemaining = $(context).find('#message-remaining').addClass('d-none');\r\n          var $messageOk = $(context).find('#message-ok').addClass('d-none');\r\n          var $messageOver = $(context).find('#message-over').addClass('d-none');\r\n          \r\n          // if the selection is switched to even split, enable the Next button and exit function\r\n          if ($('[name=\"apply_funds_split\"][value=\"Evenly among all members\"]').is(':checked')) {\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n            return;\r\n          }\r\n          \r\n          // get allocation values\r\n          var $field1 = $(context).find('[name=\"funds_member_1\"]');\r\n          var $field2 = $(context).find('[name=\"funds_member_2\"]');\r\n          var $field3 = $(context).find('[name=\"funds_member_3\"]');\r\n          var $field4 = $(context).find('[name=\"funds_member_4\"]');\r\n          var $field5 = $(context).find('[name=\"funds_member_5\"]');\r\n          var val1 = $field1.length && $field1.val() > 0 ? $field1.val() : 0;\r\n          var val2 = $field2.length && $field2.val() > 0 ? $field2.val() : 0;\r\n          var val3 = $field3.length && $field3.val() > 0 ? $field3.val() : 0;\r\n          var val4 = $field4.length && $field4.val() > 0 ? $field4.val() : 0;\r\n          var val5 = $field5.length && $field5.val() > 0 ? $field5.val() : 0;\r\n\r\n          var allocated = parseInt(val1) + parseInt(val2) + parseInt(val3) + parseInt(val4) + parseInt(val5);\r\n          \r\n          if (allocated == funds) {\r\n            $messageOk.removeClass('d-none');\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n          } else if (allocated > funds) {\r\n            $messageOver.removeClass('d-none');\r\n            var over = (funds - allocated) * -1;\r\n            var $spanOver = $(context).find('#allocated-over');\r\n            if ($spanOver.length) $spanOver.text(over);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          } else if (allocated < funds) {\r\n            $messageRemaining.removeClass('d-none');\r\n            var remaining = funds - allocated;\r\n            var $spanRemaining = $(context).find('#remaining-amt');\r\n            if ($spanRemaining.length) $spanRemaining.text(remaining);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          }\r\n          \r\n        });\r\n      }\r\n    }\r\n  };\r\n  Drupal.behaviors.disableDatepicker = {\r\n    attach: function (context, settings) {\r\n      $('input[type=\"date\"]', context).removeAttr('max').removeAttr('data-max-year');\r\n    }\r\n  };\r\n})(jQuery, Drupal, once);\r\n"
+javascript: "(function ($, Drupal, once) {\r\n  Drupal.behaviors.updateSubmitButtonState = {\r\n    attach: function (context) {\r\n      \r\n      var $wizardPage = once('funds-distribution-handler', '[data-webform-key=\"page_funds_distribution\"]', context);\r\n      \r\n      if ($wizardPage.length) {\r\n      \r\n        // find the input field\r\n        var $field1 = $(context).find('[name=\"funds_member_1\"], [name=\"funds_member_2\"], [name=\"funds_member_3\"], [name=\"funds_member_4\"], [name=\"funds_member_5\"]');\r\n        \r\n        // get the available amount and number of members values\r\n        var funds = $(context).find('#available-funds').text();\r\n        var members = $(context).find('#household-members').text();\r\n        \r\n        // Ensure the event listener is only attached once\r\n        $field1.off('input change').on('input change', function () {\r\n          \r\n          // hide all messages\r\n          var $messageRemaining = $(context).find('#message-remaining').addClass('d-none');\r\n          var $messageOk = $(context).find('#message-ok').addClass('d-none');\r\n          var $messageOver = $(context).find('#message-over').addClass('d-none');\r\n          \r\n          // if the selection is switched to even split, enable the Next button and exit function\r\n          if ($('[name=\"apply_funds_split\"][value=\"Evenly among all members\"]').is(':checked')) {\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n            return;\r\n          }\r\n          \r\n          // get allocation values\r\n          var $field1 = $(context).find('[name=\"funds_member_1\"]');\r\n          var $field2 = $(context).find('[name=\"funds_member_2\"]');\r\n          var $field3 = $(context).find('[name=\"funds_member_3\"]');\r\n          var $field4 = $(context).find('[name=\"funds_member_4\"]');\r\n          var $field5 = $(context).find('[name=\"funds_member_5\"]');\r\n          var val1 = $field1.length && $field1.val() > 0 ? $field1.val() : 0;\r\n          var val2 = $field2.length && $field2.val() > 0 ? $field2.val() : 0;\r\n          var val3 = $field3.length && $field3.val() > 0 ? $field3.val() : 0;\r\n          var val4 = $field4.length && $field4.val() > 0 ? $field4.val() : 0;\r\n          var val5 = $field5.length && $field5.val() > 0 ? $field5.val() : 0;\r\n\r\n          var allocated = parseInt(val1) + parseInt(val2) + parseInt(val3) + parseInt(val4) + parseInt(val5);\r\n          \r\n          if (allocated == funds) {\r\n            $messageOk.removeClass('d-none');\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n          } else if (allocated > funds) {\r\n            $messageOver.removeClass('d-none');\r\n            var over = (funds - allocated) * -1;\r\n            var $spanOver = $(context).find('#allocated-over');\r\n            if ($spanOver.length) $spanOver.text(over);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          } else if (allocated < funds) {\r\n            $messageRemaining.removeClass('d-none');\r\n            var remaining = funds - allocated;\r\n            var $spanRemaining = $(context).find('#remaining-amt');\r\n            if ($spanRemaining.length) $spanRemaining.text(remaining);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          }\r\n          \r\n        });\r\n      }\r\n    }\r\n  };\r\n  Drupal.behaviors.disableDatepicker = {\r\n    attach: function (context, settings) {\r\n      $('input[type=\"date\"]', context).removeAttr('max').removeAttr('data-max-year');\r\n    }\r\n  };\r\n  Drupal.behaviors.ageCalculation = {\r\n    attach: function (context, settings) {\r\n\r\n      // Define all the date input field and corresponding hidden age output field name pairs\r\n      const fieldPairs = [\r\n        { dateField: 'apply_date_of_birth', ageField: 'apply_applicant_age' },\r\n        { dateField: 'apply_date_of_birth_hc', ageField: 'apply_applicant_age_hc' },\r\n        { dateField: 'date_of_birth_member_2', ageField: 'age_member_2' },\r\n        { dateField: 'date_of_birth_member_3', ageField: 'age_member_3' },\r\n        { dateField: 'date_of_birth_member_4', ageField: 'age_member_4' },\r\n        { dateField: 'date_of_birth_member_5', ageField: 'age_member_5' }\r\n      ];\r\n\r\n      // The calculateAge function remains the same as it correctly handles YYYY-MM-DD\r\n      function calculateAge(birthDateString) {\r\n        if (!birthDateString) {\r\n          return 0;\r\n        }\r\n\r\n        const parts = birthDateString.split('-');\r\n        if (parts.length !== 3) {\r\n          console.error('Invalid date format: Expected YYYY-MM-DD. Received:', birthDateString);\r\n          return 0;\r\n        }\r\n\r\n        const birthYear = parseInt(parts[0], 10);\r\n        const birthMonth = parseInt(parts[1], 10);\r\n        const birthDay = parseInt(parts[2], 10);\r\n\r\n        if (isNaN(birthMonth) || isNaN(birthDay) || isNaN(birthYear)) {\r\n          console.error('Invalid date parts: Year, Month, or Day is not a number. Received:', parts);\r\n          return 0;\r\n        }\r\n\r\n        const birthDate = new Date(birthYear, birthMonth - 1, birthDay);\r\n\r\n        if (isNaN(birthDate.getTime())) {\r\n          console.error('Invalid date created. Check year/month/day combination. Date parts:', birthYear, birthMonth, birthDay);\r\n          return 0;\r\n        }\r\n\r\n        const today = new Date();\r\n\r\n        let age = today.getFullYear() - birthDate.getFullYear();\r\n        const m = today.getMonth() - birthDate.getMonth();\r\n\r\n        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {\r\n          age--;\r\n        }\r\n        return age;\r\n      }\r\n\r\n      // Loop through each defined field pair\r\n      fieldPairs.forEach(function(pair) {\r\n        const dateFieldSelector = `input[name=\"${pair.dateField}\"]`;\r\n        const ageFieldSelector = `input[name=\"${pair.ageField}\"]`;\r\n\r\n        // Select the date input using once() to ensure the behavior is attached only once\r\n        const rawDateInputElements = once(`ageCalc-${pair.dateField}`, dateFieldSelector, context);\r\n        const $dateInput = $(rawDateInputElements); // Ensure it's a jQuery collection\r\n\r\n        // Select the corresponding hidden age input\r\n        const $hiddenAgeInput = $(ageFieldSelector, context);\r\n\r\n        // Proceed only if the date input element(s) were found\r\n        if ($dateInput.length > 0) {\r\n          $dateInput.each(function () {\r\n            const currentInput = $(this);\r\n\r\n            // Attach the 'change' event handler\r\n            currentInput.on('change', function () {\r\n              const birthDateValue = $(this).val();\r\n              const calculatedAge = calculateAge(birthDateValue);\r\n\r\n              $hiddenAgeInput.val(calculatedAge);\r\n              $hiddenAgeInput.trigger('change'); // Trigger 'change' for Webform States API\r\n            });\r\n\r\n            // Also run the calculation once on page load for initial state (if date field has a value)\r\n            if (currentInput.val() && !$hiddenAgeInput.val()) {\r\n              const initialBirthDateValue = currentInput.val();\r\n              const initialCalculatedAge = calculateAge(initialBirthDateValue);\r\n              $hiddenAgeInput.val(initialCalculatedAge);\r\n              $hiddenAgeInput.trigger('change');\r\n            }\r\n          });\r\n        }\r\n      });\r\n    }\r\n  };\r\n})(jQuery, Drupal, once);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
