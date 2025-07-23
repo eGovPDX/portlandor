@@ -29,8 +29,12 @@ class FilterAccordionHeadings extends FilterBase
     $xpath = new \DOMXPath($dom);
 
     // Find all headings h1 to h6 and store them in a flat array.
+    $headings = [];
     foreach ($xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6') as $heading) {
       $headings[] = $heading;
+    }
+    if(empty($headings)) {
+      return $result; // No headings found, nothing to process.
     }
 
     // Traverse the $headings array and process as described.
