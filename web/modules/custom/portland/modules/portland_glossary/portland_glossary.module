@@ -1,0 +1,77 @@
+<?php
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Session\AccountInterface;
+
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Attaches glossary_term library to the body content field if it contains a glossary term link.
+ */
+function portland_glossary_preprocess_field__field_body_content(&$variables) {
+  if (array_key_exists('#items', $variables['element'])) {
+    /** @var \Drupal\Core\Field\FieldItemListInterface $items */
+    $items = $variables['element']['#items'];
+    if ($items->isEmpty()) return;
+
+    $body_content = $items->first()->value;
+    if (str_contains($body_content, 'data-entity-substitution="glossary_term"')) {
+      $variables['#attached']['library'][] = 'portland_glossary/glossary_term';
+    }
+  }
+}
+
+/**
+ * Implements hook_linkit_suggestions_alter().
+ */
+function portland_glossary_linkit_suggestions_alter(array &$suggestions, \Drupal\linkit\ProfileInterface $profile, $search_string) {
+  foreach ($suggestions as &$suggestion) {
+    if (!empty($suggestion['label']) && mb_strlen($suggestion['label']) > 90) {
+      $suggestion['label'] = mb_substr($suggestion['label'], 0, 87) . '…';
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ *
+ * For lack of a better place to put this, we modify the accordion behavior on PP&D pages using the new design.
+ * - Collapse all rows by default.
+ * - Only show expand all/collapse all starting at 3 rows.
+ * TODO: Remove this if we decide to expand behavior to all pages.
+ */
+function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $node, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode !== 'full') {
+    return;
+  }
+
+  // Page must be using new design if Page subtype == Service or it has a parent page.
+  if (($node->bundle() === 'page' && $node->field_page_type->target_id === "1032") || ($node->hasField('field_parent') && $node->field_parent->count() > 0)) {
+    $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 3;
+  }
+}
+
+/**
+ * Implements hook_node_access().
+ * 
+ * Restricts access to certain types of content fragments by returning a 302 response for
+ * anonymous uses. 302 is sent instead of 404 because the latter is more complicated to implement
+ * from here, and this is just meant to be a temporary solution until we can implement the Rabbit Hole 
+ * 2.0's plugin architecture. We need to allow Content Component and Glossary Term fragments to be
+ * accessible to anonymous users, but restrict access to Webform Ruleset fragments.
+ */
+function portland_glossary_node_access(NodeInterface $node, $op, AccountInterface $account) {
+  if ($op === 'view' && $node->bundle() === 'content_fragment') {
+    if ($node->hasField('field_fragment_type') && !$node->get('field_fragment_type')->isEmpty()) {
+      $term = $node->get('field_fragment_type')->entity;
+      if ($term && $term->label() == 'Webform Ruleset' && $account->isAnonymous()) {
+        return AccessResult::forbidden()->addCacheableDependency($node);
+      }
+    }
+  }
+
+  return AccessResult::neutral();
+}
+

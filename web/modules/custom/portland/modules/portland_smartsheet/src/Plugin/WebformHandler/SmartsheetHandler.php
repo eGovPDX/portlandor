@@ -242,7 +242,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     parent::submitConfigurationForm($form, $form_state);
 
     $values = $form_state->getUserInput()['settings'];
-    $this->configuration['column_mappings'] = $values['column_mappings'];
+    $this->configuration['column_mappings'] = array_filter($values['column_mappings']);
     $this->configuration['multiple_rows_enable'] = $values['multiple_rows_enable'];
     $this->configuration['multiple_rows_field'] = $values['multiple_rows_field'];
     $this->configuration['multiple_rows_separator'] = $values['multiple_rows_separator'];
@@ -271,6 +271,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $cells[] = [
         'columnId' => (int) $col_id,
+        'strict' => false,
         'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
       ];
     }

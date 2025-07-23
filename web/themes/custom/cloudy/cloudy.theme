@@ -49,35 +49,16 @@ function cloudy_preprocess_html(&$variables) {
       }
     }
   }
-
-  // Add Swiftype metatags to customize indexing on POG
-  $swiftype_domain_identifier = [
-    '#tag' => 'meta',
-    '#attributes' => [
-      'class' => 'swiftype',
-      'name' => 'domain-identifier',
-      'data-type' => 'string',
-      'content' => 'portland.gov'
-    ]
-  ];
-  $variables['page']['#attached']['html_head'][] = [$swiftype_domain_identifier, 'swiftype_domain-identifier'];
-
-  $swiftype_site_priority = [
-    '#tag' => 'meta',
-    '#attributes' => [
-      'class' => 'swiftype',
-      'name' => 'site-priority',
-      'data-type' => 'integer',
-      'content' => '2'
-    ]
-  ];
-  $variables['page']['#attached']['html_head'][] = [$swiftype_site_priority, 'swiftype_site-priority'];
+  // Skip Editoria11y check for Seach API pages
+  elseif ( ! empty($route_match->getParameter('search_api_page_name')) ) {
+    $variables['attributes']['class'][] = 'skip-editoria11y-check';
+  }
 }
 
 /**
  * Implements hook_preprocess_HOOK()
  *
- * Unset page title on Bureau/Office Homepages and move display to content for custom layouts
+ * - Unset page title on Bureau/Office Homepages and move display to content for custom layouts
  */
 function cloudy_preprocess_page(&$variables) {
   if($group = \Drupal::routeMatch()->getParameter('group')) {
@@ -303,4 +284,17 @@ function cloudy_theme() {
       ],
     ],
   ];
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ * Skip Editoria11y check for all views EXCEPT the Council Impact Statements view
+ */
+function cloudy_preprocess_views_view(&$variables) {
+  $view = $variables['view'];
+  $view_id = $view?->id();
+  if( empty($view_id) || $view_id === 'council_impact_statements' ) {
+    return;
+  }
+  $variables['attributes']['class'][] = 'skip-editoria11y-check';
 }

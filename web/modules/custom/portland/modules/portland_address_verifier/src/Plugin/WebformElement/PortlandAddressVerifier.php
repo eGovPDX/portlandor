@@ -4,6 +4,7 @@ namespace Drupal\portland_address_verifier\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Provides a 'portland_address_verifier' element.
@@ -123,6 +124,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $machine_name = "edit-" . $key . "--wrapper";
     $machine_name = str_replace("_", "-", $machine_name);
 
+    $errorTest = array_key_exists('#error_test', $element) && strtolower($element['#error_test']) == "1" ? 1 : 0;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['error_test'] = $errorTest;
+
     $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_type'] = $addressType;
 
@@ -158,6 +162,20 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy'] = $notVerifiedRemedy;
+
+    $notVerifiedRemedyRequired = array_key_exists('#not_verified_remedy_required', $element) ? $element['#not_verified_remedy_required'] : "A verified address is required. Please try again.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy_required'] = $notVerifiedRemedyRequired;
+
+    $requirePortlandCityLimits = array_key_exists('#require_portland_city_limits', $element) && strtolower($element['#require_portland_city_limits']) == "1";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['require_portland_city_limits'] = $requirePortlandCityLimits;
+
+    $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The address you provided is outside of the Portland city limits. Please try a different address.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['out_of_bounds_message'] = $outOfBoundsMessage;
+
+    $secondaryQueries = array_key_exists('#secondary_queries', $element) ? $element['#secondary_queries'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_queries'] = $secondaryQueries;
+
+
   }
 
 }

@@ -1,7 +1,7 @@
 name: portlandor
 recipe: pantheon
 config:
-  framework: drupal9
+  framework: drupal10
   site: portlandor
   id: 5c6715db-abac-4633-ada8-1c9efe354629
   index: false
@@ -22,7 +22,6 @@ services:
     run:
       - terminus self:update
       - terminus self:plugin:reload
-      - terminus self:plugin:install pantheon-systems/terminus-secrets-plugin
       - terminus self:plugin:install pantheon-systems/terminus-composer-plugin
     xdebug: false
     config:
@@ -35,18 +34,14 @@ services:
         # Move /app/vendor/bin from the start of the path to the end so that `composer` executes /usr/local/bin/composer
         PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/.composer/vendor/bin:/srv/bin:/app/vendor/bin
   node:
-    type: node:custom
+    type: lando
     overrides:
+      user: root
       image: cimg/node:lts-browsers
       environment:
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
-    build_as_root:
-      - /bin/sh -c "mkdir /home/node"
-      - /bin/sh -c "chmod -R 777 /home/node"
+        LANDO_DROP_USER: www-data
     run_as_root:
-      - /bin/sh -c "adduser www-data node"
-      - /bin/sh -c "adduser www-data dialout"
-      - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
     build:
       - echo "Installing Node.js dependencies and building theme..."

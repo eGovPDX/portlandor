@@ -122,10 +122,6 @@ class ZendeskHandler extends WebformHandlerBase
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    $error_level = error_reporting();
-    error_reporting(E_ALL & ~E_DEPRECATED);
-
     $webform_fields = $this->getWebform()->getElementsDecoded();
     $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
     $options = [
@@ -492,9 +488,6 @@ class ZendeskHandler extends WebformHandlerBase
       $form['ticket_fork_field']['#weight'] = 5;
       $form['custom_fields']['#weight'] = 6;
 
-      // TODO: remove once zendesk PHP library is updated for PHP 8.2
-      error_reporting($error_level);
-
       return parent::buildConfigurationForm($form, $form_state);
   }
 
@@ -686,6 +679,12 @@ class ZendeskHandler extends WebformHandlerBase
         $request['requester_email'] = self::ANONYMOUS_EMAIL;
       }
 
+      // if requester_name contains an html entity, we need to html decode it
+      // so it doesn't get passed to Zendesk as an entity.
+      if (str_contains($request['requester_name'], '&')) {
+        $request['requester_name'] = html_entity_decode($request['requester_name']);
+      }
+
       $request['requester'] = $request['requester_name']
         ? [
           'name' => Utility::convertName($request['requester_name']),
@@ -715,11 +714,11 @@ class ZendeskHandler extends WebformHandlerBase
         // else use the value as the token
         $value = is_array($raw_value) ? $raw_value[0] : $raw_value;
 
-        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
+        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url or location_address custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
         // Portland instance, the resolution_url field should always have this key, but other url custom fields may need
         // to be added in the future.
-        if ($key == "6355783758871") {
+        if ($key == "6355783758871" || $key == "1500012743961") {
           $value = str_replace("&amp;", "&", $value);
           $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE

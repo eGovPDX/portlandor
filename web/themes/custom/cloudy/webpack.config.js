@@ -18,6 +18,7 @@ const config = {
     path: path.resolve(__dirname, "./dist"),
     publicPath: "/themes/custom/cloudy/dist/",
     filename: "[name].bundle.js",
+    devtoolModuleFilenameTemplate: '../[resource-path]'.replace(/.\//g, ""),
   },
   /**
    * The externals configuration option provides a way of excluding dependencies from the output bundles.
@@ -62,7 +63,9 @@ const config = {
     new StylelintPlugin(),
   ],
   optimization: {
-    minimizer: [new CssMinimizerPlugin()],
+    // ... preserves the default JS minimizer (TerserPlugin)
+    // https://webpack.js.org/configuration/optimization/#optimizationminimizer
+    minimizer: ["...", new CssMinimizerPlugin()],
   },
   module: {
     rules: [

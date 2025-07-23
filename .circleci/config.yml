@@ -1,6 +1,14 @@
 # CircleCI integration with Drupal 8.
 version: 2.1
 
+parameters:
+  pantheon-env:
+    type: string
+    default: dev
+  clone-type:
+    type: string
+    default: db-only
+
 # Common tasks defined as commands
 commands:
   checkout_source:
@@ -45,7 +53,9 @@ commands:
               ./terminus self:plugin:reload
               ./terminus self:plugin:install terminus-build-tools-plugin
             fi
-            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV && source $BASH_ENV
+            terminus plugin:reload
+            terminus plugins
       - save_cache:
           name: Save Terminus cache
           key: terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
@@ -311,16 +321,10 @@ build_and_deploy: &build_and_deploy
             last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
             lowercase_last_log="${last_log,,}"
             JIRA_STORY_ID=""
-            # Simple merge
-            # Example: Merge pull request #35 from eGovPDX/powr-152
-            if [[ $lowercase_last_log =~ (^merge pull request #[0-9]* from egovpdx\/)([^,]*) ]]; then
-              echo "Found story ID from merge commit message: '${BASH_REMATCH[2]}'";
-              JIRA_STORY_ID=${BASH_REMATCH[2]}
-            # Squash and Merge on other feature branches
-            # Should also match all other Jira project codes
-            # Example: CSM-3058 Delete all related multi-devs when a branch is merged
-            elif [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
-              echo "Found story ID from squash and merge commit message: '${BASH_REMATCH[1]}'";
+            # Expect the commit message to be like below for both squash and merge and simple merge:
+            # PGOV-1234 Delete all related multi-devs when a branch is merged
+            if [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
+              echo "Found story ID from the commit message: '${BASH_REMATCH[1]}'";
               JIRA_STORY_ID=${BASH_REMATCH[1]}
             else
               echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
@@ -400,6 +404,9 @@ basic_tests: &basic_tests
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
 
 full_regression: &full_regression
   docker:
@@ -457,6 +464,12 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        environment: development
+        environment_type: development
+        job_type: deployment
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
     # - slack/notify:
     #     branch_pattern: powr-3508
     #     event: fail
@@ -482,13 +495,13 @@ clone_live_database: &clone_live_database
         command: |
           # On Master branch, clone to Dev
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export PANTHEON_ENV="dev"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export PANTHEON_ENV="<< pipeline.parameters.pantheon-env >>"' >> $BASH_ENV && source $BASH_ENV
           else
             echo 'export PANTHEON_ENV=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
           fi
 
-          echo "Cloning DB from Live to $PANTHEON_ENV..."
-          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
+          echo "Cloning << pipeline.parameters.clone-type >> from Live to $PANTHEON_ENV..."
+          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
 
           # Reindex the Solr server. Indexing will take some time
@@ -531,6 +544,7 @@ jobs:
 orbs:
 # percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
+  jira: circleci/jira@2.2.0
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -542,6 +556,7 @@ workflows:
     jobs:
       - deploy
       - basic_tests:
+          context: eGovPDX
           requires:
             - deploy
       - full_regression:
@@ -552,9 +567,8 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1366
-  # The update database workflow runs when the scheduled pipeline named "Update Sandbox
-  # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
+  # The update database workflow runs when the following scheduled pipelines run.
+  # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
   update_database:
     when:
@@ -563,6 +577,8 @@ workflows:
         - or:
           - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
           - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Files", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
 

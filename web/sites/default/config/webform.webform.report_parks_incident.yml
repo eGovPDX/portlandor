@@ -22,7 +22,7 @@ categories: {  }
 elements: |-
   markup_intro:
     '#type': webform_markup
-    '#markup': '<p>This page is for internal PP&amp;R staff to report security, safety, property damage, and bias-hate incidents in parks. The public needing to report park incidents should call Portland Park Rangers at 503-823-1637.</p><p>Three steps for PP&amp;R staff to report an incident in parks:</p><ol><li>For emergencies, always call 911.</li><li>For park rule violations, call <a href="/parks/rangers">Portland Park Rangers</a> at <a href="tel:+1-503-823-1637">503-823-1637</a>.</li><li>In all cases, close the loop by filling out the PP&amp;R Incident Report fprm below.&nbsp;</li></ol><p>Once your form is submitted, you may be asked by the Safety team to complete additional forms for workers compensation, guest accident, or property damage. Refer to the PP&amp;R Red Book for more information.</p><p><strong>This form is for Portland Parks &amp; Recreation internal use only. Unauthorized submissions will be disregarded.</strong></p>'
+    '#markup': '<p>This page is for internal PP&amp;R staff to report security, safety, property damage, and bias-hate incidents in parks. The public needing to report park incidents should call Portland Park Rangers at 503-823-1637.</p><p>Three steps for PP&amp;R staff to report an incident in parks:</p><ol><li>For emergencies, always call 911.</li><li>For park rule violations, call <a href="/parks/rangers">Portland Park Rangers</a> at <a href="tel:+1-503-823-1637">503-823-1637</a>.</li><li>In all cases, close the loop by filling out the PP&amp;R Incident Report form below.&nbsp;</li></ol><p>Once your form is submitted, you may be asked by the Safety team to complete additional forms for workers compensation, guest accident, or property damage. Refer to the PP&amp;R Red Book for more information.</p><p><strong>This form is for Portland Parks &amp; Recreation internal use only. Unauthorized submissions will be disregarded.</strong></p>'
   container_report:
     '#type': container
     report_organization:
@@ -41,18 +41,41 @@ elements: |-
       '#description_display': before
       '#options':
         'Yes, I was injured and I called my supervisor': 'Yes, I was injured and I called my supervisor'
+        'Yes, reporting on behalf of employee': 'Yes, reporting on behalf of employee'
         'Yes, a visitor (not me)': 'Yes, a visitor (not me)'
         'No': 'No'
         'No, but it was a near-miss incident that could have resulted in an injury or illness to a worker.': 'No, but it was a near-miss incident that could have resulted in an injury or illness to a worker.'
       '#required': true
     report_supervisor_name:
       '#type': textfield
-      '#title': "Supervisor's name"
+      '#title': 'Supervisor Name'
       '#required': true
       '#states':
         visible:
-          ':input[name="report_injury"]':
-            value: 'Yes, I was injured and I called my supervisor'
+          - ':input[name="report_injury"]':
+              value: 'Yes, I was injured and I called my supervisor'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, reporting on behalf of employee'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, a visitor (not me)'
+    report_supervisor_email:
+      '#type': textfield
+      '#title': 'Supervisor Email'
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#states':
+        visible:
+          - ':input[name="report_injury"]':
+              value: 'Yes, I was injured and I called my supervisor'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, reporting on behalf of employee'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, a visitor (not me)'
     markup_urgent:
       '#type': webform_markup
       '#states':
@@ -66,9 +89,10 @@ elements: |-
       '#options':
         'Crime related': 'Crime related'
         'Environmental/infrastructure hazard': 'Environmental/infrastructure hazard'
-        'Medical event/first aid': 'Medical event/first aid'
+        'Employee Injury/First Aid Care': 'Employee Injury/First Aid Care'
         'Park violation or safety issue': 'Park violation or safety issue'
         'Trail or facility hazard': 'Trail or facility hazard'
+        'Vehicle damage or collision': 'Vehicle damage or collision'
       '#required': true
     report_issue_type_crime:
       '#type': select
@@ -102,9 +126,9 @@ elements: |-
             value: 'Environmental/infrastructure hazard'
     report_issue_type_medical:
       '#type': select
-      '#title': 'What type of medical event/first aid issue?'
+      '#title': 'What type of Employee Injury/First Aid Care'
       '#options':
-        'Initial care provided': 'Initial care provided'
+        'Initial Injury Report': 'Initial Injury Report'
         'Medica emergency (CPR, stroke, substance OD)': 'Medical emergency (CPR, stroke, substance OD)'
         'Mental health crisis': 'Mental health crisis'
         'Wellness check': 'Wellness check'
@@ -114,7 +138,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="report_issue_category"]':
-            value: 'Medical event/first aid'
+            value: 'Employee Injury/First Aid Care'
     report_issue_type_violations_safety:
       '#type': select
       '#title': 'What type of park violation or safety issue?'
@@ -126,8 +150,6 @@ elements: |-
         DOLA: DOLA
         'Drug use/paraphernalia': 'Drug use/paraphernalia'
         Hate/bias: Hate/bias
-        'Vehicle damage - employee': 'Vehicle damage - employee'
-        'Vehicle damage - public': 'Vehicle damage - public'
         'Verbal threats or harassment': 'Verbal threats or harassment'
         'Other Park Rule (Title 20) Violation': 'Other Park Rule (Title 20) Violation'
         Other: Other
@@ -147,6 +169,16 @@ elements: |-
         visible:
           ':input[name="report_issue_category"]':
             value: 'Trail or facility hazard'
+    report_issue_type_vehicle:
+      '#type': select
+      '#title': 'What type of vehicle was damaged?'
+      '#options':
+        Employee: Employee
+        Public: Public
+      '#states':
+        visible:
+          ':input[name="report_issue_category"]':
+            value: 'Vehicle damage or collision'
   container_continue:
     '#type': container
     '#states':
@@ -165,6 +197,13 @@ elements: |-
         - or
         - ':input[name="report_issue_type_trail_facility_hazard"]':
             filled: true
+        - or
+        - ':input[name="report_issue_type_vehicle"]':
+            filled: true
+    report_corrective_action:
+      '#type': textarea
+      '#title': 'Corrective actions taken as a result of this incident'
+      '#required': true
     incident_details:
       '#type': webform_section
       '#title': 'Incident details'
@@ -220,6 +259,7 @@ elements: |-
           'Community center': 'Community center'
           'Community garden': 'Community garden'
           'Office or maintenance facility': 'Office or maintenance facility'
+          'Not on PP&R Property. Mark the location on the map below': 'Not on PP&R Property. Mark the location on the map below'
         '#default_value': 'Park or natural area'
       report_location_name:
         '#type': webform_entity_select
@@ -314,21 +354,21 @@ elements: |-
       markup_pre_submit:
         '#type': webform_markup
         '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><ul><li>For guest accidents and employee injuries, additional forms are needed. Please refer to the Red Book.&nbsp;</li><li>For criminal activity, remember to also fill out an online police report.</li></ul><p><strong>Except for specific health/injury information for employees or visitors, all submissions are considered public record.</strong> If you have questions, please reach out to the safety team or a supervisor by phone before submitting.</p></div>'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Internal Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+        '#support_agent_widget_title__markup': '<h2>Internal Use Only</h2>'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
   request_ticket_id:
     '#type': hidden
     '#title': 'Zendesk Ticket ID'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Internal Use Only'
-    '#access_create_roles':
-      - authenticated
-    '#zendesk_request_number__access': false
-    '#employee_notes_panel__access': false
-    '#escalate_issue__access': false
-    '#support_agent_widget_title__markup': '<h2>Internal Use Only</h2>'
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
@@ -363,6 +403,10 @@ elements: |-
 
       {% if data.report_issue_type_trail_facility_hazard and data.report_issue_type_trail_facility_hazard is not iterable %}
         <p><strong>What type of trail/facility hazard</strong>: {{ data.report_issue_type_trail_facility_hazard }}</p>
+      {% endif %}
+
+      {% if data.report_issue_type_vehicle and data.report_issue_type_vehicle is not iterable %}
+        <p><strong>What type of vehicle</strong>: {{ data.report_issue_type_vehicle }}</p>
       {% endif %}
 
       <p><strong>Incident details</strong>:<br>{{ data.report_description }}</p>
@@ -616,7 +660,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -634,6 +678,8 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -644,7 +690,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -662,21 +708,25 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
-  email:
+      is_child_incident: ''
+      parent_ticket_id_field: ''
+  supervisor_notification:
     id: email
-    handler_id: email
-    label: 'Email confirmation to requester'
+    handler_id: supervisor_notification
+    label: 'Email to Supervisor'
     notes: ''
     status: true
     conditions:
       enabled:
-        ':input[name="contact_email"]':
+        ':input[name="report_injury"]':
+          value: 'Yes, I was injured and I called my supervisor'
+        ':input[name="report_supervisor_email"]':
           filled: true
-    weight: 2
+    weight: 4
     settings:
       states:
         - completed
-      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_mail: '[webform_submission:values:report_supervisor_email:raw]'
       to_options: {  }
       bcc_mail: ''
       bcc_options: {  }
@@ -685,12 +735,12 @@ handlers:
       from_mail: _default
       from_options: {  }
       from_name: _default
-      reply_to: ''
+      reply_to: '[webform_submission:values:contact_email:raw]'
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: '[webform_submission:values:computed_subject:raw]'
-      body: '<p>Your incident report has been received and will be triaged to get the most appropriate visibility and response.</p><p><strong>Report ID:</strong> [webform_submission:values:request_ticket_id]</p><p>[webform_submission:values:computed_issue_description:html]</p>'
+      subject: 'Park incident report - staff injury notification'
+      body: '<p>[webform_submission:values:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

@@ -121,10 +121,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    $error_level = error_reporting();
-    error_reporting(E_ALL & ~E_DEPRECATED);
-
     $webform_fields = $this->getWebform()->getElementsDecoded();
     $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
     $form_ticket_fields = [];
@@ -368,9 +364,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // display link for token variables
     $form['token_link'] = $this->token_manager->buildTreeLink();
 
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    error_reporting($error_level);
-
     return parent::buildConfigurationForm($form, $form_state);
   }
 
@@ -546,11 +539,11 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $request['custom_fields'] = [];
     if($custom_fields) {
       foreach ($custom_fields as $key => $value) {
-        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
+        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url or location_address custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
         // Portland instance, the resolution_url field should always have this key, but other url custom fields may need
         // to be added in the future.
-        if ($key == "6355783758871") {
+        if ($key == "6355783758871" || $key == "1500012743961") {
           $value = str_replace("&amp;", "&", $value);
         } // END KLUGE
 
