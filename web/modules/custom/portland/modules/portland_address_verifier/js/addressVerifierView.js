@@ -76,6 +76,74 @@ AddressVerifierView.prototype._checkIfVerificationRequired = function () {
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
 
+    // if address fields are populated on postback, automatically activate verification action
+    const $locationAddress = this.$element.find('#location_address');
+    const $locationState = this.$element.find('#location_city');
+    const $locationCity = this.$element.find('#location_state');
+    const $locationZip = this.$element.find('#location_zip');
+
+    if ($locationAddress.val() && $locationCity.val() && $locationState.val() && $locationZip.val()) {
+        this.model.fetchAutocompleteItems($locationAddress.val())
+            .done(function (locationItems) {
+                if (locationItems.length == 1) {
+                    // if single item, auto verify
+                    const item = locationItems[0];
+                    self._selectAddress(item);
+                } else if (locationItems.length > 1) {
+                    self.showSuggestionListInModal(locationItems);
+                } else {
+                    // no results, show not found modal
+                    self._showNotFoundModal();
+                }
+
+            });
+    }
+
+    AddressVerifierView.prototype.showSuggestionListInModal = function (locationItems) {
+        var self = this;
+
+        var list = self.$("<ul></ul>");
+        locationItems.map(function (item) {
+            var strData = JSON.stringify(item);
+            var listItem = self.$(`<li><a href=\"#\" class="pick btn btn-primary"
+                        data-item='${strData}'>${item.fullAddress}</a></li>`);
+            listItem.find('a.pick').on('click', function (e) {
+                e.preventDefault();
+                var item = self.$(this).data('item');
+
+                // user has clicked a suggestion in the modal dialog.......
+                self._selectAddress(item);
+
+                self.$suggestModal.dialog('close');
+            });
+            list.append(listItem);
+        });
+        var listInfo = self.$('<p><em>Select one of the verified addresses below.</em></p>');
+        self.$suggestModal.append(listInfo);
+        var notFound = self.$(`<li><a href=\"#\" class="pick-not-found btn btn-secondary not-found"
+                    data-item=''>My address is not listed</a></li>`);
+        notFound.find('a.pick-not-found').on('click', function (e) {
+            e.preventDefault();
+            self.$suggestModal.dialog('close');
+            self._showNotFoundModal();
+        });
+        list.append(notFound);
+        self.$suggestModal.append(list);
+        Drupal.dialog(self.$suggestModal, {
+            title: 'Possible matches found',
+            width: '600px',
+            buttons: [{
+                text: 'Close',
+                class: 'btn-primary',
+                click: function () {
+                    self.$(this).dialog('close');
+                }
+            }]
+        }).showModal();
+        self.$suggestModal.removeClass('visually-hidden');
+
+    }
+
     requestAnimationFrame(function () {
         const verificationStatus = self.$verificationStatus.val();
 
@@ -240,16 +308,18 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 }
 
 AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
-    for (var i = 0; i < query.capture.length; i++) {
-        let field = query.capture[i].field;
-        let path = query.capture[i].path;
-        let parse = query.capture[i].parse;
-        let omit_nulls = query.capture[i].omit_null_properties;
+    if (query.capture && query.capture.length > 0) {
+        for (var i = 0; i < query.capture.length; i++) {
+            let field = query.capture[i].field;
+            let path = query.capture[i].path;
+            let parse = query.capture[i].parse;
+            let omit_nulls = query.capture[i].omit_null_properties;
 
-        // this returns non-stringified JSON object or empty string
-        let propertyValue = AddressVerifierModel.getPropertyByPath(results, path, parse, omit_nulls);
+            // this returns non-stringified JSON object or empty string
+            let propertyValue = AddressVerifierModel.getPropertyByPathNew(results, path, parse, omit_nulls);
 
-        view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+            view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+        }
     }
 }
 
@@ -328,19 +398,22 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
 
         if (query.api) {
             // new method using array of secondary queries
+            // there may not be args or captures, just a URL we need to hit, such as for testing error codes or health checks
             let queryUrl = query.api + "?format=json";
-            for (const arg of query.api_args) {
-                const [key, value] = Object.entries(arg)[0];
+            if (query.api_args && query.api_args.length > 0) {
+                for (const arg of query.api_args) {
+                    const [key, value] = Object.entries(arg)[0];
 
-                switch (key) {
-                    case 'geometry':
-                        queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
-                        break;
-                    case 'detail_id':
-                        queryUrl += "&detail_id" + item.taxlotId;
-                        break;
-                    default:
-                        queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    switch (key) {
+                        case 'geometry':
+                            queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
+                            break;
+                        case 'detail_id':
+                            queryUrl += "&detail_id" + item.taxlotId;
+                            break;
+                        default:
+                            queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    }
                 }
             }
 
@@ -348,26 +421,20 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
             this.$.ajax({
                 url: queryUrl,
                 success: function (results, textStatus, jqXHR) {
-                    if (textStatus == "success" && results.status && results.status == "success" && !self.settings.error_test) {
+                    if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !self.settings.error_test)) {
                         self._processSecondaryResultsNew(results, self, query);
                     } else {
-                        // TODO: Put this in its own function
-                        if (!self._serverError) {
-                            self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                            self._resetVerified(self.$checkmark, self.$button);
-                            console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, results?.status, results?.message);
-                            self._serverError = 1;
-                        }
+                        const message = "API call failed";
+                        const error = new Error();
+                        self._logError(jqXHR, SERVER_ERROR_MESSAGE, results?.status || message, error);
+                        self._displayError(self, jqXHR, SERVER_ERROR_MESSAGE, results?.status || message);
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    // TODO: Put this in its own function
-                    if (!self._serverError) {
-                        self._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                        self._resetVerified(self.$checkmark, self.$button);
-                        console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR.status, textStatus, errorThrown);
-                        self._serverError = 1;
-                    }
+                    const message = "API call failed";
+                    const error = new Error(); // captures accurate stack location
+                    self._logError(jqXHR, textStatus, jqXHR?.responseText, error);
+                    self._displayError(self, jqXHR, textStatus, jqXHR?.responseText);
                 }
             });
 
@@ -379,6 +446,41 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
         }
     }
 }
+
+AddressVerifierView.prototype._displayError = function (view, jqXHR, textStatus, errorThrown) {
+    var statusCode = jqXHR ? jqXHR.status : '';
+    textStatus = textStatus == "error" ? "Unknown error" : textStatus;
+    var message = (statusCode ? statusCode + " " : "") + (errorThrown ? errorThrown : textStatus ? textStatus : "Unknown error");
+    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${message}</p>`, "Close");
+    view._resetVerified(view.$checkmark, view.$button);
+    view._serverError = 1;
+}
+
+AddressVerifierView.prototype._logError = function (jqXHR, textStatus, message, errorObj) {
+    let file = 'unknown';
+    let line = 0;
+    const stack = errorObj?.stack || '';
+
+    // Try to extract file and line number from second stack frame
+    const match = stack.split('\n')[1]?.match(/(https?:\/\/[^\s:]+):(\d+):(\d+)/);
+    if (match) {
+        file = match[1];
+        line = parseInt(match[2]);
+    }
+
+    const status = jqXHR?.status || 'Unknown';
+    const statusText = jqXHR?.statusText || 'No status text';
+    const responseText = jqXHR?.responseText || '';
+
+    const fullMessage = `${message} (${status} ${statusText}): ${textStatus}`;
+
+    AddressVerifierModel.logClientErrorToDrupal(
+        fullMessage,
+        file,
+        line,
+        "Response:\n" + responseText
+    );
+};
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     var self = view;
@@ -403,7 +505,6 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
         .done(function (locationItems) {
 
             if (locationItems.length > 0) {
-                // Pass the locationItems to the response callback
                 var list = self.$("<ul></ul>");
                 locationItems.map(function (item) {
                     var strData = JSON.stringify(item);
