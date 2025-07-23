@@ -264,7 +264,7 @@ class SmartsheetHandler extends WebformHandlerBase {
         $keys = explode('__', $field_id);
         $parent = $keys[0];
         $child = $keys[1];
-        $field_data = $fields[$parent][$child];
+        if (array_key_exists($parent, $fields) && !is_null($fields[$parent])) $field_data = $fields[$parent][$child];
       } else {
         $field_data = $fields[$field_id];
       }
