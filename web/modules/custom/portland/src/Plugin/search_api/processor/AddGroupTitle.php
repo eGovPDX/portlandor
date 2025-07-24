@@ -88,6 +88,11 @@ class AddGroupTitle extends ProcessorPluginBase {
       if(empty($group_contents)) return; // ignore nodes without a parent group
 
       $group_content = reset($group_contents); // get the first value
+      if (!$group_content->gid->entity) {
+        // Abort if the node belongs to a group that no longer exists.
+        \Drupal::logger('portland')->warning('Node @nid belongs to a group that no longer exists. Run `drush portland:delete_orphaned_content` to remove orphaned content.', ['@nid' => $node->id()]);
+        return;
+      }
       $title = $group_content->gid->entity->label->value; // get the gid
 
       $fields = $item->getFields(FALSE);
