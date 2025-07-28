@@ -184,6 +184,60 @@ elements: |-
           ':input[name="wizard_permit_need"]':
             '!value': existing_permit
       '#prepopulate': true
+    complex_permit_self_doing_work:
+      '#type': radios
+      '#title': 'Will you be the company on site performing this work?'
+      '#states':
+        visible:
+          ':input[name="contact_applicant_type"]':
+            value: fun
+          ':input[name="wizard_permit_need"]':
+            '!value': existing_permit
+      '#prepopulate': true
+      '#options': yes_no
+    markup_subcontractor_details:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="complex_permit_self_doing_work"]':
+            value: No
+      '#markup': '<p><strong>Please provide details on who will be on site working.</strong></p>'
+    contact_subcontractor_company:
+      '#type': textfield
+      '#title': 'Subcontractor company name'
+      '#states':
+        visible:
+          ':input[name="complex_permit_self_doing_work"]':
+            value: No
+      '#prepopulate': true
+    contact_subcontractor_name:
+      '#type': textfield
+      '#title': 'Subcontractor contact name'
+      '#states':
+        visible:
+          ':input[name="complex_permit_self_doing_work"]':
+            value: No
+      '#prepopulate': true
+    contact_subcontractor_phone:
+      '#type': textfield
+      '#title': 'Subcontractor phone number'
+      '#input_mask': 999-999-9999
+      '#states':
+        visible:
+          ':input[name="complex_permit_self_doing_work"]':
+            value: No
+      '#prepopulate': true
+    contact_subcontractor_email:
+      '#type': textfield
+      '#title': 'Subcontractor email'
+      '#states':
+        visible:
+          ':input[name="complex_permit_self_doing_work"]':
+            value: No
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#prepopulate': true
     support_agent_use_only:
       '#type': portland_support_agent_widget
       '#title': 'Support Agent Use Only'
@@ -2079,6 +2133,12 @@ elements: |-
           <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
           {% if data.contact_applicant_type %}
           <li>Type of Applicant: <strong>{{ webform_token('[webform_submission:values:contact_applicant_type]', webform_submission) }}</strong></li>
+          {% if data.complex_permit_self_doing_work == 'No' %}
+          <li>Subcontractor company name: <strong>{{ webform_token('[webform_submission:values:contact_subcontractor_company]', webform_submission) }}</strong></li>
+          <li>Subcontractor contact name: <strong>{{ webform_token('[webform_submission:values:contact_subcontractor_name]', webform_submission) }}</strong></li>
+          <li>Subcontractor phone: <strong>{{ webform_token('[webform_submission:values:contact_subcontractor_phone]', webform_submission) }}</strong></li>
+          <li>Subcontractor email: <strong>{{ webform_token('[webform_submission:values:contact_subcontractor_email]', webform_submission) }}</strong></li>
+          {% endif %}
           {% if data.contact_city_work_type %}
           <li>Work performed by: <strong>{{ webform_token('[webform_submission:values:contact_city_work_type]', webform_submission) }}</strong></li>
           {% endif %}
@@ -2411,7 +2471,36 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <p><a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need={{ data.wizard_permit_need }}&wizard_existing_permit_situation={{ data.wizard_existing_permit_situation }}&general_subpage={{ data.general_subpage }}&contact_full_legal_name={{ data.contact_full_legal_name|url_encode }}&contact_company={{ data.contact_company|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_applicant_type={{ data.contact_applicant_type|url_encode }}&contact_city_work_type={{ data.contact_city_work_type|url_encode }}&contact_fun_company={{ data.contact_fun_company|url_encode }}&contact_bureau={{ data.contact_bureau|url_encode }}&complex_permit_billing_info={{ data.complex_permit_billing_info|url_encode }}&complex_permit_bureau_contact={{ data.complex_permit_bureau_contact|url_encode }}&complex_permit_job_number={{ data.complex_permit_job_number|url_encode }}"><em>Submit another application</em></a></p>
+      <p><a class="btn btn-outline-primary" href="{{ path(webform_token('[webform:url]', webform_submission), {
+        query: {
+          assessment_prefilled: 1,
+          wizard_permit_need: data.wizard_permit_need,
+          wizard_existing_permit_situation: data.wizard_existing_permit_situation,
+          general_subpage: data.general_subpage,
+          contact_full_legal_name: data.contact_full_legal_name|url_encode,
+          contact_company: data.contact_company|url_encode,
+          contact_phone: data.contact_phone|url_encode,
+          contact_email: data.contact_email|url_encode,
+          contact_applicant_type: data.contact_applicant_type|url_encode,
+          contact_city_work_type: data.contact_city_work_type|url_encode,
+          contact_fun_company: data.contact_fun_company|url_encode,
+          contact_bureau: data.contact_bureau|url_encode,
+          complex_permit_billing_info: data.complex_permit_billing_info|url_encode,
+          complex_permit_bureau_contact: data.complex_permit_bureau_contact|url_encode,
+          complex_permit_job_number: data.complex_permit_job_number|url_encode,
+          complex_permit_self_doing_work: data.complex_permit_self_doing_work|url_encode
+          contact_subcontractor_company: data.contact_subcontractor_company|url_encode,
+          contact_subcontractor_name: data.contact_subcontractor_name|url_encode,
+          contact_subcontractor_phone: data.contact_subcontractor_phone|url_encode,
+          contact_subcontractor_email: data.contact_subcontractor_email|url_encode,
+        }
+      }) }}">
+      {% if data.permit_type == "fun" %}
+      Submit another application for this job
+      {% else %}
+      Submit an application for a new permit
+      {% endif %}
+      </a></p>
       {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
