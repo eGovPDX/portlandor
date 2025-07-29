@@ -2516,9 +2516,8 @@ elements: |-
       <p>Sidewalk repair notifications cannot include any street or travel lane closures. For these closures, please submit a separate permit application by using the button below.</p>
       {% endif %}
       {% if data.wizard_permit_need != "general" and source_url %}
-      <p><a class="btn btn-outline-primary" href="{{ source_url }}?{{ {
+      {% set app_url = source_url ~ "?" ~ ({
           assessment_prefilled: 1,
-          contact_prefilled: (data.permit_type == "fun" or data.permit_type == "sidewalk_repair") ? 1 : "",
           wizard_permit_need: data.permit_type == "sidewalk_repair" ? "traffic" : data.wizard_permit_need,
           wizard_existing_permit_situation: data.wizard_existing_permit_situation,
           general_subpage: data.general_subpage,
@@ -2538,9 +2537,8 @@ elements: |-
           contact_subcontractor_name: data.contact_subcontractor_name|url_encode,
           contact_subcontractor_phone: data.contact_subcontractor_phone|url_encode,
           contact_subcontractor_email: data.contact_subcontractor_email|url_encode,
-        }|filter((v) => v is not empty)|map((v, k) => k ~ "=" ~ v)|join("&")
-      }}">
-      {% endif %}
+        }|filter((v) => v is not empty)|map((v, k) => k ~ "=" ~ v)|join("&")) %}
+      <p><a class="btn btn-primary" href="{{ app_url }}{% if data.permit_type == "fun" or data.permit_type == "sidewalk_repair" %}&contact_prefilled=1{% endif %}">
       {% if data.permit_type == "fun" %}
       Submit another application for this job
       {% elseif data.permit_type == "sidewalk_repair" %}
@@ -2549,6 +2547,12 @@ elements: |-
       Submit an application for a new permit
       {% endif %}
       </a></p>
+      {% endif %}
+      {% if data.permit_type == "fun" %}
+      <p><a class="btn btn-outline-primary" href="{{ app_url }}">
+      Submit an application for a new job
+      </a></p>
+      {% endif %}
       {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
