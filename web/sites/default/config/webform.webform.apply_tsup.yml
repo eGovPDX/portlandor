@@ -206,6 +206,7 @@ elements: |-
           ':input[name="complex_permit_self_doing_work"]':
             value: No
       '#markup': '<p><strong>Please provide details on who will be on site working.</strong></p>'
+      '#required': true
     contact_subcontractor_company:
       '#type': textfield
       '#title': 'Subcontractor company name'
@@ -214,6 +215,7 @@ elements: |-
           ':input[name="complex_permit_self_doing_work"]':
             value: No
       '#prepopulate': true
+      '#required': true
     contact_subcontractor_name:
       '#type': textfield
       '#title': 'Subcontractor contact name'
@@ -231,6 +233,7 @@ elements: |-
           ':input[name="complex_permit_self_doing_work"]':
             value: No
       '#prepopulate': true
+      '#required': true
     contact_subcontractor_email:
       '#type': textfield
       '#title': 'Subcontractor email'
@@ -238,7 +241,6 @@ elements: |-
         visible:
           ':input[name="complex_permit_self_doing_work"]':
             value: No
-      '#required': true
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
       '#prepopulate': true
@@ -2510,11 +2512,14 @@ elements: |-
     '#mode': html
     '#template': |-
       {% set source_url = webform_token('[webform_submission:source-url:path]', webform_submission) %}
+      {% if data.permit_type == "sidewalk_repair" %}
+      <p>Sidewalk repair notifications cannot include any street or travel lane closures. For these closures, please submit a separate permit application by using the button below.</p>
+      {% endif %}
       {% if data.wizard_permit_need != "general" and source_url %}
       <p><a class="btn btn-outline-primary" href="{{ source_url }}?{{ {
           assessment_prefilled: 1,
           contact_prefilled: (data.permit_type == "fun" or data.permit_type == "sidewalk_repair") ? 1 : "",
-          wizard_permit_need: data.wizard_permit_need,
+          wizard_permit_need: data.permit_type == "sidewalk_repair" ? "traffic" : data.wizard_permit_need,
           wizard_existing_permit_situation: data.wizard_existing_permit_situation,
           general_subpage: data.general_subpage,
           contact_full_legal_name: data.contact_full_legal_name|url_encode,
@@ -2538,6 +2543,8 @@ elements: |-
       {% endif %}
       {% if data.permit_type == "fun" %}
       Submit another application for this job
+      {% elseif data.permit_type == "sidewalk_repair" %}
+      Submit an application for street or lane closures
       {% else %}
       Submit an application for a new permit
       {% endif %}
@@ -2582,8 +2589,19 @@ elements: |-
       {% elseif data.permit_type == "fun" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for notifying Temporary Street Use Permitting about your upcoming work.</p>
-        <p>Please allow the necessary processing time as outlined on your FUN permit.</p>
         <p>If your work is along a <a href="https://ride.trimet.org/home/?tool=routes#/">TriMet transit route</a>, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:bsc@trimet.org">bsc@trimet.org</a>.</p>
+
+        <h2>Processing Wait Times</h2>
+        <ul>
+        <li><strong>If you submitted a TCP that has not yet been reviewed by a PBOT Traffic Engineer:</strong> 6 Business Days</li>
+        <ul><li><em>Following your submittal, you will receive an approved TCP from one of our traffic engineers; do not proceed prior to this.</em></li></ul>
+        <li><strong>If your request has metered parking:</strong> 5 Business Days</li>
+        <ul><li><em>Following your submittal, you will receive a copy of the metered parking reservation details from us; do not proceed prior to this.</em></li></ul>
+        <li><strong>All other requests:</strong> 2 Business Days</li>
+        <ul><li>All other requests are subject to 2 business days of review. We will not respond unless there is an issue or further coordination is needed.</li></ul>
+        </ul>
+
+        <p><strong>Do Not implement any closures before the required processing time.</strong></p>
       {% elseif data.permit_type == "sidewalk_repair" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for notifying Temporary Street Use Permitting about your upcoming work. You will NOT receive communication from us if there are no conflicts with your proposed work. If there is a conflict with the proposed work, someone will contact you within 5 business days. No work should commence within 5 business days of this notification.</p>
