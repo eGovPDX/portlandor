@@ -1288,15 +1288,23 @@ elements: |-
           '#type': number
           '#title': 'How many parking spaces will you be impacting?'
           '#states':
+            required:
+              - ':input[name="complex_permit_closure_type[parking]"]':
+                  checked: true
+              - or
+              - ':input[name="wizard_permit_need"]':
+                  value: parking
             visible:
               - ':input[name="complex_permit_closure_type[parking]"]':
                   checked: true
               - or
               - ':input[name="wizard_permit_need"]':
                   value: parking
+              - or
+              - ':input[name="permit_type"]':
+                  value: sidewalk_repair
           '#description_display': before
-          '#required': true
-          '#min': 1
+          '#min': 0
           '#step': 1
         complex_permit_parking_description:
           '#type': textfield
@@ -1309,6 +1317,10 @@ elements: |-
               - or
               - ':input[name="wizard_permit_need"]':
                   value: parking
+              - or
+              - ':input[name="complex_permit_parking_spaces_affected"]':
+                  value:
+                    greater: 0
           '#required': true
         complex_permit_parking_operation_hours:
           '#type': textfield
@@ -1321,6 +1333,10 @@ elements: |-
               - or
               - ':input[name="wizard_permit_need"]':
                   value: parking
+              - or
+              - ':input[name="complex_permit_parking_spaces_affected"]':
+                  value:
+                    greater: 0
           '#required': true
         complex_permit_bds_associated:
           '#type': webform_radios_other
@@ -1423,8 +1439,7 @@ elements: |-
                       value:
                         '!pattern': trafficSignals
                     ':input[name="complex_permit_lanes_affected"]':
-                      value:
-                        equal: 1
+                      value: 1
                     ':input[name="complex_permit_closure_type[street]"]':
                       unchecked: true
                   - or
@@ -1659,13 +1674,6 @@ elements: |-
           '#type': textarea
           '#title': 'Additional Info'
           '#description': "<p>Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above.</p>"
-        markup_sidewalk_repair_parking:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="permit_type"]':
-                value: sidewalk_repair
-          '#markup': '<p>If you need to reserve any parking adjacent to your jobsite, you may do so via <a target="_blank" href="http://www.tsup.info">separate application at www.tsup.info</a>.</p>'
         container_tocs:
           '#type': container
           '#states':
@@ -2313,12 +2321,10 @@ elements: |-
           {% if data.complex_permit_closure_type %}
           <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
           <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) ?: '0' }}</strong></li>
-          {% if "parking" in data.complex_permit_closure_type %}
-          <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
-          <li>Hours of operation for parking: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_operation_hours]', webform_submission) }}</strong></li>
-          {% endif %}
           {% elseif data.wizard_permit_need == "parking" %}
           <li>Type of closure(s): <strong>Parking</strong></li>
+          {% endif %}
+          {% if data.complex_permit_parking_spaces_affected > 0 %}
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
           <li>Hours of operation for parking: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_operation_hours]', webform_submission) }}</strong></li>
           {% endif %}
