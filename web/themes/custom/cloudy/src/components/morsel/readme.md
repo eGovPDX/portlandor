@@ -16,7 +16,7 @@
 - `updated_on`: string - An updated date that supersedes the posted_on value
 - `image`: string - Pass in the rendered entity from Drupal
 - `text`: string - The content summary
-- `type`: string - The content/node/group type the content belongs to
+- `items`: array - An array of render arrays to render inside the morsel (typically used for badges)
 
 ## Usage
 
