@@ -55,14 +55,17 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           return;
         }
 
-        accordion.insertAdjacentHTML(
-          "afterbegin",
-          `
+        // Skip adding expand-all button if it's been overridden with the class "no-expand-all"
+        if (!accordion.classList.contains("no-expand-all")) {
+          accordion.insertAdjacentHTML(
+            "afterbegin",
+            `
             <button type="button" class="toggle-accordion btn btn-link d-block ms-auto mb-1 p-0" aria-expanded="false" aria-controls="${accordionPanelIds.join(
               " ",
-            )}">${this.STR_EXPAND_ALL}</a>
+            )}">${this.STR_EXPAND_ALL}</button>
           `,
-        );
+          );
+        }
         accordion.addEventListener("click", (e) => {
           const toggleControl = e.target;
           if (!toggleControl.classList.contains("toggle-accordion")) return;
