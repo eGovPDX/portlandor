@@ -272,6 +272,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     foreach ($column_mappings as $col_id => $field_id) {
       // skip empty mappings
       if ($field_id === '') continue;
+      $field_data = null;
 
       // if $field_id is a sub-element, the parent/sub relationship will be denoted with a double underscore (verified_address__location_address)
       if (str_contains($field_id, '__')) {
@@ -291,7 +292,7 @@ class SmartsheetHandler extends WebformHandlerBase {
             'values' => $field_data,
           ],
         ];
-      } else {
+      } else if (!is_null($field_data)) {
         $cells[] = [
           'columnId' => (int) $col_id,
           'strict' => false,
