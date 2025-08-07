@@ -68,7 +68,7 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
       $entity->setRevisionCreationTime(\Drupal::time()->getRequestTime());
       $entity->setRevisionUserId(\Drupal::currentUser()->id());
       if ($entity instanceof RevisionLogInterface) {
-        $entity->setRevisionLogMessage('Bulk operation: published by '. $user_display_name);
+        $entity->setRevisionLogMessage('Bulk operation: unpublished by '. $user_display_name);
       }
     }
 
