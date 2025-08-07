@@ -39,9 +39,6 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
   attach(context, drupalSettings) {
     const minRows = drupalSettings?.portland?.cloudyExpandAllAccordion?.minRows ?? 0;
     window.addEventListener("DOMContentLoaded", () => {
-      const hashId = location.hash.slice(1);
-      if (hashId) this.scrollToPanelContainingId(hashId);
-
       once("cloudyExpandAllAccordion", "div.aria-accordion", context).forEach((accordion) => {
         const accordionPanelIds = Array.from(
           accordion.querySelectorAll("div.aria-accordion__panel"),
@@ -75,6 +72,9 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           toggleControl.textContent = isExpanding ? this.STR_COLLAPSE_ALL : this.STR_EXPAND_ALL;
         });
       });
+
+      const hashId = location.hash.slice(1);
+      if (hashId) this.scrollToPanelContainingId(hashId);
     });
 
     window.addEventListener("click", (e) => {
