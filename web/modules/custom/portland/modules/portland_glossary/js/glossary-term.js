@@ -32,7 +32,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               const textNode = document.createTextNode(link.textContent.trim());
               link.replaceWith(textNode);
             }
-
             return;
           }
 
@@ -45,11 +44,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const seeAlsoLinks =
             Array.isArray(termData.see_also) && termData.see_also.length
               ? `<div class="term-see-also"><strong>${Drupal.t('See also:')}</strong> ` +
-                termData.see_also
-                  .map(
-                    (item) => `<a href="${item.url}">${item.title}</a>`,
-                  )
-                  .join('') +
+                termData.see_also.map((item) => `<a href="${item.url}">${item.title}</a>`).join('') +
                 `</div>`
               : '';
 
@@ -91,10 +86,29 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           `;
 
           link.parentNode.insertBefore(wrapper, link);
-          link.setAttribute('aria-details', tooltipId);
-          wrapper.prepend(link);
 
-          const reference = link;
+          const isMobileDevice = () =>
+            window.matchMedia('(pointer: coarse)').matches ||
+            'ontouchstart' in window ||
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          const isMobile = isMobileDevice();
+
+          let reference;
+          if (!hasLongDefinition) {
+            // Replace <a> with <span> to keep appearance but remove link
+            reference = document.createElement('span');
+            reference.className = link.className;
+            reference.innerHTML = link.innerHTML;
+            reference.setAttribute('data-entity-substitution', 'glossary_term');
+            reference.setAttribute('tabindex', '0');
+            link.replaceWith(reference);
+          } else {
+            reference = link;
+          }
+
+          wrapper.prepend(reference);
+          reference.setAttribute('aria-details', tooltipId);
+
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
           const closeBtn = tooltip.querySelector('.glossary-close');
@@ -102,16 +116,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;
-
-          // Detect mobile/touch device
-          const isMobileDevice = () =>
-            window.matchMedia('(pointer: coarse)').matches ||
-            'ontouchstart' in window ||
-            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-              navigator.userAgent,
-            );
-
-          const isMobile = isMobileDevice();
 
           requestAnimationFrame(() => {
             const popperInstance = createPopper(reference, tooltip, {
