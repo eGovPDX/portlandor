@@ -54,7 +54,7 @@ elements: |-
         visible:
           ':input[name="apply_needs_help"]':
             value: 'Yes'
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Following the completion of this form, you will see a link to book your appointment. Please use this to schedule a time and date for your phone consultation. We will also provide the link in your confirmation email.</p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Please complete this form. Once you submit the form you will see a link to book your appointment.</p></div>'
     horizontal_rule_01:
       '#type': webform_horizontal_rule
   section_tree_selection:
@@ -65,7 +65,7 @@ elements: |-
       '#markup': '<p>We are offering many high-quality tree species this year. <a href="https://www.portland.gov/trees/tree-planting/documents/2024-yard-tree-giveaway-species-list-english/download" target="_blank">Check out the size and characteristics of our trees here.</a></p><p>Yard trees should be planted a minimum of 10 feet from your house, two feet from property lines, and five feet from a driveway. For advice on where to plant your tree, see <a href="https://www.arborday.org/trees/righttreeandplace/" target="_blank">Right Tree, Right Place from the Arbor Day Foundation</a></p><p><strong>Please select your tree species below.</strong></p><p><strong><u>Every address is eligible for 3 trees.</u></strong></p>'
     apply_fulfilling_permit:
       '#type': checkbox
-      '#title': 'Yard Tree Giveaway trees can now be used to fulfill a removal/replant permit. <strong>Check here if these trees will be used to fulfill a permit.</strong>'
+      '#title': 'Yard Tree Giveaway trees can now be used to fulfill a removal/replant permit. <strong>Check here if any of these trees will be used to fulfill a permit.</strong>'
     markup_permit_disclaimer:
       '#type': webform_markup
       '#states':
@@ -146,6 +146,16 @@ elements: |-
       '#secondary_query_capture_property': features.attributes.MAPLABEL
       '#secondary_query_capture_field': location_capture_field
       '#require_portland_city_limits': 0
+    apply_want_yard_sign:
+      '#type': checkbox
+      '#states':
+        visible:
+          ':input[name="apply_location[location_verification_status]"]':
+            value: Verified
+          ':input[name="apply_location[location_capture_field]"]':
+            value:
+              pattern: '^(Argay Terrace|Boise|Buckman|Centennial|Cully|East Columbia|Eliot|Glenfair|Hayden Island|Hazelwood|Humboldt|Hollywood|Kerns|King|Lloyd|Montavilla|Mill Park|Mt. Scott-Arleta|Overlook|Parkrose|Parkrose Heights|Piedmont|Portsmouth|Powellhurst-Gilbert|Russell|South Tabor|St. Johns|Sumner|Sunderland|Wilkes|Woodlawn)$'
+      '#title': '<strong>Check here if you want a yard sign celebrating trees!</strong> <em>* Available while supplies last.</em>'
   horizontal_rule_04:
     '#type': webform_horizontal_rule
   section_receiving_trees:
@@ -171,7 +181,7 @@ elements: |-
       '#options':
         'Sat, Sept 27 - SE Portland - Mt Tabor Community Garden': '<strong>Sat, Sept 27</strong> - SE Portland - Mt Tabor Community Garden -- Enter at SE 64th Ave & SE Lincoln St'
         'Sat, Oct 4 - N Portland - Farragut City Park': '<strong>Sat, Oct 4</strong> - N Portland - Farragut City Park -- Enter at N Kerby Ave & N Farragut St'
-        'Sat, Oct 11 - SE Portland - Gilbert Heights': '<strong>Sat, Oct 11</strong> - SE Portland - Gilbert Heights -- 12839 SE Holgate Blvd'
+        'Sat, Oct 11 - SE Portland - Gilbert Heights Elementary School': '<strong>Sat, Oct 11</strong> - SE Portland - Gilbert Heights Elementary School -- 12839 SE Holgate Blvd'
         'Sat, Oct 18 - NE Portland - Sacajawea Head Start': '<strong>Sat, Oct 18</strong> - NE Portland - Sacajawea Head Start -- 4800 NE 74th Ave'
         'Sat, Oct 25 - SE Portland - OMSI': '<strong>Sat, Oct 25</strong> - SE Portland - OMSI -- Enter at SE Water Ave & SE 2nd Pl N Portland'
         'Sat, Nov 1 - SE Portland - Mt Tabor Community Garden': '<strong>Sat, Nov 1</strong> - SE Portland - Mt Tabor Community Garden -- Enter at 64th Ave & Lincoln St'
@@ -430,8 +440,11 @@ elements: |-
       <p><a class="btn btn-primary" href="https://outlook.office365.com/book/FY26YardTreeGiveawayPhoneConsultations@portlandoregon.gov/?ismsaljsauthenabled"><strong>Book your phone consultation here</strong></a></p>
       {% endif %}
     '#whitespace': spaceless
+  hide_events:
+    '#type': hidden
+    '#title': 'Hidden - Hide Events (comma delimited, substring search)'
 css: ''
-javascript: "(() => {\r\n  Drupal.behaviors.yardTreeGiveaway = {\r\n    updateTimes(form, newEventValue) {\r\n      const date = newEventValue.split(\", \")[1]?.split(\" - \")[0];\r\n      if (!date) return;\r\n      const pickupTimes = form.querySelectorAll(\r\n        'select[name=\"apply_pickup_time\"] option'\r\n      );\r\n\r\n      pickupTimes.forEach((option) => {\r\n        if (option.value.includes(date)) {\r\n          option.removeAttribute(\"disabled\");\r\n          option.removeAttribute(\"hidden\");\r\n        } else {\r\n          option.setAttribute(\"disabled\", \"\");\r\n          option.setAttribute(\"hidden\", \"\");\r\n        }\r\n      });\r\n    },\r\n\r\n    attach(context) {\r\n      once(\"yardTreeGiveaway\", \".webform-submission-form\", context).forEach(\r\n        (form) => {\r\n          const eventRadios = form.querySelectorAll('input[name=\"apply_pickup_event\"]');\r\n          const currentEventValue = document.querySelector('input[name=\"apply_pickup_event\"]:checked')?.value;\r\n          if (currentEventValue) this.updateTimes(form, currentEventValue);\r\n          \r\n          // Hide chestnut except for 1st tree\r\n          form.querySelectorAll(':not([name=apply_tree_1]) > option[value=\"Colossal chestnut and Marrone Di val di chestnut\"]').forEach((el) => el.remove());\r\n\r\n          eventRadios.forEach((radio) => {\r\n            radio.addEventListener(\"change\", (e) => {\r\n              form.querySelector('select[name=\"apply_pickup_time\"]').value = \"\";\r\n              this.updateTimes(form, e.target.value);\r\n            });\r\n          });\r\n        }\r\n      );\r\n    },\r\n  };\r\n})();\r\n"
+javascript: "(() => {\r\n  Drupal.behaviors.yardTreeGiveaway = {\r\n    updateTimes(form, newEventValue) {\r\n      const date = newEventValue.split(\", \")[1]?.split(\" - \")[0];\r\n      if (!date) return;\r\n      const pickupTimes = form.querySelectorAll(\r\n        'select[name=\"apply_pickup_time\"] option'\r\n      );\r\n\r\n      pickupTimes.forEach((option) => {\r\n        if (option.value.includes(date)) {\r\n          option.removeAttribute(\"disabled\");\r\n          option.removeAttribute(\"hidden\");\r\n        } else {\r\n          option.setAttribute(\"disabled\", \"\");\r\n          option.setAttribute(\"hidden\", \"\");\r\n        }\r\n      });\r\n    },\r\n\r\n    attach(context) {\r\n      once(\"yardTreeGiveaway\", \".webform-submission-form\", context).forEach(\r\n        (form) => {\r\n          // a comma-delimited list of events to hide if they have a substring match\r\n          const hideEvents = form.querySelector('input[name=\"hide_events\"]').value?.split(',');\r\n          const eventRadios = form.querySelectorAll('input[name=\"apply_pickup_event\"]');\r\n          const currentEventValue = form.querySelector('input[name=\"apply_pickup_event\"]:checked')?.value;\r\n          if (currentEventValue) this.updateTimes(form, currentEventValue);\r\n          \r\n          // Hide chestnut except for 1st tree\r\n          form.querySelectorAll(':not([name=apply_tree_1]) > option[value=\"Colossal chestnut and Marrone Di val di chestnut\"]').forEach((el) => el.remove());\r\n\r\n          eventRadios.forEach((radio) => {\r\n            // if the hidden events array matches this radio button, remove it.\r\n            if (hideEvents.some((str) => str.trim() && radio.value.includes(str))) {\r\n              radio.closest('.js-form-item').remove();\r\n              return;\r\n            }\r\n\r\n            radio.addEventListener(\"change\", (e) => {\r\n              form.querySelector('select[name=\"apply_pickup_time\"]').value = \"\";\r\n              this.updateTimes(form, e.target.value);\r\n            });\r\n          });\r\n        }\r\n      );\r\n    },\r\n  };\r\n})();\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -636,6 +649,7 @@ handlers:
         4772538758156164: apply_tree_2
         3813764618735492: apply_tree_3
         1551097487118212: apply_fulfilling_permit
+        3651237291184004: apply_want_yard_sign
         3928113828024196: apply_pickup_time
         831889084206980: apply_needs_help
         7587288525262724: apply_tree_delivery
