@@ -448,8 +448,10 @@ elements: |-
         - ':input[name="request_purpose_individual"]':
             value: 'Provide comment or feedback'
     feedback_topics_entity:
-      '#type': webform_entity_checkboxes
-      '#title': 'Choose one or more topics'
+      '#type': checkboxes
+      '#title': 'Chose one or more topics'
+      '#prepopulate': true
+      '#options': feedback_topics
       '#options_display': two_columns
       '#target_type': taxonomy_term
       '#selection_handler': views
@@ -962,6 +964,9 @@ elements: |-
         - or
         - ':input[name="request_purpose_individual"]':
             value: 'Submit a media inquiry'
+        - or
+        - ':input[name="request_purpose"]':
+            unchecked: true
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -1079,21 +1084,21 @@ elements: |-
         {% if data.request_district == "Not sure..." %}
           {% set subject = "Feedback for District " ~ data.report_location.location_region_id %}
         {% elseif data.request_district %}
-          {% set subject = "Feedback for District " ~ data.request_district %}  
+          {% set subject = "Feedback for District " ~ data.request_district %}
         {% endif %}
 
       {% elseif data.request_purpose == "Provide comment or feedback to the full City Council" %}
         {% set subject = "Feedback for City Council" %}
-        
+
       {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback" %}
         {% set subject = "Feedback for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
-        
+
       {% elseif data.request_purpose == "Request a meeting/event participation" or data.request_purpose_individual == "Request a meeting" %}
         {% set subject = "Meeting request for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
-        
+
       {% elseif data.request_purpose == "Submit a media inquiry" or data.request_purpose_individual == "Submit a media inquiry" %}
         {% set subject = "Media inquiry for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
-        
+
       {% endif %}
 
       {% if data.contact_name %}
@@ -1104,6 +1109,20 @@ elements: |-
       {% endif %}
 
       {{ subject }}
+    '#whitespace': spaceless
+  computed_mayor_cc:
+    '#type': webform_computed_twig
+    '#title': 'Computed Mayor Courtesy Copy Indicator'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {# only set this if the mayor is not the primary recipient #}
+      {% if data.request_recipient != "Mayor Keith Wilson" %}
+        {% set options = data.feedback_topics_entity %}
+        {% if "Federal government policy" in data.feedback_topics_entity %}
+            (CC to Mayor)
+        {% endif %}
+      {% endif %}
     '#whitespace': spaceless
   computed_confirmation_message:
     '#type': webform_computed_twig
@@ -1141,7 +1160,7 @@ elements: |-
           data.recipient == "Councilor Jamie Dunphy" or
           data.request_recipient == "Councilor Jamie Dunphy" or
           data.recipient == "Councilor Loretta Smith" or
-          data.request_recipient == "Councilor Loretta Smith" or 
+          data.request_recipient == "Councilor Loretta Smith" or
           data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 1 or
           data.report_location.location_region_id == 1 %}Yes{% endif %}
@@ -1157,7 +1176,7 @@ elements: |-
           data.recipient == "Councilor Elana Pirtle-Guiney" or
           data.request_recipient == "Councilor Elana Pirtle-Guiney" or
           data.recipient == "Councilor Sameer Kanal" or
-          data.request_recipient == "Councilor Sameer Kanal" or 
+          data.request_recipient == "Councilor Sameer Kanal" or
           data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 2 or
           data.report_location.location_region_id == 2 %}Yes{% endif %}
@@ -1173,7 +1192,7 @@ elements: |-
           data.recipient == "Councilor Steve Novick" or
           data.request_recipient == "Councilor Steve Novick" or
           data.recipient == "Councilor Tiffany Koyama Lane" or
-          data.request_recipient == "Councilor Tiffany Koyama Lane" or 
+          data.request_recipient == "Councilor Tiffany Koyama Lane" or
           data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 3 or
           data.report_location.location_region_id == 3 %}Yes{% endif %}
@@ -1189,7 +1208,7 @@ elements: |-
           data.recipient == "Councilor Mitch Green" or
           data.request_recipient == "Councilor Mitch Green" or
           data.recipient == "Councilor Olivia Clark" or
-          data.request_recipient == "Councilor Olivia Clark" or 
+          data.request_recipient == "Councilor Olivia Clark" or
           data.request_purpose == "Provide comment or feedback to the full City Council" or
           data.request_district == 4 or
           data.report_location.location_region_id == 4 %}Yes{% endif %}
@@ -1511,16 +1530,23 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="computed_send_to_mayor"]':
-          value: 'Yes'
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+          ':input[name="computed_send_to_mayor"]':
+            value: 'Yes'
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+          ':input[name="feedback_topics_entity[Federal government policy]"]':
+            checked: true
     weight: 0
     settings:
       requester_name: contact_name
       requester_email: contact_email_address
-      subject: '[webform_submission:values:computed_subject]'
-      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n<div>[webform_submission:values:html]</div>"
+      subject: '[webform_submission:values:computed_subject] [webform_submission:values:computed_mayor_cc]'
+      comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
