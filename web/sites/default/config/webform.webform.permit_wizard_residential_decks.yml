@@ -15,10 +15,10 @@ uid: 60
 template: false
 archive: false
 id: permit_wizard_residential_decks
-title: 'Permit Wizard - Residential Decks'
+title: 'Permit Guide - Residential Decks'
 description: ''
 categories:
-  - 'Permit Wizard'
+  - 'Permit Guide'
 elements: |-
   test:
     '#type': hidden
@@ -26,29 +26,9 @@ elements: |-
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
-  welcome_back:
-    '#type': webform_section
-    '#title': 'Welcome back!'
-    '#states':
-      visible:
-        ':input[name="returning_user"]':
-          filled: true
-    '#attributes':
-      class:
-        - mb-10
-        - bg-info
-        - p-3
-    '#title_attributes':
-      class:
-        - mt-0
-        - mb-0
-    markup_welcome_back:
-      '#type': webform_markup
-      '#wrapper_attributes':
-        class:
-          - mb-0
-          - mt-1
-      '#markup': '<p class="mb-0">This guide was created based on project details you previously provided. If you need to make changes, use the "Edit project details" button at the bottom of the page.</p>'
+  ajax_indicator:
+    '#type': portland_ajax_indicator
+    '#title': 'Ajax indicator'
   container_project_details:
     '#type': container
     '#states':
@@ -59,7 +39,7 @@ elements: |-
           unchecked: true
     section_location:
       '#type': webform_section
-      '#title': Location
+      '#title': 'Project Details'
       '#attributes':
         class:
           - mb-10
@@ -107,7 +87,7 @@ elements: |-
               - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
             capture:
               - path: general.percent_slope
-                field: hidden_percent_slope
+                field: q4_project_deck_site_slope
       hidden_zoning_overlays:
         '#type': hidden
         '#title': 'Hidden Zoning Overlays'
@@ -123,9 +103,6 @@ elements: |-
       hidden_historic_resource:
         '#type': hidden
         '#title': 'Hidden Historic Resource'
-      hidden_percent_slope:
-        '#type': hidden
-        '#title': 'Hidden Percent Slope'
       markup_01:
         '#type': webform_markup
         '#states':
@@ -135,26 +112,14 @@ elements: |-
             ':input[name="edit_my_project[Edit my project]"]':
               unchecked: true
         '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
-      markup_02:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="q1_project_address[location_verification_status]"]':
-              empty: true
-            ':input[name="edit_my_project[Edit my project]"]':
-              checked: true
-        '#markup': '<p><strong>Please re-verify your address to continue.</strong></p>'
     section_property_details:
       '#type': webform_section
       '#title': 'Property Details'
       '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
-      '#states':
-        invisible:
-          ':input[name="q1_project_address[location_verification_status]"]':
-            empty: true
       '#attributes':
         class:
           - mb-10
+          - d-none
       property_id:
         '#type': webform_computed_twig
         '#title': 'Property ID'
@@ -196,27 +161,10 @@ elements: |-
         '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
         '#whitespace': trim
         '#ajax': true
-      q4_project_deck_site_slope:
-        '#type': webform_computed_twig
-        '#title': 'What is the slope of the property?'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': form
-        '#mode': text
-        '#template': '{{ data.hidden_percent_slope }}'
-        '#whitespace': trim
-        '#ajax': true
-      slope_display:
-        '#type': webform_computed_twig
-        '#title': 'What is the slope of the property?'
-        '#title_display': inline
-        '#display_on': form
-        '#template': '{{ data.hidden_percent_slope }}%'
-        '#ajax': true
     section_project_details:
       '#type': webform_section
       '#title': 'Project Details'
+      '#title_display': invisible
       '#states':
         invisible:
           ':input[name="q1_project_address[location_verification_status]"]':
@@ -226,7 +174,7 @@ elements: |-
           - mb-10
       q2_project_deck_height:
         '#type': number
-        '#title': 'How high off the ground is the highest point of the deck’s walking surface?'
+        '#title': "How high off the ground is the highest point of the deck's walking surface?"
         '#description': '<p>Measure (in inches) 3 feet from where the perimeter of the deck will be.</p>'
         '#description_display': before
         '#field_suffix': inches
@@ -239,15 +187,34 @@ elements: |-
           'A hired contractor': 'A hired contractor'
         '#required': true
         '#prepopulate': true
+      computed_slope_message:
+        '#type': webform_computed_twig
+        '#title': 'Slope message'
+        '#title_display': none
+        '#template': |-
+          <label for="edit-q4-project-deck-site-slope" class="js-form-required form-required">{{ 'What is the slope of the worksite?'|t }}</label>
+          <div id="edit-q4-project-deck-site-slope--description" class="webform-element-description">
+          {{ 'Using data from'|t }} <a href="https://www.portlandmaps.com/search/?query={{ data.q1_project_address.location_address }}" target="_blank">Portland Maps</a>, {{ 'we\'ve determined that the average slope of your property is'|t }} {{ data.q4_project_deck_site_slope }}%. {{ 'If the slope of the worksite is more or less than that, please enter the new number as a percentage.'|t }} <a href="/ppd/glossary-term/slope" target="_blank">{{ 'Learn more about slope'|t }}</a>.
+          </div>
+          </p>
+        '#ajax': true
+      q4_project_deck_site_slope:
+        '#type': number
+        '#title': 'What is the slope of the worksite?'
+        '#title_display': none
+        '#description_display': invisible
+        '#field_suffix': '%'
+        '#required': true
       q5_project_deck_near_waterbody:
         '#type': radios
         '#title': 'Is there a wetland or body of water near the worksite?'
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q6_project_waterbody_distance:
         '#type': number
         '#title': 'How far away is the wetland or body of water from the worksite?'
         '#description': '<p>Enter the distance in feet.</p>'
+        '#description_display': before
         '#field_suffix': feet
         '#required': true
         '#states':
@@ -257,29 +224,28 @@ elements: |-
       q7_project_using_powered_machinery:
         '#type': radios
         '#title': 'Will your project temporarily disturb more than 500 square feet of the ground?'
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q8_project_deck_single_level:
         '#type': radios
-        '#title': 'Are you building a single-level deck?'
+        '#title': 'Will the deck have only one level?'
         '#description': "<p>A single-level deck is one flat surface, usually connected to the house. If your deck will have multiple sections at different heights, it's not single-level.</p>"
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
-        '#prepopulate': true
       q9_project_deck_connected_to_house:
         '#type': radios
         '#title': 'Will the deck connect to the outside wall of the house?'
         '#description': '<p>This means the deck will be physically attached to the house, not free-standing.</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q10_project_deck_finish:
         '#type': radios
         '#title': 'Will you add tile, concrete, or other finish materials on top of the deck?'
         '#description': '<p>Some decks are designed to hold finish materials like tile or concrete. These materials add extra weight, so your deck may need special design or permits.</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#prepopulate': true
       q11_project_deck_rectangular:
@@ -287,7 +253,7 @@ elements: |-
         '#title': 'Will the deck be rectangular in shape?'
         '#description': '<p>This means your deck is shaped like a rectangle — not an L-shape, hexagon, or something more complex.</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#prepopulate': true
       q12_project_deck_one_row_posts:
@@ -295,7 +261,7 @@ elements: |-
         '#title': 'Will the deck have just one row of posts supporting the outer edge?'
         '#description': '<p>This means the joists (the boards under the deck that support the surface) run straight from the house to a single beam (a heavy board that rests on posts). This is called a single-span deck, and the joists may cantilever (stick out a little past the beam).</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#prepopulate': true
       q13_project_deck_heavy:
@@ -303,7 +269,7 @@ elements: |-
         '#title': 'Will the deck need to hold something very heavy, like a hot tub?'
         '#description': '<p>Some decks need to support concentrated weight (heavy items in one spot), like hot tubs, large planters, or heavy grills. This affects how the deck must be built to stay safe and strong.</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q14_project_deck_manufactured_handrails:
         '#type': radios
@@ -311,20 +277,20 @@ elements: |-
         '#description': '<p>This refers to handrail systems that are pre-made by a company, often called proprietary handrails.</p>'
         '#description_display': before
         '#prepopulate': true
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q15_project_large_impervious_surface:
         '#type': radios
         '#title': 'Will the project add more than 1,000 square feet of impervious surface?'
-        '#description': '<p>Impervious surfaces are things like concrete, asphalt, or decks that stop water from soaking into the ground. We use this to understand how your project affects rainwater drainage.</p>'
+        '#description': '<p>Impervious surfaces are things like concrete or asphalt that stop water from soaking into the ground. We use this to understand how your project affects rainwater drainage.</p>'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
       q16_project_deck_has_roof:
         '#type': radios
         '#title': 'Will the deck have a solid, covered roof?'
         '#description_display': before
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#prepopulate': true
       q17_project_deck_roof_over_200_sqft:
@@ -332,7 +298,7 @@ elements: |-
         '#title': 'Will the solid, covered roof be more than 200 square feet?'
         '#description_display': before
         '#prepopulate': true
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#states':
           visible:
@@ -341,34 +307,20 @@ elements: |-
       q18_project_septic_on_property:
         '#type': radios
         '#title': 'Is there a septic system or cesspool on the property?'
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#prepopulate': true
-      q19_project_deck_septic_distance:
-        '#type': number
-        '#title': 'How far is the septic system or cesspool from the deck?'
-        '#description': '<p>Enter the distance (in feet) that the septic system or cesspool is away from the deck.</p>'
-        '#description_display': before
-        '#field_suffix': feet
-        '#prepopulate': true
-        '#required': true
-        '#states':
-          visible:
-            ':input[name="q18_project_septic_on_property"]':
-              value: 'Yes'
       q20_project_deck_large_trees:
         '#type': radios
-        '#title': 'Are there trees measuring more than 8” in diameter near the worksite?'
-        '#options': yes_no_not_sure
+        '#title': 'Are there trees near where the project will be happening?'
+        '#options': yes_no
         '#required': true
-        '#prepopulate': true
       q21_project_deck_trees_distance:
         '#type': number
-        '#title': 'How far are the trees from the worksite?'
+        '#title': 'How far are the trees from where the project will be happening?'
         '#description': '<p>Enter the distance (in feet) that the trees are away from the project.</p>'
         '#description_display': before
         '#field_suffix': feet
-        '#prepopulate': true
         '#required': true
         '#states':
           visible:
@@ -380,7 +332,7 @@ elements: |-
         '#description': '<p>Public right-of-way are things like sidewalks, planting strips, road shoulders, street medians, alleys, etc.</p>'
         '#description_display': before
         '#prepopulate': true
-        '#options': yes_no_not_sure
+        '#options': yes_no
         '#required': true
         '#states':
           visible:
@@ -400,462 +352,470 @@ elements: |-
       email_address_optional:
         '#type': textfield
         '#title': 'Email address (optional)'
-  return_link:
-    '#type': webform_computed_twig
-    '#title': 'Return Link'
-    '#display_on': none
-    '#template': "https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q1_project_address[location_address]={{ data.q1_project_address.location_address }}&q1_project_address[location_city]={{ data.q1_project_address.location_city }}&q1_project_address[location_state]={{ data.q1_project_address.location_state }}&q1_project_address[location_zip]={{ data.q1_project_address.location_zip }}&q1_1_environmental_overlay_zone={{ data.q1_1_environmental_overlay_zone }}&q1_2_greenway_overlay_zone={{ data.q1_2_greenway_overlay_zone }}&q1_3_historic_landmark={{ data.q1_3_historic_landmark }}&q2_project_deck_height={{ data.q2_project_deck_height }}&q3_project_deck_builder={{ data.q3_project_deck_builder }}&q4_project_deck_site_slope={{ data.q4_project_deck_site_slope }}&q5_project_deck_near_waterbody={{ data.q5_project_deck_near_waterbody }}&q6_project_waterbody_distance={{ data.q6_project_waterbody_distance }}&q7_project_using_powered_machinery={{ data.q7_project_using_powered_machinery }}&q8_project_deck_single_level={{ data.q8_project_deck_single_level }}&q9_project_deck_connected_to_house={{ data.q9_project_deck_connected_to_house }}&q10_project_deck_finish={{ data.q10_project_deck_finish }}&q11_project_deck_rectangular={{ data.q11_project_deck_rectangular }}&q12_project_deck_one_row_posts={{ data.q12_project_deck_one_row_posts }}&q13_project_deck_heavy={{ data.q13_project_deck_heavy }}&q14_project_deck_manufactured_handrails={{ data.q14_project_deck_manufactured_handrails }}&q15_project_large_impervious_surface={{ data.q15_project_large_impervious_surface }}&q16_project_deck_has_roof={{ data.q16_project_deck_has_roof }}&q17_project_deck_roof_over_200_sqft={{ data.q17_project_deck_roof_over_200_sqft }}&q18_project_septic_on_property={{ data.q18_project_septic_on_property }}&q19_project_deck_septic_distance={{ data.q19_project_deck_septic_distance }}&q20_project_deck_large_trees={{ data.q20_project_deck_large_trees }}&q21_project_deck_trees_distance={{ data.q21_project_deck_trees_distance }}&q22_project_deck_trees_near_row={{ data.q22_project_deck_trees_near_row }}&email_address_optional={{ data.email_address_optional }}"
   container_welcome_back_results:
     '#type': container
     '#states':
       visible:
-        ':input[name="returning_user"]':
-          filled: true
-        ':input[name="edit_my_project[Edit my project]"]':
-          unchecked: true
+        - ':input[name="returning_user"]':
+            filled: true
+        - or
+        - ':input[name="test"]':
+            filled: true
+    return_link:
+      '#type': webform_computed_twig
+      '#title': 'Return Link'
+      '#display_on': none
+      '#template': "https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q1_project_address[location_address]={{ data.q1_project_address.location_address }}&q1_project_address[location_city]={{ data.q1_project_address.location_city }}&q1_project_address[location_state]={{ data.q1_project_address.location_state }}&q1_project_address[location_zip]={{ data.q1_project_address.location_zip }}&q1_1_environmental_overlay_zone={{ data.q1_1_environmental_overlay_zone }}&q1_2_greenway_overlay_zone={{ data.q1_2_greenway_overlay_zone }}&q1_3_historic_landmark={{ data.q1_3_historic_landmark }}&q2_project_deck_height={{ data.q2_project_deck_height }}&q3_project_deck_builder={{ data.q3_project_deck_builder }}&q4_project_deck_site_slope={{ data.q4_project_deck_site_slope }}&q5_project_deck_near_waterbody={{ data.q5_project_deck_near_waterbody }}&q6_project_waterbody_distance={{ data.q6_project_waterbody_distance }}&q7_project_using_powered_machinery={{ data.q7_project_using_powered_machinery }}&q8_project_deck_single_level={{ data.q8_project_deck_single_level }}&q9_project_deck_connected_to_house={{ data.q9_project_deck_connected_to_house }}&q10_project_deck_finish={{ data.q10_project_deck_finish }}&q11_project_deck_rectangular={{ data.q11_project_deck_rectangular }}&q12_project_deck_one_row_posts={{ data.q12_project_deck_one_row_posts }}&q13_project_deck_heavy={{ data.q13_project_deck_heavy }}&q14_project_deck_manufactured_handrails={{ data.q14_project_deck_manufactured_handrails }}&q15_project_large_impervious_surface={{ data.q15_project_large_impervious_surface }}&q16_project_deck_has_roof={{ data.q16_project_deck_has_roof }}&q17_project_deck_roof_over_200_sqft={{ data.q17_project_deck_roof_over_200_sqft }}&q18_project_septic_on_property={{ data.q18_project_septic_on_property }}&q19_project_deck_septic_distance={{ data.q19_project_deck_septic_distance }}&q20_project_deck_large_trees={{ data.q20_project_deck_large_trees }}&q21_project_deck_trees_distance={{ data.q21_project_deck_trees_distance }}&q22_project_deck_trees_near_row={{ data.q22_project_deck_trees_near_row }}&email_address_optional={{ data.email_address_optional }}"
+    computed_permit_required:
+      '#type': webform_computed_twig
+      '#title': 'Computed Permit Required'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set permit_required = "No" %}
+        {% if data.q2_project_deck_height > 30 or data.q17_project_deck_roof_over_200_sqft == "Yes" %}
+        	{% set permit_required = "Yes" %}
+        {% endif %}
+        {{ permit_required }}
+      '#whitespace': trim
+    computed_project_details:
+      '#type': webform_computed_twig
+      '#title': 'Computed Project Details'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |2
+              <table class="mb-5">
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Project address:"|t }}</th>
+                  <td>{{ data.q1_project_address.location_address }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Deck height:"|t }}</th>
+                  <td>{{ data.q2_project_deck_height }} {{ "inches"|t }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Who is doing the construction:"|t }}</th>
+                  <td>{{ data.q3_project_deck_builder }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Worksite slope:"|t }}</th>
+                  <td>{{ data.q4_project_deck_site_slope }}%</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Near body of water:"|t }}</th>
+                  <td>{{ data.q5_project_deck_near_waterbody }}</td>
+                </tr>
+                {% if data.q6_project_waterbody_distance == "Yes" %}
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Distance to body of water:"|t }}</th>
+                  <td>{{ data.q6_project_waterbody_distance }} {{ "feet"|t }}</td>
+                </tr>
+                {% endif %}
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Disturb more than 500 sq. ft. of soil:"|t }}</th>
+                  <td>{{ data.q7_project_using_powered_machinery }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Single level deck:"|t }}</th>
+                  <td>{{ data.q8_project_deck_single_level }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Connected to house:"|t }}</th>
+                  <td>{{ data.q9_project_deck_connected_to_house }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Finishing materials on top of deck:"|t }}</th>
+                  <td>{{ data.q10_project_deck_finish }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Rectangular deck:"|t }}</th>
+                  <td>{{ data.q11_project_deck_rectangular }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "One row of posts supporting deck:"|t }}</th>
+                  <td>{{ data.q12_project_deck_one_row_posts }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Support heavy weight:"|t }}</th>
+                  <td>{{ data.q13_project_deck_heavy }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Manufactured handrails:"|t }}</th>
+                  <td>{{ data.q14_project_deck_manufactured_handrails }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface:"|t }}</th>
+                  <td>{{ data.q15_project_large_impervious_surface }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Solid covered roof:"|t }}</th>
+                  <td>{{ data.q16_project_deck_has_roof }}</td>
+                </tr>
+
+                {% if data.q17_project_deck_roof_over_200_sqft == "Yes" %}
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Solid cover roof is more than 200 sq. ft.:"|t }}</th>
+                  <td>{{ data.q17_project_deck_roof_over_200_sqft }}</td>
+                </tr>
+                {% endif %}
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Septic system or cesspool:"|t }}</th>
+                  <td>{{ data.q18_project_septic_on_property }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Trees near the project:"|t }}</th>
+                  <td>{{ data.q20_project_deck_large_trees }}</td>
+                </tr>
+                {% if data.q20_project_deck_large_trees == "Yes" %}
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Distance of trees near the project:"|t }}</th>
+                  <td>{{ data.q21_project_deck_trees_distance }} {{ "feet"|t }}</td>
+                </tr>
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Trees in public right-of-way:"|t }}</th>
+                  <td>{{ data.q22_project_deck_trees_near_row }}</td>
+                </tr>
+                {% endif %}
+              </table>
+
+              <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
+              
+    computed_project_details_container:
+      '#type': webform_computed_twig
+      '#title': 'Computed Project Details Container'
+      '#title_display': none
+      '#display_on': form
+      '#template': |
+        <div class="accordion aria-accordion no-expand-all mb-5" id="acc-1-0">
+          <h3 class="aria-accordion__heading accordion-item">
+            <button
+              class="accordion-button collapsed aria-accordion__trigger"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#acc-1-0-panel-1"
+              aria-expanded="false"
+              aria-controls="acc-1-0-panel-1"
+              id="acc-1-0-panel-1-trigger">
+              Your project details
+            </button>
+          </h3>
+          <div
+            id="acc-1-0-panel-1"
+            class="accordion-collapse collapse aria-accordion__panel aria-accordion__panel--transition"
+            role="region"
+            aria-labelledby="acc-1-0-panel-1-trigger"
+            data-bs-parent="#acc-1-0">
+            <div class="accordion-body">
+
+              {{ data.computed_project_details }}
+
+            </div>
+          </div>
+        </div>
+      '#ajax': true
+    computed_no_permit_required:
+      '#type': webform_computed_twig
+      '#title': 'Computed No Permit Required'
+      '#title_display': none
+      '#display_on': none
+      '#template': |+
+        {% if data.computed_permit_required == "No" %}
+
+        	<li>
+        		<h3>{{ "You don't need a building permit!"|t }}</h3>
+        		<p>{{ 'Based on what you\'ve told us, you don\'t need a building permit for your project. However, all structures need to meet zoning requirements even if you don\'t need a permit. Please call <a href="tel:+1-503-823-7300">503-823-7300</a> to verify your zoning situation, or schedule a 15-minute appointment with an expert.'|t }}</p>
+
+        		{% if 1 == 1 %}
+        		<div class="text-body rounded border border-3 p-4 mb-4">
+        			<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        				<div class="flex-grow-1">
+        					<h4 class="mb-2"><i class="fa-solid fa-circle-info"></i> {{ "Schedule a 15-minute appointment with an expert"|t }}</h4>
+        					<p class="mb-3 mb-md-0">{{ "See the full list of all the 15-minute appointments you can schedule based on your specific questions."|t }}</p>
+        				</div>
+        				<div class="flex-shrink-0">
+        					<a href="https://www.portland.gov/ppd/early-assistance/15-minute-question-appointments" target="_blank" class="btn btn-outline-primary rounded-1 ms-md-3 ms-0 border-2" aria-label="{{ "Learn about 15 minutes appointments"|t }}">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        				</div>
+        			</div>
+        		</div>
+        		{% endif %}
+        	</li>
+            
+        {% endif %}
+
+    computed_talk_with_us:
+      '#type': webform_computed_twig
+      '#title': 'Computed Talk With Us'
+      '#title_display': none
+      '#display_on': none
+      '#template': |
+        {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test == "true" %}
+
+        <li>
+          <h3>{{ "Talk with zoning and land use experts first"|t }}</h3>
+          <p>{{ "Before moving forward, schedule time to talk to experts at the City of Portland about your project. Based on information you've shared about your project, you may want to check to see what's possible."|t }}</p>
+
+          <!-- Building permit application -->
+          {% if 1 == 1 %}
+          <div class="text-body rounded border border-3 p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+              <div class="flex-grow-1">
+                <h4 class="mb-2"><i class="fa-solid fa-phone-volume"></i> {{ "Zoning and land use"|t }}</h4>
+                <p class="mb-3 mb-md-0">{{ "Request approval for porjects that may affect zoning, environmental standards, or the appearance of historic sites."|t }}</p>
+              </div>
+              <div class="flex-shrink-0">
+                <a href="https://www.portland.gov/ppd/early-assistance/15-minute-question-appointments#toc-zoning-and-land-use-questions" target="_blank" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Schedule a 15 minutes appointment"|t }}">{{ "Schedule"|t }}</a>
+              </div>
+            </div>
+              
+              
+        		<div class="position-relative mt-4">
+        			<div class="alert p-3">
+        				<p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
+        				<ul class="mb-0">
+        					{% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
+        					<li>{{ "This address is in a Historic District."|t }}</li>
+        					{% endif %}
+        					{% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+        					<li>{{ "This address is in an Environmental Zone."|t }}</li>
+        					{% endif %}
+        					{% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
+        					<li>{{ "This address is in a Greenway Zone."|t }}</li>
+        					{% endif %}
+        					{% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+        					<li>{{ "You're making exterior changes to the property."|t }}</li>
+        					{% endif %}
+        				</ul>
+        			</div>
+        		</div>
+
+          </div>
+          {% endif %}
+        </li>
+
+        {% endif %}
+    computed_requirements:
+      '#type': webform_computed_twig
+      '#title': 'Computed Requirements'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |-
+        {% set erosion_control_type = "" %}
+        {% if data.computed_permit_required == "Yes" and data.q7_project_using_powered_machinery == "Yes" and data.q4_project_deck_site_slope <= 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q6_project_waterbody_distance >= 50) %}
+        	{% set erosion_control_type = "Simple" %}
+        {% endif %}
+        {% if data.computed_permit_required == "Yes" and data.q7_project_using_powered_machinery == "Yes" and (data.q4_project_deck_site_slope > 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50)) %}
+        	{% set erosion_control_type = "Full" %}
+        {% endif %}
+
+        {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+
+          <li>
+            <h3>{{ "Gather requirements"|t }}</h3>
+            <p>{{ "You'll need to complete these forms, waivers, and other requirements to get a permit. Additional forms or waivers may be needed depending on the type of project, but this is the starting point:"|t }}</p>
+
+            <!-- Building permit application --------------->
+            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+            <div class="text-body rounded border border-3 p-4 mb-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "Building permit application"|t }}</h4>
+                  <p class="mb-3 mb-md-0">{{ "Request approval to build or change a residential structure, including a deck."|t }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <a href="https://www.portland.gov/ppd/documents/building-permit-application-building-site-development-demolition-and-zoning-permits/download" target="_blank" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download building permit application (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Detailed Plans --------------->
+            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+            <div class="text-body rounded border border-3 p-4 mb-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h4 class="mb-2"><i class="fa-solid fa-circle-info"></i> {{ "Detailed plans"|t }}</h4>
+                  <p class="mb-3 mb-md-0">{{ "Shows where your project will go on the property and verifies that it meets zoning rules."|t }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <a href="https://www.portland.gov/ppd/residential-permitting/decks/prepare/create-detailed-plans#body-content" class="btn btn-outline-primary rounded-1 ms-md-3 ms-0 border-2" target="_blank" aria-label="{{ "Learn more about building plans (opens in new tab)"|t }}">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+              </div>
+        			{% if (data.q8_project_deck_single_level == "Yes" and data.q9_project_deck_connected_to_house == "Yes" and data.q10_project_deck_finish == "No" and data.q11_project_deck_rectangular == "Yes" and data.q12_project_deck_one_row_posts == "Yes" and data.q13_project_deck_heavy == "No") or data.test is not empty %}
+        					<div class="position-relative mt-4">
+        						<div class="alert p-3">
+        							<p>{{ 'Based on your project details, you are qualified to use "<strong>permit-ready plans</strong>."'|t }}</p>
+        						</div>
+        					</div>
+        			{% endif %}
+
+        			{% if data.q14_project_deck_manufactured_handrails == "Yes" or data.test is not empty %}
+        					<div class="position-relative mt-4">
+        						<div class="alert p-3">
+        							<p>{{ 'If your deck uses a pre-made handrail system, you will also need to provide stamped structural drawings for the handrail and its attachment at the base.'|t }}</p>
+        						</div>
+        					</div>          
+        			{% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- "Owner doing work" form --------------->
+            {% if data.q3_project_deck_builder == "The property owner" or data.test is not empty %}
+            <div class="text-body rounded border border-3 p-4 mb-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "\"Owner doing work\" form"|t }}</h4>
+                  <p class="mb-3 mb-md-0">{{ "Confirms that a homeowner understands the rules when acting as their own contractor."|t }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <a href="https://www.portland.gov/ppd/documents/owner-doing-work-form-notice-homeowners-about-construction-responsibilities/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" target="_blank" aria-label="{{ "Download owner doing work form (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Erosion Control --------------->
+            {% if erosion_control_type == "Simple" or data.test is not empty %}
+        			<div class="text-body rounded border border-3 p-4 mb-4">
+        				<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        					<div class="flex-grow-1">
+        						<h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "Simple site erosion control"|t }}</h4>
+        						<p class="mb-3 mb-md-0">{{ "Outlines basic erosion control measures for low-risk sites where soil will be disturbed during construction."|t }}</p>
+        					</div>
+        					<div class="flex-shrink-0">
+        						<a href="https://www.portland.gov/ppd/documents/simple-site-plan-erosion-control-requirements-form/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" target="_blank" aria-label="{{ "Download simple site erosion control plan (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        					</div>
+        				</div>
+        			</div>
+        		{% endif %}
+        			
+            {% if erosion_control_type == "Full" or data.test is not empty %}
+        			<div class="text-body rounded border border-3 p-4 mb-4">
+        				<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        					<div class="flex-grow-1">
+        						<h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "Erosion control plan"|t }}</h4>
+        						<p class="mb-3 mb-md-0">{{ "Shows how you’ll prevent erosion on complex or sensitive sites during construction."|t }}</p>
+        					</div>
+        					<div class="flex-shrink-0">
+        						<a href="https://www.portland.gov/ppd/documents/plan-review-checklist-erosion-sediment-and-pollution-controls-residential-and/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" target="_blank" aria-label="{{ "Download erosion control plan (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        					</div>
+        				</div>
+        			</div>
+        		{% endif %}
+
+            
+            <!-- Disclaimer for existing on-site sewage system --------------->
+            {% if data.q18_project_septic_on_property == "Yes" or data.test is not empty %}
+            <div class="text-body rounded border border-3 p-4 mb-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "Disclaimer for existing on-site sewage system"|t }}</h4>
+                  <p class="mb-3 mb-md-0">
+                    {{ "Confirms whether the property has a septic system or cesspool and notifies the city if it needs to be decommissioned."|t }}
+                  </p>
+                </div>
+                <div class="flex-shrink-0">
+                  <a href="https://www.portland.gov/ppd/documents/disclaimer-existing-site-sewage-disposal-system/download" target="_blank" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download disclaimer for existing on-site sewage systems (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            
+            <!-- Stormwater Mitigation Plan --------------->
+            {% if data.q15_project_large_impervious_surface == "Yes" or data.test is not empty %}
+            <div class="text-body rounded border border-3 p-4 mb-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf"></i> {{ "Stormwater mitigation plan"|t }}</h4>
+                  <p class="mb-3 mb-md-0">{{ "Explains how you’ll manage rain runoff from new surfaces that don’t absorb water."|t }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <a href="https://www.portland.gov/bes/stormwater/documents/2025-stormwater-management-manual/download" target="_blank" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download stormwater mitigation plan template (opens in new tab)"|t }}">{{ "Download"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+        	</li>
+
+        {% endif %}
     computed_results:
       '#type': webform_computed_twig
       '#title': 'Computed Results'
       '#title_display': none
-      '#states':
-        visible:
-          ':input[name="returning_user"]':
-            filled: true
-          ':input[name="action_edit_details[Edit my project]"]':
-            unchecked: true
       '#display_on': form
       '#mode': html
-      '#template': |-
-        <h2>{{ "Your project guide"|t }}</h2>
-        <p>{{ "We've created a plan to help you follow the City of Portland's building rules based on the details you provided about your project. Print this page or save it as a PDF for reference. If you provided an email address in the project details, we'll send you a link to your filled-out form that you can reference anytime."|t }}</p>
-        <hr>
-
+      '#template': |
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
         </div>
         {% endif %}
 
-        <ol class="process-list">
+        <ol class="process-list mb-10">
 
-          <li>
-            <h3>{{ "Gather requirements"|t }}</h3>
-            <p>{{ "You'll need to complete these forms, waivers, and other requirements to get a permit. Additional forms or waivers may be needed depending on the type of project, but this is the starting point:"|t }}</p>
-            
-            <!-- Building permit application -->
-            {% if data.q2_project_deck_height > 30 or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Building permit application"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Used to get approval to build or change a structure by sharing details about the project and ensuring it meets safety and construction codes."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/building-permit-application-building-site-development-demolition-and-zoning-permits/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download building permit application"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
+          {{ data.computed_no_permit_required }}  
 
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Site plan"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Shows where your project will go on the property and verifies that it meets zoning and tree preservation rules."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/sample-site-plan/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download site plan template"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-            
-            <!-- (Pre-Approved) Residential Deck Plans -->
-            {% if ((data.q8_project_deck_single_level == "Yes" or data.q8_project_deck_single_level == "Not sure") and 
-               (data.q9_project_deck_connected_to_house == "Yes" or data.q9_project_deck_connected_to_house == "Not sure") and 
-               (data.q10_project_deck_finish == "No" or data.q10_project_deck_finish == "Not sure") and 
-               (data.q11_project_deck_rectangular == "Yes" or data.q11_project_deck_rectangular == "Not sure") and 
-               (data.q12_project_deck_one_row_posts == "Yes" or data.q12_project_deck_one_row_posts == "Not sure") and 
-               (data.q13_project_deck_heavy == "No" or data.q13_project_deck_heavy == "Not sure")) or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "(Pre-approved) residential deck plans"|t }}</h4>
-                  <p class="mb-3 mb-md-0">
-                    {{ "Used to show how a structure will be built and confirm that the design meets building and safety codes."|t }}
-                    {% if data.q14_project_deck_manufactured_handrails == "Yes" %}
-                    <br><br><strong>{{ "Since the deck has handrails made of glass, cable, aluminum, or steel, you must also provide stamped structural drawings for the handrail and its attachment at the base to the structure along with the permit ready drawings."|t }}</strong>
-                    {% endif %}
-                  </p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="/bcd/permit-services/Documents/permit-ready-deck.pdf" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download pre-approved residential deck plans"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-              {% if ((data.q8_project_deck_single_level == "Not sure") or 
-                    (data.q9_project_deck_connected_to_house == "Not sure") or 
-                    (data.q10_project_deck_finish == "Not sure") or 
-                    (data.q11_project_deck_rectangular == "Not sure") or 
-                    (data.q12_project_deck_one_row_posts == "Not sure") or 
-                    (data.q13_project_deck_heavy == "Not sure")) or data.test == "true" %}
-                <p class="mt-4 mb-0"><strong>{{ "You answered \"Not sure\" on one or more question, so you may not be able to use a pre-approved deck plan."|t }}</strong></p>
-              {% endif %}
-            </div>
-            {% endif %}
+          {{ data.computed_talk_with_us }}
 
-            <!-- Simple Site Erosion Control Plan -->
-            {% if ((data.q7_project_using_powered_machinery == "Yes" or data.q7_project_using_powered_machinery == "Not sure") and data.q4_project_deck_site_slope < 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q5_project_deck_near_waterbody == "Not sure" or data.q6_project_waterbody_distance > 50)) or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Simple site erosion control plan"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Explains how you'll manage erosion and rain runoff on small, low-risk sites where soil will be disturbed."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/simple-site-plan-erosion-control-requirements-form/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download simple site erosion control plan template"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-              {% if data.q5_project_deck_near_waterbody == "Not sure" or data.q7_project_using_powered_machinery == "Not sure" or data.test == "true" %}
-                <p class="mt-4 mb-0"><strong>{{ "You answered \"Not sure\" on one or more question, so you may need to submit a full <a href=\"https://portland.gov/ppd/documents/plan-review-checklist-erosion-sediment-and-pollution-controls-residential-and/download\">erosion control plan</a>."|t|raw }}</strong></p>
-              {% endif %}
-            </div>
-            {% endif %}
-
-            <!-- Stormwater Mitigation Plan -->
-            {% if data.q15_project_large_impervious_surface == "Yes" or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Stormwater mitigation plan"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Explains how you'll manage rain runoff from new roofs or hard surfaces that don't absorb water."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/simple-site-plan-erosion-control-requirements-form/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download stormwater mitigation plan template"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Residential Deck Plans -->
-            {% if (data.q8_project_deck_single_level == "No" or data.q9_project_deck_connected_to_house == "No" or data.q10_project_deck_finish == "Yes" or data.q11_project_deck_rectangular == "No" or data.q12_project_deck_one_row_posts == "No" or data.q13_project_deck_heavy == "Yes") or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Residential deck plans"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Used to show how a structure will be built and confirm that the design meets building and safety codes."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="#" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download residential deck plan template"|t }}">{{ "Download -NEED LINK-"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- “Owner doing work” form -->
-            {% if data.q3_project_deck_builder == "The property owner" or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "\"Owner doing work\" form"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Used to confirm that a property owner understands the rules when doing construction work themselves instead of hiring a licensed contractor."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/owner-doing-work-form-information-notice-owners-about-construction-responsibilities/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download owner doing work form"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Erosion control plan -->
-            {% if ((data.q7_project_using_powered_machinery == "Yes") and (data.q4_project_deck_site_slope >= 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50))) or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Erosion control plan"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Shows how you'll prevent erosion during construction on steep, sensitive, or environmentally protected sites."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/plan-review-checklist-erosion-sediment-and-pollution-controls-residential-and/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download erosion control plan template"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Disclaimer for existing on-site sewage system -->
-            {% if data.q18_project_septic_on_property == "Yes" or data.q18_project_septic_on_property == "Not sure" or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Disclaimer for existing on-site sewage system"|t }}</h4>
-                  <p class="mb-3 mb-md-0">
-                    {{ "Confirms whether the property has a septic system or cesspool and notifies the city if it needs to be decommissioned."|t }}
-                    {% if data.q18_project_septic_on_property == "Not sure" or data.test == "true" %}
-                    <br><br><strong>{{ "You answered \"Not sure\" whether there is a septic system or cesspool on the property. If there is, you will need to submit this item."|t }}</strong>
-                    {% endif %}
-                  </p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="https://portland.gov/ppd/documents/disclaimer-existing-site-sewage-disposal-system/download" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download disclaimer for existing on-site sewage systems"|t }}">{{ "Download"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Land use review application -->
-            {% if data.q1_3_historic_landmark == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test == "true" %}
-            <div class="text-body rounded border border-3 p-4 mb-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div class="flex-grow-1">
-                  <h4 class="mb-2"><i class="fa-solid fa-file-pdf me-2"></i>{{ "Land use review application"|t }}</h4>
-                  <p class="mb-3 mb-md-0">{{ "Used to request approval for projects that may affect zoning, environmental standards, or the appearance of historic sites. Requires a 15 minute appointment."|t }}</p>
-                </div>
-                <div class="flex-shrink-0">
-                  <a href="#" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Download land use review application"|t }}">{{ "Schedule"|t }}</a>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-
+          {{ data.computed_requirements }}
 
           </li>
 
-          <!--<li>
-            <h3>{{ "Gather other requirements"|t }}</h3>
-            <p>{{ "You'll need to fill out these forms to get a permit. After your conversations in Step 1, you may need to provide additional forms or waivers based on the details of your project:"|t }}</p>
-            
-            <div class="text-body rounded border border-3 p-5 clearfix mb-4">
-              <h3><i class="fa-solid fa-file-pdf"></i>{{ "Site plan"|t }}</h3>
-              <p class="float-right"><a aria-label="{{ "Learn more about site plans"|t }}" href="#" class="btn btn-outline-primary rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
-              <p class="mb-0">{{ "Shows where your project will go on the property and verifies that it meets zoning rules."|t }}</p>
-            </div>
-          </li>-->
+        {% if data.computed_permit_required == "Yes" %}
 
           <li>
-            <h3>{{ "Submit your application"|t }}</h3>
-            <p>{{ "You'll need to fill out these forms to get a permit. After your conversations in Step 1, you may need to provide additional forms or waivers based on the details of your project:"|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Submit permit application requirements"|t }}" href="#" class="btn btn-primary ms-auto me-3 rounded rounded-1">{{ "Submit requirements"|t }}</a>
-              <a aria-label="{{ "Learn more about submitting permit requirements"|t }}" href="#" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            <h3>{{ "Submit your application materials"|t }}</h3>
+            <p>{{ "Submit your application materials and pay any fees. City staff will review your materials and may ask you to revise or clarify details."|t }}</p>
+            <p class="mb-0"><a aria-label="{{ "Learn more about submitting permit requirements"|t }}" href="https://www.portland.gov/ppd/residential-permitting/decks/apply#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
           </li>
 
           <li>
-            <h3>{{ "Check your application status"|t }}</h3>
-            <p>{{ "When you apply for a permit, it goes through various departments where it's reviewed by different specialists. You will want to check frequently to know if there are adjustments you need to make or where it is in the overall process."|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Check permit status"|t }}" href="#" class="btn btn-primary ms-auto me-3 rounded rounded-1">{{ "Check status"|t }}</a>
-              <a aria-label="{{ "Learn more about checking permit status"|t }}" href="#" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            <h3>{{ "Respond to feedback"|t }}</h3>
+            <p>{{ "After you submit your application, it goes through various departments for specialists to review. Check frequently to see if you need to make changes or where your application is in the overall process."|t }}</p>
+            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about responding to feedback"|t }}" href="https://www.portland.gov/ppd/residential-permitting/decks/apply/respond-feedback#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
           </li>
 
+        {% endif %}
+
           <li>
-            <h3>{{ "Get your permit and start building!"|t }}</h3>
-            <p>{{ "Once approved, you can start your project. Follow the permit rules and schedule inspections as needed."|t }}</p>
+            <h3>{{ "Start building!"|t }}</h3>
+            <p>{{ "You’re ready to start your project. If any rules or inspections apply, be sure to follow them."|t }}</p>
+            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about starting your project"|t }}" href="https://www.portland.gov/ppd/residential-permitting/decks/start-your-project#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
           </li>
+
+        {% if data.computed_permit_required == "Yes" %}
 
           <li>
             <h3>{{ "Schedule inspections"|t }}</h3>
-            <p>{{ "After your project is complete, you can schedule inspections. Your permit allows for 3 inspections &#151; extra inspections will cost more."|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Schedule inspection"|t }}" href="#" class="btn btn-primary ms-auto me-3 rounded rounded-1">{{ "Schedule inspection"|t }}</a>
-              <a aria-label="{{ "Learn more about scheduling an inspection"|t }}" href="#" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            <p>{{ "After your project is complete, schedule inspections to get your finished deck approved."|t }}</p>
+            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about scheduling an inspection"|t }}" href="https://www.portland.gov/ppd/residential-permitting/decks/get-inspection#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
           </li>
 
         </ol>
 
-        <hr>
-
-        <h3>{{ "Your project details"|t }}</h3>
-
-        <table>
-          <tr class="">
-            <th style="text-align: left;">{{ "Project type:"|t }}</th>
-            <td>{{ "Residential deck"|t }}</td>
-          </tr>
-
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Location:"|t }}</th>
-            <td>{{ data.q1_project_address.location_address }}</td>
-          </tr>
-
-        {% if data.q1_1_environmental_overlay_zone != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Environmental overlay zone?"|t }}</th>
-            <td>{{ data.q1_1_environmental_overlay_zone }}</td>
-          </tr>
         {% endif %}
-
-        {% if data.q1_2_greenway_overlay_zone != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Greenway overlay zone?"|t }}</th>
-            <td>{{ data.q1_2_greenway_overlay_zone }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q1_3_historic_landmark != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Historic/conservation landmark or district?"|t }}</th>
-            <td>{{ data.q1_3_historic_landmark }}</td>
-          </tr>
-        {% endif %}
-
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Who is doing the work?"|t }}</th>
-            <td>{{ data.q3_project_deck_builder }}</td>
-          </tr>
-
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Deck height:"|t }}</th>
-            <td>{{ data.q2_project_deck_height }} ft</td>
-          </tr>
-
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Site slope:"|t }}</th>
-            <td>{{ data.q4_project_deck_site_slope }}%</td>
-          </tr>
-
-        {% if data.q5_project_deck_near_waterbody != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Near wetland or waterbody?"|t }}</th>
-            <td>{{ data.q5_project_deck_near_waterbody }}</td>
-          </tr>
-          {% if data.q6_project_waterbody_distance != "No" %}
-          <tr class="border-top border-1 border border-bottom-0 border-start-0 border-end-0">
-            <th class="ps-5" style="text-align: left;">{{ "Distance:"|t }}</th>
-            <td>{{ data.q6_project_waterbody_distance }} {{ "feet"|t }}</td>
-          </tr>
-          {% endif %}
-        {% endif %}
-
-        {% if data.q7_project_using_powered_machinery != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Using powered machinery to disturb the ground?"|t }}</th>
-            <td>{{ data.q7_project_using_powered_machinery }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q8_project_deck_single_level != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Single level deck?"|t }}</th>
-            <td>{{ data.q8_project_deck_single_level }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q9_project_deck_connected_to_house != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Connected to outside wall of house?"|t }}</th>
-            <td>{{ data.q9_project_deck_connected_to_house }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q10_project_deck_finish != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Tile, concrete, or other finish materials on deck?"|t }}</th>
-            <td>{{ data.q10_project_deck_finish }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q11_project_deck_rectangular != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Rectangular in shape?"|t }}</th>
-            <td>{{ data.q11_project_deck_rectangular }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q12_project_deck_one_row_posts != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "One row of posts supporting outer edge?"|t }}</th>
-            <td>{{ data.q12_project_deck_one_row_posts }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q13_project_deck_heavy != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Heavy weight bearing, such as hot tub?"|t }}</th>
-            <td>{{ data.q13_project_deck_heavy }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q14_project_deck_manufactured_handrails != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Manufactured handrails?"|t }}</th>
-            <td>{{ data.q14_project_deck_manufactured_handrails }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q15_project_large_impervious_surface != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "More than 500 sq ft impervious surface?"|t }}</th>
-            <td>{{ data.q15_project_large_impervious_surface }}</td>
-          </tr>
-        {% endif %}
-
-        {% if data.q16_project_deck_has_roof != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Solid, covered roof?"|t }}</th>
-            <td>{{ data.q16_project_deck_has_roof }}</td>
-          </tr>
-
-          {% if data.q17_project_deck_roof_over_200_sqft != "No" %}
-          <tr class="border-top border-1 border border-bottom-0 border-start-0 border-end-0">
-            <th class="ps-5" style="text-align: left;">{{ "More than 200 sq ft?"|t }}</th>
-            <td>{{ data.q17_project_deck_roof_over_200_sqft }}</td>
-          </tr>
-          {% endif %}
-        {% endif %}
-
-        {% if data.q18_project_septic_on_property != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Septic system or cesspool on property?"|t }}</th>
-            <td>{{ data.q18_project_septic_on_property }}</td>
-          </tr>
-          {% if data.q19_project_deck_septic_distance %}
-          <tr class="border-top border-1 border border-bottom-0 border-start-0 border-end-0">
-            <th class="ps-5" style="text-align: left;">{{ "Distance:"|t }}</th>
-            <td>{{ data.q19_project_deck_septic_distance }} feet</td>
-          </tr>
-          {% endif %}
-        {% endif %}
-
-        {% if data.q20_project_deck_large_trees != "No" %}
-          <tr class="border-top border-1 border-dark border-bottom-0 border-start-0 border-end-0">
-            <th style="text-align: left;">{{ "Trees larger than 8\" diameter near worksite?"|t }}</th>
-            <td>{{ data.q20_project_deck_large_trees }}</td>
-          </tr>
-          {% if data.q21_project_deck_trees_distance %}
-          <tr class="border-top border-1 border border-bottom-0 border-start-0 border-end-0">
-            <th class="ps-5" style="text-align: left;">{{ "Distance:"|t }}</th>
-            <td>{{ data.q21_project_deck_trees_distance }} feet</td>
-          </tr>
-          {% endif %}
-          {% if data.q22_project_deck_trees_near_row %}
-          <tr class="border-top border-1 border border-bottom-0 border-start-0 border-end-0">
-            <th class="ps-5" style="text-align: left;">{{ "Trees near public right-of-way?"|t }}</th>
-            <td>{{ data.q22_project_deck_trees_near_row }}</td>
-          </tr>
-          {% endif %}
-        {% endif %}
-        </table>
       '#whitespace': spaceless
       '#ajax': true
-    edit_my_project:
-      '#type': checkboxes
-      '#title': 'Edit project details'
-      '#title_display': none
-      '#options':
-        'Edit my project': 'Edit project details'
-      '#options_display': buttons_horizontal
-      '#states':
-        invisible:
-          ':input[name="action_edit_details[Edit my project]"]':
-            checked: true
-      '#wrapper_attributes':
-        class:
-          - mb-0
-          - checkbox-button-outline-primary
-      '#access_create_roles': {  }
-    computed_edit_link:
-      '#type': webform_computed_twig
-      '#title': 'Computed Edit Link'
-      '#title_display': none
-      '#display_on': form
-      '#mode': html
-      '#template': "<a href=\"{{ data.return_link|replace({'returning_user=1&':''}) }}#body-content\" class=\"btn btn-outline-primary ms-auto rounded rounded-1 border-2\">{{ 'Edit project details'|t }}</a>"
-      '#whitespace': trim
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -870,7 +830,7 @@ elements: |-
             unchecked: true
           ':input[name="returning_user"]':
             empty: false
-css: "  .checkbox-button-outline-primary label.option {\r\n    display: inline-block;\r\n    padding: 0.375rem 0.75rem;\r\n    font-size: 1rem;\r\n    font-weight: 400;\r\n    line-height: 1.5;\r\n    text-align: center;\r\n    white-space: nowrap;\r\n    vertical-align: middle;\r\n    user-select: none;\r\n    background-color: transparent;\r\n    color: #1d62c9;\r\n    border: 2px solid #1d62c9;\r\n    border-radius: 0.2rem;\r\n    margin-left: auto;\r\n    margin-right: 0;\r\n    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;\r\n    cursor: pointer;\r\n  }\r\n  \r\n  .checkbox-button-outline-primary label.option:hover {\r\n    background-color: #1d62c9;\r\n    color: #ffffff;\r\n    border: 2px solid #1d62c9;\r\n    border-radius: 0.2rem;\r\n  }\r\n"
+css: "  .checkbox-button-outline-primary label.option {\r\n    display: inline-block;\r\n    padding: 0.375rem 0.75rem;\r\n    font-size: 1rem;\r\n    font-weight: 400;\r\n    line-height: 1.5;\r\n    text-align: center;\r\n    white-space: nowrap;\r\n    vertical-align: middle;\r\n    user-select: none;\r\n    background-color: transparent;\r\n    color: #1d62c9;\r\n    border: 2px solid #1d62c9;\r\n    border-radius: 0.2rem;\r\n    margin-left: auto;\r\n    margin-right: 0;\r\n    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;\r\n    cursor: pointer;\r\n  }\r\n  \r\n  .checkbox-button-outline-primary label.option:hover {\r\n    background-color: #1d62c9;\r\n    color: #ffffff;\r\n    border: 2px solid #1d62c9;\r\n    border-radius: 0.2rem;\r\n  }\r\n\r\n.permit-guide div.alert {\r\n  border-left: 6px solid #00b3b3;\r\n  background-color: #eaf7f9;\r\n  color: #000000;\r\n}\r\n\r\n.permit-guide div.alert a, .permit-guide div.alert a:hover {\r\n  color: #1d62c9;\r\n  font-size: inherit;\r\n  font-weight: inherit;\r\n  text-decoration: none !important;\r\n}\r\n\r\n.permit-guide div.alert a:hover {\r\n  color:inherit;\r\n  text-decoration: underline;\r\n}"
 javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.bodyLinkHandler = {\r\n    attach: function (context, settings) {\r\n      $('#edit-edit-my-project label.webform-options-display-buttons-label').on('click', function() {\r\n        document.location = '#body-content';\r\n      });\r\n    }\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
@@ -911,7 +871,10 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
-  form_attributes: {  }
+  form_attributes:
+    class:
+      - permit-guide
+    id: residential-decks-guide
   form_method: ''
   form_action: ''
   share: false
@@ -977,9 +940,9 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>[webform_submission:values:computed_results:html]</p>'
+  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_project_details:html]</div><div>[webform_submission:values:computed_results:html]</div>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -1057,7 +1020,7 @@ handlers:
   email:
     id: email
     handler_id: email
-    label: 'Send return link'
+    label: 'Send confirmation and return link'
     notes: ''
     status: true
     conditions: {  }
@@ -1079,7 +1042,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: '<p>Thanks for telling us about your deck project on <a href="https://portland.gov">Portland.gov</a>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.&nbsp;</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your deck project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/decks#body-content">visit our pages on residential decks</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><p>[webform_submission:values:computed_results:html]</p>'
+      body: '<p>Thanks for telling us about your deck project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]&amp;returning_user=1#residential-decks-guide"><strong>Return to your deck project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/decks#body-content">visit our pages on residential decks</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br><hr></div><h2>Your residential deck permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

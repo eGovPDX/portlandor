@@ -7,6 +7,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\RevisionLogInterface;
 
 /**
  * Some description.
@@ -29,20 +30,24 @@ class PublishAction extends ViewsBulkOperationsActionBase {
     // Get current user's display name
     $user_display_name = \Drupal::currentUser()->getDisplayName();
 
-    if( $entity->status->value == 1)
+    if ($entity->status->value == 1) {
       return $this->t('Is already published.');
+    }
 
     $entity->status->value = 1;
     $entity->moderation_state->value = 'published';
     // Make this change a new revision
-    if($entity->hasField('revision_log'))
-      $entity->revision_log = 'Bulk operation: published by '. $user_display_name;
-    $entity->setNewRevision(TRUE);
-    $entity->setRevisionCreationTime(\Drupal::time()->getRequestTime());
-    $entity->setRevisionUserId(\Drupal::currentUser()->id());
+    if ($entity->getEntityType()->isRevisionable()) {
+      $entity->setNewRevision(TRUE);
+      $entity->setRevisionCreationTime(\Drupal::time()->getRequestTime());
+      $entity->setRevisionUserId(\Drupal::currentUser()->id());
+      if ($entity instanceof RevisionLogInterface) {
+        $entity->setRevisionLogMessage('Bulk operation: published by '. $user_display_name);
+      }
+    }
+
     $entity->save();
 
-    // Don't return anything for a default completion message, otherwise return translatable markup.
     return $this->t('Bulk operation: published by '. $user_display_name);
   }
 
@@ -55,8 +60,8 @@ class PublishAction extends ViewsBulkOperationsActionBase {
       $access_result_for_update = $object->access('update', $account);
       $access_result_for_edit = $object->access('edit', $account);
       $access = $access_result_for_update || $access_result_for_edit ? AccessResult::allowed() : AccessResult::forbidden();
-      
-      // For moderated content, edit access to the entity is not enough. 
+
+      // For moderated content, edit access to the entity is not enough.
       // Users should also have permission to the proper workflow transition to publish moderated content.
       $moderation_info = \Drupal::service('content_moderation.moderation_information');
       if ($moderation_info->isModeratedEntity($object)) {
@@ -80,7 +85,7 @@ class PublishAction extends ViewsBulkOperationsActionBase {
         // The workflow transition permission is named like "use editorial transition publish"
         $access = $access->andIf(AccessResult::allowedIfHasPermission($account, "use $workflow_id transition $transition_id"));
       }
-      
+
       return $return_as_object ? $access : $access->isAllowed();
     }
 
