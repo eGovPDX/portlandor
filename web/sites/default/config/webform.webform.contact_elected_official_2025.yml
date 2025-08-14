@@ -450,6 +450,7 @@ elements: |-
     feedback_topics_entity:
       '#type': checkboxes
       '#title': 'Chose one or more topics'
+      '#prepopulate': true
       '#options': feedback_topics
       '#options_display': two_columns
       '#other__option_label': 'Something else...'
@@ -957,6 +958,9 @@ elements: |-
         - or
         - ':input[name="request_purpose_individual"]':
             value: 'Submit a media inquiry'
+        - or
+        - ':input[name="request_purpose"]':
+            unchecked: true
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -1099,6 +1103,20 @@ elements: |-
       {% endif %}
 
       {{ subject }}
+    '#whitespace': spaceless
+  computed_mayor_cc:
+    '#type': webform_computed_twig
+    '#title': 'Computed Mayor Courtesy Copy Indicator'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {# only set this if the mayor is not the primary recipient #}
+      {% if data.request_recipient != "Mayor Keith Wilson" %}
+        {% set options = data.feedback_topics_entity %}
+        {% if "Federal government policy" in data.feedback_topics_entity %}
+            (CC to Mayor)
+        {% endif %}
+      {% endif %}
     '#whitespace': spaceless
   computed_confirmation_message:
     '#type': webform_computed_twig
@@ -1587,15 +1605,22 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="computed_send_to_mayor"]':
-          value: 'Yes'
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+          ':input[name="computed_send_to_mayor"]':
+            value: 'Yes'
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+          ':input[name="feedback_topics_entity[Federal government policy]"]':
+            checked: true
     weight: 0
     settings:
       requester_name: contact_name
       requester_email: contact_email_address
-      subject: '[webform_submission:values:computed_subject]'
+      subject: '[webform_submission:values:computed_subject] [webform_submission:values:computed_mayor_cc]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform'
       priority: normal
