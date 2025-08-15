@@ -102,6 +102,13 @@ class PortlandNodeFetcher extends WebformElementBase
             if (preg_match('/^\/node\/(\d+)$/', $internal_path, $matches)) {
                 $nid = $matches[1];
                 $node = Node::load($nid);
+
+                // Get the current content language of the form/page.
+                $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+                if ($node instanceof Node && $node->hasTranslation($language)) {
+                    $node = $node->getTranslation($language);
+                }
                 if ($node instanceof Node) {
                     // Attach the node entity to the element for debugging or internal use.
                     $element['#node'] = $node;
