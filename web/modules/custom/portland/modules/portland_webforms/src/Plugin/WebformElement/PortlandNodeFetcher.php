@@ -28,6 +28,7 @@ class PortlandNodeFetcher extends WebformElementBase
     {
         return [
             'node_alias_path' => '',
+            'render_inline' => '1',
         ] + parent::defineDefaultProperties();
     }
 
@@ -43,9 +44,15 @@ class PortlandNodeFetcher extends WebformElementBase
         $form['node_alias_path'] = [
             '#type' => 'textfield',
             '#title' => $this->t('Node alias path'),
-            '#default_value' => $element['#node_alias_path'],
+            '#default_value' => array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "",
             '#description' => $this->t('Enter a path like /about-us.'),
             '#required' => TRUE,
+        ];
+        $form['render_inline'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Render node content inline'),
+            '#description' => $this->t('If checked, the fetched node\'s content will be rendered directly in the webform. If unchecked, it will only be available to Computed Twig elements.'),
+            '#default_value' => array_key_exists('#render_inline', $element) ? $element['#render_inline'] : TRUE,
         ];
         return $form;
     }
@@ -61,6 +68,8 @@ class PortlandNodeFetcher extends WebformElementBase
         if (isset($user_input['node_alias_path'])) {
             $form_state->setValue('node_alias_path', $user_input['node_alias_path']);
         }
+        $render_inline = $user_input['render_inline'] === NULL ? '0' : $user_input['render_inline'];
+        $form_state->setValue('render_inline', $render_inline);
     }
 
     /**
@@ -78,15 +87,28 @@ class PortlandNodeFetcher extends WebformElementBase
     /**
      * {@inheritdoc}
      */
-    public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL)
+    public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL)
     {
-        $alias = $element['#node_alias_path'] ?? NULL;
+        if (!isset($element['#render_inline'])) {
+            $element['#render_inline'] = "1"; // or your desired default
+        }
+
+        $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "";
+        $render_inline = array_key_exists('#render_inline', $element) && $element['#render_inline'] == "1" ? $element['#render_inline'] : "0";
+        $element_name = $element['#webform_key'] ?? NULL;
 
         if ($alias) {
             $internal_path = \Drupal::service('path_alias.manager')->getPathByAlias($alias);
             if (preg_match('/^\/node\/(\d+)$/', $internal_path, $matches)) {
                 $nid = $matches[1];
                 $node = Node::load($nid);
+
+                // Get the current content language of the form/page.
+                $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+                if ($node instanceof Node && $node->hasTranslation($language)) {
+                    $node = $node->getTranslation($language);
+                }
                 if ($node instanceof Node) {
                     // Attach the node entity to the element for debugging or internal use.
                     $element['#node'] = $node;
@@ -108,14 +130,20 @@ class PortlandNodeFetcher extends WebformElementBase
 
                     // Add to submission data, available in Twig via `data.fetch_node`.
                     if ($webform_submission) {
-                        $webform_submission->setData(['fetch_node' => $values] + $webform_submission->getData());
+                        $webform_submission->setData([$element_name => $values] + $webform_submission->getData());
                     }
                 }
             }
         }
 
-        // Suppress output in form.
-        $element['#markup'] = Markup::create('');
+        // Conditionally render the node body content as HTML if render_inline is enabled
+        if ($render_inline && isset($node) && $node->hasField('field_body_content')) {
+            $html = $node->get('field_body_content')->value; // or ->processed if you want filtered text
+            $element['#markup'] = Markup::create($html);
+        } else {
+            // If not rendering inline, or no node/field, set empty markup to avoid errors.
+            $element['#markup'] = Markup::create('');
+        }
 
         parent::prepare($element, $webform_submission);
     }
