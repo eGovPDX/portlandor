@@ -31,6 +31,7 @@ class PortlandViewsSelect extends Select {
       'display' => '',
       'label_field' => '',
       'value_field' => '',
+      'cache_ttl_sec' => 20,
     ] + parent::defineDefaultProperties();
     unset(
       $properties['options'],
@@ -153,6 +154,15 @@ class PortlandViewsSelect extends Select {
       '#required' => TRUE,
       '#description' => t('The field from the view result to use as the option value.'),
       '#options' => $view_fields,
+    ];
+    $form['views_select']['cache_ttl_sec'] = [
+      '#type' => 'number',
+      '#min' => 0,
+      '#step' => 1,
+      '#title' => t('Cache TTL (seconds)'),
+      '#default_value' => $element_properties['cache_ttl_sec'] ?? 20,
+      '#required' => TRUE,
+      '#description' => t('The time to cache view data, in seconds. This is useful if you want to cache the view for a shorter period than built-in views caching allows (e.g. for live inventory counts).'),
     ];
 
     return $form;
