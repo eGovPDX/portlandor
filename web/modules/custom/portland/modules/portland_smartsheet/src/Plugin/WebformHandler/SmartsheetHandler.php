@@ -53,6 +53,7 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function defaultConfiguration() {
     return [
       'column_mappings' => [],
+      'field_handlers' => [],
       'multiple_rows_enable' => false,
       'multiple_rows_field' => '',
       'multiple_rows_separator' => '',
@@ -89,6 +90,7 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function fetchColumns(array &$form, FormStateInterface $form_state) {
     $sheet_id = $form_state->getUserInput()['settings']['sheet_id'] ?? $this->configuration["sheet_id"];
     $form['column_mappings'] = ['#type' => 'value'];
+    $form['field_handlers'] = ['#type' => 'value'];
     $form['column_mappings_container'] = [
       '#type' => 'details',
       '#title' => $this->t('Column mappings'),
@@ -100,6 +102,7 @@ class SmartsheetHandler extends WebformHandlerBase {
         '#header' => [
           $this->t('Smartsheet column'),
           $this->t('Webform field'),
+          $this->t('Field handler'),
         ],
         '#rows' => []
       ]
@@ -137,8 +140,17 @@ class SmartsheetHandler extends WebformHandlerBase {
             '#required' => false,
             '#name' => "settings[column_mappings][{$col->id}]",
             '#value' => $this->configuration['column_mappings'][$col->id] ?? '',
-            '#options' => $options
-          ]]
+            '#options' => $options,
+          ]],
+          ['data' => [
+            '#type' => 'select2',
+            '#required' => false,
+            '#name' => "settings[field_handlers][{$col->id}]",
+            '#value' => $this->configuration['field_handlers'][$col->id] ?? '',
+            '#options' => [
+              'MULTI_PICKLIST' => $this->t('Multi Picklist'),
+            ],
+          ]],
         ], array_filter($columns, fn($col) => !isset($col->formula))
       );
     } catch (\Exception $e) {
@@ -243,6 +255,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
     $values = $form_state->getUserInput()['settings'];
     $this->configuration['column_mappings'] = array_filter($values['column_mappings']);
+    $this->configuration['field_handlers'] = array_filter($values['field_handlers']);
     $this->configuration['multiple_rows_enable'] = $values['multiple_rows_enable'];
     $this->configuration['multiple_rows_field'] = $values['multiple_rows_field'];
     $this->configuration['multiple_rows_separator'] = $values['multiple_rows_separator'];
@@ -253,27 +266,39 @@ class SmartsheetHandler extends WebformHandlerBase {
 
   private function getRowData(array $fields) {
     $column_mappings = $this->configuration['column_mappings'];
+    $field_handlers = $this->configuration['field_handlers'];
     $row_location = $this->configuration['row_location'];
     $cells = [];
     foreach ($column_mappings as $col_id => $field_id) {
       // skip empty mappings
       if ($field_id === '') continue;
+      $field_data = null;
 
       // if $field_id is a sub-element, the parent/sub relationship will be denoted with a double underscore (verified_address__location_address)
       if (str_contains($field_id, '__')) {
         $keys = explode('__', $field_id);
         $parent = $keys[0];
         $child = $keys[1];
-        $field_data = $fields[$parent][$child];
+        if (array_key_exists($parent, $fields) && !is_null($fields[$parent])) $field_data = $fields[$parent][$child];
       } else {
         $field_data = $fields[$field_id];
       }
 
-      $cells[] = [
-        'columnId' => (int) $col_id,
-        'strict' => false,
-        'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
-      ];
+      if (array_key_exists($col_id, $field_handlers) && $field_handlers[$col_id] === "MULTI_PICKLIST" && is_array($field_data)) {
+        $cells[] = [
+          'columnId' => (int) $col_id,
+          'objectValue' => [
+            'objectType' => 'MULTI_PICKLIST',
+            'values' => $field_data,
+          ],
+        ];
+      } else if (!is_null($field_data)) {
+        $cells[] = [
+          'columnId' => (int) $col_id,
+          'strict' => false,
+          'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
+        ];
+      }
     }
 
     return [

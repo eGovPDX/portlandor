@@ -112,7 +112,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_jurisdiction'] = [
       '#type' => 'hidden',
       '#title' => t('Jurisdiction'),
-      '#id' => 'location_jurisdiction',
+      '#attributes' => [ 'id' => 'location_jurisdiction' ],
     ];
     $element['av_suggestions_modal'] = [
       '#type' => 'markup',
