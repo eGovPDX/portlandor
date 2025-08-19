@@ -130,14 +130,14 @@ class PortlandViewsSelect extends Select {
       '#default_value' => $element_properties['display_id'] ?? '',
       '#required' => TRUE,
       '#description' => t('The display ID of the view to use.'),
-      '#options' => self::getViewDisplays($element_properties['view_id']),
+      '#options' => self::getViewDisplays($element_properties['view_id'] ?? ''),
       '#ajax' => [
         'callback' => [static::class, 'ajaxFetchViewFields'],
         'event' => 'input',
       ],
     ];
 
-    $view_fields = self::getViewFields($element_properties['view_id'], $element_properties['display_id']);
+    $view_fields = self::getViewFields($element_properties['view_id'] ?? '', $element_properties['display_id'] ?? '');
     $form['views_select']['label_field'] = [
       '#type' => 'select',
       '#title' => t('Label field'),
