@@ -1,7 +1,11 @@
-{% set is_popular = content.field_popular[0]['#markup'] == 'On' %}
-{% set service_label = node.type.entity.label %}
+{% set service_label %}
+  {% include '@components/badge/badge.twig' with {
+    text: node.type.entity.label,
+    mb: 2
+  } only %}
+{% endset %}
 
-{% embed '@components/morsel/morsel.twig'
+{% include '@components/morsel/morsel.twig'
   with {
     is_draft: node.isPublished() ? false : true,
     layout_mt: 8,
@@ -13,16 +17,7 @@
       style_override: 3
     },
     text: content.field_summary,
-    image: content.field_featured_media|render
+    image: content.field_featured_media|render,
+    items: [content.field_popular, { '#markup': service_label }],
   }
 %}
-  {% block prehead %}
-    {{ parent() }}
-    {% if service_label %}
-      {% include '@components/badge/badge.twig' with {
-        text: service_label,
-        mb: 2
-      } only %}
-    {% endif %}
-  {% endblock %}
-{% endembed %}
