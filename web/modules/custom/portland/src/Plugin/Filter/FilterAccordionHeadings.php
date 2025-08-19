@@ -31,6 +31,9 @@ class FilterAccordionHeadings extends FilterBase
     // Find all headings h1 to h6 and store them in a flat array.
     $headings = [];
     foreach ($xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6') as $heading) {
+      if( $this->isWithinAccordionPanel($heading) ) {
+        continue; // Skip headings that are within an accordion panel.
+      }
       $headings[] = $heading;
     }
     if(empty($headings)) {
@@ -44,11 +47,11 @@ class FilterAccordionHeadings extends FilterBase
         $heading->hasAttribute('data-aria-accordion-heading') &&
         $heading->getAttribute('data-aria-accordion-heading') === 'data-aria-accordion-heading'
       ) {
-        // Look for a previous H3 without the attribute in the array.
+        // Look for a previous heading without the attribute in the array.
         for ($i = $idx - 1; $i >= 0; $i--) {
           $prev = $headings[$i];
           $prev_name = strtolower($prev->nodeName);
-          // Only consider h3-h6
+          // Only consider H3-H6. The default H3 works as expected for H2
           if (in_array($prev_name, ['h3', 'h4', 'h5', 'h6'])) {
             if (
               !$prev->hasAttribute('data-aria-accordion-heading') ||
@@ -84,5 +87,27 @@ class FilterAccordionHeadings extends FilterBase
   public function tips($long = FALSE)
   {
     return $this->t('<p>Modify accordion headings for accessibility.</p>');
+  }
+
+  /**
+   * Helper function to check if an element is within an accordion panel.
+   */
+  private function isWithinAccordionPanel(\DOMElement $element) {
+    if(!$element || $element->nodeType !== XML_ELEMENT_NODE) {
+      return false;
+    }
+    // Traverse up the DOM tree to check if the element is within <div data-aria-accordion-panel="data-aria-accordion-panel">
+    $parent = $element->parentNode;
+    while ($parent && $parent->nodeType === XML_ELEMENT_NODE) {
+      if (
+        strtolower($parent->nodeName) === 'div' &&
+        $parent->hasAttribute('data-aria-accordion-panel') &&
+        $parent->getAttribute('data-aria-accordion-panel') === 'data-aria-accordion-panel'
+      ) {
+        return true;
+      }
+      $parent = $parent->parentNode;
+    }
+    return false;
   }
 }
