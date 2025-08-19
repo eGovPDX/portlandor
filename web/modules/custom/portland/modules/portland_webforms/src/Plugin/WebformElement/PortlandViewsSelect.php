@@ -27,8 +27,8 @@ class PortlandViewsSelect extends Select {
    */
   public function defineDefaultProperties() {
     $properties = [
-      'view' => '',
-      'display' => '',
+      'view_id' => '',
+      'display_id' => '',
       'label_field' => '',
       'value_field' => '',
       'cache_ttl_sec' => 20,
@@ -130,14 +130,14 @@ class PortlandViewsSelect extends Select {
       '#default_value' => $element_properties['display_id'] ?? '',
       '#required' => TRUE,
       '#description' => t('The display ID of the view to use.'),
-      '#options' => self::getViewDisplays($element_properties['view_id'] ?? ''),
+      '#options' => self::getViewDisplays($element_properties['view_id']),
       '#ajax' => [
         'callback' => [static::class, 'ajaxFetchViewFields'],
         'event' => 'input',
       ],
     ];
 
-    $view_fields = self::getViewFields($element_properties['view_id'] ?? '', $element_properties['display_id'] ?? '');
+    $view_fields = self::getViewFields($element_properties['view_id'], $element_properties['display_id']);
     $form['views_select']['label_field'] = [
       '#type' => 'select',
       '#title' => t('Label field'),
