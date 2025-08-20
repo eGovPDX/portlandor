@@ -6,6 +6,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Views;
+use Drupal\webform\Element\WebformAjaxElementTrait;
 use Drupal\webform\Plugin\WebformElement\Select;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -21,6 +22,7 @@ use Drupal\webform\WebformSubmissionInterface;
  */
 class PortlandViewsSelect extends Select {
   use PortlandViewsSelectTrait;
+  use WebformAjaxElementTrait;
 
   /**
    * {@inheritdoc}
@@ -52,7 +54,6 @@ class PortlandViewsSelect extends Select {
   public static function getViewDisplays(string $view_id) {
     $view_storage = \Drupal::entityTypeManager()->getStorage('view');
     $view = $view_storage->load($view_id);
-
     if ($view) {
       $displays = $view->get('display');
       return array_combine(array_keys($displays), array_column($displays, 'display_title'));
@@ -75,36 +76,17 @@ class PortlandViewsSelect extends Select {
     return $options;
   }
 
-  public static function ajaxFetchViewDisplays(&$form, FormStateInterface $form_state) {
-    $view_id = $form_state->getValue(['properties', 'view_id']);
-    $form['properties']['views_select']['display_id']['#options'] = self::getViewDisplays($view_id);
-
-    $res = new AjaxResponse();
-    $res->addCommand(new HtmlCommand('.js-form-item-properties-display-id', $form['properties']['views_select']['display_id']));
-
-    return $res;
-  }
-
-  public static function ajaxFetchViewFields(&$form, FormStateInterface $form_state) {
-    $view_id = $form_state->getValue(['properties', 'view_id']);
-    $display_id = $form_state->getValue(['properties', 'display_id']);
-    $view_fields = self::getViewFields($view_id, $display_id);
-    $form['properties']['views_select']['label_field']['#options'] = $view_fields;
-    $form['properties']['views_select']['value_field']['#options'] = $view_fields;
-
-    $res = new AjaxResponse();
-    $res->addCommand(new HtmlCommand('.js-form-item-properties-label-field', $form['properties']['views_select']['label_field']));
-    $res->addCommand(new HtmlCommand('.js-form-item-properties-value-field', $form['properties']['views_select']['value_field']));
-
-    return $res;
-  }
-
   /**
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    $element_properties = $form_state->get('element_properties');
     $form = parent::form($form, $form_state);
+    $element_properties = $form_state->get('element_properties');
+    // If form is rebuilding from AJAX, get values from user input because
+    // $form_state->get() is blank.
+    if ($form_state->isRebuilding()) {
+      $element_properties = $form_state->getUserInput()['properties'] ?? [];
+    }
 
     $form['views_select'] = [
       '#type' => 'fieldset',
@@ -113,32 +95,30 @@ class PortlandViewsSelect extends Select {
     ];
 
     $form['views_select']['view_id'] = [
-      '#type' => 'entity_autocomplete',
+      '#type' => 'select2',
       '#title' => t('View'),
       '#default_value' => $element_properties['view_id'] ?? '',
       '#required' => TRUE,
       '#description' => t('The view to use.'),
-      '#target_type' => 'view',
-      '#ajax' => [
-        'callback' => [static::class, 'ajaxFetchViewDisplays'],
-        'event' => 'change',
-      ],
+      '#options' => Views::getViewsAsOptions(true, 'enabled'),
     ];
-    $form['views_select']['display_id'] = [
+
+    // create container for ajax trigger
+    $form['views_select']['view_settings'] = [];
+    $form['views_select']['view_settings']['display_id'] = [
       '#type' => 'select',
       '#title' => t('View display ID'),
       '#default_value' => $element_properties['display_id'] ?? '',
       '#required' => TRUE,
-      '#description' => t('The display ID of the view to use.'),
+      '#description' => t('The display ID of the view to use. Display must be using the <strong>Fields</strong> style plugin.'),
       '#options' => self::getViewDisplays($element_properties['view_id']),
-      '#ajax' => [
-        'callback' => [static::class, 'ajaxFetchViewFields'],
-        'event' => 'input',
-      ],
     ];
+    $this->buildAjaxElement('views-select-view-settings', $form['views_select']['view_settings'], $form['views_select']['view_id']);
 
     $view_fields = self::getViewFields($element_properties['view_id'], $element_properties['display_id']);
-    $form['views_select']['label_field'] = [
+    // create container for ajax trigger
+    $form['views_select']['view_settings']['display_settings'] = [];
+    $form['views_select']['view_settings']['display_settings']['label_field'] = [
       '#type' => 'select',
       '#title' => t('Label field'),
       '#default_value' => $element_properties['label_field'] ?? '',
@@ -147,7 +127,7 @@ class PortlandViewsSelect extends Select {
       '#options' => $view_fields,
 
     ];
-    $form['views_select']['value_field'] = [
+    $form['views_select']['view_settings']['display_settings']['value_field'] = [
       '#type' => 'select',
       '#title' => t('Value field'),
       '#default_value' => $element_properties['value_field'] ?? '',
@@ -155,6 +135,8 @@ class PortlandViewsSelect extends Select {
       '#description' => t('The field from the view result to use as the option value.'),
       '#options' => $view_fields,
     ];
+    $this->buildAjaxElement('views-select-display-settings', $form['views_select']['view_settings']['display_settings'], $form['views_select']['view_settings']['display_id']);
+
     $form['views_select']['cache_ttl_sec'] = [
       '#type' => 'number',
       '#min' => 0,
