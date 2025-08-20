@@ -81,6 +81,7 @@ class PortlandNodeFetcher extends WebformElementBase
             '#input' => FALSE,
             '#markup' => '',
             '#theme_wrappers' => ['container'],
+            '#webform_composite' => TRUE,
         ];
     }
 
@@ -111,26 +112,14 @@ class PortlandNodeFetcher extends WebformElementBase
                 }
                 if ($node instanceof Node) {
                     // Attach the node entity to the element for debugging or internal use.
-                    $element['#node'] = $node;
+                    //$element['#node'] = $node;
 
-                    // Flatten all field values and add them to temporary data.
-                    $values = [];
-                    foreach ($node->getFields() as $field_name => $field) {
-                        if ($field->count() === 1) {
-                            $values[$field_name] = $field->value;
-                        } else {
-                            $values[$field_name] = [];
-                            foreach ($field as $item) {
-                                $values[$field_name][] = $item->value;
-                            }
-                        }
-                    }
-
-                    $values['node_alias_path'] = $alias;
+                    // Only store the value of field_body_content as a string.
+                    $value = $node->hasField('field_body_content') ? $node->get('field_body_content')->value : '';
 
                     // Add to submission data, available in Twig via `data.fetch_node`.
                     if ($webform_submission) {
-                        $webform_submission->setData([$element_name => $values] + $webform_submission->getData());
+                        $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
                     }
                 }
             }
