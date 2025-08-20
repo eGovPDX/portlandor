@@ -461,57 +461,6 @@ elements: |-
           </div>
         </div>
       '#ajax': true
-    computed_talk_with_us:
-      '#type': webform_computed_twig
-      '#title': 'Computed Talk With Us'
-      '#title_display': none
-      '#display_on': none
-      '#template': |
-        {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test == "true" %}
-
-        <li>
-          <h3>{{ "Talk with zoning and land use experts first"|t }}</h3>
-          <p>{{ "Before moving forward, schedule time to talk to experts at the City of Portland about your project. Based on information you've shared about your project, you may want to check to see what's possible."|t }}</p>
-
-          <!-- Building permit application -->
-          {% if 1 == 1 %}
-          <div class="text-body rounded border border-3 p-4 mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-              <div class="flex-grow-1">
-                <h4 class="mb-2"><i class="fa-solid fa-phone-volume"></i> {{ "Zoning and land use"|t }}</h4>
-                <p class="mb-3 mb-md-0">{{ "Request approval for porjects that may affect zoning, environmental standards, or the appearance of historic sites."|t }}</p>
-              </div>
-              <div class="flex-shrink-0">
-                <a href="https://www.portland.gov/ppd/early-assistance/15-minute-question-appointments#toc-zoning-and-land-use-questions" target="_blank" class="btn btn-primary rounded-1 ms-md-3 ms-0" aria-label="{{ "Schedule a 15 minutes appointment"|t }}">{{ "Schedule"|t }}</a>
-              </div>
-            </div>
-              
-              
-        		<div class="position-relative mt-4">
-        			<div class="alert p-3">
-        				<p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
-        				<ul class="mb-0">
-        					{% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
-        					<li>{{ "This address is in a Historic District."|t }}</li>
-        					{% endif %}
-        					{% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-        					<li>{{ "This address is in an Environmental Zone."|t }}</li>
-        					{% endif %}
-        					{% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
-        					<li>{{ "This address is in a Greenway Zone."|t }}</li>
-        					{% endif %}
-        					{% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-        					<li>{{ "You're making exterior changes to the property."|t }}</li>
-        					{% endif %}
-        				</ul>
-        			</div>
-        		</div>
-
-          </div>
-          {% endif %}
-        </li>
-
-        {% endif %}
     computed_requirements:
       '#type': webform_computed_twig
       '#title': 'Computed Requirements'
@@ -519,6 +468,8 @@ elements: |-
       '#display_on': none
       '#mode': html
       '#template': |-
+        {% set errors = 0 %}
+
         <li>
             <h3>{{ "Gather requirements"|t }}</h3>
             <p>{{ "You'll need to complete these forms, waivers, and other requirements to get a permit. Additional forms or waivers may be needed depending on the type of project, but this is the starting point:"|t }}</p>
@@ -570,6 +521,27 @@ elements: |-
             <!-- Detailed plans--------------->
             {# required if permit required, which is always #}
             {{ data.fetch_card_detailed_plans|raw }}
+            
+            {% set errors = "" %}
+            {% if data.fetch_card_building_permit_application == "" %}{% set errors = errors ~ "<li>Missing: Building permit application</li>" %}{% endif %}
+            {% if data.fetch_card_simple_bathroom_process == "" %}{% set errors = errors ~ "<li>Missing: Simple bathroom process</li>" %}{% endif %}
+            {% if data.fetch_card_owner_doing_work_form == "" %}{% set errors = errors ~ "<li>Missing: \"Owner doing work\" form</li>" %}{% endif %}
+            {% if data.fetch_card_electrical_permit_application == "" %}{% set errors = errors ~ "<li>Missing: Electrical permit application</li>" %}{% endif %}
+            {% if data.fetch_card_plumbing_permit_application == "" %}{% set errors = errors ~ "<li>Missing: Plumbing permit application</li>" %}{% endif %}
+            {% if data.fetch_card_mechanical_permit_application == "" %}{% set errors = errors ~ "<li>Missing: Mechanical permit application</li>" %}{% endif %}
+            {% if data.fetch_card_zoning_and_land_use_15_min_appointment == "" %}{% set errors = errors ~ "<li>Missing: Zoning and land use</li>" %}{% endif %}
+            {% if data.fetch_card_water_meter_sizing_worksheet == "" %}{% set errors = errors ~ "<li>Missing: Water meter sizing</li>" %}{% endif %}
+            {% if data.fetch_card_residential_sdc_form == "" %}{% set errors = errors ~ "<li>Missing: Residential SDC form</li>" %}{% endif %}
+            {% if data.fetch_card_detailed_plans == "" %}{% set errors = errors ~ "<li>Missing: Detailed plans information</li>" %}{% endif %}
+            
+            {% if errors != "" %}
+            <div class="position-relative mt-4">
+              <div class="error alert alert-danger p-3">
+                <p>{{ '<strong>We\'re sorry, an error has occured.</strong><br>Some content is missing. Please wait a moment and try again. If the error continutes, <a href="/feedback">let us know</a>.</p>'|t }}<ul class="mb-0">{{ errors|raw }}</ul>
+              </div>
+            </div>
+
+            {% endif %}
 
           </li>
     computed_results:
@@ -640,7 +612,7 @@ elements: |-
             unchecked: true
           ':input[name="returning_user"]':
             empty: false
-css: ''
+css: ".permit-guide div.error {\r\n  border-left: 6px solid #dc3545;\r\n  color: #000000;\r\n}\r\n\r\n.permit-guide div.error a, .permit-guide div.error a:hover {\r\n  color: #1d62c9;\r\n  font-size: inherit;\r\n  font-weight: inherit;\r\n  text-decoration: none !important;\r\n}\r\n\r\n.permit-guide div.error a:hover {\r\n  color:inherit;\r\n  text-decoration: underline;\r\n}"
 javascript: ''
 settings:
   ajax: false
@@ -682,6 +654,8 @@ settings:
   form_access_denied_attributes: {  }
   form_file_limit: ''
   form_attributes:
+    class:
+      - permit-guide
     id: residential-bathrooms-guide
   form_method: ''
   form_action: ''
