@@ -97,35 +97,49 @@ class PortlandNodeFetcher extends WebformElementBase
         $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "";
         $render_inline = array_key_exists('#render_inline', $element) && $element['#render_inline'] == "1" ? $element['#render_inline'] : "0";
         $element_name = $element['#webform_key'] ?? NULL;
+        $misisng_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:</strong> ' . $element['#title'] . '</p></div>';
 
-        if ($alias) {
-            $internal_path = \Drupal::service('path_alias.manager')->getPathByAlias($alias);
-            if (preg_match('/^\/node\/(\d+)$/', $internal_path, $matches)) {
-                $nid = $matches[1];
-                $node = Node::load($nid);
+        $node = NULL; // Ensure $node is defined for later checks
 
-                // Get the current content language of the form/page.
-                $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+        if ($alias && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($alias), $matches)) {
+            $nid = $matches[1];
+            $node = Node::load($nid);
 
-                if ($node instanceof Node && $node->hasTranslation($language)) {
-                    $node = $node->getTranslation($language);
+            // Get the current content language of the form/page.
+            $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+            if ($node instanceof Node && $node->hasTranslation($language)) {
+                $node = $node->getTranslation($language);
+            }
+            // Only use node content if published
+            if ($node instanceof Node && $node->isPublished()) {
+                // Attach the node entity to the element for debugging or internal use.
+                //$element['#node'] = $node;
+
+                // Only store the value of field_body_content as a string.
+                $value = $node->hasField('field_body_content') ? $node->get('field_body_content')->value : $misisng_value;
+
+                // Add to submission data, available in Twig via `data.fetch_node`.
+                if ($webform_submission) {
+                    $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
                 }
-                if ($node instanceof Node) {
-                    // Attach the node entity to the element for debugging or internal use.
-                    //$element['#node'] = $node;
-
-                    // Only store the value of field_body_content as a string.
-                    $value = $node->hasField('field_body_content') ? $node->get('field_body_content')->value : '';
-
-                    // Add to submission data, available in Twig via `data.fetch_node`.
-                    if ($webform_submission) {
-                        $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
-                    }
+            } else {
+                // If not published, set value to default missing content message
+                $value = $misisng_value;
+                if ($webform_submission) {
+                    $webform_submission->setData([$element_name => $value, "fetch_error" => 100] + $webform_submission->getData());
                 }
+                // Also clear $node so it doesn't render below
+                $node = NULL;
+            }
+        } else {
+            // If no alias provided, set value to empty string
+            if ($webform_submission) {
+                $webform_submission->setData([$element_name => $misisng_value, "fetch_error" => 200] + $webform_submission->getData());
             }
         }
 
-        // Conditionally render the node body content as HTML if render_inline is enabled
+        // Conditionally render the node body content as HTML if render_inline is enabled and node is published
         if ($render_inline && isset($node) && $node->hasField('field_body_content')) {
             $html = $node->get('field_body_content')->value; // or ->processed if you want filtered text
             $element['#markup'] = Markup::create($html);
