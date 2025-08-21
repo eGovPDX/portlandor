@@ -102,6 +102,7 @@ class MoveGroupMedia extends ViewsBulkOperationsActionBase implements PluginForm
       // Add the new group to the beginning of the list. The first group in the list is the primary group.
       array_unshift($new_display_groups, ['target_id' => $new_group_id]);
       $media->set('field_display_groups', $new_display_groups);
+      $media->setRevisionLogMessage("Bulk operation moved media to group: $new_group_title");
       $media->save();
       // Group relationships are automatically synced after the media is saved. 
       // See _portland_groups_synchronize_entity_group_ownership() in portland_groups.module.
