@@ -106,7 +106,7 @@ class MoveGroupMedia extends ViewsBulkOperationsActionBase implements PluginForm
       $media->save();
       // Group relationships are automatically synced after the media is saved. 
       // See _portland_groups_synchronize_entity_group_ownership() in portland_groups.module.
-      return $this->t("Media moved to $new_group_title.");
+      return $this->t("Media moved to " . $new_group_title);
     }
   }
 
