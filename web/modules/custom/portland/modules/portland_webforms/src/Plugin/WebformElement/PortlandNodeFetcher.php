@@ -28,6 +28,7 @@ class PortlandNodeFetcher extends WebformElementBase
     {
         return [
             'node_alias_path' => '',
+            'render_inline' => '1',
         ] + parent::defineDefaultProperties();
     }
 
@@ -43,9 +44,15 @@ class PortlandNodeFetcher extends WebformElementBase
         $form['node_alias_path'] = [
             '#type' => 'textfield',
             '#title' => $this->t('Node alias path'),
-            '#default_value' => $element['#node_alias_path'],
+            '#default_value' => array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "",
             '#description' => $this->t('Enter a path like /about-us.'),
             '#required' => TRUE,
+        ];
+        $form['render_inline'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Render node content inline'),
+            '#description' => $this->t('If checked, the fetched node\'s content will be rendered directly in the webform. If unchecked, it will only be available to Computed Twig elements.'),
+            '#default_value' => array_key_exists('#render_inline', $element) ? $element['#render_inline'] : TRUE,
         ];
         return $form;
     }
@@ -61,6 +68,8 @@ class PortlandNodeFetcher extends WebformElementBase
         if (isset($user_input['node_alias_path'])) {
             $form_state->setValue('node_alias_path', $user_input['node_alias_path']);
         }
+        $render_inline = $user_input['render_inline'] === NULL ? '0' : $user_input['render_inline'];
+        $form_state->setValue('render_inline', $render_inline);
     }
 
     /**
@@ -72,50 +81,72 @@ class PortlandNodeFetcher extends WebformElementBase
             '#input' => FALSE,
             '#markup' => '',
             '#theme_wrappers' => ['container'],
+            '#webform_composite' => TRUE,
         ];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL)
+    public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL)
     {
-        $alias = $element['#node_alias_path'] ?? NULL;
+        if (!isset($element['#render_inline'])) {
+            $element['#render_inline'] = "1"; // or your desired default
+        }
 
-        if ($alias) {
-            $internal_path = \Drupal::service('path_alias.manager')->getPathByAlias($alias);
-            if (preg_match('/^\/node\/(\d+)$/', $internal_path, $matches)) {
-                $nid = $matches[1];
-                $node = Node::load($nid);
-                if ($node instanceof Node) {
-                    // Attach the node entity to the element for debugging or internal use.
-                    $element['#node'] = $node;
+        $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : "";
+        $render_inline = array_key_exists('#render_inline', $element) && $element['#render_inline'] == "1" ? $element['#render_inline'] : "0";
+        $element_name = $element['#webform_key'] ?? NULL;
+        $misisng_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:</strong> ' . $element['#title'] . '</p></div>';
 
-                    // Flatten all field values and add them to temporary data.
-                    $values = [];
-                    foreach ($node->getFields() as $field_name => $field) {
-                        if ($field->count() === 1) {
-                            $values[$field_name] = $field->value;
-                        } else {
-                            $values[$field_name] = [];
-                            foreach ($field as $item) {
-                                $values[$field_name][] = $item->value;
-                            }
-                        }
-                    }
+        $node = NULL; // Ensure $node is defined for later checks
 
-                    $values['node_alias_path'] = $alias;
+        if ($alias && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($alias), $matches)) {
+            $nid = $matches[1];
+            $node = Node::load($nid);
 
-                    // Add to submission data, available in Twig via `data.fetch_node`.
-                    if ($webform_submission) {
-                        $webform_submission->setData(['fetch_node' => $values] + $webform_submission->getData());
-                    }
+            // Get the current content language of the form/page.
+            $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+            if ($node instanceof Node && $node->hasTranslation($language)) {
+                $node = $node->getTranslation($language);
+            }
+            // Only use node content if published
+            if ($node instanceof Node && $node->isPublished()) {
+                // Attach the node entity to the element for debugging or internal use.
+                //$element['#node'] = $node;
+
+                // Only store the value of field_body_content as a string.
+                $value = $node->hasField('field_body_content') ? $node->get('field_body_content')->value : $misisng_value;
+
+                // Add to submission data, available in Twig via `data.fetch_node`.
+                if ($webform_submission) {
+                    $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
                 }
+            } else {
+                // If not published, set value to default missing content message
+                $value = $misisng_value;
+                if ($webform_submission) {
+                    $webform_submission->setData([$element_name => $value, "fetch_error" => 100] + $webform_submission->getData());
+                }
+                // Also clear $node so it doesn't render below
+                $node = NULL;
+            }
+        } else {
+            // If no alias provided, set value to empty string
+            if ($webform_submission) {
+                $webform_submission->setData([$element_name => $misisng_value, "fetch_error" => 200] + $webform_submission->getData());
             }
         }
 
-        // Suppress output in form.
-        $element['#markup'] = Markup::create('');
+        // Conditionally render the node body content as HTML if render_inline is enabled and node is published
+        if ($render_inline && isset($node) && $node->hasField('field_body_content')) {
+            $html = $node->get('field_body_content')->value; // or ->processed if you want filtered text
+            $element['#markup'] = Markup::create($html);
+        } else {
+            // If not rendering inline, or no node/field, set empty markup to avoid errors.
+            $element['#markup'] = Markup::create('');
+        }
 
         parent::prepare($element, $webform_submission);
     }
