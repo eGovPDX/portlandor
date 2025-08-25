@@ -138,7 +138,13 @@ class PortlandNodeFetcher extends WebformElementBase {
     $render_inline = (array_key_exists('#render_inline', $element) && $element['#render_inline'] == '1') ? '1' : '0';
     $element_name = $element['#webform_key'] ?? NULL;
 
-    $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:</strong> ' . ($element['#title'] ?? 'Node content') . ' (' . $alias . ')</p></div>';
+    $missing_fragment_link = '<a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '</a>';
+
+    if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
+      $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
+    } else {
+      $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> ' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</p></div>';
+    }
 
     $node = NULL;
 
