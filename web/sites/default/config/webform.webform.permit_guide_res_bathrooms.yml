@@ -21,6 +21,16 @@ elements: |-
       '#title': 'Card - Building Permit Application'
       '#node_alias_path': /ppd/residential-permitting/content-component/card-general-building-permit-application
       '#render_inline': 0
+    fetch_card_detailed_plans:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Detailed Plans'
+      '#node_alias_path': /ppd/residential-permitting/content-component/card-bathrooms-detailed-plans
+      '#render_inline': 0
+    fetch_card_zoning_and_land_use_15_min_appointment:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Zoning and Land Use 15 Min Appointment'
+      '#node_alias_path': /ppd/residential-permitting/content-component/card-general-zoning-land-use-15-min-appointment
+      '#render_inline': 0
     fetch_card_simple_bathroom_process:
       '#type': portland_node_fetcher
       '#title': 'Card - Simple Bathroom Process'
@@ -47,25 +57,15 @@ elements: |-
       '#title': 'Card - Mechanical Permit Application'
       '#node_alias_path': /ppd/residential-permitting/content-component/card-general-mechanical-permit-application
       '#render_inline': 0
-    fetch_card_zoning_and_land_use_15_min_appointment:
-      '#type': portland_node_fetcher
-      '#title': 'Card - Zoning and Land Use 15 Min Appointment'
-      '#node_alias_path': /ppd/residential-permitting/content-component/card-general-zoning-land-use-15-min-appointment
-      '#render_inline': 0
     fetch_card_water_meter_sizing_worksheet:
       '#type': portland_node_fetcher
-      '#title': 'Card - Water Meter Sizing Worksheet'
-      '#node_alias_path': /ppd/residential-permitting/content-component/card-general-water-meter-sizing-worksheet
+      '#title': 'Card - Residential Meter Request Form'
+      '#node_alias_path': /ppd/residential-permitting/content-component/card-general-residential-meter-request-form
       '#render_inline': 0
     fetch_card_residential_sdc_form:
       '#type': portland_node_fetcher
       '#title': 'Card - Residential SDC Form'
       '#node_alias_path': /ppd/residential-permitting/content-component/card-general-residential-sdc-form
-      '#render_inline': 0
-    fetch_card_detailed_plans:
-      '#type': portland_node_fetcher
-      '#title': 'Card - Detailed Plans'
-      '#node_alias_path': /ppd/residential-permitting/content-component/card-bathrooms-detailed-plans
       '#render_inline': 0
   test:
     '#type': hidden
@@ -112,6 +112,9 @@ elements: |-
               - path: 'zoning.overlay[].code'
                 field: hidden_zoning_overlays
                 parse: stringify
+              - path: 'zoning.base[0].code'
+                field: hidden_base_zone
+                parse: stringify
               - path: 'zoning.historic_district[].code'
                 field: hidden_historic_district
                 parse: stringify
@@ -149,6 +152,9 @@ elements: |-
       hidden_historic_resource:
         '#type': hidden
         '#title': 'Hidden Historic Resource'
+      hidden_base_zone:
+        '#type': hidden
+        '#title': 'Hidden Base Zone'
       markup_01:
         '#type': webform_markup
         '#states':
@@ -158,6 +164,18 @@ elements: |-
             ':input[name="edit_my_project[Edit my project]"]':
               unchecked: true
         '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
+      container_zoning_warning:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="hidden_base_zone"]':
+              value:
+                '!pattern': '^"(R10|R2\.5|R20|R5|R7)"$'
+        warning_invalid_zone:
+          '#type': portland_node_fetcher
+          '#title': 'Warning - Invalid Zone'
+          '#title_display': none
+          '#node_alias_path': /ppd/residential-permitting/content-component/warning-invalid-zone
     section_property_details:
       '#type': webform_section
       '#title': 'Property Details'
@@ -477,6 +495,15 @@ elements: |-
             {# alwyas required #}
             {{ data.fetch_card_building_permit_application|raw }}
 
+            <!-- Detailed plans--------------->
+            {# required if permit required, which is always #}
+            {{ data.fetch_card_detailed_plans|raw }}
+
+            <!-- Zoning and land use --------------->
+            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes" and (data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_3_historic_landmark == "Yes")) or data.test is not empty %}
+              {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+            {% endif %}
+            
             <!-- Simple bathroom process --------------->
             {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "No" and data.q13_will_this_project_include_any_structural_changes == "No" and data.q12_how_many_total_bathrooms_will_the_property_have <= 3 and data.q7_where_will_this_project_take_place == "In the primary dwelling structure" and data.q10_will_the_sink_for_this_project_be_in_the_same_room == "Yes") or data.test is not empty %}
               {{ data.fetch_card_simple_bathroom_process|raw }}
@@ -502,11 +529,6 @@ elements: |-
               {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
-            <!-- Zoning and land use --------------->
-            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes" and (data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_3_historic_landmark == "Yes")) or data.test is not empty %}
-              {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-            {% endif %}
-            
             <!-- Water meter sizing --------------->
             {% if data.q8_will_this_project_add_new_plumbing_to_an_existing == "Yes" or data.q12_how_many_total_bathrooms_will_the_property_have > 4 or data.test is not empty %}
               {{ data.fetch_card_water_meter_sizing_worksheet|raw }}
@@ -517,9 +539,6 @@ elements: |-
               {{ data.fetch_card_residential_sdc_form|raw }}
             {% endif %}
             
-            <!-- Detailed plans--------------->
-            {# required if permit required, which is always #}
-            {{ data.fetch_card_detailed_plans|raw }}
             
           </li>
     computed_results:
