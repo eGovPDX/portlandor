@@ -125,6 +125,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
       $entity->setNewRevision(TRUE);
     }
     if ($entity instanceof RevisionLogInterface) {
+      $entity->setRevisionUserId(\Drupal::currentUser()->id());
       $entity->setRevisionLogMessage("Bulk operation changed group ownership from $old_group_title ($old_group_id) to $new_group_title ($new_group_id).");
     }
     $entity->save();
