@@ -148,35 +148,13 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    $user = \Drupal::currentUser();
-    $is_admin = in_array('administrator', $user->getRoles());
-
-    // If the user is a site admin, allow them to select any group.
-    if ($is_admin) {
-      $form['group_id'] = [
-        '#title' => $this->t('Select the destination group'),
-        '#type' => 'entity_autocomplete',
-        '#target_type' => 'group',
-        '#required' => TRUE,
-      ];
-    } else {
-      // If the user is not an admin, limit the selection to groups they are a member of.
-      $form['group_id'] = [
-        '#title' => $this->t('Select the destination group'),
-        '#type' => 'entity_autocomplete',
-        '#target_type' => 'group',
-        '#required' => TRUE,
-        '#selection_handler' => 'views',
-        '#selection_settings' => [
-          'view' => [
-            'view_name' => 'assigned_groups',
-            'display_name' => 'er_user_in_groups',
-            'arguments' => [$user->id()],
-          ],
-          'match_operator' => 'CONTAINS'
-        ],
-      ];
-    }
+    $form['group_id'] = [
+      '#title' => $this->t('Select the destination group'),
+      '#type' => 'entity_autocomplete',
+      '#target_type' => 'group',
+      '#required' => TRUE,
+      '#selection_handler' => 'default:group_membership_filter',
+    ];
     return $form;
   }
 
