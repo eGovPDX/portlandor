@@ -24,18 +24,14 @@ class FilterAccordionHeadings extends FilterBase
   public function process($text, $langcode)
   {
     $result = new FilterProcessResult($text);
+    // Skip processing if there is no accordion heading in the text.
+    if (!str_contains($text, 'data-aria-accordion-heading')) return $result;
 
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
 
-    // Find all headings h1 to h6 and store them in a flat array.
-    $headings = [];
-    foreach ($xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6') as $heading) {
-      if( $this->isWithinAccordionPanel($heading) ) {
-        continue; // Skip headings that are within an accordion panel.
-      }
-      $headings[] = $heading;
-    }
+    // Find all headings h1 to h6 and store them in a flat array. Skips headings within accordion panels.
+    $headings = $xpath->query('(//h1 | //h2 | //h3 | //h4 | //h5 | //h6)[not(ancestor::*[@data-aria-accordion-panel])]');
     if(empty($headings)) {
       return $result; // No headings found, nothing to process.
     }
@@ -87,27 +83,5 @@ class FilterAccordionHeadings extends FilterBase
   public function tips($long = FALSE)
   {
     return $this->t('<p>Modify accordion headings for accessibility.</p>');
-  }
-
-  /**
-   * Helper function to check if an element is within an accordion panel.
-   */
-  private function isWithinAccordionPanel(\DOMElement $element) {
-    if(!$element || $element->nodeType !== XML_ELEMENT_NODE) {
-      return false;
-    }
-    // Traverse up the DOM tree to check if the element is within <div data-aria-accordion-panel="data-aria-accordion-panel">
-    $parent = $element->parentNode;
-    while ($parent && $parent->nodeType === XML_ELEMENT_NODE) {
-      if (
-        strtolower($parent->nodeName) === 'div' &&
-        $parent->hasAttribute('data-aria-accordion-panel') &&
-        $parent->getAttribute('data-aria-accordion-panel') === 'data-aria-accordion-panel'
-      ) {
-        return true;
-      }
-      $parent = $parent->parentNode;
-    }
-    return false;
   }
 }
