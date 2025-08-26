@@ -153,7 +153,15 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
       '#type' => 'entity_autocomplete',
       '#target_type' => 'group',
       '#required' => TRUE,
+      // Custom selection handler to filter groups by current user's group membership.
       '#selection_handler' => 'default:group_membership_filter',
+      // Sort groups by title in ascending order.
+      '#selection_settings' => [
+        'sort' => [
+          'field' => 'label',
+          'direction' => 'ASC',
+        ],
+      ],
     ];
     return $form;
   }
