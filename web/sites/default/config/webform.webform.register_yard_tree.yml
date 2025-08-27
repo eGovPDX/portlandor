@@ -132,8 +132,8 @@ elements: |-
       '#type': radios
       '#title': 'Yard Tree Giveaway trees can now be used to fulfill a removal/replant permit. Will any of these trees be used to fulfill a permit?'
       '#options':
-        '0': 'No'
-        '1': 'Yes'
+        - 'No'
+        - 'Yes'
       '#required': true
     markup_permit_disclaimer:
       '#type': webform_markup
@@ -346,6 +346,7 @@ elements: |-
         visible:
           ':input[name="apply_referral_org"]':
             checked: true
+      '#required': true
     apply_referral_event:
       '#type': checkbox
       '#title': 'At a Community Event'
@@ -356,6 +357,7 @@ elements: |-
         visible:
           ':input[name="apply_referral_event"]':
             checked: true
+      '#required': true
     apply_referral_postcard:
       '#type': checkbox
       '#title': 'Postcard in the Mail'
@@ -372,6 +374,7 @@ elements: |-
         visible:
           ':input[name="apply_referral_flyer_or_sign"]':
             checked: true
+      '#required': true
     apply_referral_local_news:
       '#type': checkbox
       '#title': 'Local news article - TV, Radio, Print, or Online'
@@ -382,12 +385,36 @@ elements: |-
         visible:
           ':input[name="apply_referral_local_news"]':
             checked: true
+      '#required': true
     apply_referral_word_of_mouth:
       '#type': checkbox
       '#title': 'Heard from a Friend, Neighbor or Family Member'
     apply_referral_other:
       '#type': checkbox
       '#title': Other
+      '#required_error': 'Please select how you heard about the program.'
+      '#states':
+        optional:
+          - ':input[name="apply_referral_org"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_event"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_postcard"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_past_recipient"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_flyer_or_sign"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_local_news"]':
+              checked: true
+          - or
+          - ':input[name="apply_referral_word_of_mouth"]':
+              checked: true
     apply_referral_other_details:
       '#type': textfield
       '#title': 'Where did you hear about this program?'
@@ -395,6 +422,7 @@ elements: |-
         visible:
           ':input[name="apply_referral_other"]':
             checked: true
+      '#required': true
   after_event:
     '#type': hidden
     '#title': 'Hidden - Is after event season?'
@@ -460,7 +488,7 @@ elements: |-
   hide_events:
     '#type': hidden
     '#title': 'Hidden - Hide Events (comma delimited, substring search)'
-css: ''
+css: "label[for=\"edit-apply-referral-other\"]::after {\r\n  display: none;\r\n}"
 javascript: "(() => {\r\n  Drupal.behaviors.yardTreeGiveaway = {\r\n    updateTimes(form, newEventValue) {\r\n      const date = newEventValue.split(\", \")[1]?.split(\" - \")[0];\r\n      if (!date) return;\r\n      const pickupTimes = form.querySelectorAll(\r\n        'select[name=\"apply_pickup_time\"] option'\r\n      );\r\n\r\n      pickupTimes.forEach((option) => {\r\n        if (option.value.includes(date)) {\r\n          option.removeAttribute(\"disabled\");\r\n          option.removeAttribute(\"hidden\");\r\n        } else {\r\n          option.setAttribute(\"disabled\", \"\");\r\n          option.setAttribute(\"hidden\", \"\");\r\n        }\r\n      });\r\n    },\r\n\r\n    attach(context) {\r\n      once(\"yardTreeGiveaway\", \".webform-submission-form\", context).forEach(\r\n        (form) => {\r\n          // a comma-delimited list of events to hide if they have a substring match\r\n          const hideEvents = form.querySelector('input[name=\"hide_events\"]').value?.split(',');\r\n          const eventRadios = form.querySelectorAll('input[name=\"apply_pickup_event\"]');\r\n          const currentEventValue = form.querySelector('input[name=\"apply_pickup_event\"]:checked')?.value;\r\n          if (currentEventValue) this.updateTimes(form, currentEventValue);\r\n          \r\n          // Hide chestnut except for 1st tree\r\n          form.querySelectorAll(':not([name=apply_tree_1]) > option[value=\"Colossal chestnut and Marrone Di val di chestnut\"]').forEach((el) => el.remove());\r\n\r\n          eventRadios.forEach((radio) => {\r\n            // if the hidden events array matches this radio button, remove it.\r\n            if (hideEvents.some((str) => str.trim() && radio.value.includes(str))) {\r\n              radio.closest('.js-form-item').remove();\r\n              return;\r\n            }\r\n\r\n            radio.addEventListener(\"change\", (e) => {\r\n              form.querySelector('select[name=\"apply_pickup_time\"]').value = \"\";\r\n              this.updateTimes(form, e.target.value);\r\n            });\r\n          });\r\n        }\r\n      );\r\n    },\r\n  };\r\n})();\r\n"
 settings:
   ajax: false
@@ -779,7 +807,7 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      bcc_mail: ''
+      bcc_mail: freeyardtrees@portlandoregon.gov
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -821,7 +849,7 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      bcc_mail: ''
+      bcc_mail: freeyardtrees@portlandoregon.gov
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -866,7 +894,7 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      bcc_mail: ''
+      bcc_mail: freeyardtrees@portlandoregon.gov
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -909,7 +937,7 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      bcc_mail: ''
+      bcc_mail: freeyardtrees@portlandoregon.gov
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -949,7 +977,7 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      bcc_mail: ''
+      bcc_mail: freeyardtrees@portlandoregon.gov
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
