@@ -421,6 +421,9 @@ elements: |-
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Parking strip, median, or other parts of the street or right-of-way'
       contact_home_address:
         '#type': textfield
         '#title': 'Your Home Address'
@@ -442,6 +445,9 @@ elements: |-
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Parking strip, median, or other parts of the street or right-of-way'
       phone:
         '#type': textfield
         '#title': Phone
@@ -462,6 +468,9 @@ elements: |-
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Parking strip, median, or other parts of the street or right-of-way'
       contact_email:
         '#type': textfield
         '#title': Email
@@ -493,7 +502,7 @@ elements: |-
     '#title_display': inline
     '#access_create_roles':
       - authenticated
-    '#display_on': form
+    '#display_on': none
     '#template': |
       {% set routing = "" %}
 
@@ -567,7 +576,7 @@ elements: |-
     '#title_display': inline
     '#access_create_roles':
       - authenticated
-    '#display_on': form
+    '#display_on': none
     '#mode': text
     '#template': |-
       {% set routing = data.computed_routing|split('|') %}
@@ -581,13 +590,14 @@ elements: |-
     '#title_display': inline
     '#access_create_roles':
       - authenticated
-    '#display_on': form
+    '#display_on': none
     '#mode': text
     '#template': |-
       {% set routing = data.computed_routing|split('|') %}
       {% set recipient = routing[1] %}
       {{ recipient }}
     '#whitespace': trim
+    '#store': true
     '#ajax': true
   computed_requires_additional_triage:
     '#type': webform_computed_twig
@@ -601,6 +611,7 @@ elements: |-
       {% set triage = routing[2] %}
       {% if triage == "triage" %}Yes{% else %}No{% endif %}
     '#whitespace': trim
+    '#store': true
     '#ajax': true
   report_ticket_id:
     '#type': hidden
@@ -713,7 +724,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |
-      {% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}
+      {% if data.computed_requires_additional_triage == "Yes" %}
         <h3>This ticket requires additional triage</h3>
         <p><strong>Attention 311 CSR:</strong> this ticket came from the ROW Obstruction form and may need further triage/investigation to ensure it reaches the appropriate resolving entity. If you have any issues tracking down who this should be forwarded to, contact John Dutt.</p>
         {% if data.computed_email_recipient != "" %}
