@@ -149,9 +149,10 @@ elements: |-
       '#type': radios
       '#title': 'Which part of the right of way?'
       '#options':
-        'Travel lane': 'Travel lane'
+        'Vehicle lane on a city street': 'Vehicle lane on a city street'
         'Bike lane': 'Bike lane'
         Sidewalk: Sidewalk
+        'Interstate highway': 'Interstate highway'
       '#required': true
       '#states':
         visible:
@@ -163,6 +164,20 @@ elements: |-
           - or
           - ':input[name="report_debris"]':
               value: Debris
+    markup_street_sweeping:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_debris_where"]':
+            value: 'Vehicle lane on a city street'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The city has limited resources for street cleaning in vehicle lanes. <a href="/transportation/maintenance/street-sweeping">Learn more about street sweeping</a>. If this is an urgent safety hazard, please call <a href="tel:+1-503-823-1700">503-823-1700</a>.</p><p class="mb-0">To report trash in the street related to a campsite or something else, <a href="/311/report-trash">view options for reporting trash</a>.</p></div>'
+    markup_contact_odot:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_debris_where"]':
+            value: 'Interstate highway'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">If the trash or debris is causing a road hazard, please call the Oregon Department of Transportation’s Dispatch Center at <a href="tel:+1-503-283-5859">(503) 283-5859</a>. Otherwise, you can report it to the regional Maintenance District at <a href="tel:+1-971-673-6200">(971) 673-6200</a>.</p></div>'
     report_outdoor_dining_item:
       '#type': radios
       '#title': 'What type of outdoor dining item?'
@@ -181,7 +196,8 @@ elements: |-
         'A tree or large branch that has fallen and is now a hazard in the street or sidewalk': 'A tree or large branch that has fallen and is now a hazard in the street or sidewalk'
         'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection': 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
         'Vegetation blocking a streetlight': 'Vegetation blocking a streetlight'
-        'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane': 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane -- For example, hanging from above or growing in from the side'
+        'Vegetation growing into the sidewalk, public pathway, or other travel lane': 'Vegetation growing into the sidewalk, public pathway, or other travel lane -- For example, hanging from above or growing in from the side'
+        'Vegetation growing into a bike lane': 'Vegetation growing into a bike lane'
         'None of the above': 'None of the above'
       '#required': true
       '#states':
@@ -200,7 +216,10 @@ elements: |-
       '#states':
         visible:
           - ':input[name="report_tree_issue"]':
-              value: 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane'
+              value: 'Vegetation growing into the sidewalk, public pathway, or other travel lane'
+          - or
+          - ':input[name="report_tree_issue"]':
+              value: 'Vegetation growing into a bike lane'
           - or
           - ':input[name="report_tree_issue"]':
               value: 'None of the above'
@@ -315,14 +334,11 @@ elements: |-
         - ':input[name="report_issue_type"]':
             value: 'Sidewalk in need of repair'
         - or
-        - ':input[name="report_debris"]':
-            value: 'Loose trash'
+        - ':input[name="report_debris_where"]':
+            value: 'Bike lane'
         - or
-        - ':input[name="report_debris"]':
-            value: 'Loose glass'
-        - or
-        - ':input[name="report_debris"]':
-            value: Debris
+        - ':input[name="report_debris_where"]':
+            value: Sidewalk
         - or
         - ':input[name="report_debris"]':
             value: 'Something else'
@@ -337,10 +353,13 @@ elements: |-
             value: 'Vegetation blocking a streetlight'
         - or
         - ':input[name="report_tree_issue"]':
-            value: 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane'
+            value: 'Vegetation growing into the sidewalk, public pathway, or other travel lane'
         - or
         - ':input[name="report_tree_issue"]':
-            value: 'Something else, or unsure'
+            value: 'Vegetation growing into a bike lane'
+        - or
+        - ':input[name="report_tree_issue"]':
+            value: 'None of the above'
         - or
         - ':input[name="report_outdoor_dining_item"]':
             value: 'Outdoor seating'
@@ -496,7 +515,7 @@ elements: |-
             data.report_debris_where == "Sidewalk"%}
         {% set routing = "ZENDESK|ROW Compliance" %}
         
-      {% elseif data.report_debris_where == "Bike lane" %}
+      {% elseif data.report_debris_where == "Bike lane" or (data.report_tree_issue == "Vegetation growing into a bike lane" and data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way") %}
         {% set routing = "ZENDESK|Bike Lane Maintenance" %}
         
       {% elseif data.report_construction_work_zone_item == "Cuts in the roadway surface/missing manhole covers" %}
@@ -517,13 +536,12 @@ elements: |-
       {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
         {% set routing = "EMAIL|wasteinfo@portlandoregon.gov" %}
         
-      {% elseif data.report_debris_where == "Travel lane" or 
-                data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" %}
-        {% set routing = "EMAIL|pdxroads@portlandoregon.gov" %}
-        
       {% elseif data.report_vegetation_source == "Park or natural area" or
                 data.report_vegetation_source == "Something else, or unsure" %}
-        {% set routing = "EMAIL|trees@portlandoregon.gov" %}
+        {% set routing = "EMAIL|trees@portlandoregon.gov|triage" %}
+        
+      {% elseif data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" %}
+        {% set routing = "EMAIL|pdxroads@portlandoregon.gov|triage" %}
         
       {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstruction to prevent parking, including unauthorized curb painting" %}
         {% set routing = "EMAIL|PBOTparkingcontrol@portlandoregon.gov" %}
@@ -532,7 +550,7 @@ elements: |-
         {% set routing = "EMAIL|sidewalkrepair@portlandoregon.gov" %}
         
       {% elseif data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection" %}
-        {% set routing = "EMAIL|tom.jensen@portlandoregon.gov" %}
+        {% set routing = "EMAIL|tom.jensen@portlandoregon.gov|triage" %}
         
       {% elseif data.report_tree_issue == "Vegetation blocking a streetlight" %}
         {% set routing = "EMAIL|streetlighting@portlandoregon.gov" %}
@@ -569,6 +587,19 @@ elements: |-
       {% set routing = data.computed_routing|split('|') %}
       {% set recipient = routing[1] %}
       {{ recipient }}
+    '#whitespace': trim
+    '#ajax': true
+  computed_requires_additional_triage:
+    '#type': webform_computed_twig
+    '#title': 'Requires Additional Triage?'
+    '#title_display': inline
+    '#access_create_roles':
+      - authenticated
+    '#mode': text
+    '#template': |-
+      {% set routing = data.computed_routing|split('|') %}
+      {% set triage = routing[2] %}
+      {% if triage == "triage" %}Yes{% else %}No{% endif %}
     '#whitespace': trim
     '#ajax': true
   report_ticket_id:
@@ -690,16 +721,6 @@ elements: |-
         {% endif %}
       {% endif %}
     '#whitespace': spaceless
-    '#ajax': true
-  computed_requires_additional_triage:
-    '#type': webform_computed_twig
-    '#title': 'Requires Additional Triage?'
-    '#title_display': inline
-    '#access_create_roles':
-      - authenticated
-    '#mode': text
-    '#template': '{% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}Yes{% else %}No{% endif %}'
-    '#whitespace': trim
     '#ajax': true
 css: ''
 javascript: ''
@@ -896,7 +917,7 @@ handlers:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
         ':input[name="computed_email_recipient"]':
-          empty: true
+          value: 'ROW Compliance'
     weight: -50
     settings:
       requester_name: contact_name
@@ -915,7 +936,7 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
   email:
     id: email
@@ -996,7 +1017,7 @@ handlers:
     handler_id: zendesk_update_request
     label: 'Update ticket with triage instructions'
     notes: ''
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="computed_triage_message"]':
@@ -1021,7 +1042,7 @@ handlers:
     handler_id: submit_to_zendesk_requires_additional_triage
     label: 'Submit to Zendesk (311 group, requires additional triage)'
     notes: 'If there''s an "additional triage needed" message, send to 311 group for triage.'
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
