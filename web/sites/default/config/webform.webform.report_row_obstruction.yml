@@ -409,21 +409,6 @@ elements: |-
         '#title': Name
         '#states':
           required:
-            - ':input[name="report_temporary_item"]':
-                value: 'Mulch pile'
-            - or
-            - ':input[name="report_temporary_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_outdoor_dining_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
-            - or
-            - ':input[name="report_signage_type"]':
-                value: 'A-board sign'
-            - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Parking strip, median, or other parts of the street or right-of-way'
               ':input[name="report_tree_issue"]':
@@ -434,6 +419,9 @@ elements: |-
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Something else, or unsure'
+            - or
+            - ':input[name="report_tree_issue"]':
+                value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
       contact_home_address:
         '#type': textfield
         '#title': 'Your Home Address'
@@ -441,58 +429,38 @@ elements: |-
         '#description_display': before
         '#states':
           required:
-            - ':input[name="report_temporary_item"]':
-                value: 'Mulch pile'
-            - or
-            - ':input[name="report_temporary_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_outdoor_dining_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
-            - or
-            - ':input[name="report_signage_type"]':
-                value: 'A-board sign'
-            - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Parking strip, median, or other parts of the street or right-of-way'
+              ':input[name="report_tree_issue"]':
+                '!value': 'Vegetation growing into a bike lane'
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Park or natural area'
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Something else, or unsure'
+            - or
+            - ':input[name="report_tree_issue"]':
+                value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
       contact_phone:
         '#type': textfield
         '#title': Phone
         '#input_mask': '(999) 999-9999'
         '#states':
           required:
-            - ':input[name="report_temporary_item"]':
-                value: 'Mulch pile'
-            - or
-            - ':input[name="report_temporary_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_outdoor_dining_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
-            - or
-            - ':input[name="report_signage_type"]':
-                value: 'A-board sign'
-            - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Parking strip, median, or other parts of the street or right-of-way'
+              ':input[name="report_tree_issue"]':
+                '!value': 'Vegetation growing into a bike lane'
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Park or natural area'
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Something else, or unsure'
+            - or
+            - ':input[name="report_tree_issue"]':
+                value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
       contact_email:
         '#type': textfield
         '#title': Email
@@ -776,6 +744,18 @@ elements: |-
     '#display_on': view
     '#template': '{% if data.report_location.location_region_id == "PBL" %}true{% else %}false{% endif %}'
     '#ajax': true
+  computed_bike_lane_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Bike Lane Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_debris_where == "Bike lane" %}
+        {{ data.report_debris }}
+      {% elseif data.report_tree_issue == "Vegetation growing into a bike lane" %}
+        Vegetation
+      {% endif %}
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -1071,7 +1051,7 @@ handlers:
     handler_id: zendesk_update_request
     label: 'Update ticket with triage instructions'
     notes: ''
-    status: false
+    status: true
     conditions:
       enabled:
         ':input[name="computed_requires_additional_triage"]':
@@ -1096,7 +1076,7 @@ handlers:
     handler_id: submit_to_zendesk_requires_additional_triage
     label: 'Submit to Zendesk (311 group, requires additional triage)'
     notes: 'If there''s an "additional triage needed" message, send to 311 group for triage.'
-    status: false
+    status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
@@ -1139,7 +1119,7 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Obstruction in bike lane: [webform_submission:values:report_debris][webform_submission:values:report_tree_issue]'
+      subject: 'Obstruction in bike lane: [webform_submission:values:computed_bike_lane_subject]'
       comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform'
       priority: normal
