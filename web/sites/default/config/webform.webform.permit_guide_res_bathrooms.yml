@@ -67,6 +67,31 @@ elements: |-
       '#title': 'Card - Residential SDC Form'
       '#node_alias_path': /ppd/residential-permitting/content-component/card-general-residential-sdc-form
       '#render_inline': 0
+    process_step_gather:
+      '#type': portland_node_fetcher
+      '#title': 'Process Step - Gather Requirements'
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-general-gather-requirements
+      '#render_inline': 0
+    process_step_apply:
+      '#type': portland_node_fetcher
+      '#title': 'Process Step - Apply'
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-apply
+      '#render_inline': 0
+    process_step_respond:
+      '#type': portland_node_fetcher
+      '#title': 'Process Step - Respond'
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-respond-feedback
+      '#render_inline': 0
+    process_step_start:
+      '#type': portland_node_fetcher
+      '#title': 'Process Step - Start'
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-start-building
+      '#render_inline': 0
+    process_step_inspect:
+      '#type': portland_node_fetcher
+      '#title': 'Process Step - Inspect'
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-schedule-inspections
+      '#render_inline': 0
   test:
     '#type': hidden
     '#title': 'Test mode'
@@ -365,9 +390,7 @@ elements: |-
       '#title': 'Computed Permit Required'
       '#display_on': none
       '#mode': text
-      '#template': |-
-        {# permit is always required #}
-        Yes
+      '#template': 'No'
       '#whitespace': trim
     computed_project_details:
       '#type': webform_computed_twig
@@ -486,11 +509,7 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |-
-        <li>
-            <h3>{{ "Gather requirements"|t }}</h3>
-            <p>{{ "You'll need to complete these forms, waivers, and other requirements to get a permit. Additional forms or waivers may be needed depending on the type of project, but this is the starting point:"|t }}</p>
-
+      '#template': |2-
             <!-- Building permit application --------------->
             {# alwyas required #}
             {{ data.fetch_card_building_permit_application|raw }}
@@ -538,9 +557,6 @@ elements: |-
             {% if data.q11_will_this_project_increase_the_number_of_fixtures == "Yes" or data.test is not empty %}
               {{ data.fetch_card_residential_sdc_form|raw }}
             {% endif %}
-            
-            
-          </li>
     computed_results:
       '#type': webform_computed_twig
       '#title': 'Computed Results'
@@ -556,43 +572,28 @@ elements: |-
 
         <ol class="process-list mb-10">
 
-          {{ data.computed_requirements }}
-
-          </li>
-
-        {% if data.computed_permit_required == "Yes" %}
-
           <li>
-            <h3>{{ "Submit your application materials"|t }}</h3>
-            <p>{{ "Submit your application materials and pay any fees. City staff will review your materials and may ask you to revise or clarify details."|t }}</p>
-            <p class="mb-0"><a aria-label="{{ "Learn more about submitting permit requirements"|t }}" href="https://www.portland.gov/ppd/residential-permitting/bathrooms/apply#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            {{ data.process_step_gather|raw }}
+            {{ data.computed_requirements }}
           </li>
 
           <li>
-            <h3>{{ "Respond to feedback"|t }}</h3>
-            <p>{{ "After you submit your application, it goes through various departments for specialists to review. Check frequently to see if you need to make changes or where your application is in the overall process."|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about responding to feedback"|t }}" href="https://www.portland.gov/ppd/residential-permitting/bathrooms/apply/respond-feedback#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            {{ data.process_step_apply|raw }}
           </li>
 
-        {% endif %}
-
           <li>
-            <h3>{{ "Start building!"|t }}</h3>
-            <p>{{ "You’re ready to start your project. If any rules or inspections apply, be sure to follow them."|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about starting your project"|t }}" href="https://www.portland.gov/ppd/residential-permitting/bathrooms/start-your-project#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            {{ data.process_step_respond|raw }}
           </li>
 
-        {% if data.computed_permit_required == "Yes" %}
+          <li>
+            {{ data.process_step_start|raw }}
+          </li>
 
           <li>
-            <h3>{{ "Schedule inspections"|t }}</h3>
-            <p>{{ "After your project is complete, schedule inspections to get your finished deck approved."|t }}</p>
-            <p class="mb-0" class="float-right"><a aria-label="{{ "Learn more about scheduling an inspection"|t }}" href="https://www.portland.gov/ppd/residential-permitting/bathrooms/get-inspection#body-content" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ "Learn"|t }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            {{ data.process_step_inspect|raw }}
           </li>
 
         </ol>
-
-        {% endif %}
       '#whitespace': spaceless
       '#ajax': true
   actions:
