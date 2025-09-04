@@ -126,6 +126,14 @@ class PortlandNodeFetcher extends WebformElementBase {
     return $element;
   }
 
+  public function buildMissingContentWarning($alias, $element) {
+    if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
+      return '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
+    } else {
+      return '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> ' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</p></div>';
+    }
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -140,15 +148,19 @@ class PortlandNodeFetcher extends WebformElementBase {
 
     $missing_fragment_link = '<a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '</a>';
 
-    if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
-      $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
-    } else {
-      $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> ' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</p></div>';
-    }
+    // if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
+    //   $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
+    // } else {
+    //   $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> ' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</p></div>';
+    // }
 
     $node = NULL;
+    $error = 0;
+    $is_published = false;
+    $value = '';
 
     if ($alias && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($alias), $matches)) {
+      $path_exists = 1;
       $nid = $matches[1];
       $node = Node::load($nid);
 
@@ -159,40 +171,30 @@ class PortlandNodeFetcher extends WebformElementBase {
         $node = $node->getTranslation($language);
       }
 
-      if ($node instanceof Node && $node->isPublished()) {
-        // Only store the value of field_body_content as a string.
-        $value = $node->hasField('field_body_content') ? ($node->get('field_body_content')->value ?? $missing_value) : $missing_value;
-
-        // Add to submission data, available in Twig via `data.{element_key}`.
-        if ($webform_submission && $element_name) {
-          $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
-        }
+      $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
+      if ($is_published) {
+        $value = $node->get('field_body_content')->value;
       }
       else {
-        $value = $missing_value;
-        if ($webform_submission && $element_name) {
-          $webform_submission->setData([$element_name => $value, 'fetch_error' => 100] + $webform_submission->getData());
-        }
-        $node = NULL;
+        $error = 1;
+        $value = $this->buildMissingContentWarning($alias, $element);
       }
     }
     else {
-      if ($webform_submission && $element_name) {
-        $webform_submission->setData([$element_name => $missing_value, 'fetch_error' => 200] + $webform_submission->getData());
-      }
+      $error = 1;
+      $value = $this->buildMissingContentWarning("[Alias missing]", $element);
+    }
+
+    if ($webform_submission && $element_name && $value) {
+      $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
     }
 
     // Render content INSIDE the webform_element wrapper so #states/Conditions can hide it.
-    if ($render_inline === '1' && isset($node) && $node->hasField('field_body_content')) {
-      // FIX: correct operator (->), not a dot.
-      $html = $node->get('field_body_content')->value ?? '';
-      if ($html === '') {
-        $html = $missing_value;
-      }
+    if ($render_inline === '1' && $value) {
       $element['content'] = [
         '#type' => 'container',
         '#attributes' => ['class' => ['portland-node-fetcher__content']],
-        'markup' => ['#markup' => Markup::create($html)],
+        'markup' => ['#markup' => Markup::create($value)],
       ];
     }
     else {
