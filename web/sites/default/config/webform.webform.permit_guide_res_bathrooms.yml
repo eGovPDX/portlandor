@@ -74,12 +74,12 @@ elements: |-
       '#render_inline': 0
     process_step_apply:
       '#type': portland_node_fetcher
-      '#title': 'Process Step - Apply'
+      '#title': 'Process Step - Prepare Application'
       '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-apply
       '#render_inline': 0
     process_step_respond:
       '#type': portland_node_fetcher
-      '#title': 'Process Step - Respond'
+      '#title': 'Process Step - Apply, Pay, Respond to Feedback'
       '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-respond-feedback
       '#render_inline': 0
     process_step_start:
@@ -517,11 +517,6 @@ elements: |-
             <!-- Detailed plans--------------->
             {# required if permit required, which is always #}
             {{ data.fetch_card_detailed_plans|raw }}
-
-            <!-- Zoning and land use --------------->
-            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes" and (data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_3_historic_landmark == "Yes")) or data.test is not empty %}
-              {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-            {% endif %}
             
             <!-- Simple bathroom process --------------->
             {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "No" and data.q13_will_this_project_include_any_structural_changes == "No" and data.q12_how_many_total_bathrooms_will_the_property_have <= 3 and data.q7_where_will_this_project_take_place == "In the primary dwelling structure" and data.q10_will_the_sink_for_this_project_be_in_the_same_room == "Yes") or data.test is not empty %}
@@ -563,7 +558,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': |-
+      '#template': |
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
@@ -571,6 +566,36 @@ elements: |-
         {% endif %}
 
         <ol class="process-list mb-10">
+
+        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.test == "true" %}
+
+          <li>
+            {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+
+            <div class="position-relative mt-4">
+              <div class="alert p-3">
+                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
+                <ul class="mb-0">
+                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Historic District."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "You're making exterior changes to the property."|t }}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+
+          </li>
+
+        {% endif %}
+
 
           <li>
             {{ data.process_step_gather|raw }}
