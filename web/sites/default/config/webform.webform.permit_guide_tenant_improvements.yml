@@ -412,7 +412,7 @@ elements: |-
       '#title': 'Computed Permit Required'
       '#display_on': none
       '#mode': text
-      '#template': 'No'
+      '#template': '{% if data.q2 == "Yes" or data.q3 == "Yes" or data.q4 == "Yes" %}Yes{% else %}No{% endif %}'
       '#whitespace': trim
     computed_project_details:
       '#type': webform_computed_twig
@@ -540,46 +540,88 @@ elements: |-
       '#mode': html
       '#template': |2-
             <!-- Building permit application --------------->
-            {# alwyas required #}
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_building_permit_application|raw }}
+            {% endif %}
 
             <!-- Detailed plans--------------->
-            {# required if permit required, which is always #}
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_detailed_plans|raw }}
+            {% endif %}
             
-            <!-- Simple bathroom process --------------->
-            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "No" and data.q13_will_this_project_include_any_structural_changes == "No" and data.q12_how_many_total_bathrooms_will_the_property_have <= 3 and data.q7_where_will_this_project_take_place == "In the primary dwelling structure" and data.q10_will_the_sink_for_this_project_be_in_the_same_room == "Yes") or data.test is not empty %}
-              {{ data.fetch_card_simple_bathroom_process|raw }}
+            <!-- Change of use or occupancy guidance --------------->
+            {% if data.computed_permit_required == "Yes" or data.q3 == "Yes" or data.q5 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_change_of_use_guidance|raw }}
             {% endif %}
-
-            <!-- "Owner doing work" form --------------->
-            {% if data.q2_who_will_be_doing_the_construction == "The property owner" or data.test is not empty %}
-              {{ data.fetch_card_owner_doing_work_form|raw }}
+            
+            <!-- Seismic upgrade guidance --------------->
+            {% if data.computed_permit_required == "Yes" or data.q3 == "Yes" or data.q5 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_seismic_upgrade_guidance|raw }}
             {% endif %}
-
+            
             <!-- Electrical permit application --------------->
-            {% if data.q3_will_this_project_include_any_electrical_work == "Yes" or data.test is not empty %}
+            {% if data.q8 == "Yes" or data.test != "" %}
               {{ data.fetch_card_electrical_permit_application|raw }}
             {% endif %}
             
             <!-- Plumbing permit application --------------->
-            {% if data.q4_will_this_project_include_any_plumbing_work == "Yes" or data.test is not empty %}
+            {% if data.q9 == "Yes" or data.test != "" %}
               {{ data.fetch_card_plumbing_permit_application|raw }}
             {% endif %}
             
             <!-- Mechanical permit application --------------->
-            {% if data.q5_will_this_project_include_any_mechanical_work == "Yes" or data.test is not empty %}
+            {% if data.q10 == "Yes" or data.test != "" %}
               {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
-            <!-- Water meter sizing --------------->
-            {% if data.q8_will_this_project_add_new_plumbing_to_an_existing == "Yes" or data.q12_how_many_total_bathrooms_will_the_property_have > 4 or data.test is not empty %}
-              {{ data.fetch_card_water_meter_sizing_worksheet|raw }}
+            <!-- Fire sprinkler system permit application --------------->
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
+              {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
-            <!-- Residential SDC form --------------->
-            {% if data.q11_will_this_project_increase_the_number_of_fixtures == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_residential_sdc_form|raw }}
+            <!-- Fire alarm permit application --------------->
+            {% if data.q11 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_fire_alarm_permit_app|raw }}
+            {% endif %}
+            
+            <!-- Fire department requirements --------------->
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
+              {{ data.fetch_card_fire_dept_requirements|raw }}
+            {% endif %}
+            
+            <!-- Commercial systems development charge (SDC) form --------------->
+            {% if data.q3 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_commercial_sdc_form|raw }}
+            {% endif %}
+            
+            <!-- Public right-of-way upgrades --------------->
+            {% if data.q6 == "Increase" or data.test != "" %}
+              {{ data.fetch_card_public_row_upgrades|raw }}
+            {% endif %}
+            
+            <!-- Commercial food establishment requirements --------------->
+            {% if data.q7 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_commercial_food_requirements|raw }}
+            {% endif %}
+            
+            <!-- Shell permit acknowledgement statement --------------->
+            {% if data.q13 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_shell_permit_statement|raw }}
+            {% endif %}
+            
+            <!-- Rack storage system permit requirements --------------->
+            {% if data.q12 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_rack_storage_requirements|raw }}
+            {% endif %}
+            
+            <!-- Fire Safety (15 Minute Appointment) --------------->
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
+              {{ data.fetch_card_fire_safety_appointment|raw }}
+            {% endif %}
+            
+            <!-- Street tree pruning requirements --------------->
+            {% if data.q14 == "Yes" or data.test != "" %}
+              {{ data.fetch_card_street_tree_requirements|raw }}
             {% endif %}
     computed_results:
       '#type': webform_computed_twig
@@ -596,7 +638,7 @@ elements: |-
 
         <ol class="process-list mb-10">
 
-        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.test == "true" %}
+        {% if (data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") or data.test == "true" %}
 
           <li>
             {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
@@ -613,9 +655,6 @@ elements: |-
                   {% endif %}
                   {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
                   <li>{{ "This address is in a Greenway Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "You're making exterior changes to the property."|t }}</li>
                   {% endif %}
                 </ul>
               </div>
