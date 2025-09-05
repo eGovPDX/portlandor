@@ -138,6 +138,7 @@ class PortlandNodeFetcher extends WebformElementBase {
    * {@inheritdoc}
    */
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
+
     if (!isset($element['#render_inline'])) {
       $element['#render_inline'] = '1';
     }
@@ -146,20 +147,37 @@ class PortlandNodeFetcher extends WebformElementBase {
     $render_inline = (array_key_exists('#render_inline', $element) && $element['#render_inline'] == '1') ? '1' : '0';
     $element_name = $element['#webform_key'] ?? NULL;
 
-    $missing_fragment_link = '<a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '</a>';
-
-    // if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
-    //   $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
-    // } else {
-    //   $missing_value = '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> ' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</p></div>';
-    // }
+    // Resolve redirect if one exists for this alias.
+    $resolved_path = $alias;
+    if (!empty($alias)) {
+      // Remove leading slash for redirect.repository lookup.
+      $alias_trimmed = ltrim($alias, '/');
+      $redirects = \Drupal::service('redirect.repository')->findBySourcePath($alias_trimmed);
+      if (!empty($redirects)) {
+        $redirect = reset($redirects);
+        if ($redirect && method_exists($redirect, 'getRedirect')) {
+          $redirect_url = $redirect->getRedirect();
+          // Handle internal:/node/12345 and similar URIs
+          if (is_array($redirect_url) && isset($redirect_url['uri'])) {
+            $uri = $redirect_url['uri'];
+            if (strpos($uri, 'internal:/') === 0) {
+              // Convert internal:/node/12345 to /node/12345
+              $resolved_path = substr($uri, strlen('internal:'));
+            } else {
+              // Fallback: use the URI as-is (could be external: or route:)
+              $resolved_path = $uri;
+            }
+          }
+        }
+      }
+    }
 
     $node = NULL;
-    $error = 0;
     $is_published = false;
     $value = '';
 
-    if ($alias && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($alias), $matches)) {
+    // Use the resolved path for node lookup.
+    if ($resolved_path && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($resolved_path), $matches)) {
       $path_exists = 1;
       $nid = $matches[1];
       $node = Node::load($nid);
@@ -177,12 +195,12 @@ class PortlandNodeFetcher extends WebformElementBase {
       }
       else {
         $error = 1;
-        $value = $this->buildMissingContentWarning($alias, $element);
+        $value = $this->buildMissingContentWarning($resolved_path, $element);
       }
     }
     else {
       $error = 1;
-      $value = $this->buildMissingContentWarning($alias ?? "[Alias missing]", $element);
+      $value = $this->buildMissingContentWarning($resolved_path ?? "[Alias missing]", $element);
     }
 
     if ($webform_submission && $element_name && $value) {
