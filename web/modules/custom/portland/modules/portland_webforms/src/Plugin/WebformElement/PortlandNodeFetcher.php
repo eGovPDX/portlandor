@@ -182,7 +182,7 @@ class PortlandNodeFetcher extends WebformElementBase {
     }
     else {
       $error = 1;
-      $value = $this->buildMissingContentWarning("[Alias missing]", $element);
+      $value = $this->buildMissingContentWarning($alias ?? "[Alias missing]", $element);
     }
 
     if ($webform_submission && $element_name && $value) {
