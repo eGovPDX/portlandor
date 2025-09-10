@@ -292,7 +292,12 @@ AddressVerifierModel.getPropertyByPathNew = function (obj, path, parse = "string
     if (parse === "flatten" && typeof retVal === 'object' && retVal !== null) {
         result = AddressVerifierModel.flattenObjectToDelimitedString(retVal);
     } else if (parse === "stringify") {
-        result = JSON.stringify(retVal);
+        // If the value is a string, return as-is (no quotes). Otherwise, stringify.
+        if (typeof retVal === 'string') {
+            result = retVal;
+        } else {
+            result = JSON.stringify(retVal);
+        }
     } else {
         result = retVal;
     }
