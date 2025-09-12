@@ -102,7 +102,7 @@ function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInter
 /**
  * If current user has Council Agenda Scheduler role,
  *  - and editing a council document where the state is Agenda Scheduling or Published:
- *    - hide all fields except Meeting Date and Time Requested, and those under the Scheduling Request group
+ *    - hide all fields except Meeting Date and those under the Scheduling Request group
  *    - disable/read-only all items under the Scheduling Request group
  *    - set the default revision log
  *  - else:
@@ -117,12 +117,12 @@ function _check_council_agenda_scheduling_state(array &$form, Node $node) {
       // Set the default revision log to denote that this item was scheduled
       $form['revision_log']['widget'][0]['value']['#default_value'] = t('Item scheduled for a future meeting.');
 
-      // Hide all other non-scheduling fields and make all scheduling request fields readonly
+      // Hide all other non-scheduling fields
       foreach ($form as $key => &$element) {
         if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))) {
           if (array_key_exists('#group', $element) && $element['#group'] === 'group_scheduling_request') {
-            $element['#disabled'] = true;
-          } else if ($key !== 'group_scheduling_request' && $key !== 'field_requested_council_date' && $key !== 'field_time_requested') {
+            continue;
+          } else if ($key !== 'group_scheduling_request' && $key !== 'field_requested_council_date') {
             $element['#access'] = false;
           }
         }
