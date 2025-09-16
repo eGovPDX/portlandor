@@ -20,7 +20,6 @@ elements: |-
       '#type': portland_node_fetcher
       '#title': 'Card - Building Permit Application'
       '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-building-permit-application
-      '#render_inline': 0
     fetch_card_detailed_plans:
       '#type': portland_node_fetcher
       '#title': 'Card - Detailed Plans'
@@ -51,6 +50,16 @@ elements: |-
       '#type': portland_node_fetcher
       '#title': 'Card - Mechanical Permit Application'
       '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-mechanical-permit-application
+      '#render_inline': 0
+    fetch_card_propane_permit_application:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Propane Permit Application'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-propane-permit-application
+      '#render_inline': 0
+    fetch_card_tents_permit_application:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Tents Permit Application'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-tents-permit-application
       '#render_inline': 0
     fetch_card_fire_dept_requirements:
       '#type': portland_node_fetcher
@@ -372,11 +381,12 @@ elements: |-
         '#title': 'How many gallons will the propane tank be?'
         '#description': '<p>The size of the tank is measured in gallons. You can usually find this information on the tank itself or in the purchase details.</p>'
         '#description_display': before
+        '#field_suffix': gallons
+        '#required': true
         '#states':
           visible:
             ':input[name="q11_use_of_propane_tank"]':
               value: 'Yes'
-        '#required': true
       q13_use_of_tent:
         '#type': radios
         '#title': 'Will this project include the use of a tent?'
@@ -443,22 +453,24 @@ elements: |-
       '#title': 'Return Link'
       '#display_on': none
       '#template': |
-        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q2_change_the_building_structure_or_size={{ data.q2_change_the_building_structure_or_size }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_structural_changes={{ data.q4_structural_changes }}&q5_occupancy_change={{ data.q5_occupancy_change }}&q6_occupancy_change_increase_or_decrease={{ data.q6_occupancy_change_increase_or_decrease }}&q7_include_restaurant={{ data.q7_include_restaurant }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_fire_alarm_changes={{ data.q11_fire_alarm_changes }}&q12_tall_racks_shelves={{ data.q12_tall_racks_shelves }}&q13_empty_unfinished_space={{ data.q13_empty_unfinished_space }}&q14_street_trees={{ data.q14_street_trees }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
       '#wrapper_attributes':
         class:
           - d-nonex
-      '#display_on': form
+      '#display_on': none
       '#mode': text
       '#template': |-
-        {% if data.q2_making_building_improvements == "Yes" 
+        {% if data.q1_building_installing_permanent_structure == "Yes" 
               or data.q3_change_how_space_is_used == "Yes" 
+              or data.q4_occupancy_change == "Yes"
               or data.q5_occupancy_change == "Yes" 
               or data.q6_include_drive_thru == "Yes" 
               or data.q7_include_restriping_parking_lot == "Yes" %}Yes{% else %}No{% endif %}
       '#whitespace': trim
+      '#ajax': true
     computed_project_details:
       '#type': webform_computed_twig
       '#title': 'Computed Project Details'
@@ -483,6 +495,7 @@ elements: |-
                   <td>{{ data.q2_making_building_improvements }}</td>
                 </tr>
 
+                {% if data.q2 == "Yes" or data.test is not empty %}
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
                   <th style="text-align: left;">{{ "Change in use:"|t }}</th>
                   <td>{{ data.q3_change_how_space_is_used }}</td>
@@ -492,6 +505,7 @@ elements: |-
                   <th style="text-align: left;">{{ "Change in occupancy:"|t }}</th>
                   <td>{{ data.q4_occupancy_change }}</td>
                 </tr>
+                {% endif %}
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
                   <th style="text-align: left;">{{ "Anchoring/building into site:"|t }}</th>
@@ -528,10 +542,12 @@ elements: |-
                   <td>{{ data.q11_use_of_propane_tank }}</td>
                 </tr>
 
+                {% if data.q11_use_of_propane_tank == "Yes" or data.test is not empty %}
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
                   <th style="text-align: left;">{{ "Propane tank size:"|t }}</th>
-                  <td>{{ data.q12_propane_tank_size }}</td>
+                  <td>{{ data.q12_propane_tank_size }} gallons</td>
                 </tr>
+                {% endif %}
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
                   <th style="text-align: left;">{{ "Tent use:"|t }}</th>
@@ -555,7 +571,7 @@ elements: |-
       '#type': webform_computed_twig
       '#title': 'Computed Project Details Container'
       '#title_display': none
-      '#display_on': form
+      '#display_on': none
       '#template': |
         <div class="accordion aria-accordion no-expand-all mb-5" id="acc-1-0">
           <h3 class="aria-accordion__heading accordion-item">
@@ -590,90 +606,49 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |2-
-
+      '#template': |2
             {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_building_permit_application|raw }}
             {% endif %}
 
-
             {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_detailed_plans|raw }}
             {% endif %}
-            
 
-            {% if data.computed_permit_required == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q5_occupancy_change == "Yes" or data.test != "" %}
-              {{ data.fetch_card_change_of_use_guidance|raw }}
-            {% endif %}
+            {{ data.fetch_card_commercial_permitting_15_min_appointment|raw }}
             
-
-            {% if data.computed_permit_required == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q5_occupancy_change == "Yes" or data.test != "" %}
-              {{ data.fetch_card_seismic_upgrade_guidance|raw }}
-            {% endif %}
-            
-
             {% if data.q8_electrical_work == "Yes" or data.test != "" %}
               {{ data.fetch_card_electrical_permit_application|raw }}
             {% endif %}
             
-
             {% if data.q9_plumbing_work == "Yes" or data.test != "" %}
               {{ data.fetch_card_plumbing_permit_application|raw }}
             {% endif %}
             
-
             {% if data.q10_mechanical_work == "Yes" or data.test != "" %}
               {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
-
-            {% if data.computed_permit_required == "Yes" or data.test != "" %}
-              {{ data.fetch_card_fire_sprinkler_permit_app|raw }}
+            {% if data.q12_propane_tank_size >= 60 or data.test != "" %}
+              {{ data.fetch_card_propane_permit_application|raw }}
             {% endif %}
-            
 
-            {% if data.q11_fire_alarm_changes == "Yes" or data.test != "" %}
-              {{ data.fetch_card_fire_alarm_permit_app|raw }}
+            {% if data.q13_use_of_tent == "Yes" or data.test != "" %}
+              {{ data.fetch_card_tents_permit_application|raw }}
             {% endif %}
-            
 
-            {% if data.computed_permit_required == "Yes" or data.test != "" %}
-              {{ data.fetch_card_fire_dept_requirements|raw }}
+            {{ data.fetch_card_fire_dept_requirements|raw }}
+            
+            {% if data.q14_use_of_portable_sign == "Yes" or data.test != "" %}
+              {{ data.fetch_card_portable_sign_registration|raw }}
             {% endif %}
-            
 
-            {% if data.q3_change_how_space_is_used   == "Yes" or data.test != "" %}
-              {{ data.fetch_card_commercial_sdc_form|raw }}
-            {% endif %}
-            
-
-            {% if data.q6_occupancy_change_increase_or_decrease == "Increase" or data.test != "" %}
-              {{ data.fetch_card_public_row_upgrades|raw }}
-            {% endif %}
-            
-
-            {% if data.q7_include_restaurant == "Yes" or data.test != "" %}
-              {{ data.fetch_card_commercial_food_requirements|raw }}
-            {% endif %}
-            
-
-            {% if data.q13_empty_unfinished_space == "Yes" or data.test != "" %}
-              {{ data.fetch_card_shell_permit_statement|raw }}
-            {% endif %}
-            
-
-            {% if data.q12_tall_racks_shelves == "Yes" or data.test != "" %}
-              {{ data.fetch_card_rack_storage_requirements|raw }}
-            {% endif %}
-            
-
-            {% if data.computed_permit_required == "Yes" or data.test != "" %}
-              {{ data.fetch_card_fire_safety_appointment|raw }}
-            {% endif %}
-            
-
-            {% if data.q14_street_trees == "Yes" or data.test != "" %}
+            {% if data.q15_tree_pruning_in_right_of_way == "Yes" or data.test != "" %}
               {{ data.fetch_card_street_tree_requirements|raw }}
+            {% endif %}
+            
+            {% if data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_tenant_improvement|raw }}
             {% endif %}
       '#whitespace': trim
     computed_results:
@@ -682,7 +657,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': |+
+      '#template': |
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
@@ -697,31 +672,9 @@ elements: |-
           </li>
         {% endif %}
 
-        {% if (data.q0_3_historic_landmark == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_1_environmental_overlay_zone == "Yes") or data.test != "" %}
-
-          <li>
-            {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-
-            <div class="position-relative mt-4">
-              <div class="alert p-3">
-                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
-                <ul class="mb-0">
-                  {% if data.q0_3_historic_landmark == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Historic District."|t }}</li>
-                  {% endif %}
-                  {% if data.q0_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q0_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
-
-          </li>
-
-        {% endif %}
+        <li>
+          {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+        </li>
 
         {% if data.computed_requirements != "" or data.test != "" %}
           <li>
@@ -751,7 +704,6 @@ elements: |-
         {% endif %}
 
         </ol>
-
       '#whitespace': spaceless
       '#ajax': true
   actions:
