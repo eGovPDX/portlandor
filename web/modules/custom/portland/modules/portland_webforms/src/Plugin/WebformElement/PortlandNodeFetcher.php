@@ -139,6 +139,9 @@ class PortlandNodeFetcher extends WebformElementBase {
    */
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
 
+    // Always define $edit_link to avoid undefined variable warnings.
+    $edit_link = '';
+
     if (!isset($element['#render_inline'])) {
       $element['#render_inline'] = '1';
     }
@@ -192,6 +195,11 @@ class PortlandNodeFetcher extends WebformElementBase {
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
         $value = $node->get('field_body_content')->value;
+        // Add edit link for authenticated users if node is found and published.
+        if (\Drupal::currentUser()->isAuthenticated()) {
+          $edit_url = $node->toUrl('edit-form')->toString();
+          $edit_link = '<div class="portland-node-fetcher__edit-link"><a href="' . htmlspecialchars($edit_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" class="contextual-icon-link" title="Edit">✎</a></div>';
+        }
       }
       else {
         $error = 1;
@@ -203,8 +211,12 @@ class PortlandNodeFetcher extends WebformElementBase {
       $value = $this->buildMissingContentWarning($resolved_path ?? "[Alias missing]", $element);
     }
 
+    // For computed twig/data array, group edit link and content in a parent div for authenticated users.
     if ($webform_submission && $element_name && $value) {
-      $webform_submission->setData([$element_name => $value] + $webform_submission->getData());
+      $grouped_markup = '<div class="portland-node-fetcher__wrapper">' . $edit_link . '<div class="portland-node-fetcher__inner-content">' . $value . '</div></div>';
+      $webform_submission->setData([
+        $element_name => $grouped_markup
+      ] + $webform_submission->getData());
     }
 
     // Render content INSIDE the webform_element wrapper so #states/Conditions can hide it.
@@ -212,7 +224,14 @@ class PortlandNodeFetcher extends WebformElementBase {
       $element['content'] = [
         '#type' => 'container',
         '#attributes' => ['class' => ['portland-node-fetcher__content']],
-        'markup' => ['#markup' => Markup::create($value)],
+        'edit_link' => [
+          '#markup' => $edit_link,
+          '#weight' => 0,
+        ],
+        'markup' => [
+          '#markup' => Markup::create('<div class="portland-node-fetcher__inner-content">' . $value . '</div>'),
+          '#weight' => 10,
+        ],
       ];
     }
     else {
