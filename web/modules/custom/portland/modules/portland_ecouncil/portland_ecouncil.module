@@ -102,10 +102,11 @@ function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInter
 /**
  * If current user has Council Agenda Scheduler role,
  *  - and editing a council document where the state is Agenda Scheduling or Published:
- *    - hide all fields except Meeting Date and those under the Scheduling Request group
- *    - disable/read-only all items under the Scheduling Request group
  *    - set the default revision log
- *  - else:
+ *    - hide all non-scheduling related fields
+ *    - move Meeting Date, Agenda Type, and Time Requested to the top
+ *    - restrict the list of available agenda types to only "Regular" and "Consent"
+ *  - and editing a council document in any other state:
  *    - hide the Meeting Date field since this should only be editable by Agenda Scheduler if the item is in one of the two above states.
  */
 function _check_council_agenda_scheduling_state(array &$form, Node $node) {
@@ -114,17 +115,28 @@ function _check_council_agenda_scheduling_state(array &$form, Node $node) {
     if ($node->moderation_state->value === 'agenda_scheduling' || $node->moderation_state->value === 'published') {
       // Hide title field
       $form['title']['#access'] = false;
-      // Set the default revision log to denote that this item was scheduled
+      // Set the default revision log for the scheduling use case
       $form['revision_log']['widget'][0]['value']['#default_value'] = t('Item scheduled for a future meeting.');
+      // Restrict available agenda types to regular and consent
+      $form['field_agenda_type']['widget']['#options'] = array_intersect_key(
+        $form['field_agenda_type']['widget']['#options'],
+        array_flip(['regular', 'consent']),
+      );
 
-      // Hide all other non-scheduling fields
+      // Define the properties of all visible fields. All other fields will be hidden
+      $visible_fields = [
+        'group_scheduling_request' => [],
+        'field_requested_council_date' => [],
+        'field_agenda_type' => [ '#group' => null ],
+        'field_time_requested' => [ '#group' => null ],
+        'field_staff_committee_preference' => [ '#disabled' => true ],
+        'field_preferred_meeting_date' => [ '#disabled' => true ],
+        'field_staff_commitee_pref_info' => [ '#disabled' => true ],
+      ];
       foreach ($form as $key => &$element) {
         if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))) {
-          if (array_key_exists('#group', $element) && $element['#group'] === 'group_scheduling_request') {
-            continue;
-          } else if ($key !== 'group_scheduling_request' && $key !== 'field_requested_council_date') {
-            $element['#access'] = false;
-          }
+          if (array_key_exists($key, $visible_fields)) $form[$key] = array_merge($form[$key], $visible_fields[$key]);
+          else $element['#access'] = false;
         }
       }
     } else {
