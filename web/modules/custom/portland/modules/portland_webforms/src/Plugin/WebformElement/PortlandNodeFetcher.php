@@ -198,7 +198,9 @@ class PortlandNodeFetcher extends WebformElementBase {
         // Add edit link for authenticated users if node is found and published.
         if (\Drupal::currentUser()->isAuthenticated()) {
           $edit_url = $node->toUrl('edit-form')->toString();
-          $edit_link = '<div class="portland-node-fetcher__edit-link"><a href="' . htmlspecialchars($edit_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" class="contextual-icon-link" title="Edit">✎</a></div>';
+          $node_title = $node->getTitle();
+          $edit_title = 'Edit ' . $node_title;
+          $edit_link = '<div class="portland-node-fetcher__edit-link"><a href="' . htmlspecialchars($edit_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" class="contextual-icon-link" title="' . htmlspecialchars($edit_title, ENT_QUOTES, 'UTF-8') . '">✎</a></div>';
         }
       }
       else {
