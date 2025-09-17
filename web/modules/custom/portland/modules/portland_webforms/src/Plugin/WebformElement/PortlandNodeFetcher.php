@@ -18,12 +18,14 @@ use Drupal\Core\Render\Markup;
  *   category = @Translation("Custom")
  * )
  */
-class PortlandNodeFetcher extends WebformElementBase {
+class PortlandNodeFetcher extends WebformElementBase
+{
 
   /**
    * {@inheritdoc}
    */
-  protected function defineDefaultProperties(): array {
+  protected function defineDefaultProperties(): array
+  {
     return [
       'node_alias_path' => '',
       'render_inline' => '1',
@@ -33,7 +35,8 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array
+  {
     $form = parent::buildConfigurationForm($form, $form_state);
     $element = $form_state->get('element');
 
@@ -69,7 +72,8 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void
+  {
     parent::submitConfigurationForm($form, $form_state);
 
     $user_input = $form_state->getUserInput();
@@ -86,7 +90,8 @@ class PortlandNodeFetcher extends WebformElementBase {
    * Keep Webform's own pre_render (wrapper & data-attrs), add our classes,
    * and add an after_build to mirror #states onto the inner content.
    */
-  public function getInfo(): array {
+  public function getInfo(): array
+  {
     $info = parent::getInfo();                         // preserve Webform’s wiring
     $info['#input'] = FALSE;                           // display-only element
     $info['#theme_wrappers'] = ['webform_element'];    // standard webform wrapper
@@ -98,7 +103,8 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * Add recognizable classes to the element wrapper (useful for theming/debug).
    */
-  public static function preRenderNodeFetcher(array $element): array {
+  public static function preRenderNodeFetcher(array $element): array
+  {
     $element['#wrapper_attributes']['class'][] = 'js-webform-type-portland-node-fetcher';
     $element['#wrapper_attributes']['class'][] = 'webform-type-portland-node-fetcher';
 
@@ -114,19 +120,20 @@ class PortlandNodeFetcher extends WebformElementBase {
    * After build: ensure any #states/Conditions applied to this element
    * are also applied to the inner 'content' child so it hides reliably.
    */
-  public static function afterBuildPropagateStatesToContent(array $element, FormStateInterface $form_state): array {
+  public static function afterBuildPropagateStatesToContent(array $element, FormStateInterface $form_state): array
+  {
     if (isset($element['#states']) && isset($element['content']) && is_array($element['content'])) {
       if (!isset($element['content']['#states'])) {
         $element['content']['#states'] = $element['#states'];
-      }
-      else {
+      } else {
         $element['content']['#states'] += $element['#states'];
       }
     }
     return $element;
   }
 
-  public function buildMissingContentWarning($alias, $element) {
+  public function buildMissingContentWarning($alias, $element)
+  {
     if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
       return '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
     } else {
@@ -137,7 +144,8 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL)
+  {
 
     // Always define $edit_link to avoid undefined variable warnings.
     $edit_link = '';
@@ -196,19 +204,18 @@ class PortlandNodeFetcher extends WebformElementBase {
       if ($is_published) {
         $value = $node->get('field_body_content')->value;
         // Add edit link for authenticated users if node is found and published.
-        if (\Drupal::currentUser()->isAuthenticated()) {
+        $current_user = \Drupal::currentUser();
+        if ($current_user->isAuthenticated() && array_intersect(['glossary_editor', 'administrator'], $current_user->getRoles())) {
           $edit_url = $node->toUrl('edit-form')->toString();
           $node_title = $node->getTitle();
           $edit_title = 'Edit ' . $node_title;
           $edit_link = '<div class="portland-node-fetcher__edit-link"><a href="' . htmlspecialchars($edit_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" class="contextual-icon-link" title="' . htmlspecialchars($edit_title, ENT_QUOTES, 'UTF-8') . '">✎</a></div>';
         }
-      }
-      else {
+      } else {
         $error = 1;
         $value = $this->buildMissingContentWarning($resolved_path, $element);
       }
-    }
-    else {
+    } else {
       $error = 1;
       $value = $this->buildMissingContentWarning($resolved_path ?? "[Alias missing]", $element);
     }
@@ -235,13 +242,11 @@ class PortlandNodeFetcher extends WebformElementBase {
           '#weight' => 10,
         ],
       ];
-    }
-    else {
+    } else {
       // Ensure no stray child if not rendering inline.
       unset($element['content']);
     }
 
     parent::prepare($element, $webform_submission);
   }
-
 }
