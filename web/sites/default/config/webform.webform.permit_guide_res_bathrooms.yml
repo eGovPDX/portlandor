@@ -92,6 +92,11 @@ elements: |-
       '#title': 'Process Step - Inspect'
       '#node_alias_path': /ppd/residential-permitting/content-component/process-step-bathrooms-schedule-inspections
       '#render_inline': 0
+    warning_invalid_zone:
+      '#type': portland_node_fetcher
+      '#title': 'Warning - Invalid Zone'
+      '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      '#render_inline': 0
   test:
     '#type': hidden
     '#title': 'Test mode'
@@ -189,22 +194,30 @@ elements: |-
             ':input[name="edit_my_project[Edit my project]"]':
               unchecked: true
         '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
-      container_zoning_warning:
-        '#type': container
-        '#states':
-          visible:
-            ':input[name="test"]':
-              filled: true
-            ':input[name="q1_project_address[location_verification_status]"]':
-              value: Verified
-            ':input[name="hidden_base_zone"]':
-              value:
-                '!pattern': R10|R2\.5|R20|R5|R7
-        warning_invalid_zone:
-          '#type': portland_node_fetcher
-          '#title': 'Warning - Invalid Zone'
-          '#title_display': none
-          '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      computed_valid_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the zone valid?'
+        '#title_display': none
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#mode': text
+        '#template': "{% if data.hidden_base_zone in ['R10','R2.5','R20','R5','R7'] %}Yes{% elseif data.q1_project_address.location_verification_status == 'Verified' %}No{% endif %}"
+        '#whitespace': trim
+        '#ajax': true
+      computed_invalid_zone_warning:
+        '#type': webform_computed_twig
+        '#title': 'Invalid Zone Warning'
+        '#title_display': none
+        '#display_on': form
+        '#mode': html
+        '#template': |-
+          {% if data.computed_valid_zone == "No" %}
+            <div class="mb-3">
+            {{ data.warning_invalid_zone|raw }}
+            </div>
+          {% endif %}
+        '#ajax': true
     section_property_details:
       '#type': webform_section
       '#title': 'Property Details'
@@ -402,7 +415,11 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |2+
+      '#template': |+
+        {% if data.computed_valid_zone %}
+          <div class="mb-5">{{ data.computed_invalid_zone_warning|raw }}</div>
+        {% endif %}
+
               <table class="mb-5">
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
@@ -562,7 +579,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': |
+      '#template': |+
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
@@ -571,7 +588,7 @@ elements: |-
 
         <ol class="process-list mb-10">
 
-        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.test == "true" %}
+        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.computed_valid_zone == "No" or data.test == "true" %}
 
           <li>
             {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
@@ -591,6 +608,9 @@ elements: |-
                   {% endif %}
                   {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
                   <li>{{ "You're making exterior changes to the property."|t }}</li>
+                  {% endif %}
+                  {% if data.computed_valid_zone == "No" or data.test == "true" %}
+                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
                   {% endif %}
                 </ul>
               </div>
@@ -623,6 +643,7 @@ elements: |-
           </li>
 
         </ol>
+
       '#whitespace': spaceless
       '#ajax': true
   actions:
