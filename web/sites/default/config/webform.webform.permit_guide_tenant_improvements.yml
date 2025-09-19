@@ -152,6 +152,11 @@ elements: |-
       '#title': 'Process Step - Get Inspections'
       '#node_alias_path': /ppd/commercial-permitting/content-component/process-step-commercial-tenant-improvement-get
       '#render_inline': 0
+    warning_invalid_zone:
+      '#type': portland_node_fetcher
+      '#title': 'Warning - Invalid Zone'
+      '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      '#render_inline': 0
   test:
     '#type': hidden
     '#title': 'Test mode'
@@ -247,22 +252,28 @@ elements: |-
             ':input[name="q0_project_address[location_verification_status]"]':
               '!value': Verified
         '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
-      container_zoning_warning:
-        '#type': container
-        '#states':
-          visible:
-            ':input[name="test"]':
-              filled: true
-            ':input[name="q1_project_address[location_verification_status]"]':
-              value: Verified
-            ':input[name="hidden_base_zone"]':
-              value:
-                '!pattern': R10|R2\.5|R20|R5|R7
-        warning_invalid_zone:
-          '#type': portland_node_fetcher
-          '#title': 'Warning - Invalid Zone'
-          '#title_display': none
-          '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      computed_valid_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the zone valid?'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
+        '#whitespace': trim
+        '#ajax': true
+      computed_invalid_zone_warning:
+        '#type': webform_computed_twig
+        '#title': 'Invalid Zone Warning'
+        '#title_display': none
+        '#display_on': form
+        '#mode': html
+        '#template': |-
+          {% if data.computed_valid_zone == "No" %}
+            {{ data.warning_invalid_zone|raw }}
+          {% endif %}
+        '#ajax': true
     section_property_details:
       '#type': webform_section
       '#title': 'Property Details'
@@ -704,22 +715,26 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': |+
+      '#template': |
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
         </div>
         {% endif %}
 
+        {% if data.computed_valid_zone == "No" %}
+          <div class="mb-5">{{ data.computed_invalid_zone_warning }}</div>
+        {% endif %}
+
         <ol class="process-list mb-10">
 
-        {% if data.computed_permit_required == "No" or data.test != "" %}
+        {% if (data.computed_permit_required == "No" and data.computed_valid_zone == "Yes") or data.test != "" %}
           <li>
             {{ data.process_step_building_permit_not_needed|raw }}
           </li>
         {% endif %}
 
-        {% if (data.q0_3_historic_landmark == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_1_environmental_overlay_zone == "Yes") or data.test != "" %}
+        {% if (data.q0_3_historic_landmark == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_1_environmental_overlay_zone == "Yes") or data.computed_valid_zone == "No" or data.test != "" %}
 
           <li>
             {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
@@ -736,6 +751,9 @@ elements: |-
                   {% endif %}
                   {% if data.q0_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
                   <li>{{ "This address is in a Greenway Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.computed_valid_zone == "No" or data.test is not empty %}
+                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
                   {% endif %}
                 </ul>
               </div>
@@ -773,7 +791,6 @@ elements: |-
         {% endif %}
 
         </ol>
-
       '#whitespace': spaceless
       '#ajax': true
   actions:
@@ -1002,7 +1019,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Your tenant improvement permit guide'
-      body: '<p>Thanks for telling us about your tenant improvement project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]#residential-bathrooms-guide"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/commercial-permitting/tenant-improvement">visit our pages on tenant improvement with change of occupancy</a>. <span style="color:Red;">TODO: need final production link</span></p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your tenant improvement permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
+      body: '<p>Thanks for telling us about your tenant improvement project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/commercial-permitting/tenant-improvement">visit our pages on tenant improvement with change of occupancy</a>. <span style="color:Red;">TODO: need final production link</span></p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your tenant improvement permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
