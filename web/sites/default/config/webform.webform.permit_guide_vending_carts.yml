@@ -52,10 +52,15 @@ elements: |-
       '#title': 'Card - Mechanical Permit Application'
       '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-mechanical-permit-application
       '#render_inline': 0
-    fetch_card_propane_permit_application:
+    fetch_card_propane_special_tank_permit:
       '#type': portland_node_fetcher
-      '#title': 'Card - Propane Permit Application'
-      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-propane-permit-application
+      '#title': 'Card - Propane Special Tank Permit'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-special-propane-tank-permit-application
+      '#render_inline': 0
+    fetch_card_propane_portable_device_permit:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Portable Propane Device Permit'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-portable-propane-device-permit
       '#render_inline': 0
     fetch_card_tents_permit_application:
       '#type': portland_node_fetcher
@@ -390,12 +395,14 @@ elements: |-
         '#options': yes_no
         '#required': true
       q12_propane_tank_size:
-        '#type': number
-        '#title': 'How many gallons will the propane tank be?'
-        '#description': '<p>The size of the tank is measured in gallons. You can usually find this information on the tank itself or in the purchase details.</p>'
+        '#type': radios
+        '#title': 'Which of these best describes your tank size?'
+        '#description': '<p>You can usually find the size of the tank on the tank itself or in the purchase details.</p>'
         '#description_display': before
-        '#field_suffix': gallons
-        '#required': true
+        '#options':
+          'Less than 17 oz': 'Less than 17 oz'
+          '17 oz to under 25 gallons': '17 oz to under 25 gallons'
+          '25 gallons or more': '25 gallons or more'
         '#states':
           visible:
             ':input[name="q11_use_of_propane_tank"]':
@@ -558,7 +565,7 @@ elements: |-
                 {% if data.q11_use_of_propane_tank == "Yes" or data.test is not empty %}
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
                   <th style="text-align: left;">{{ "Propane tank size:"|t }}</th>
-                  <td>{{ data.q12_propane_tank_size }} gallons</td>
+                  <td>{{ data.q12_propane_tank_size }}</td>
                 </tr>
                 {% endif %}
 
@@ -622,7 +629,7 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |2
+      '#template': |2-
             {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_building_permit_application|raw }}
             {% endif %}
@@ -645,8 +652,12 @@ elements: |-
               {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
-            {% if data.q12_propane_tank_size >= 60 or data.test != "" %}
-              {{ data.fetch_card_propane_permit_application|raw }}
+            {% if data.q12_propane_tank_size == "25 gallons or more" or data.test != "" %}
+              {{ data.fetch_card_propane_special_tank_permit|raw }}
+            {% endif %}
+
+            {% if data.q12_propane_tank_size == "17 oz to under 25 gallons" or data.test != "" %}
+              {{ data.fetch_card_propane_portable_device_permit|raw }}
             {% endif %}
 
             {% if data.q13_use_of_tent == "Yes" or data.test != "" %}
