@@ -100,20 +100,42 @@ function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInter
 }
 
 /**
- * If current user has Council Agenda Scheduler role and editing a council document where
- * the state is Agenda Scheduling: hide all fields except Requested Council Date and Time Requested.
+ * If current user has Council Agenda Scheduler role,
+ *  - and editing a council document where the state is Agenda Scheduling or Published:
+ *    - set the default revision log
+ *    - hide all non-scheduling related fields
+ *    - move Meeting Date, Agenda Type, and Time Requested to the top
+ *  - and editing a council document in any other state:
+ *    - hide the Meeting Date field since this should only be editable by Agenda Scheduler if the item is in one of the two above states.
  */
 function _check_council_agenda_scheduling_state(array &$form, Node $node) {
   $user_roles = \Drupal::currentUser()->getRoles();
-  if (in_array('council_agenda_scheduler', $user_roles) && $node->moderation_state->value === 'agenda_scheduling') {
-    // Hide title field
-    $form['title']['#access'] = false;
-    // Hide all other non-president fields
-    foreach ($form as $key => &$element) {
-      if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))
-        && ($key !== 'field_requested_council_date'  && $key !== 'field_time_requested')) {
-        $element['#access'] = false;
+  if (in_array('council_agenda_scheduler', $user_roles)) {
+    if ($node->moderation_state->value === 'agenda_scheduling' || $node->moderation_state->value === 'published') {
+      // Hide title field
+      $form['title']['#access'] = false;
+      // Set the default revision log for the scheduling use case
+      $form['revision_log']['widget'][0]['value']['#default_value'] = t('Item scheduled for a future meeting.');
+
+      // Define the properties of all visible fields. All other fields will be hidden
+      $visible_fields = [
+        'group_scheduling_request' => [],
+        'field_requested_council_date' => [ '#group' => null ],
+        'field_agenda_type' => [ '#group' => null ],
+        'field_time_requested' => [ '#group' => null ],
+        'field_requested_start_time' => [ '#disabled' => true ],
+        'field_staff_committee_preference' => [ '#disabled' => true ],
+        'field_preferred_meeting_date' => [ '#disabled' => true ],
+        'field_staff_commitee_pref_info' => [ '#disabled' => true ],
+      ];
+      foreach ($form as $key => &$element) {
+        if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))) {
+          if (array_key_exists($key, $visible_fields)) $form[$key] = array_merge($form[$key], $visible_fields[$key]);
+          else $element['#access'] = false;
+        }
       }
+    } else {
+      $form['field_requested_council_date']['#access'] = false;
     }
   }
 }
@@ -146,12 +168,20 @@ function _check_council_president_state(array &$form, Node $node) {
 
 const COUNCIL_DOCUMENT_TYPE_PROCLAMATION_TID = 75;
 /**
- * "Proclamation" type should only be accessible to Council Clerk/admin.
+ * "Time Certain" agenda type and "Proclamation" document type should only be accessible to Council Clerk/admin.
  */
-function _hide_council_document_types(array &$form) {
+function _hide_council_document_types(array &$form, Node $node) {
   $user_roles = \Drupal::currentUser()->getRoles();
   if (!in_array('administrator', $user_roles) && !in_array('council_clerk', $user_roles)) {
     unset($form['field_council_document_type']['widget']['#options'][COUNCIL_DOCUMENT_TYPE_PROCLAMATION_TID]);
+
+    if ($node->get('field_agenda_type')->value === 'time_certain') {
+      // If the value is already Time Certain, disable the field completely so they can't switch it.
+      $form['field_agenda_type']['#disabled'] = true;
+      $form['field_agenda_type']['widget']['#description'] = t('This item is currently marked as Time Certain. Please contact the Council Clerk to change this.');
+    } else {
+      unset($form['field_agenda_type']['widget']['#options']['time_certain']);
+    }
   }
 }
 
@@ -176,7 +206,7 @@ function portland_ecouncil_field_group_form_process_build_alter(array &$element,
   if ($node->bundle() === 'council_document') {
     _check_council_agenda_scheduling_state($form, $node);
     _check_council_president_state($form, $node);
-    _hide_council_document_types($form);
+    _hide_council_document_types($form, $node);
     _hide_deprecated_field_values($form);
   }
 }
@@ -217,14 +247,14 @@ function portland_ecouncil_relation_update(EntityInterface $relation) {
 /**
  * Implements hook_system_breadcrumb_alter().
  *
- * On council document pages, add a breadcrumb link with the committee, if set.
+ * On public council document pages, add a breadcrumb link with the committee, if set.
  */
 function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context)
 {
   $node = $route_match->getParameter('node');
   if (!empty($node) && $node instanceof Node && $node->bundle() === 'council_document') {
     $committee = $node->field_committee->entity;
-    if ($committee) {
+    if ($committee && !\Drupal::service('router.admin_context')->isAdminRoute($route_match->getRouteObject())) {
       $breadcrumb->addLink($committee->toLink());
     }
   }
