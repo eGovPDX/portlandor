@@ -25,10 +25,11 @@ elements: |-
     '#title': 'What is the nature of this report?'
     '#help_title': 'CSR Note'
     '#help': '<p>Options 2 and 3 are CSR only. CMs can only leave feedback</p>'
+    '#required': true
     '#options':
-      'A question, comment or feedback about the Leaf Day Program': "A question, comment or feedback about the Leaf Day Program -- ex. I don't like that my neighborhood was removed, general kudos or feedback"
-      'Request to be included in a future Leaf Day': 'Request to be included in a future Leaf Day -- i.e. you would like your address to be included in a future coverage area'
-      'A problem with Leaf Day service': 'A problem with Leaf Day service -- ex. missed my house, towing issue, parking issue'
+      'leafday_feedback': "A question, comment or feedback about the Leaf Day Program -- ex. I don't like that my neighborhood was removed, general kudos or feedback"
+      'leafday_future_request': 'Request to be included in a future Leaf Day -- i.e. you would like your address to be included in a future coverage area'
+      'leafday_service_issue': 'A problem with Leaf Day service -- ex. missed my house, towing issue, parking issue'
     '#access_create_roles':
       - authenticated
   report_description:
@@ -37,7 +38,9 @@ elements: |-
   report_attachments:
     '#type': managed_file
     '#title': 'Upload attachments'
-    '#file_extensions': 'jpg, png, pdf, doc, docx'
+    '#multiple': 10
+    '#max_filesize': '10'
+    '#file_extensions': 'pdf jpg jpeg png'
   section_contact:
     '#type': webform_section
     '#title': 'Your Contact Information'
@@ -48,7 +51,7 @@ elements: |-
         visible:
           ':input[name="report_type"]':
             value:
-              pattern: 'A problem with Leaf Day service|Request to be included in a future Leaf Day'
+              pattern: 'leafday_service_issue|leafday_future_request'
       '#access_create_roles':
         - authenticated
     contact_name:
@@ -58,8 +61,6 @@ elements: |-
     contact_email:
       '#type': email
       '#title': Email
-      '#description': '<p>We will use your email to confirm your submission.</p>'
-      '#description_display': before
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
       '#states':
@@ -77,15 +78,15 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <h2> Leaf day feedback details</h2>
+      <h2>Leaf day feedback details</h2>
       <p>
-      <strong>What is the nature of this report?</strong><br> {{ data.report_type }}<br>
-      <strong>Please detail your question, issue, or program feedback:</strong> {{ data.report_description }}<br>
-      <strong>Upload attachments:</strong> {{ data.report_attachments }}<br>
+      <strong>What is the nature of this report?</strong><br> {{ webform_token('[webform_submission:values:report_type:clear]', webform_submission)|default('A question, comment or feedback about the Leaf Day Program') }}<br>
+      <strong>Please detail your question, issue, or program feedback:</strong><br>
+      {{ data.report_description }}<br>
       </p><br>
       <h2>Contact Information</h2>
       <p>
-      <strong>What is your home address?</strong><br> {{ data.report_leaf_day_address.location_address }}<br>
+      {% if data.report_leaf_day_address.location_address %}<strong>What is your home address?</strong><br> {{ data.report_leaf_day_address.location_address }}<br>{% endif %}
       <strong>Name:</strong> {{ data.contact_name }}<br>
       <strong>Email:</strong> {{ data.contact_email }}<br>
       <strong>Phone:</strong> {{ data.contact_phone }}<br>
@@ -197,7 +198,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Leaf Day Feedback'
-  confirmation_message: '<p><span data-testid="comment-base-item-30614">Thank you for submitting Leaf Day feedback. Your comments have been received and will be reviewed.</span></p>'
+  confirmation_message: '<p>Thank you for submitting Leaf Day feedback. Your comments have been received and will be reviewed.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -284,7 +285,7 @@ handlers:
       enabled:
         -
           ':input[name="report_type"]':
-            value: 'A question, comment or feedback about the Leaf Day Program'
+            value: 'leafday_feedback'
         - or
         -
           ':input[name="report_type"]':
@@ -295,7 +296,7 @@ handlers:
       requester_email: contact_email
       subject: 'Leaf Day Feedback'
       comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform leafday_feedback'
       priority: normal
       status: new
       recipient: ''
@@ -319,18 +320,18 @@ handlers:
       enabled:
         -
           ':input[name="report_type"]':
-            value: 'A problem with Leaf Day service'
+            value: 'leafday_service_issue'
         - or
         -
           ':input[name="report_type"]':
-            value: 'Request to be included in a future Leaf Day'
+            value: 'leafday_future_request'
     weight: -48
     settings:
       requester_name: ''
       requester_email: contact_email
-      subject: 'A problem with Leaf Day service'
+      subject: '[webform_submission:values:report_type]'
       comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:report_type:raw]'
       priority: normal
       status: solved
       recipient: ''
@@ -344,44 +345,4 @@ handlers:
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: ''
-  email:
-    id: email
-    handler_id: email
-    label: Email
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="report_type"]':
-          value: 'Request to be included in a future Leaf Day'
-    weight: -47
-    settings:
-      states:
-        - completed
-      to_mail: melanie.edmonson@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: _default
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'Request to be included in a future Leaf Day'
-      body: _default
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
 variants: {  }
