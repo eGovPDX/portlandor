@@ -396,7 +396,7 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                             queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
                             break;
                         case 'detail_id':
-                            queryUrl += "&detail_id" + item.taxlotId;
+                            queryUrl += "&detail_id=" + item.taxlotId;
                             break;
                         default:
                             queryUrl += "&" + key + "=" + encodeURIComponent(value);
