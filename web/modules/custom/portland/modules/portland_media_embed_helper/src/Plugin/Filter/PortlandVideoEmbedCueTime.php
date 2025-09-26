@@ -26,35 +26,37 @@ class PortlandVideoEmbedCueTime extends FilterBase {
   public function process($text, $langcode) {
     $result = new FilterProcessResult($text);
 
-    $dom = Html::load($text);
-    $xpath = new \DOMXPath($dom);
-    // this section only gets used if data-start-cue attribute is present
-    $elems = $xpath->query('//div[@data-start-cue]');
-    foreach ($elems as $elem) {
-      $cue = $elem->getAttribute('data-start-cue');
-      $iframes = $elem->getElementsByTagName('iframe');
-      foreach ($iframes as $frame) {
-        $src = $frame->getAttribute('src');
-        $url = parse_url($src);
-        parse_str($url['query'], $query);
-        if (strpos($url['host'], 'youtube') !== false) {
-          $query['start'] = $cue;
-          $url['query'] = http_build_query($query);
-        } else if (strpos($url['host'], 'vimeo') !== false) {
-          $url['path'] .= "#t=" . $cue . "s";
+    if (str_contains($text, 'data-start-cue')) {
+      $dom = Html::load($text);
+      $xpath = new \DOMXPath($dom);
+      // this section only gets used if data-start-cue attribute is present
+      $elems = $xpath->query('//div[@data-start-cue]');
+      foreach ($elems as $elem) {
+        $cue = $elem->getAttribute('data-start-cue');
+        $iframes = $elem->getElementsByTagName('iframe');
+        foreach ($iframes as $frame) {
+          $src = $frame->getAttribute('src');
+          $url = parse_url($src);
+          parse_str($url['query'], $query);
+          if (strpos($url['host'], 'youtube') !== false) {
+            $query['start'] = $cue;
+            $url['query'] = http_build_query($query);
+          } else if (strpos($url['host'], 'vimeo') !== false) {
+            $url['path'] .= "#t=" . $cue . "s";
+          }
+          // reassemble and set URL
+          $src = $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $url['query'];
+          $frame->setAttribute('src', $src);
         }
-        // reassemble and set URL
-        $src = $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $url['query'];
-        $frame->setAttribute('src', $src);
       }
-    }
 
-    $result->setProcessedText(Html::serialize($dom))
-      ->addAttachments([
-        'library' => [
-          'filter/caption',
-        ],
-      ]);
+      $result->setProcessedText(Html::serialize($dom))
+        ->addAttachments([
+          'library' => [
+            'filter/caption',
+          ],
+        ]);
+    }
 
     return $result;
   }
