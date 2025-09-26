@@ -9,7 +9,6 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
-    this._verificationRequired = false;
     this._serverError = false;
 
     // this.$checkmark;
@@ -53,11 +52,6 @@ const IGNORE_FIELDS = [
 ]; // these fields can be ignored for the purposes of address verification
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
-
-    var self = this; // preserve refernece to "this" for use inside functions.
-
-    this._checkIfVerificationRequired();
-
     if (this.settings && this.settings.address_suggest) {
         this._setUpVerifyButton();
         this._setUpInputFieldAndAutocomplete();
@@ -65,13 +59,6 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     this._setUpUnitNumberField();
     // this._handlePostback();
 };
-
-AddressVerifierView.prototype._checkIfVerificationRequired = function () {
-    // check if the verification is required
-    if (this.$verificationStatus.attr('required') == "required") {
-        this._verificationRequired = true;
-    }
-}
 
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
@@ -563,7 +550,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
-    var remedyMessage = this._verificationRequired ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
+    var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
@@ -573,7 +560,7 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
             click: function () {
                 self.$notFoundModal.dialog('close');
                 // if verification is not required, set the status to "Forced"
-                if (!self._verificationRequired) {
+                if (!self.settings.verification_required) {
                     self._useUnverified();
                 }
             }
@@ -659,7 +646,7 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$checkmark.addClass("invisible");
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-    var unverifiedMessage = this._verificationRequired ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
+    var unverifiedMessage = this.settings.verification_required ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
     this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
     // var input = this.$notFoundModal.find("#enteredAddress").val();
     // this.$input.val(input);

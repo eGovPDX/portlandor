@@ -24,10 +24,10 @@ class FilterAspectRatio extends FilterBase {
   public function process($text, $langcode) {
     $result = new FilterProcessResult($text);
 
-    if (stristr($text, 'data-entity-uuid') !== FALSE) {
+    if (str_contains($text, 'data-aspect-ratio')) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
-      foreach ($xpath->query('//*[@data-entity-uuid]') as $node) {
+      foreach ($xpath->query('//div[@data-aspect-ratio]') as $node) {
         // Check if it's an iframe
         $uuid = $node->getAttribute('data-entity-uuid');
         if (empty($uuid)) continue;
