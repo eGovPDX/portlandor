@@ -156,7 +156,9 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
         url: url, success: function (results, textStatus, jqXHR) {
             if (textStatus == "success" && results.status && results.status == "success" && !view.settings.error_test) {
                 item.taxlotId = results.detail.taxlot[0].property_id;
-                item.city = results.detail.zipcode[0].name;
+                if (view.settings.find_unincorporated && !results.detail.city) {
+                    item.city = results.detail.zipcode[0].name;
+                }
                 item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode);
                 callback(item, view);
             } else {

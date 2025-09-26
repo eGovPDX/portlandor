@@ -264,17 +264,43 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 AddressVerifierView.prototype._selectAddress = function (item) {
     var self = this;
 
-    // if the city is unincorporated or the widget is configured to need taxlot ID,
-    // we need to perform a call to the intersects API do so some reverse geocoding.
-    if ((self.settings.find_unincorporated && (!item.city || item.city.toUpperCase() == "UNINCORPORATED")) || self.settings.lookup_taxlot) {
+    // DEFAULT ADDRESS VERIFIER SETTINGS:
+    //      address_suggest = 1                 Suggest addresses in autocomplete and Verify button results.
+    //      lookup_taxlot = 0                   Do not lookup taxlot ID.
+    //      find_unincorporated = 0             Use the jurisdiction as the city.
+    //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
+    //      verification_required = 0           Verificaiton is not required.
 
-        if (!item.city || item.city.toUpperCase() == "UNINCORPORATED") {
-            self.$element.find('#location_is_unincorporated').val(1);
-        }
+    // The City value returned by the Suggest API is the postal city associated with the zipcode.
+    // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
 
+    // This needs to cover 3 main use cases:
+    // 1. Allow any address anywhere, including unincorporated areas. (default)
+    // 2. Require verified City of Portland address.
+    // 3. Verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
+    // For all other use cases, the widget will use the postal address city value returned by the Suggest API. Additional logic can
+    // be built into the form using conditional fields or computed twig, and individual city/state/zip fields can be required in the 
+    // element configuration.
+
+    if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required) {
+        // USE CASE 1: allow any address anywhere, including unincorporated areas. 
+        // do nothing here--item.city is already set to postal city by Suggest API.
+        // city/state/zip can be required in the element configuration.
+    } else if (self.settings.require_portland_city_limits && self.settings.verification_required) {
+        // USE CASE 2: only allow verified addresses within Portland city limits.
+        // use jurisdiction value as city.
+        item.city = item.jurisdiction.toUpperCase();
+    } else if (self.settings.verification_required) {
+        // USE CASE 3: verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
+        // do nothing here--item.city is already set to postal city by Suggest API.
+    }
+
+    // RESULT: The only time we need to use the jurisdiction value as the city is when we are restricting to Portland city limits.
+    
+    // need to get taxlot? requires call to intersects API.
+    if (self.settings.lookup_taxlot) {
         // _setVerified is the callback; need to pass self/view reference with it
         this.model.updateLocationFromIntersects(item.lat, item.lon, item, self._setVerified, self);
-
     } else {
         self._setVerified(item);
     }
@@ -323,7 +349,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.isVerified = false; // reset to false until we know it's verified
 
     // show error modal if invalid location /////////////////////////
-    if (view.settings.require_portland_city_limits && item.city.toUpperCase() != "PORTLAND") {
+    if (view.settings.require_portland_city_limits && item.jurisdiction.toUpperCase() != "PORTLAND") {
         view._showOutOfBoundsErrorModal(item.fullAddress);
         view.$element.find('#location_address').val('');
         return false;
