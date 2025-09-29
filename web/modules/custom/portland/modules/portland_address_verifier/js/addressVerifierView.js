@@ -267,35 +267,37 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     // DEFAULT ADDRESS VERIFIER SETTINGS:
     //      address_suggest = 1                 Suggest addresses in autocomplete and Verify button results.
     //      lookup_taxlot = 0                   Do not lookup taxlot ID.
-    //      find_unincorporated = 0             Use the jurisdiction as the city.
+    //      find_unincorporated = 1             Use the jurisdiction as the city.
     //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
-    //      verification_required = 0           Verificaiton is not required.
+    //      verification_required = false       Verificaiton not required by default. This is set in the element configuration.
 
     // The City value returned by the Suggest API is the postal city associated with the zipcode.
     // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
 
     // This needs to cover 3 main use cases:
-    // 1. Allow any address anywhere, including unincorporated areas. (default)
-    // 2. Require verified City of Portland address.
+    // 1. Require verified City of Portland address.
+    // 2. Allow any address anywhere, including unincorporated areas. (DEFAULT)
     // 3. Verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
-    // For all other use cases, the widget will use the postal address city value returned by the Suggest API. Additional logic can
-    // be built into the form using conditional fields or computed twig, and individual city/state/zip fields can be required in the 
-    // element configuration.
 
-    if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required) {
-        // USE CASE 1: allow any address anywhere, including unincorporated areas. 
-        // do nothing here--item.city is already set to postal city by Suggest API.
-        // city/state/zip can be required in the element configuration.
-    } else if (self.settings.require_portland_city_limits && self.settings.verification_required) {
-        // USE CASE 2: only allow verified addresses within Portland city limits.
-        // use jurisdiction value as city.
+    // Use case 1 is the only one that sets the item.city with the value from item.jurisdiction.
+    // Additional logic can be built into the form using conditional fields or computed twig, 
+    // and individual city/state/zip fields can be required in the element configuration.
+
+    if ((self.settings.require_portland_city_limits && self.settings.verification_required) || !self.settings.find_unincorporated) {
+        // USE CASE 1: only allow verified addresses within Portland city limits.
+        // use jurisdiction value as city, then verify jurisdiction/city is PORTLAND in _setVerified.
         item.city = item.jurisdiction.toUpperCase();
-    } else if (self.settings.verification_required) {
-        // USE CASE 3: verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
-        // do nothing here--item.city is already set to postal city by Suggest API.
     }
+    
+    // USE CASE 2: allow any address anywhere, including unincorporated areas. 
+    // if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required)
+    // do nothing here--item.city is already set to postal city by Suggest API.
+    // city/state/zip can be required in the element configuration.
 
-    // RESULT: The only time we need to use the jurisdiction value as the city is when we are restricting to Portland city limits.
+    // USE CASE 3: verification is required, but address can be anywhere that's 
+    // if (self.settings.verification_required)
+    // in the PortlandMaps database, including unincorporated areas.
+    // do nothing here--item.city is already set to postal city by Suggest API.
     
     // need to get taxlot? requires call to intersects API.
     if (self.settings.lookup_taxlot) {

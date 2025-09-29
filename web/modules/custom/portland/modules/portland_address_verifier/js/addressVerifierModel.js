@@ -51,7 +51,7 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
                 response &&
                 response.candidates &&
                 Array.isArray(response.candidates)
-                && !self.view.settings.error_test
+                && !(self.view && self.view.settings && self.view.settings.error_test)
             ) {
                 if (response.candidates.length > 1) {
                     return response.candidates.map(candidate =>

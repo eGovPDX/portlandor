@@ -17,39 +17,51 @@ description: ''
 categories:
   - Test
 elements: |-
-  address_verifier_default_settings:
+  address_verifier_use_case_1:
     '#type': portland_address_verifier
-    '#title': 'Address Verifier - Default Settings'
-    '#description': '<p>The default behavior is to allow any address anywhere, but to also offer suggestions.</p><ul><li>Use address suggestion</li><li>Do not look up taxlot</li><li>Find unincorporated (will return postal city)</li><li>Do not require City of Portland address</li><li>Do not require verification</li></ul><p>Since neither Portland nor verification are required, any unincorporated property should return the postal city by default.&nbsp;</p>'
+    '#title': 'Address Verifier - Use Case 1 - Require verified City of Portland address'
+    '#description': '<p>Requires a verified City of Portland address. This means that the jurisdiction must be PORTLAND, regardless of the value in the city property.<br><br>To enable this use case, require the location_verification_status sub-element, and set require_portland_city_limits: 0 in the advanced custom properties.</p>'
     '#title_display': before
     '#description_display': before
-  address_verifier_find_unincorporated_address:
-    '#type': portland_address_verifier
-    '#title': 'Address Verifier - Find Unincorporated Address'
-    '#description': '<p>If an address in an unincorporated area is used, the city associated with the zipcode will be used. Example: <span class="cf0">260 SW 82ND AVE is unincorporated but associated with Portland. City should return as Portland.</span></p>'
-    '#title_display': before
-    '#description_display': before
-    '#find_unincorporated': 1
-  address_verifier_require_portland_address:
-    '#type': portland_address_verifier
-    '#title': 'Address Verifier - Require Portland Address'
-    '#description': '<p>Requires address be within the City of Portland. The jurisdiction returned by the Suggest API must be PORTLAND.</p>'
-    '#title_display': none
-    '#description_display': before
+    '#location_verification_status__required': true
     '#require_portland_city_limits': 1
-  verified_address:
+  horizontal_rule:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_2:
     '#type': portland_address_verifier
-    '#title': 'Address Verifier (verification required)'
-    '#description': '<p>Full verified address is required.</p>'
+    '#title': 'Address Verifier - Use Case 2 (DEFAULT) - Allow any address anywhere, unverified'
+    '#description': '<p>The default behavior is to allow any address anywhere, but to also offer suggestions. Since neither Portland nor verification are required, any unincorporated property should return the postal city by default.&nbsp;</p><p>Address parts are required through element configuration.</p>'
     '#title_display': before
     '#description_display': before
-    '#required': true
     '#location_address__required': true
     '#location_city__required': true
     '#location_state__required': true
+    '#location_zip__required': true
+  horizontal_rule_01:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_3:
+    '#type': portland_address_verifier
+    '#title': 'Address Verifier - Use Case 3 - Verification required, any jurisdiction'
+    '#description': "<p>This use case requires that the address be verified but doesn't check the city/jurisdiction. This means that it must be in the Portland Maps database, which covers municipalities with which Portland might have shared jurisdiction over certain functions. The Water Bureau is a good example of this. PWB serves some communities that aren't in the Portland jurisdiction.<br><br>To require verification, the location_verification_status sub-element must be set to required in the widget configuration.</p>"
+    '#title_display': before
+    '#description_display': before
     '#location_verification_status__required': true
-    '#find_unincorporated': 1
+  horizontal_rule_02:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_1_with_queries:
+    '#type': portland_address_verifier
+    '#title': 'Address Verifier - Use Case 1 with Supplemental Queries'
+    '#description': '<p>Full verified address is required. Also retrieves zoning and overlay data</p>'
+    '#title_display': before
+    '#description_display': before
+    '#required': true
+    '#location_verification_status__required': true
+    '#location_address__required': true
+    '#location_city__required': true
+    '#location_state__required': true
+    '#require_portland_city_limits': 1
     '#not_verified_remedy': 'A verified address is required. Please try again.'
+    '#lookup_taxlot': 1
     '#secondary_queries':
       - api: 'https://www.portlandmaps.com/api/detail/'
         api_args:
@@ -61,19 +73,29 @@ elements: |-
           - path: 'zoning.overlay[].code'
             field: hidden_zoning_overlays
             parse: stringify
-          - path: 'zoning.historic_district[].code'
-            field: hidden_historic_district
+          - path: 'zoning.base[0].code'
+            field: hidden_base_zone
             parse: stringify
-          - path: 'zoning.national_register_district[].code'
-            field: hidden_national_register_district
-            parse: stringify
-          - path: 'zoning.conservation_district[].code'
-            field: hidden_conservation_district
-            parse: stringify
-          - path: historic_resource
-            field: hidden_historic_resource
-            parse: flatten
-            omit_null_properties: true
+      - api: 'https://www.portlandmaps.com/api/detail/'
+        api_args:
+          - detail_type: environmental-percent-slope
+          - sections: general
+          - geometry: '{"x":${x}, "y":${y}}'
+          - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+        capture:
+          - path: general.percent_slope
+            field: hidden_site_slope
+  hidden_base_zone:
+    '#type': textfield
+    '#title': 'Base Zone'
+  hidden_zoning_overlays:
+    '#type': textfield
+    '#title': 'Zoning Overlays'
+  hidden_site_slope:
+    '#type': textfield
+    '#title': 'Site Slope (%)'
+  horizontal_rule_03:
+    '#type': webform_horizontal_rule
   ajax_indicator:
     '#type': portland_ajax_indicator
     '#title': 'Ajax Indicator'
