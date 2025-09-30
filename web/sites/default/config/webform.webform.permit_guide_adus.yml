@@ -220,7 +220,7 @@ elements: |-
               - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
             capture:
               - path: general.percent_slope
-                field: q6_project_site_slope
+                field: hidden_pmapi_site_slope
           - api: 'https://www.portlandmaps.com/api/detail/'
             api_args:
               - detail_type: hazard-flood
@@ -251,25 +251,25 @@ elements: |-
               - path: general.wild_lands_fire
                 field: hidden_wild_lands_fire
       hidden_zoning_overlays:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden Zoning Overlays'
       hidden_historic_district:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden Historic District'
       hidden_national_register_district:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden National Register District'
       hidden_conservation_district:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden Conservation District'
       hidden_historic_resource:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden Historic Resource'
       hidden_base_zone:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden Base Zone'
       hidden_pmapi_site_slope:
-        '#type': hidden
+        '#type': textfield
         '#title': 'Hidden PM Site Slope'
       hidden_1996_flood_inundation_area:
         '#type': textfield
@@ -321,7 +321,7 @@ elements: |-
       '#attributes':
         class:
           - mb-10
-          - d-none
+          - d-nonex
       property_id:
         '#type': webform_computed_twig
         '#title': 'Property ID'
@@ -415,8 +415,8 @@ elements: |-
           class:
             - mb-0
         '#template': |
-          <label for="edit-q4-project-deck-site-slope" class="js-form-required form-required">{{ 'What is the slope of the worksite?'|t }}</label>
-          <div id="edit-q4-project-deck-site-slope--description" class="webform-element-description mb-0">
+          <label for="edit-q6-project-site-slope" class="js-form-required form-required">{{ 'What is the slope of the worksite?'|t }}</label>
+          <div id="edit-q6-project-site-slope--description" class="webform-element-description">
           {{ 'Using data from'|t }} <a href="https://www.portlandmaps.com/search/?query={{ data.q1_project_address.location_address }}" target="_blank">Portland Maps</a>, {{ 'we\'ve determined that the average slope of your property is'|t }} {{ data.hidden_pmapi_site_slope }}%. {{ 'If the slope of the worksite is more or less than that, please enter the new number as a percentage.'|t }} <a href="/ppd/glossary-term/slope" target="_blank">{{ 'Learn more about slope'|t }}</a>.
           </div>
         '#ajax': true
@@ -533,7 +533,7 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |
+      '#template': |-
         {% if data.computed_valid_zone %}
           <div class="mb-5">{{ data.computed_invalid_zone_warning|raw }}</div>
         {% endif %}
@@ -603,7 +603,7 @@ elements: |-
                 </tr>
                 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface:"|t }}</th>
+                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface"|t }}</th>
                   <td>{{ data.q12_project_large_impervious_surface }}</td>
                 </tr>
                 
@@ -698,15 +698,15 @@ elements: |-
             {% endif %}
             
             <!-- Simple site erosion control --------------->
-            {% if data.q5_project_disturb_ground == "No" and data.q6_project_site_slope < 10 and data.q0_1_environmental_overlay_zone == "No" and data.q0_2_greenway_overlay_zone == "No" and data.q0_3_historic_landmark == "No" and (data.q7_project_deck_near_waterbody == "No" or data.q8_project_waterbody_distance > 50) or data.test is not empty %}
+            {% if data.q5_project_disturb_ground == "No" and data.q6_project_site_slope < 10 and data.q0_1_environmental_overlay_zone == "No" and data.q0_2_greenway_overlay_zone == "No" and data.q0_3_historic_landmark == "No" and (data.q7_project_deck_near_waterbody == "No" or data.q8_project_waterbody_distance > 50) %}
               {{ data.fetch_card_simple_site_erosion_control|raw }}
               {% if data.test is not empty %}
-                {{ data.fetch_card_erosion_control|raw }}
+                {{ data.fetch_card_simple_site_erosion_control|raw }}
               {% endif %}
             {% else %}
-              {{ data.fetch_card_erosion_control|raw }}
+              {{ data.fetch_card_erosion_control_plan|raw }}
             {% endif %}
-            
+
             <!-- Residential meter request from --------------->
             {% if data.computed_permit_required == "Yes" or data.test is not empty %}
               {{ data.fetch_card_water_meter_sizing_worksheet|raw }}
@@ -751,7 +751,7 @@ elements: |-
             
             <!-- Geotechnical report --------------->
             {% if data.q6_project_site_slope >= 20 or data.hidden_title_33_potential_landslide_hazard_area == "true" or data.test is not empty %}
-              {{ data.fetch_card_stormwater_mitigation_plan|raw }}
+              {{ data.fetch_card_geotechnical_report|raw }}
             {% endif %}
     computed_results:
       '#type': webform_computed_twig
@@ -759,7 +759,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#mode': html
-      '#template': |+
+      '#template': |
         {% if data.test %}
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
@@ -768,7 +768,7 @@ elements: |-
 
         <ol class="process-list mb-10">
 
-        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.computed_valid_zone == "No" or data.test is not empty %}
+        {% if (data.q0_3_historic_landmark == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_1_environmental_overlay_zone == "Yes") or data.computed_valid_zone == "No" or data.test is not empty %}
 
           <li>
             {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
@@ -777,20 +777,20 @@ elements: |-
               <div class="alert p-3">
                 <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
                 <ul class="mb-0">
-                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Historic District."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "You're making exterior changes to the property."|t }}</li>
-                  {% endif %}
                   {% if data.computed_valid_zone == "No" or data.test is not empty %}
                   <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
+                  {% endif %}
+                  {% if data.q0_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "You're making exterior changes to the property."|t }}</li>
+                  {% endif %}
+                  {% if data.q0_3_historic_landmark == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Historic District."|t }}</li>
+                  {% endif %}
+                  {% if data.q0_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q0_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
                   {% endif %}
                 </ul>
               </div>
@@ -823,7 +823,6 @@ elements: |-
           </li>
 
         </ol>
-
       '#whitespace': spaceless
       '#ajax': true
   actions:
@@ -1051,8 +1050,8 @@ handlers:
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: 'Your residential bathroom permit guide'
-      body: '<p>Thanks for telling us about your bathroom project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your bathroom project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/bathrooms">visit our pages on residential bathrooms</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your residential bathroom permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
+      subject: 'Your ADU permit guide'
+      body: '<p>Thanks for telling us about your ADU project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your ADU project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/bathrooms">visit our pages on residential bathrooms</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your ADU permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
