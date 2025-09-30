@@ -130,12 +130,12 @@ elements: |-
     process_step_apply:
       '#type': portland_node_fetcher
       '#title': 'Process Step - Prepare Application'
-      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-adus-apply
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-residential-adus-prepare-your-application
       '#render_inline': 0
     process_step_respond:
       '#type': portland_node_fetcher
       '#title': 'Process Step - Apply, Pay, Respond to Feedback'
-      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-residential-adus-apply-pay-and
+      '#node_alias_path': /ppd/residential-permitting/content-component/process-step-residential-adus-apply-pay-and-respond
       '#render_inline': 0
     process_step_start:
       '#type': portland_node_fetcher
@@ -182,7 +182,6 @@ elements: |-
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
-        '#find_unincorporated': 0
         '#require_portland_city_limits': 1
         '#not_verified_remedy': 'A verified address is required. Please try again.'
         '#lookup_taxlot': 1
@@ -518,13 +517,15 @@ elements: |-
       '#type': webform_computed_twig
       '#title': 'Return Link'
       '#display_on': none
-      '#template': "https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q1_project_address[location_address]={{ data.q1_project_address.location_address }}&q1_project_address[location_city]={{ data.q1_project_address.location_city }}&q1_project_address[location_state]={{ data.q1_project_address.location_state }}&q1_project_address[location_zip]={{ data.q1_project_address.location_zip }}&q1_1_environmental_overlay_zone={{ data.q1_1_environmental_overlay_zone }}&q1_2_greenway_overlay_zone={{ data.q1_2_greenway_overlay_zone }}&q1_3_historic_landmark={{ data.q1_3_historic_landmark }}&q2_who_will_be_doing_the_construction={{ data.q2_who_will_be_doing_the_construction }}&q3_will_this_project_include_any_electrical_work={{ data.q3_will_this_project_include_any_electrical_work }}&q4_will_this_project_include_any_plumbing_work={{ data.q4_will_this_project_include_any_plumbing_work }}&q5_will_this_project_include_any_mechanical_work={{ data.q5_will_this_project_include_any_mechanical_work }}&q7_where_will_this_project_take_place={{ data.q7_where_will_this_project_take_place }}&q8_will_this_project_add_new_plumbing_to_an_existing={{ data.q8_will_this_project_add_new_plumbing_to_an_existing }}&q9_will_this_project_include_any_changes_to_the_exterior={{ data.q9_will_this_project_include_any_changes_to_the_exterior }}&q10_will_the_sink_for_this_project_be_in_the_same_room={{ data.q10_will_the_sink_for_this_project_be_in_the_same_room }}&q11_will_this_project_increase_the_number_of_fixtures={{ data.q11_will_this_project_increase_the_number_of_fixtures }}&q12_how_many_total_bathrooms_will_the_property_have={{ data.q12_how_many_total_bathrooms_will_the_property_have }}&q13_will_this_project_include_any_structural_changes={{ data.q13_will_this_project_include_any_structural_changes }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}"
+      '#template': |
+        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q1_who_will_be_doing_the_construction={{ data.q1_who_will_be_doing_the_construction }}&q2_will_this_project_include_any_electrical_work={{ data.q2_will_this_project_include_any_electrical_work }}&q3_will_this_project_include_any_plumbing_work={{ data.q3_will_this_project_include_any_plumbing_work }}&q4_will_this_project_include_any_mechanical_work={{ data.q4_will_this_project_include_any_mechanical_work }}&q5_project_disturb_ground={{ data.q5_project_disturb_ground }}&q6_project_site_slope={{ data.q6_project_site_slope }}&q7_project_deck_near_waterbody={{ data.q7_project_deck_near_waterbody }}&q8_project_waterbody_distance={{ data.q8_project_waterbody_distance }}&q9_add_more_than_500_feet_indoor_space={{ data.q9_add_more_than_500_feet_indoor_space }}&q10_remove_exterior_walls={{ data.q10_remove_exterior_walls }}&q11_sdc_waiver_no_short_term_rental={{ data.q11_sdc_waiver_no_short_term_rental }}&q12_project_large_impervious_surface={{ data.q12_project_large_impervious_surface }}&q13_tree_pruning_in_row={{ data.q13_tree_pruning_in_row }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+      '#whitespace': trim
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
       '#display_on': none
       '#mode': text
-      '#template': 'No'
+      '#template': 'Yes'
       '#whitespace': trim
     computed_project_details:
       '#type': webform_computed_twig
@@ -532,7 +533,7 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |+
+      '#template': |
         {% if data.computed_valid_zone %}
           <div class="mb-5">{{ data.computed_invalid_zone_warning|raw }}</div>
         {% endif %}
@@ -540,74 +541,80 @@ elements: |-
               <table class="mb-5">
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Project address:"|t }}</th>
-                  <td>{{ data.q1_project_address.location_address }}</td>
+                  <th style="text-align: left;">{{ "Project address"|t }}</th>
+                  <td>{{ data.q0_project_address.location_address }}</td>
                 </tr>
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Who is doing the construction:"|t }}</th>
-                  <td>{{ data.q2_who_will_be_doing_the_construction }}</td>
-                </tr>
-
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Includes electrical work:"|t }}</th>
-                  <td>{{ data.q3_will_this_project_include_any_electrical_work }}</td>
+                  <th style="text-align: left;">{{ "Who is doing the construction"|t }}</th>
+                  <td>{{ data.q1_who_will_be_doing_the_construction }}</td>
                 </tr>
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Includes plumbing work:"|t }}</th>
-                  <td>{{ data.q4_will_this_project_include_any_plumbing_work }}</td>
+                  <th style="text-align: left;">{{ "Electrical work"|t }}</th>
+                  <td>{{ data.q2_will_this_project_include_any_electrical_work }}</td>
                 </tr>
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Includes mechanical work:"|t }}</th>
-                  <td>{{ data.q5_will_this_project_include_any_mechanical_work }}</td>
+                  <th style="text-align: left;">{{ "Plumbing work"|t }}</th>
+                  <td>{{ data.q3_will_this_project_include_any_plumbing_work }}</td>
                 </tr>
 
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Project location:"|t }}</th>
-                  <td>{{ data.q7_where_will_this_project_take_place }}</td>
+                  <th style="text-align: left;">{{ "Mechanical work"|t }}</th>
+                  <td>{{ data.q4_will_this_project_include_any_mechanical_work }}</td>
                 </tr>
 
-                {% if data.q7_where_will_this_project_take_place == "In an accessory dwelling unit" %}
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "New plumbing in detached structure:"|t }}</th>
-                  <td>{{ data.q8_will_this_project_add_new_plumbing_to_an_existing }}</td>
+                  <th style="text-align: left;">{{ "Disturb more than 500 sq. ft. of soil"|t }}</th>
+                  <td>{{ data.q5_project_disturb_ground }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Worksite slope"|t }}</th>
+                  <td>{{ data.q6_project_site_slope }}%</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Nearby body of water"|t }}</th>
+                  <td>{{ data.q7_project_deck_near_waterbody }}</td>
+                </tr>
+                
+                {% if data.q7_project_deck_near_waterbody == "Yes" or data.test is not empty %}
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Distance to body of water"|t }}</th>
+                  <td>{{ data.q8_project_waterbody_distance }} feet</td>
                 </tr>
                 {% endif %}
-
+                
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Changes to exterior:"|t }}</th>
-                  <td>{{ data.q9_will_this_project_include_any_changes_to_the_exterior }}</td>
+                  <th style="text-align: left;">{{ "Add 500+ sq. ft. interior space"|t }}</th>
+                  <td>{{ data.q9_add_more_than_500_feet_indoor_space }}</td>
                 </tr>
-
+                
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Sink in same room as toilet and shower/bath:"|t }}</th>
-                  <td>{{ data.q10_will_the_sink_for_this_project_be_in_the_same_room }}</td>
+                  <th style="text-align: left;">{{ "Remove 50%+ of exterior walls"|t }}</th>
+                  <td>{{ data.q10_remove_exterior_walls }}</td>
                 </tr>
-
+                
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Adds new plumbing fixtures:"|t }}</th>
-                  <td>{{ data.q11_will_this_project_increase_the_number_of_fixtures }}</td>
+                  <th style="text-align: left;">{{ "SDC waiver (short-term rental use)"|t }}</th>
+                  <td>{{ data.q11_sdc_waiver_no_short_term_rental }}</td>
                 </tr>
-
+                
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Total number of bathrooms:"|t }}</th>
-                  <td>{{ data.q12_how_many_total_bathrooms_will_the_property_have }}</td>
+                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface:"|t }}</th>
+                  <td>{{ data.q12_project_large_impervious_surface }}</td>
                 </tr>
-
+                
                 <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Includes structural changes:"|t }}</th>
-                  <td>{{ data.q13_will_this_project_include_any_structural_changes }}</td>
+                  <th style="text-align: left;">{{ "Tree pruning in right-of-way"|t }}</th>
+                  <td>{{ data.q13_tree_pruning_in_row  }}</td>
                 </tr>
-
 
               </table>
 
               <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
-              
-
     computed_project_details_container:
       '#type': webform_computed_twig
       '#title': 'Computed Project Details Container'
@@ -649,8 +656,12 @@ elements: |-
       '#mode': html
       '#template': |2
             <!-- Site Development (15-minute appointment) --------------->
-            {% if data.hidden_1996_flood_inundation_area == "Yes" or data.hidden_fema_special_flood_hazard_area == "Yes" or data.hidden_title_33_potential_landslide_hazard_area == "Yes" or data.test is not empty %}
+            {% set elevation_cert_required = data.hidden_fema_special_flood_hazard_area == "true" or data.hidden_1996_flood_inundation_area == "true" %}
+            {% set georeport_required = data.hidden_title_33_potential_landslide_hazard_area == "true" or data.q6_project_site_slope > 20 %}
+            
+            {% if elevation_cert_required or georeport_required or data.test is not empty %}
               {{ data.fetch_card_site_development_15_minute_appointment|raw }}
+              
             {% endif %}
             
             <!-- Fire Safety (15-minute appointment) --------------->
