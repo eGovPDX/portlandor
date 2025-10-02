@@ -1,15 +1,17 @@
-uuid: 4d74fa45-e830-4742-8fe8-97aed2b45e2a
+uuid: c42dca60-cf9e-4092-b445-fbf169bbbf72
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
 uid: 1
 template: false
 archive: false
-id: report_issue_row_structure
-title: 'Report an Issue with a Right-of-Way Structure'
+id: report_row_maintenance_issue
+title: 'Report a Maintenance Issue in the Right-of-Way'
 description: ''
 categories: {  }
 elements: |-
@@ -158,7 +160,6 @@ elements: |-
       '#title': 'Do you have a photo?'
       '#options': yes_no
       '#options_display': side_by_side
-      '#required': true
       '#states':
         invisible:
           - ':input[name="report_road_surface_damage_type[radios]"]':
@@ -403,6 +404,50 @@ elements: |-
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
+  section_dispatch_use_only:
+    '#type': webform_section
+    '#title': 'Dispatch Use Only'
+    '#attributes':
+      style: 'background-color: #ccc; padding: 15px;'
+    '#access_create_roles':
+      - support_agent
+      - administrator
+    dispatch_employee_email:
+      '#type': textfield
+      '#title': 'Employee Email'
+      '#readonly': true
+      '#default_value': '[current-user:mail]'
+    dispatch_contact_format:
+      '#type': select
+      '#title': 'Contact Format'
+      '#options':
+        walk_in: Walk-in
+        phone: Phone
+        radio: Radio
+        email: Email
+    dispatch_contact_type:
+      '#type': select
+      '#title': 'Contact Type'
+      '#options':
+        community: Community
+        city_employee: 'City employee'
+        pbot: PBOT
+        ppb: PPB
+        boec: BOEC
+        pfr: 'PF&R'
+        ppr: 'PP&R'
+        agency_partner: 'Agency partner'
+        odot: ODOT
+        multco: 'Mult Co'
+        metro: Metro
+        trimet: TriMet
+        other: Other
+    dispatch_already_reported:
+      '#type': checkbox
+      '#title': 'Already reported'
+    dispatch_related_emergency:
+      '#type': checkbox
+      '#title': 'Related to a declared emergency'
 css: ''
 javascript: ''
 settings:
@@ -586,5 +631,67 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk - Bridges'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue_type"]':
+          value: bridge
+        ':input[name="report_asset_type_bridge"]':
+          '!value': bridge_major_river
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'ROW Maintenance Issue - [webform_submission:values:report_issue_type]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '31623419540375'
+      assignee_id: ''
+      type: problem
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_row_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n23923247765911: '23923247765911_[webform_submission:values:report_issue_type:raw]_[webform_submission:values:report_asset_type_bridge:raw]'"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '35281905079319'
+  zendesk_bike_racks:
+    id: zendesk
+    handler_id: zendesk_bike_racks
+    label: 'Zendesk - Bike Racks'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue_type"]':
+          value: bike_rack
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'ROW Maintenance Issue - [webform_submission:values:report_issue_type]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '35280882128279'
+      assignee_id: ''
+      type: problem
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_row_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n23923247765911: '23923247765911_[webform_submission:values:report_issue_type:raw]_[webform_submission:values:report_issue_type_bike_rack:raw]'"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '35281905079319'
 variants: {  }
