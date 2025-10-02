@@ -72,7 +72,7 @@ class DisclaimerRedirectSubscriber implements EventSubscriberInterface {
    *
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     return [
       // We want to redirect before the dynamic page cache is hit, so we need a priority > 27
       // https://drupal.stackexchange.com/a/201293
