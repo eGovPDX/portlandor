@@ -427,6 +427,131 @@ elements: |-
       '#mode': text
       '#template': 'No'
       '#whitespace': trim
+    computed_requirements:
+      '#type': webform_computed_twig
+      '#title': 'Computed Requirements'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |2-
+            <!-- Building permit application --------------->
+            {# alwyas required #}
+            {{ data.fetch_card_building_permit_application|raw }}
+
+            <!-- Detailed plans--------------->
+            {# required if permit required, which is always #}
+            {{ data.fetch_card_detailed_plans|raw }}
+            
+            <!-- Simple bathroom process --------------->
+            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "No" and data.q13_will_this_project_include_any_structural_changes == "No" and data.q12_how_many_total_bathrooms_will_the_property_have <= 3 and data.q7_where_will_this_project_take_place == "In the primary dwelling structure" and data.q10_will_the_sink_for_this_project_be_in_the_same_room == "Yes") or data.test is not empty %}
+              {{ data.fetch_card_simple_bathroom_process|raw }}
+            {% endif %}
+
+            <!-- "Owner doing work" form --------------->
+            {% if data.q2_who_will_be_doing_the_construction == "The property owner" or data.test is not empty %}
+              {{ data.fetch_card_owner_doing_work_form|raw }}
+            {% endif %}
+
+            <!-- Electrical permit application --------------->
+            {% if data.q3_will_this_project_include_any_electrical_work == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_electrical_permit_application|raw }}
+            {% endif %}
+            
+            <!-- Plumbing permit application --------------->
+            {% if data.q4_will_this_project_include_any_plumbing_work == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_plumbing_permit_application|raw }}
+            {% endif %}
+            
+            <!-- Mechanical permit application --------------->
+            {% if data.q5_will_this_project_include_any_mechanical_work == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_mechanical_permit_application|raw }}
+            {% endif %}
+            
+            <!-- Water meter sizing --------------->
+            {% if data.q8_will_this_project_add_new_plumbing_to_an_existing == "Yes" or data.q12_how_many_total_bathrooms_will_the_property_have > 4 or data.test is not empty %}
+              {{ data.fetch_card_water_meter_sizing_worksheet|raw }}
+            {% endif %}
+            
+            <!-- Residential SDC form --------------->
+            {% if data.q11_will_this_project_increase_the_number_of_fixtures == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_residential_sdc_form|raw }}
+            {% endif %}
+    markup_02:
+      '#type': webform_markup
+      '#markup': "<h2>Your project guide</h2><p>We've created a guide to help you follow the City of Portland's building rules based on the details you provided about your project.</p>"
+    computed_results:
+      '#type': webform_computed_twig
+      '#title': 'Computed Results'
+      '#title_display': none
+      '#display_on': form
+      '#mode': html
+      '#template': |+
+        {% if data.test %}
+        <div class="bg-info p-3 mb-5">
+          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
+        </div>
+        {% endif %}
+
+        <ol class="process-list mb-10">
+
+        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.computed_valid_zone == "No" or data.test == "true" %}
+
+          <li>
+            {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+
+            <div class="position-relative mt-4">
+              <div class="alert p-3">
+                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
+                <ul class="mb-0">
+                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Historic District."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "You're making exterior changes to the property."|t }}</li>
+                  {% endif %}
+                  {% if data.computed_valid_zone == "No" or data.test == "true" %}
+                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+
+          </li>
+
+        {% endif %}
+
+
+          <li>
+            {{ data.process_step_gather|raw }}
+            {{ data.computed_requirements }}
+          </li>
+
+          <li>
+            {{ data.process_step_apply|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_respond|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_start|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_inspect|raw }}
+          </li>
+
+        </ol>
+
+      '#whitespace': spaceless
+      '#ajax': true
     computed_project_details:
       '#type': webform_computed_twig
       '#title': 'Computed Project Details'
@@ -541,128 +666,6 @@ elements: |-
             </div>
           </div>
         </div>
-      '#ajax': true
-    computed_requirements:
-      '#type': webform_computed_twig
-      '#title': 'Computed Requirements'
-      '#title_display': none
-      '#display_on': none
-      '#mode': html
-      '#template': |2-
-            <!-- Building permit application --------------->
-            {# alwyas required #}
-            {{ data.fetch_card_building_permit_application|raw }}
-
-            <!-- Detailed plans--------------->
-            {# required if permit required, which is always #}
-            {{ data.fetch_card_detailed_plans|raw }}
-            
-            <!-- Simple bathroom process --------------->
-            {% if (data.q9_will_this_project_include_any_changes_to_the_exterior == "No" and data.q13_will_this_project_include_any_structural_changes == "No" and data.q12_how_many_total_bathrooms_will_the_property_have <= 3 and data.q7_where_will_this_project_take_place == "In the primary dwelling structure" and data.q10_will_the_sink_for_this_project_be_in_the_same_room == "Yes") or data.test is not empty %}
-              {{ data.fetch_card_simple_bathroom_process|raw }}
-            {% endif %}
-
-            <!-- "Owner doing work" form --------------->
-            {% if data.q2_who_will_be_doing_the_construction == "The property owner" or data.test is not empty %}
-              {{ data.fetch_card_owner_doing_work_form|raw }}
-            {% endif %}
-
-            <!-- Electrical permit application --------------->
-            {% if data.q3_will_this_project_include_any_electrical_work == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_electrical_permit_application|raw }}
-            {% endif %}
-            
-            <!-- Plumbing permit application --------------->
-            {% if data.q4_will_this_project_include_any_plumbing_work == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_plumbing_permit_application|raw }}
-            {% endif %}
-            
-            <!-- Mechanical permit application --------------->
-            {% if data.q5_will_this_project_include_any_mechanical_work == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_mechanical_permit_application|raw }}
-            {% endif %}
-            
-            <!-- Water meter sizing --------------->
-            {% if data.q8_will_this_project_add_new_plumbing_to_an_existing == "Yes" or data.q12_how_many_total_bathrooms_will_the_property_have > 4 or data.test is not empty %}
-              {{ data.fetch_card_water_meter_sizing_worksheet|raw }}
-            {% endif %}
-            
-            <!-- Residential SDC form --------------->
-            {% if data.q11_will_this_project_increase_the_number_of_fixtures == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_residential_sdc_form|raw }}
-            {% endif %}
-    computed_results:
-      '#type': webform_computed_twig
-      '#title': 'Computed Results'
-      '#title_display': none
-      '#display_on': form
-      '#mode': html
-      '#template': |+
-        {% if data.test %}
-        <div class="bg-info p-3 mb-5">
-          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
-        </div>
-        {% endif %}
-
-        <ol class="process-list mb-10">
-
-        {% if ((data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes") and data.q9_will_this_project_include_any_changes_to_the_exterior == "Yes") or data.computed_valid_zone == "No" or data.test == "true" %}
-
-          <li>
-            {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-
-            <div class="position-relative mt-4">
-              <div class="alert p-3">
-                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
-                <ul class="mb-0">
-                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Historic District."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "You're making exterior changes to the property."|t }}</li>
-                  {% endif %}
-                  {% if data.computed_valid_zone == "No" or data.test == "true" %}
-                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
-
-          </li>
-
-        {% endif %}
-
-
-          <li>
-            {{ data.process_step_gather|raw }}
-            {{ data.computed_requirements }}
-          </li>
-
-          <li>
-            {{ data.process_step_apply|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_respond|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_start|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_inspect|raw }}
-          </li>
-
-        </ol>
-
-      '#whitespace': spaceless
       '#ajax': true
   actions:
     '#type': webform_actions
@@ -788,7 +791,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_project_details:html]</div><div>[webform_submission:values:computed_results:html]</div>'
+  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;open sans&quot;, &quot;helvetica neue&quot;, helvetica, arial, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</span></p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -890,7 +893,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Your residential bathroom permit guide'
-      body: '<p><span data-teams="true">Thanks for telling us about your project on Portland.gov. We used the information you provided to show you what you''ll need to apply for a permit. Those results are included below.</span></p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/bathrooms">visit our pages on residential bathrooms</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your residential bathroom permit plan</h2><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
+      body: '<p><span data-teams="true">Thanks for telling us about your project on Portland.gov. We used the information you provided to show you what you''ll need to apply for a permit. Those results are included below.</span></p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/bathrooms">visit our pages on residential bathrooms</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Your project guide</h2><p>We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</p><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Project details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;</div><hr><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

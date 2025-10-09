@@ -539,6 +539,189 @@ elements: |-
         {% endif %}
         {{ permit_required }}
       '#whitespace': trim
+    computed_no_permit_required:
+      '#type': webform_computed_twig
+      '#title': 'Computed No Permit Required'
+      '#title_display': none
+      '#display_on': none
+      '#template': |+
+        {% if data.computed_permit_required == "No" or data.test != "" %}
+
+          <li>
+            {{ data.process_step_permit_not_required|raw }}
+          </li>
+            
+          <li>
+            {{ data.process_step_start_no_permit_needed|raw }}
+          </li>
+            
+        {% endif %}
+
+      '#ajax': true
+    computed_talk_with_us:
+      '#type': webform_computed_twig
+      '#title': 'Computed Talk With Us'
+      '#title_display': none
+      '#display_on': none
+      '#template': |
+        {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.computed_valid_zone == "No" or data.test is not empty %}
+
+        <li>
+          {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+
+            <div class="position-relative mt-4">
+              <div class="alert p-3">
+                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
+                <ul class="mb-0">
+                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Historic District."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
+                  {% endif %}
+                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
+                  <li>{{ "You're making exterior changes to the property."|t }}</li>
+                  {% endif %}
+                  {% if data.computed_valid_zone == "No" or data.test == "true" %}
+                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+
+        </li>
+
+        {% endif %}
+      '#ajax': true
+    computed_requirements:
+      '#type': webform_computed_twig
+      '#title': 'Computed Requirements'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |-
+        {% set erosion_control_type = "" %}
+        {% if data.computed_permit_required == "Yes" and data.q7_project_using_powered_machinery == "No" and data.q4_project_deck_site_slope < 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q6_project_waterbody_distance >= 50) %}
+          {% set erosion_control_type = "Simple" %}
+        {% endif %}
+        {% if data.computed_permit_required == "Yes" and (data.q7_project_using_powered_machinery == "Yes" or data.q4_project_deck_site_slope >= 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50)) %}
+          {% set erosion_control_type = "Full" %}
+        {% endif %}
+
+        {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+
+          <li>
+            {{ data.process_step_gather_requirements|raw }}
+
+            <!-- Building permit application --------------->
+            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+            {{ data.fetch_card_building_permit_application|raw }}
+            {% endif %}
+
+            <!-- Detailed Plans --------------->
+            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
+            {{ data.fetch_card_detailed_plans|raw }}
+
+            {% if (data.q8_project_deck_single_level == "Yes" and data.q9_project_deck_connected_to_house == "Yes" and data.q10_project_deck_finish == "No" and data.q11_project_deck_rectangular == "Yes" and data.q12_project_deck_one_row_posts == "Yes" and data.q13_project_deck_heavy == "No") or data.test is not empty %}
+                  <div class="position-relative mb-4">
+                    <div class="alert p-3">
+                      <p>{{ 'Based on your project details, you are qualified to use "<strong>permit-ready plans</strong>."'|t }}</p>
+                    </div>
+                  </div>
+            {% endif %}
+
+            {% if data.q14_project_deck_manufactured_handrails == "Yes" or data.test is not empty %}
+                  <div class="position-relative mb-4">
+                    <div class="alert p-3">
+                      <p>{{ 'If your deck uses a pre-made handrail system, you will also need to provide stamped structural drawings for the handrail and its attachment at the base.'|t }}</p>
+                    </div>
+                  </div>          
+              {% endif %}
+            {% endif %}
+            
+            <!-- Simple Erosion Control --------------->
+            {% if erosion_control_type == "Simple" or data.test is not empty %}
+              {{ data.fetch_card_simple_site_erosion_control|raw }}
+            {% endif %}
+            
+            <!-- Stormwater Mitigation Plan --------------->
+            {% if data.q15_project_large_impervious_surface == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_stormwater_mitigation_plan|raw }}
+            {% endif %}
+            
+            <!-- "Owner doing work" form --------------->
+            {% if data.q3_project_deck_builder == "The property owner" or data.test is not empty %}
+              {{ data.fetch_card_owner_doing_work_form|raw }}
+            {% endif %}
+
+            <!-- Erosion Control --------------->
+            {% if erosion_control_type == "Full" or data.test is not empty %}
+              {{ data.fetch_card_erosion_control_plan|raw }}
+            {% endif %}
+
+            <!-- Disclaimer for existing on-site sewage system --------------->
+            {% if (data.q18_project_septic_on_property == "Yes" and data.q19_how_far_is_the_septic_from_the_deck <=10) or data.test is not empty %}
+              {{ data.fetch_card_existing_sewage_system|raw }}
+            {% endif %}
+
+            <!-- Street tree pruning requirements --------------->
+            {% if data.q20_project_deck_large_trees == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_street_tree_pruning|raw }}
+            {% endif %}
+
+          </li>
+
+        {% endif %}
+    markup_02:
+      '#type': webform_markup
+      '#markup': "<h2>Your project guide</h2><p>We've created a guide to help you follow the City of Portland's building rules based on the details you provided about your project.</p>"
+    computed_results:
+      '#type': webform_computed_twig
+      '#title': 'Computed Results'
+      '#title_display': none
+      '#display_on': form
+      '#mode': html
+      '#template': |
+        {% if data.test %}
+        <div class="bg-info p-3 mb-5">
+          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
+        </div>
+        {% endif %}
+
+        <ol class="process-list mb-10">
+
+          {{ data.computed_no_permit_required }}  
+
+          {{ data.computed_talk_with_us }}
+
+          {{ data.computed_requirements }}
+
+        {% if data.computed_permit_required == "Yes" %}
+
+          <li>
+            {{ data.process_step_apply|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_respond|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_start|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_inspect|raw }}
+          </li>
+
+        </ol>
+
+        {% endif %}
+      '#whitespace': spaceless
+      '#ajax': true
     computed_project_details:
       '#type': webform_computed_twig
       '#title': 'Computed Project Details'
@@ -702,186 +885,6 @@ elements: |-
             </div>
           </div>
         </div>
-      '#ajax': true
-    computed_no_permit_required:
-      '#type': webform_computed_twig
-      '#title': 'Computed No Permit Required'
-      '#title_display': none
-      '#display_on': none
-      '#template': |+
-        {% if data.computed_permit_required == "No" or data.test != "" %}
-
-          <li>
-            {{ data.process_step_permit_not_required|raw }}
-          </li>
-            
-          <li>
-            {{ data.process_step_start_no_permit_needed|raw }}
-          </li>
-            
-        {% endif %}
-
-      '#ajax': true
-    computed_talk_with_us:
-      '#type': webform_computed_twig
-      '#title': 'Computed Talk With Us'
-      '#title_display': none
-      '#display_on': none
-      '#template': |
-        {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.computed_valid_zone == "No" or data.test is not empty %}
-
-        <li>
-          {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-
-            <div class="position-relative mt-4">
-              <div class="alert p-3">
-                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
-                <ul class="mb-0">
-                  {% if data.q1_3_historic_landmark == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Historic District."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in an Environmental Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_2_greenway_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "This address is in a Greenway Zone."|t }}</li>
-                  {% endif %}
-                  {% if data.q1_3_historic_landmark == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_1_environmental_overlay_zone == "Yes" or data.test is not empty %}
-                  <li>{{ "You're making exterior changes to the property."|t }}</li>
-                  {% endif %}
-                  {% if data.computed_valid_zone == "No" or data.test == "true" %}
-                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
-
-        </li>
-
-        {% endif %}
-      '#ajax': true
-    computed_requirements:
-      '#type': webform_computed_twig
-      '#title': 'Computed Requirements'
-      '#title_display': none
-      '#display_on': none
-      '#mode': html
-      '#template': |-
-        {% set erosion_control_type = "" %}
-        {% if data.computed_permit_required == "Yes" and data.q7_project_using_powered_machinery == "No" and data.q4_project_deck_site_slope < 10 and data.q1_1_environmental_overlay_zone == "No" and data.q1_2_greenway_overlay_zone == "No" and (data.q5_project_deck_near_waterbody == "No" or data.q6_project_waterbody_distance >= 50) %}
-          {% set erosion_control_type = "Simple" %}
-        {% endif %}
-        {% if data.computed_permit_required == "Yes" and (data.q7_project_using_powered_machinery == "Yes" or data.q4_project_deck_site_slope >= 10 or data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or (data.q5_project_deck_near_waterbody == "Yes" and data.q6_project_waterbody_distance < 50)) %}
-          {% set erosion_control_type = "Full" %}
-        {% endif %}
-
-        {% if data.computed_permit_required == "Yes" or data.test is not empty %}
-
-          <li>
-            {{ data.process_step_gather_requirements|raw }}
-
-            <!-- Building permit application --------------->
-            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
-            {{ data.fetch_card_building_permit_application|raw }}
-            {% endif %}
-
-            <!-- Detailed Plans --------------->
-            {% if data.computed_permit_required == "Yes" or data.test is not empty %}
-            {{ data.fetch_card_detailed_plans|raw }}
-
-            {% if (data.q8_project_deck_single_level == "Yes" and data.q9_project_deck_connected_to_house == "Yes" and data.q10_project_deck_finish == "No" and data.q11_project_deck_rectangular == "Yes" and data.q12_project_deck_one_row_posts == "Yes" and data.q13_project_deck_heavy == "No") or data.test is not empty %}
-                  <div class="position-relative mb-4">
-                    <div class="alert p-3">
-                      <p>{{ 'Based on your project details, you are qualified to use "<strong>permit-ready plans</strong>."'|t }}</p>
-                    </div>
-                  </div>
-            {% endif %}
-
-            {% if data.q14_project_deck_manufactured_handrails == "Yes" or data.test is not empty %}
-                  <div class="position-relative mb-4">
-                    <div class="alert p-3">
-                      <p>{{ 'If your deck uses a pre-made handrail system, you will also need to provide stamped structural drawings for the handrail and its attachment at the base.'|t }}</p>
-                    </div>
-                  </div>          
-              {% endif %}
-            {% endif %}
-            
-            <!-- Simple Erosion Control --------------->
-            {% if erosion_control_type == "Simple" or data.test is not empty %}
-              {{ data.fetch_card_simple_site_erosion_control|raw }}
-            {% endif %}
-            
-            <!-- Stormwater Mitigation Plan --------------->
-            {% if data.q15_project_large_impervious_surface == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_stormwater_mitigation_plan|raw }}
-            {% endif %}
-            
-            <!-- "Owner doing work" form --------------->
-            {% if data.q3_project_deck_builder == "The property owner" or data.test is not empty %}
-              {{ data.fetch_card_owner_doing_work_form|raw }}
-            {% endif %}
-
-            <!-- Erosion Control --------------->
-            {% if erosion_control_type == "Full" or data.test is not empty %}
-              {{ data.fetch_card_erosion_control_plan|raw }}
-            {% endif %}
-
-            <!-- Disclaimer for existing on-site sewage system --------------->
-            {% if (data.q18_project_septic_on_property == "Yes" and data.q19_how_far_is_the_septic_from_the_deck <=10) or data.test is not empty %}
-              {{ data.fetch_card_existing_sewage_system|raw }}
-            {% endif %}
-
-            <!-- Street tree pruning requirements --------------->
-            {% if data.q20_project_deck_large_trees == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_street_tree_pruning|raw }}
-            {% endif %}
-
-          </li>
-
-        {% endif %}
-    computed_results:
-      '#type': webform_computed_twig
-      '#title': 'Computed Results'
-      '#title_display': none
-      '#display_on': form
-      '#mode': html
-      '#template': |
-        {% if data.test %}
-        <div class="bg-info p-3 mb-5">
-          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
-        </div>
-        {% endif %}
-
-        <ol class="process-list mb-10">
-
-          {{ data.computed_no_permit_required }}  
-
-          {{ data.computed_talk_with_us }}
-
-          {{ data.computed_requirements }}
-
-        {% if data.computed_permit_required == "Yes" %}
-
-          <li>
-            {{ data.process_step_apply|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_respond|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_start|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_inspect|raw }}
-          </li>
-
-        </ol>
-
-        {% endif %}
-      '#whitespace': spaceless
       '#ajax': true
   actions:
     '#type': webform_actions
@@ -1058,7 +1061,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_project_details:html]</div><div>[webform_submission:values:computed_results:html]</div>'
+  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;open sans&quot;, &quot;helvetica neue&quot;, helvetica, arial, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</span></p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -1160,7 +1163,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Your residential deck permit guide'
-      body: '<p><span data-teams="true">Thanks for telling us about your project on Portland.gov. We used the information you provided to show you what you''ll need to apply for a permit. Those results are included below.</span></p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]&amp;returning_user=1"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/decks">visit our pages on residential decks</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]</div><hr style="margin:30px 0;"><h2>Your residential deck permit plan</h2><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
+      body: '<p><span data-teams="true">Thanks for telling us about your project on Portland.gov. We used the information you provided to show you what you''ll need to apply for a permit. Those results are included below.</span></p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]&amp;returning_user=1"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/decks">visit our pages on residential decks</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Your project guide</h2><p>We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</p><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Your project details</h2><div>[webform_submission:values:computed_project_details:html]</div><hr style="margin:30px 0;"><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
