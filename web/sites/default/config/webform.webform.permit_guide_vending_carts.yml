@@ -1,7 +1,13 @@
 uuid: c5623f33-42b2-416d-8a31-6dfbafe4f48b
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -326,6 +332,11 @@ elements: |-
       '#attributes':
         class:
           - mb-10
+      q16_adding_2_or_more_carts:
+        '#type': radios
+        '#title': 'Will you be adding 2 or more carts to the site?'
+        '#options': yes_no
+        '#required': true
       q1_building_installing_permanent_structure:
         '#type': radios
         '#title': 'Will this project include building or installing a permanent structure?'
@@ -494,7 +505,7 @@ elements: |-
       '#title': 'Return Link'
       '#display_on': none
       '#template': |
-        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q16_adding_2_or_more_carts={{ dataq16_adding_2_or_more_carts }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
@@ -507,7 +518,7 @@ elements: |-
         {% if data.q1_building_installing_permanent_structure == "Yes" 
               or data.q3_change_how_space_is_used == "Yes" 
               or data.q4_occupancy_change == "Yes"
-              or data.q5_occupancy_change == "Yes" 
+              or data.q5_include_anchoring_or_building == "Yes" 
               or data.q6_include_drive_thru == "Yes" 
               or data.q7_include_restriping_parking_lot == "Yes" %}Yes{% else %}No{% endif %}
       '#whitespace': trim
@@ -518,7 +529,7 @@ elements: |-
       '#title_display': none
       '#display_on': none
       '#mode': html
-      '#template': |2-
+      '#template': |2
             {% if data.computed_permit_required == "Yes" or data.test != "" %}
             {{ data.fetch_card_building_permit_application|raw }}
             {% endif %}
@@ -565,6 +576,15 @@ elements: |-
             
             {% if data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.test is not empty %}
               {{ data.fetch_card_tenant_improvement|raw }}
+
+            {% if data.q9_plumbing_work == "Yes" or data.q16_adding_2_or_more_carts == "Yes" or data.test != "" %}
+              {{ data.fetch_card_commercial_sdc_form|raw }}
+            {% endif %}
+            
+            {% if data.q1_building_installing_permanent_structure == "Yes" or data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.q6_include_drive_thru == "Yes" or data.q7_include_restriping_parking_lot == "Yes" or data.q16_adding_2_or_more_carts == "Yes" or data.test != "" %}
+              {{ data.fetch_card_public_row_upgrades|raw }}
+            {% endif %}
+            
             {% endif %}
       '#whitespace': trim
     markup_02:
@@ -899,7 +919,7 @@ settings:
   confirmation_title: ''
   confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;open sans&quot;, &quot;helvetica neue&quot;, helvetica, arial, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</span></p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -919,7 +939,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
