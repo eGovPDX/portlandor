@@ -191,7 +191,7 @@ class PortlandNodeFetcher extends WebformElementBase {
 
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
-        $value = $node->get('field_body_content')->value;
+        $value = $node->get('field_body_content')->processed;
       }
       else {
         $error = 1;
