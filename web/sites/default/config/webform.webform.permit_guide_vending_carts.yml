@@ -1,7 +1,13 @@
 uuid: c5623f33-42b2-416d-8a31-6dfbafe4f48b
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -87,6 +93,16 @@ elements: |-
       '#title': 'Card - Tenant Improvement'
       '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-tenant-improvement
       '#render_inline': 0
+    fetch_card_commercial_sdc_form:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Commercial - Commercial SDC Form'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-commercial-sdc-form
+      '#render_inline': 0
+    fetch_card_public_row_upgrades:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Commercial - Public Right of Way Upgrades'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-public-right-way-upgrades
+      '#render_inline': 0
     process_step_building_permit_not_needed:
       '#type': portland_node_fetcher
       '#title': "Process Step - You Don't need a building permit"
@@ -125,8 +141,19 @@ elements: |-
     warning_invalid_zone:
       '#type': portland_node_fetcher
       '#title': 'Warning - Invalid Zone'
+      '#node_alias_path': /ppd/content-component/warning-incorrect-zone
+      '#render_inline': 0
+    fetch_disclaimer_text:
+      '#type': portland_node_fetcher
+      '#title': 'Disclaimer - Permit Guide'
       '#title_display': none
-      '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      '#node_alias_path': /ppd/content-component/disclaimer-permit-guide
+      '#render_inline': 0
+    disclaimer_permit_guide_email:
+      '#type': portland_node_fetcher
+      '#title': 'Disclaimer - Permit Guide - Email'
+      '#title_display': none
+      '#node_alias_path': /ppd/content-component/disclaimer-permit-guide-email
       '#render_inline': 0
   test:
     '#type': hidden
@@ -305,6 +332,11 @@ elements: |-
       '#attributes':
         class:
           - mb-10
+      q16_adding_2_or_more_carts:
+        '#type': radios
+        '#title': 'Will you be adding 2 or more carts to the site?'
+        '#options': yes_no
+        '#required': true
       q1_building_installing_permanent_structure:
         '#type': radios
         '#title': 'Will this project include building or installing a permanent structure?'
@@ -424,7 +456,7 @@ elements: |-
       q15_tree_pruning_in_right_of_way:
         '#type': radios
         '#title': 'Do you need to prune any trees (branch or root) in the right-of-way?'
-        '#description': '<p>The public right-of-way is shared space next to streets, like sidewalks, planting strips, road shoulders, medians, or alleys.</p>'
+        '#description': '<p>The public right-of-way is shared space next to streets, like sidewalks, planting strips, road shoulders, or alleys.</p>'
         '#description_display': before
         '#options': yes_no
         '#required': true
@@ -449,11 +481,11 @@ elements: |-
         visible:
           ':input[name="q0_project_address[location_verification_status]"]':
             value: Verified
-      fetch_disclaimer_text:
-        '#type': portland_node_fetcher
-        '#title': 'Fetch Disclaimer Text'
+      computed_disclaimer:
+        '#type': webform_computed_twig
+        '#title': 'Computed Disclaimer'
         '#title_display': none
-        '#node_alias_path': /ppd/residential-permitting/content-component/disclaimer-general-permit-guide-disclaimer-text
+        '#template': '{{ data.fetch_disclaimer_text|raw }}'
       disclaimer_confirmation:
         '#type': checkbox
         '#title': 'I understand and acknowledge that this tool is for informational purposes only.'
@@ -473,7 +505,7 @@ elements: |-
       '#title': 'Return Link'
       '#display_on': none
       '#template': |
-        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+        https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q16_adding_2_or_more_carts={{ dataq16_adding_2_or_more_carts }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
@@ -486,10 +518,148 @@ elements: |-
         {% if data.q1_building_installing_permanent_structure == "Yes" 
               or data.q3_change_how_space_is_used == "Yes" 
               or data.q4_occupancy_change == "Yes"
-              or data.q5_occupancy_change == "Yes" 
+              or data.q5_include_anchoring_or_building == "Yes" 
               or data.q6_include_drive_thru == "Yes" 
               or data.q7_include_restriping_parking_lot == "Yes" %}Yes{% else %}No{% endif %}
       '#whitespace': trim
+      '#ajax': true
+    computed_requirements:
+      '#type': webform_computed_twig
+      '#title': 'Computed Requirements'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |2
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
+            {{ data.fetch_card_building_permit_application|raw }}
+            {% endif %}
+
+            {% if data.computed_permit_required == "Yes" or data.test != "" %}
+            {{ data.fetch_card_detailed_plans|raw }}
+            {% endif %}
+
+            {{ data.fetch_card_commercial_permitting_15_min_appointment|raw }}
+            
+            {% if data.q8_electrical_work == "Yes" or data.test != "" %}
+              {{ data.fetch_card_electrical_permit_application|raw }}
+            {% endif %}
+            
+            {% if data.q9_plumbing_work == "Yes" or data.test != "" %}
+              {{ data.fetch_card_plumbing_permit_application|raw }}
+            {% endif %}
+            
+            {% if data.q10_mechanical_work == "Yes" or data.test != "" %}
+              {{ data.fetch_card_mechanical_permit_application|raw }}
+            {% endif %}
+            
+            {% if data.q12_propane_tank_size == "25 gallons or more" or data.test != "" %}
+              {{ data.fetch_card_propane_special_tank_permit|raw }}
+            {% endif %}
+
+            {% if data.q12_propane_tank_size == "17 oz to under 25 gallons" or data.test != "" %}
+              {{ data.fetch_card_propane_portable_device_permit|raw }}
+            {% endif %}
+
+            {% if data.q13_use_of_tent == "Yes" or data.test != "" %}
+              {{ data.fetch_card_tents_permit_application|raw }}
+            {% endif %}
+
+            {{ data.fetch_card_fire_dept_requirements|raw }}
+            
+            {% if data.q14_use_of_portable_sign == "Yes" or data.test != "" %}
+              {{ data.fetch_card_portable_sign_registration|raw }}
+            {% endif %}
+
+            {% if data.q15_tree_pruning_in_right_of_way == "Yes" or data.test != "" %}
+              {{ data.fetch_card_street_tree_requirements|raw }}
+            {% endif %}
+            
+            {% if data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.test is not empty %}
+              {{ data.fetch_card_tenant_improvement|raw }}
+
+            {% if data.q9_plumbing_work == "Yes" or data.q16_adding_2_or_more_carts == "Yes" or data.test != "" %}
+              {{ data.fetch_card_commercial_sdc_form|raw }}
+            {% endif %}
+            
+            {% if data.q1_building_installing_permanent_structure == "Yes" or data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.q6_include_drive_thru == "Yes" or data.q7_include_restriping_parking_lot == "Yes" or data.q16_adding_2_or_more_carts == "Yes" or data.test != "" %}
+              {{ data.fetch_card_public_row_upgrades|raw }}
+            {% endif %}
+            
+            {% endif %}
+      '#whitespace': trim
+    markup_02:
+      '#type': webform_markup
+      '#markup': "<h2>Your project guide</h2><p>We've created a guide to help you follow the City of Portland's building rules based on the details you provided about your project.</p>"
+    computed_results:
+      '#type': webform_computed_twig
+      '#title': 'Computed Results'
+      '#title_display': none
+      '#display_on': form
+      '#mode': html
+      '#template': |+
+        {% if data.test %}
+        <div class="bg-info p-3 mb-5">
+          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
+        </div>
+        {% endif %}
+
+        {% if data.computed_valid_zone == "No" %}
+          <div class="mb-5">{{ data.computed_invalid_zone_warning }}</div>
+        {% endif %}
+
+        <ol class="process-list mb-10">
+
+        {% if data.computed_permit_required == "No" or data.test != "" %}
+          <li>
+            {{ data.process_step_building_permit_not_needed|raw }}
+          </li>
+        {% endif %}
+
+        <li>
+          {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
+          {% if data.computed_valid_zone == "No" %}
+            <div class="position-relative mt-4">
+              <div class="alert p-3">
+                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
+                <ul class="mb-0">
+                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
+               </ul>
+              </div>
+            </div>
+          
+          {% endif %}
+        </li>
+
+        {% if data.computed_requirements != "" or data.test != "" %}
+          <li>
+            {{ data.process_step_gather|raw }}
+            {{ data.computed_requirements|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_apply|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_respond|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_start|raw }}
+          </li>
+
+          <li>
+            {{ data.process_step_inspect|raw }}
+          </li>
+        {% else %}
+          <li>
+            {{ data.process_step_start_building_no_permit_required|raw }}
+          </li>
+        {% endif %}
+
+        </ol>
+
+      '#whitespace': spaceless
       '#ajax': true
     computed_project_details:
       '#type': webform_computed_twig
@@ -623,132 +793,6 @@ elements: |-
           </div>
         </div>
       '#ajax': true
-    computed_requirements:
-      '#type': webform_computed_twig
-      '#title': 'Computed Requirements'
-      '#title_display': none
-      '#display_on': none
-      '#mode': html
-      '#template': |2-
-            {% if data.computed_permit_required == "Yes" or data.test != "" %}
-            {{ data.fetch_card_building_permit_application|raw }}
-            {% endif %}
-
-            {% if data.computed_permit_required == "Yes" or data.test != "" %}
-            {{ data.fetch_card_detailed_plans|raw }}
-            {% endif %}
-
-            {{ data.fetch_card_commercial_permitting_15_min_appointment|raw }}
-            
-            {% if data.q8_electrical_work == "Yes" or data.test != "" %}
-              {{ data.fetch_card_electrical_permit_application|raw }}
-            {% endif %}
-            
-            {% if data.q9_plumbing_work == "Yes" or data.test != "" %}
-              {{ data.fetch_card_plumbing_permit_application|raw }}
-            {% endif %}
-            
-            {% if data.q10_mechanical_work == "Yes" or data.test != "" %}
-              {{ data.fetch_card_mechanical_permit_application|raw }}
-            {% endif %}
-            
-            {% if data.q12_propane_tank_size == "25 gallons or more" or data.test != "" %}
-              {{ data.fetch_card_propane_special_tank_permit|raw }}
-            {% endif %}
-
-            {% if data.q12_propane_tank_size == "17 oz to under 25 gallons" or data.test != "" %}
-              {{ data.fetch_card_propane_portable_device_permit|raw }}
-            {% endif %}
-
-            {% if data.q13_use_of_tent == "Yes" or data.test != "" %}
-              {{ data.fetch_card_tents_permit_application|raw }}
-            {% endif %}
-
-            {{ data.fetch_card_fire_dept_requirements|raw }}
-            
-            {% if data.q14_use_of_portable_sign == "Yes" or data.test != "" %}
-              {{ data.fetch_card_portable_sign_registration|raw }}
-            {% endif %}
-
-            {% if data.q15_tree_pruning_in_right_of_way == "Yes" or data.test != "" %}
-              {{ data.fetch_card_street_tree_requirements|raw }}
-            {% endif %}
-            
-            {% if data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.test is not empty %}
-              {{ data.fetch_card_tenant_improvement|raw }}
-            {% endif %}
-      '#whitespace': trim
-    computed_results:
-      '#type': webform_computed_twig
-      '#title': 'Computed Results'
-      '#title_display': none
-      '#display_on': form
-      '#mode': html
-      '#template': |+
-        {% if data.test %}
-        <div class="bg-info p-3 mb-5">
-          NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
-        </div>
-        {% endif %}
-
-        {% if data.computed_valid_zone == "No" %}
-          <div class="mb-5">{{ data.computed_invalid_zone_warning }}</div>
-        {% endif %}
-
-        <ol class="process-list mb-10">
-
-        {% if data.computed_permit_required == "No" or data.test != "" %}
-          <li>
-            {{ data.process_step_building_permit_not_needed|raw }}
-          </li>
-        {% endif %}
-
-        <li>
-          {{ data.fetch_card_zoning_and_land_use_15_min_appointment|raw }}
-          {% if data.computed_valid_zone == "No" %}
-            <div class="position-relative mt-4">
-              <div class="alert p-3">
-                <p class="mb-2"><strong>{{ "We're suggesting this because..."|t }}</strong></p>
-                <ul class="mb-0">
-                  <li>{{ "The zoning for the address you entered may not allow this type of project. Please schedule an appointment to talk with our staff."|t }}</li>
-               </ul>
-              </div>
-            </div>
-          
-          {% endif %}
-        </li>
-
-        {% if data.computed_requirements != "" or data.test != "" %}
-          <li>
-            {{ data.process_step_gather|raw }}
-            {{ data.computed_requirements|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_apply|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_respond|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_start|raw }}
-          </li>
-
-          <li>
-            {{ data.process_step_inspect|raw }}
-          </li>
-        {% else %}
-          <li>
-            {{ data.process_step_start_building_no_permit_required|raw }}
-          </li>
-        {% endif %}
-
-        </ol>
-
-      '#whitespace': spaceless
-      '#ajax': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -873,9 +917,9 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_project_details:html]</div><div>[webform_submission:values:computed_results:html]</div>'
+  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;open sans&quot;, &quot;helvetica neue&quot;, helvetica, arial, sans-serif;font-size:16px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</span></p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -895,7 +939,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -975,7 +1019,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Your vending cart permit guide'
-      body: '<p>Thanks for telling us about your vending cart project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]#vending-carts-guide"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/commercial-permitting/vending-carts">visit our pages on vending carts</a>. <span style="color:Red;">TODO: need final production link</span></p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your residential bathroom permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
+      body: '<p>Thanks for telling us about your vending cart project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]#vending-carts-guide"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/commercial-permitting/food-carts">visit our pages on food carts</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Your project guide</h2><p>We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</p><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Project details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;</div><hr style="margin:30px 0;"><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
