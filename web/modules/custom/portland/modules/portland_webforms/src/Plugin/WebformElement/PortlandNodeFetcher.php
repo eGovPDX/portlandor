@@ -202,7 +202,7 @@ class PortlandNodeFetcher extends WebformElementBase
 
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
-        $value = $node->get('field_body_content')->value;
+        $value = $node->get('field_body_content')->processed;
         // Add edit link for authenticated users if node is found and published.
         $current_user = \Drupal::currentUser();
         if ($current_user->isAuthenticated() && array_intersect(['glossary_editor', 'administrator'], $current_user->getRoles())) {
