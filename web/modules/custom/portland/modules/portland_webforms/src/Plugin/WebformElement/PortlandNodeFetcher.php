@@ -23,8 +23,7 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  protected function defineDefaultProperties(): array
-  {
+  protected function defineDefaultProperties(): array {
     return [
       'node_alias_path' => '',
       'render_inline' => '1',
@@ -34,8 +33,7 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array
-  {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
     $form = parent::buildConfigurationForm($form, $form_state);
     $element = $form_state->get('element');
 
@@ -71,8 +69,7 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void
-  {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     parent::submitConfigurationForm($form, $form_state);
 
     $user_input = $form_state->getUserInput();
@@ -89,8 +86,7 @@ class PortlandNodeFetcher extends WebformElementBase {
    * Keep Webform's own pre_render (wrapper & data-attrs), add our classes,
    * and add an after_build to mirror #states onto the inner content.
    */
-  public function getInfo(): array
-  {
+  public function getInfo(): array {
     $info = parent::getInfo();                         // preserve Webform’s wiring
     $info['#input'] = FALSE;                           // display-only element
     $info['#theme_wrappers'] = ['webform_element'];    // standard webform wrapper
@@ -102,8 +98,7 @@ class PortlandNodeFetcher extends WebformElementBase {
   /**
    * Add recognizable classes to the element wrapper (useful for theming/debug).
    */
-  public static function preRenderNodeFetcher(array $element): array
-  {
+  public static function preRenderNodeFetcher(array $element): array {
     $element['#wrapper_attributes']['class'][] = 'js-webform-type-portland-node-fetcher';
     $element['#wrapper_attributes']['class'][] = 'webform-type-portland-node-fetcher';
 
@@ -119,20 +114,19 @@ class PortlandNodeFetcher extends WebformElementBase {
    * After build: ensure any #states/Conditions applied to this element
    * are also applied to the inner 'content' child so it hides reliably.
    */
-  public static function afterBuildPropagateStatesToContent(array $element, FormStateInterface $form_state): array
-  {
+  public static function afterBuildPropagateStatesToContent(array $element, FormStateInterface $form_state): array {
     if (isset($element['#states']) && isset($element['content']) && is_array($element['content'])) {
       if (!isset($element['content']['#states'])) {
         $element['content']['#states'] = $element['#states'];
-      } else {
+      }
+      else {
         $element['content']['#states'] += $element['#states'];
       }
     }
     return $element;
   }
 
-  public function buildMissingContentWarning($alias, $element)
-  {
+  public function buildMissingContentWarning($alias, $element) {
     if (\Drupal::currentUser()->isAuthenticated() && !empty($alias)) {
       return '<div class="error alert alert-danger p-3 mb-4"><p><strong>Missing content:&nbsp;</strong> <a href="' . htmlspecialchars($alias, ENT_QUOTES, 'UTF-8') . '" target="_blank">' . htmlspecialchars($element['#title'] ?? 'Node content', ENT_QUOTES, 'UTF-8') . '</a></p></div>';
     } else {
