@@ -36,7 +36,7 @@ class PortlandAjaxIndicator extends WebformCompositeBase
       </div>
       EOD
     ];
-    $element['#attached']['library'][] = 'portland_webforms/portland_ajax_indicator';
+    // $element['#attached']['library'][] = 'portland_webforms/portland_ajax_indicator';
 
     return $element;
   }
