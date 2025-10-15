@@ -1,7 +1,13 @@
 uuid: ba78bdc6-cc2e-45f0-b791-7a39959b8692
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -29,7 +35,7 @@ elements: |-
     fetch_card_zoning_and_land_use_15_min_appointment:
       '#type': portland_node_fetcher
       '#title': 'Card - Zoning and Land Use 15 Min Appointment'
-      '#node_alias_path': /ppd/residential-permitting/content-component/card-general-zoning-land-use-15-min-appointment
+      '#node_alias_path': /ppd/content-component/card-zoning-and-land-use-15-minute-appointment
       '#render_inline': 0
     fetch_card_owner_doing_work_form:
       '#type': portland_node_fetcher
@@ -150,7 +156,19 @@ elements: |-
     warning_invalid_zone:
       '#type': portland_node_fetcher
       '#title': 'Warning - Invalid Zone'
-      '#node_alias_path': /ppd/residential-permitting/content-component/warning-general-incorrect-zone
+      '#node_alias_path': /ppd/content-component/warning-incorrect-zone
+      '#render_inline': 0
+    fetch_disclaimer_text:
+      '#type': portland_node_fetcher
+      '#title': 'Disclaimer - Permit Guide'
+      '#title_display': none
+      '#node_alias_path': /ppd/content-component/disclaimer-permit-guide
+      '#render_inline': 0
+    disclaimer_permit_guide_email:
+      '#type': portland_node_fetcher
+      '#title': 'Disclaimer - Permit Guide - Email'
+      '#title_display': none
+      '#node_alias_path': /ppd/content-component/disclaimer-permit-guide-email
       '#render_inline': 0
   test:
     '#type': hidden
@@ -251,37 +269,37 @@ elements: |-
               - path: general.wild_lands_fire
                 field: hidden_wild_lands_fire
       hidden_zoning_overlays:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Zoning Overlays'
       hidden_historic_district:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Historic District'
       hidden_national_register_district:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden National Register District'
       hidden_conservation_district:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Conservation District'
       hidden_historic_resource:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Historic Resource'
       hidden_base_zone:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Base Zone'
       hidden_pmapi_site_slope:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden PM Site Slope'
       hidden_1996_flood_inundation_area:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden 1996 Flood Inundation Area'
       hidden_fema_special_flood_hazard_area:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden FEMA Special Flood Hazard Area'
       hidden_title_33_potential_landslide_hazard_area:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Title 33 Potential Landslide Hazard Area'
       hidden_wild_lands_fire:
-        '#type': textfield
+        '#type': hidden
         '#title': 'Hidden Wild Lands Fire'
       markup_01:
         '#type': webform_markup
@@ -321,7 +339,7 @@ elements: |-
       '#attributes':
         class:
           - mb-10
-          - d-nonex
+          - d-none
       property_id:
         '#type': webform_computed_twig
         '#title': 'Property ID'
@@ -491,14 +509,14 @@ elements: |-
       '#type': webform_section
       '#title': Disclaimer
       '#states':
-        invisible:
+        visible:
           ':input[name="q0_project_address[location_verification_status]"]':
-            empty: true
-      fetch_disclaimer_text:
-        '#type': portland_node_fetcher
-        '#title': 'Fetch Disclaimer Text'
+            value: Verified
+      computed_disclaimer:
+        '#type': webform_computed_twig
+        '#title': 'Computed Disclaimer'
         '#title_display': none
-        '#node_alias_path': /ppd/content-component/disclaimer-permit-guide-disclaimer-text
+        '#template': '{{ data.fetch_disclaimer_text|raw }}'
       disclaimer_confirmation:
         '#type': checkbox
         '#title': 'I understand and acknowledge that this tool is for informational purposes only.'
@@ -527,127 +545,6 @@ elements: |-
       '#mode': text
       '#template': 'Yes'
       '#whitespace': trim
-    computed_project_details:
-      '#type': webform_computed_twig
-      '#title': 'Computed Project Details'
-      '#title_display': none
-      '#display_on': none
-      '#mode': html
-      '#template': |-
-        {% if data.computed_valid_zone %}
-          <div class="mb-5">{{ data.computed_invalid_zone_warning|raw }}</div>
-        {% endif %}
-
-              <table class="mb-5">
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Project address"|t }}</th>
-                  <td>{{ data.q0_project_address.location_address }}</td>
-                </tr>
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Who is doing the construction"|t }}</th>
-                  <td>{{ data.q1_who_will_be_doing_the_construction }}</td>
-                </tr>
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Electrical work"|t }}</th>
-                  <td>{{ data.q2_will_this_project_include_any_electrical_work }}</td>
-                </tr>
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Plumbing work"|t }}</th>
-                  <td>{{ data.q3_will_this_project_include_any_plumbing_work }}</td>
-                </tr>
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Mechanical work"|t }}</th>
-                  <td>{{ data.q4_will_this_project_include_any_mechanical_work }}</td>
-                </tr>
-
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Disturb more than 500 sq. ft. of soil"|t }}</th>
-                  <td>{{ data.q5_project_disturb_ground }}</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Worksite slope"|t }}</th>
-                  <td>{{ data.q6_project_site_slope }}%</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Nearby body of water"|t }}</th>
-                  <td>{{ data.q7_project_deck_near_waterbody }}</td>
-                </tr>
-                
-                {% if data.q7_project_deck_near_waterbody == "Yes" or data.test is not empty %}
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Distance to body of water"|t }}</th>
-                  <td>{{ data.q8_project_waterbody_distance }} feet</td>
-                </tr>
-                {% endif %}
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Add 500+ sq. ft. interior space"|t }}</th>
-                  <td>{{ data.q9_add_more_than_500_feet_indoor_space }}</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Remove 50%+ of exterior walls"|t }}</th>
-                  <td>{{ data.q10_remove_exterior_walls }}</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "SDC waiver (short-term rental use)"|t }}</th>
-                  <td>{{ data.q11_sdc_waiver_no_short_term_rental }}</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface"|t }}</th>
-                  <td>{{ data.q12_project_large_impervious_surface }}</td>
-                </tr>
-                
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Tree pruning in right-of-way"|t }}</th>
-                  <td>{{ data.q13_tree_pruning_in_row  }}</td>
-                </tr>
-
-              </table>
-
-              <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
-    computed_project_details_container:
-      '#type': webform_computed_twig
-      '#title': 'Computed Project Details Container'
-      '#title_display': none
-      '#display_on': form
-      '#template': |
-        <div class="accordion aria-accordion no-expand-all mb-5" id="acc-1-0">
-          <h3 class="aria-accordion__heading accordion-item">
-            <button
-              class="accordion-button collapsed aria-accordion__trigger"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#acc-1-0-panel-1"
-              aria-expanded="false"
-              aria-controls="acc-1-0-panel-1"
-              id="acc-1-0-panel-1-trigger">
-              Your project details
-            </button>
-          </h3>
-          <div
-            id="acc-1-0-panel-1"
-            class="accordion-collapse collapse aria-accordion__panel aria-accordion__panel--transition"
-            role="region"
-            aria-labelledby="acc-1-0-panel-1-trigger"
-            data-bs-parent="#acc-1-0">
-            <div class="accordion-body">
-
-              {{ data.computed_project_details }}
-
-            </div>
-          </div>
-        </div>
-      '#ajax': true
     computed_requirements:
       '#type': webform_computed_twig
       '#title': 'Computed Requirements'
@@ -825,6 +722,127 @@ elements: |-
         </ol>
       '#whitespace': spaceless
       '#ajax': true
+    computed_project_details:
+      '#type': webform_computed_twig
+      '#title': 'Computed Project Details'
+      '#title_display': none
+      '#display_on': none
+      '#mode': html
+      '#template': |-
+        {% if data.computed_valid_zone %}
+          <div class="mb-5">{{ data.computed_invalid_zone_warning|raw }}</div>
+        {% endif %}
+
+              <table class="mb-5">
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Project address"|t }}</th>
+                  <td>{{ data.q0_project_address.location_address }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Who is doing the construction"|t }}</th>
+                  <td>{{ data.q1_who_will_be_doing_the_construction }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Electrical work"|t }}</th>
+                  <td>{{ data.q2_will_this_project_include_any_electrical_work }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Plumbing work"|t }}</th>
+                  <td>{{ data.q3_will_this_project_include_any_plumbing_work }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Mechanical work"|t }}</th>
+                  <td>{{ data.q4_will_this_project_include_any_mechanical_work }}</td>
+                </tr>
+
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Disturb more than 500 sq. ft. of soil"|t }}</th>
+                  <td>{{ data.q5_project_disturb_ground }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Worksite slope"|t }}</th>
+                  <td>{{ data.q6_project_site_slope }}%</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Nearby body of water"|t }}</th>
+                  <td>{{ data.q7_project_deck_near_waterbody }}</td>
+                </tr>
+                
+                {% if data.q7_project_deck_near_waterbody == "Yes" or data.test is not empty %}
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Distance to body of water"|t }}</th>
+                  <td>{{ data.q8_project_waterbody_distance }} feet</td>
+                </tr>
+                {% endif %}
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Add 500+ sq. ft. interior space"|t }}</th>
+                  <td>{{ data.q9_add_more_than_500_feet_indoor_space }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Remove 50%+ of exterior walls"|t }}</th>
+                  <td>{{ data.q10_remove_exterior_walls }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "SDC waiver (short-term rental use)"|t }}</th>
+                  <td>{{ data.q11_sdc_waiver_no_short_term_rental }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "More than 1,000 sq. ft. of impervious surface"|t }}</th>
+                  <td>{{ data.q12_project_large_impervious_surface }}</td>
+                </tr>
+                
+                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                  <th style="text-align: left;">{{ "Tree pruning in right-of-way"|t }}</th>
+                  <td>{{ data.q13_tree_pruning_in_row  }}</td>
+                </tr>
+
+              </table>
+
+              <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
+    computed_project_details_container:
+      '#type': webform_computed_twig
+      '#title': 'Computed Project Details Container'
+      '#title_display': none
+      '#display_on': form
+      '#template': |
+        <div class="accordion aria-accordion no-expand-all mb-5" id="acc-1-0">
+          <h3 class="aria-accordion__heading accordion-item">
+            <button
+              class="accordion-button collapsed aria-accordion__trigger"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#acc-1-0-panel-1"
+              aria-expanded="false"
+              aria-controls="acc-1-0-panel-1"
+              id="acc-1-0-panel-1-trigger">
+              Your project details
+            </button>
+          </h3>
+          <div
+            id="acc-1-0-panel-1"
+            class="accordion-collapse collapse aria-accordion__panel aria-accordion__panel--transition"
+            role="region"
+            aria-labelledby="acc-1-0-panel-1-trigger"
+            data-bs-parent="#acc-1-0">
+            <div class="accordion-body">
+
+              {{ data.computed_project_details }}
+
+            </div>
+          </div>
+        </div>
+      '#ajax': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -949,7 +967,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_project_details:html]</div><div>[webform_submission:values:computed_results:html]</div>'
+  confirmation_message: '<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you''ll get a copy by email too.&nbsp;</p><h3>Project details</h3><div class="mb-10">[webform_submission:values:computed_results:html]</div><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -971,7 +989,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -1051,7 +1069,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Your ADU permit guide'
-      body: '<p>Thanks for telling us about your ADU project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your ADU project details</strong></a></p><p>For more on completing your permitting project, <a href="https://www.portland.gov/ppd/residential-permitting/bathrooms">visit our pages on residential bathrooms</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="http://portland.gov/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project Details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;<br><br>&nbsp;</div><hr><h2>Your ADU permit plan</h2><div>[webform_submission:values:computed_results:html]</div>'
+      body: '<p>Thanks for telling us about your project on <span>Portland.gov</span>. We use these details to show you what you''ll need to apply for a permit. Those results are included below.</p><p>You can return to update your project and review the requirements anytime by using this link: <a href="[webform_submission:values:return_link]"><strong>Return to your project details</strong></a></p><p>For more on completing your permitting project, <a href="/ppd/commercial-permitting/food-carts">visit our pages on food carts</a>.</p><p>Have questions? Just reply to this email. We''re happy to help.</p><p>Thank you,</p><p>Portland Permitting &amp; Development (PPD)<br>City of Portland<br><a href="/ppd">Portland.gov/ppd</a></p><hr style="margin:30px 0;"><h2>Project details</h2><div>[webform_submission:values:computed_project_details:html]&nbsp;</div><hr style="margin:30px 0;"><h2>Your tenant improvement permit plan</h2><div>[webform_submission:values:computed_results:html]</div><hr style="margin:30px 0;"><h2>Disclaimer</h2><p>[webform_submission:values:disclaimer_permit_guide_email:raw]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
