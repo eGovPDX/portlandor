@@ -303,6 +303,29 @@ class PortlandNodeFetcher extends WebformElementBase {
                     $invisible_char = ' ';
                     $has_icon_span = FALSE;
 
+                    // Determine whether we should append the icon for this
+                    // anchor. Only append when the link opens in a new tab
+                    // (target="_blank") and the href is internal to the
+                    // allowed hosts (portland.gov, lndo.site) or is a
+                    // relative/internal URL (no host). External absolute
+                    // hosts will not get the icon.
+                    $href = $a->getAttribute('href');
+                    $target_attr = strtolower($a->getAttribute('target'));
+                    $allow_icon = TRUE;
+                    if ($target_attr !== '_blank') {
+                      $allow_icon = FALSE;
+                    } else {
+                      $parts = @parse_url($href);
+                      if ($parts !== FALSE && isset($parts['host']) && $parts['host'] !== '') {
+                        $host = strtolower($parts['host']);
+                        // Allowed hosts: any subdomain of portland.gov,
+                        // any subdomain of lndo.site, and localhost.
+                        if (!preg_match('/(^|\.)portland\.gov$/', $host) && !preg_match('/(^|\.)lndo\.site$/', $host) && $host !== 'localhost') {
+                          $allow_icon = FALSE;
+                        }
+                      }
+                    }
+
                     // 1) Invisible character check (existing behavior).
                     $span_nodes = $a->getElementsByTagName('span');
                     foreach ($span_nodes as $snode) {
@@ -342,7 +365,9 @@ class PortlandNodeFetcher extends WebformElementBase {
                       }
                     }
 
-                    if (!$has_icon_span) {
+                    // Only consider appending the icon when allowed by the
+                    // target/href checks above.
+                    if ($allow_icon && !$has_icon_span) {
                       // Add a normal space before the icon for separation.
                       $a->appendChild($doc->createTextNode(' '));
                       // Try to insert the configured HTML as a fragment. If the
