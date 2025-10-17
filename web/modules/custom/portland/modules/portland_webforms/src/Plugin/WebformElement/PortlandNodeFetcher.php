@@ -301,19 +301,49 @@ class PortlandNodeFetcher extends WebformElementBase {
                     // element configuration (see the Link icon textarea).
                     $invisible_char = ' ';
                     $has_icon_span = FALSE;
+
+                    // 1) Invisible character check (existing behavior).
                     $span_nodes = $a->getElementsByTagName('span');
                     foreach ($span_nodes as $snode) {
-                      if ($snode instanceof \DOMElement) {
-                        if (strpos($snode->textContent, $invisible_char) !== FALSE) {
-                          $has_icon_span = TRUE;
-                          break;
+                      if ($snode instanceof \DOMElement && strpos($snode->textContent, $invisible_char) !== FALSE) {
+                        $has_icon_span = TRUE;
+                        break;
+                      }
+                    }
+
+                    // 2) Exact-fragment substring check against configured icon HTML.
+                    $icon_html = trim($element['#link_icon'] ?? ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>');
+                    if (!$has_icon_span && $icon_html !== '') {
+                      // Use saveHTML on the anchor to get a string representation
+                      // and look for the configured fragment. This is a best-effort
+                      // string match and helps avoid duplicating identical HTML.
+                      $anchor_html = $doc->saveHTML($a);
+                      if (strpos($anchor_html, $icon_html) !== FALSE) {
+                        $has_icon_span = TRUE;
+                      }
+                    }
+
+                    // 3) Class-based detection: if configured icon contains a class
+                    // token, consider the icon present when an inner span already
+                    // has any of those tokens.
+                    if (!$has_icon_span && preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
+                      $classes = preg_split('/\s+/', trim($cmatch[1]));
+                      if (!empty($classes)) {
+                        foreach ($span_nodes as $snode) {
+                          if ($snode instanceof \DOMElement) {
+                            $span_classes = preg_split('/\s+/', trim($snode->getAttribute('class')));
+                            if (array_intersect($classes, $span_classes)) {
+                              $has_icon_span = TRUE;
+                              break;
+                            }
+                          }
                         }
                       }
                     }
+
                     if (!$has_icon_span) {
                       // Add a normal space before the icon for separation.
                       $a->appendChild($doc->createTextNode(' '));
-                      $icon_html = $element['#link_icon'] ?? ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>';
                       // Try to insert the configured HTML as a fragment. If the
                       // fragment isn't valid XML/HTML, fall back to creating a
                       // simple span element with the default class and invisible
