@@ -29,6 +29,7 @@ class PortlandNodeFetcher extends WebformElementBase
     return [
       'node_alias_path' => '',
       'render_inline' => '1',
+      'open_links_in_new_tab' => '1',
     ] + parent::defineDefaultProperties();
   }
 
@@ -66,6 +67,13 @@ class PortlandNodeFetcher extends WebformElementBase
       '#default_value' => array_key_exists('#render_inline', $element) ? $element['#render_inline'] : TRUE,
     ];
 
+    $form['open_links_in_new_tab'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Open links in new tab'),
+      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window.'),
+      '#default_value' => array_key_exists('#open_links_in_new_tab', $element) ? $element['#open_links_in_new_tab'] : TRUE,
+    ];
+
     return $form;
   }
 
@@ -82,6 +90,9 @@ class PortlandNodeFetcher extends WebformElementBase
     }
     $render_inline = $user_input['render_inline'] === NULL ? '0' : $user_input['render_inline'];
     $form_state->setValue('render_inline', $render_inline);
+    // Persist open_links_in_new_tab checkbox value.
+    $open_links = $user_input['open_links_in_new_tab'] === NULL ? '0' : $user_input['open_links_in_new_tab'];
+    $form_state->setValue('open_links_in_new_tab', $open_links);
   }
 
   /**
@@ -154,6 +165,12 @@ class PortlandNodeFetcher extends WebformElementBase
       $element['#render_inline'] = '1';
     }
 
+    // Ensure open_links_in_new_tab has a sensible default when the webform
+    // element config doesn't include it (older webforms or unset checkboxes).
+    if (!isset($element['#open_links_in_new_tab'])) {
+      $element['#open_links_in_new_tab'] = '1';
+    }
+
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
     $render_inline = (array_key_exists('#render_inline', $element) && $element['#render_inline'] == '1') ? '1' : '0';
     $element_name = $element['#webform_key'] ?? NULL;
@@ -193,16 +210,97 @@ class PortlandNodeFetcher extends WebformElementBase
       $nid = $matches[1];
       $node = Node::load($nid);
 
-      // Get the current content language of the form/page.
-      $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+      // Get the current content language of the form/page and use it for
+      // translation and caching to avoid language collisions.
+      $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
-      if ($node instanceof Node && $node->hasTranslation($language)) {
-        $node = $node->getTranslation($language);
+      if ($node instanceof Node && $node->hasTranslation($langcode)) {
+        $node = $node->getTranslation($langcode);
       }
+
+      // Attach render cache metadata as soon as we know the node id and
+      // content language so both successful and error/warning states vary
+      // correctly and are invalidated when the node changes.
+      $element['#cache']['tags'][] = 'node:' . $nid;
+      $element['#cache']['contexts'][] = 'languages:language_content';
+      $element['#cache']['contexts'][] = 'user.roles';
 
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
         $value = $node->get('field_body_content')->processed;
+        // If configured, ensure links open in a new tab/window for safety add rel attributes.
+        $open_links_enabled = (array_key_exists('#open_links_in_new_tab', $element) && $element['#open_links_in_new_tab'] == '1') ? TRUE : FALSE;
+        if ($open_links_enabled && !empty($value)) {
+          // Fast path: only proceed if there's an <a> tag that contains an
+          // href attribute (attributes may appear in any order). This avoids
+          // DOM parsing for content that has anchors without hrefs or no
+          // anchors at all.
+          // If there's no <a> with an href attribute, we intentionally skip
+          // all link-rewrite work (no cache lookup, no DOM parsing, no cache
+          // write). This is an early-exit fast-path to avoid unnecessary CPU
+          // work for content without actionable links.
+          if (!preg_match('/<a\b[^>]*\bhref\s*=\s*/i', $value)) {
+            // TEMP LOG: record that we skipped processing due to no href
+            // anchors. Remove or lower the log level once measurement is done.
+            \Drupal::logger('portland_node_fetcher')->notice('Skipped link processing (no <a href>) for nid {nid} lang {lang}', ['nid' => $nid, 'lang' => $langcode]);
+          
+          }
+          else {
+            // Use Drupal cache to avoid reparsing HTML for the same node repeatedly.
+            // Include language in the cache id to avoid collisions between
+            // translated bodies.
+            $cid = 'portland_node_fetcher:processed_links:' . $nid . ':' . $langcode . ':' . ($open_links_enabled ? '1' : '0');
+            $cache = \Drupal::cache('data')->get($cid);
+            if ($cache) {
+              $value = $cache->data;
+              // Cache hit: no logging to avoid noise (misses and skips are logged).
+            }
+            else {
+              // TEMP LOG: cache miss — we'll parse and then store the result.
+              \Drupal::logger('portland_node_fetcher')->notice('Cache MISS for processed links: {cid} (nid {nid} lang {lang})', ['cid' => $cid, 'nid' => $nid, 'lang' => $langcode]);
+              
+              // Use DOMDocument to safely update anchor tags. Suppress warnings for malformed HTML.
+              libxml_use_internal_errors(true);
+              $doc = new \DOMDocument();
+              // Load wrapped HTML to ensure a single root element.
+              $loaded = $doc->loadHTML('<?xml encoding="utf-8" ?><div>' . $value . '</div>');
+              if ($loaded) {
+                $xpath = new \DOMXPath($doc);
+                $anchors = $xpath->query('//a');
+                foreach ($anchors as $a) {
+                  if ($a instanceof \DOMElement) {
+                    // Set target="_blank"
+                    $a->setAttribute('target', '_blank');
+                    // Merge or set rel attribute to include noopener noreferrer
+                    $existing_rel = $a->getAttribute('rel');
+                    $rels = preg_split('/\s+/', trim($existing_rel)) ?: [];
+                    foreach (['noopener', 'noreferrer'] as $required) {
+                      if (!in_array($required, $rels)) {
+                        $rels[] = $required;
+                      }
+                    }
+                    $a->setAttribute('rel', trim(implode(' ', array_filter($rels))));
+                  }
+                }
+                // Extract innerHTML of our wrapper div.
+                $body_div = $doc->getElementsByTagName('div')->item(0);
+                $inner_html = '';
+                if ($body_div) {
+                  foreach ($body_div->childNodes as $child) {
+                    $inner_html .= $doc->saveHTML($child);
+                  }
+                  $value = $inner_html;
+                }
+              }
+              libxml_clear_errors();
+
+              // Cache the processed HTML in the data cache bin and tag by node
+              // so it's invalidated on node updates.
+              \Drupal::cache('data')->set($cid, $value, \Drupal\Core\Cache\Cache::PERMANENT, ['node:' . $nid]);
+            }
+          }
+        }
+        // (Cache metadata attached earlier.)
         // Add edit link for authenticated users if node is found and published.
         $current_user = \Drupal::currentUser();
         if ($current_user->isAuthenticated() && array_intersect(['glossary_editor', 'administrator'], $current_user->getRoles())) {
@@ -217,6 +315,11 @@ class PortlandNodeFetcher extends WebformElementBase
       }
     } else {
       $error = 1;
+      // Ensure render cache contexts are present even when alias did not
+      // resolve to a node so warning output varies by language and user
+      // roles and cannot leak privileged UI into anonymous caches.
+      $element['#cache']['contexts'][] = 'languages:language_content';
+      $element['#cache']['contexts'][] = 'user.roles';
       $value = $this->buildMissingContentWarning($resolved_path ?? "[Alias missing]", $element);
     }
 
