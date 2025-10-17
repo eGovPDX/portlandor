@@ -30,10 +30,11 @@ class PortlandNodeFetcher extends WebformElementBase
       'node_alias_path' => '',
       'render_inline' => '1',
       'open_links_in_new_tab' => '1',
-      // Default HTML snippet appended to links when opening in a new tab.
-      // Contains a span with an invisible figure-space character (U+2007)
-      // used to detect that the icon has already been added.
-      'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>',
+  // Default HTML snippet appended to links when opening in a new tab.
+  // Contains a span with an invisible figure-space character (U+2007)
+  // used to detect that the icon has already been added. The icon
+  // is hidden from assistive tech via aria-hidden="true".
+  'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
     ] + parent::defineDefaultProperties();
   }
 
@@ -82,7 +83,7 @@ class PortlandNodeFetcher extends WebformElementBase
       '#type' => 'textarea',
       '#title' => $this->t('Link icon (HTML)'),
       '#description' => $this->t('HTML snippet appended to link text when "Open links in new tab" is enabled. Provide a small <span> element. Default: the external link icon.'),
-      '#default_value' => array_key_exists('#link_icon', $element) ? $element['#link_icon'] : ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>',
+      '#default_value' => array_key_exists('#link_icon', $element) ? $element['#link_icon'] : ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
       '#rows' => 2,
     ];
 
@@ -374,6 +375,8 @@ class PortlandNodeFetcher extends WebformElementBase
                         }
                         $fallback_span = $doc->createElement('span', $invisible_char);
                         $fallback_span->setAttribute('class', $class_attr);
+                        // Ensure the icon is hidden from assistive tech.
+                        $fallback_span->setAttribute('aria-hidden', 'true');
                         $a->appendChild($fallback_span);
                       }
                     }
