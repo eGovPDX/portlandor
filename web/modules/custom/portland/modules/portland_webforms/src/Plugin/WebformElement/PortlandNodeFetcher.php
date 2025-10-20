@@ -224,6 +224,9 @@ class PortlandNodeFetcher extends WebformElementBase
     $node = NULL;
     $is_published = false;
     $value = '';
+  // Flag to indicate that the glossary_term library needs to be attached
+  // when the fetched content contains glossary term substitutions.
+  $needs_glossary_library = FALSE;
 
     // Use the resolved path for node lookup.
     if ($resolved_path && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($resolved_path), $matches)) {
@@ -290,6 +293,14 @@ class PortlandNodeFetcher extends WebformElementBase
                 $anchors = $xpath->query('//a');
                 foreach ($anchors as $a) {
                   if ($a instanceof \DOMElement) {
+                    // If the href is empty or is just an in-page anchor (e.g. #)
+                    // or a javascript pseudo-link, treat it as not a real link
+                    // and skip icon/target modifications.
+                    $href = $a->getAttribute('href');
+                    if ($href === '' || preg_match('/^\s*(#|javascript:)/i', $href)) {
+                      continue;
+                    }
+
                     // Set target="_blank"
                     $a->setAttribute('target', '_blank');
                     // Merge or set rel attribute to include noopener noreferrer
@@ -425,6 +436,14 @@ class PortlandNodeFetcher extends WebformElementBase
             }
           }
         }
+        // Detect glossary term substitutions and attach glossary library so
+        // glossary behaviors are available when this node content is rendered
+        // inline or included in computed webform elements.
+        if (is_string($value) && str_contains($value, 'data-entity-substitution="glossary_term"')) {
+          $element['#attached']['library'][] = 'portland_glossary/glossary_term';
+          $needs_glossary_library = TRUE;
+        }
+
         // (Cache metadata attached earlier.)
         // Add edit link for authenticated users if node is found and published.
         $current_user = \Drupal::currentUser();
@@ -450,7 +469,11 @@ class PortlandNodeFetcher extends WebformElementBase
 
     // For computed twig/data array, group edit link and content in a parent div for authenticated users.
     if ($webform_submission && $element_name && $value) {
-      $grouped_markup = '<div class="portland-node-fetcher__wrapper">' . $edit_link . '<div class="portland-node-fetcher__inner-content">' . $value . '</div></div>';
+      $inner_attrs = '';
+      if (!empty($open_links_enabled)) {
+        $inner_attrs = ' data-open-links-in-new-tab="1"';
+      }
+      $grouped_markup = '<div class="portland-node-fetcher__wrapper">' . $edit_link . '<div class="portland-node-fetcher__inner-content"' . $inner_attrs . '>' . $value . '</div></div>';
       $webform_submission->setData([
         $element_name => $grouped_markup
       ] + $webform_submission->getData());
@@ -458,9 +481,13 @@ class PortlandNodeFetcher extends WebformElementBase
 
     // Render content INSIDE the webform_element wrapper so #states/Conditions can hide it.
     if ($render_inline === '1' && $value) {
+      $content_attributes = ['class' => ['portland-node-fetcher__content']];
+      if (!empty($open_links_enabled)) {
+        $content_attributes['data-open-links-in-new-tab'] = '1';
+      }
       $element['content'] = [
         '#type' => 'container',
-        '#attributes' => ['class' => ['portland-node-fetcher__content']],
+        '#attributes' => $content_attributes,
         'edit_link' => [
           '#markup' => $edit_link,
           '#weight' => 0,
@@ -470,6 +497,9 @@ class PortlandNodeFetcher extends WebformElementBase
           '#weight' => 10,
         ],
       ];
+      if (!empty($needs_glossary_library)) {
+        $element['content']['#attached']['library'][] = 'portland_glossary/glossary_term';
+      }
     } else {
       // Ensure no stray child if not rendering inline.
       unset($element['content']);
