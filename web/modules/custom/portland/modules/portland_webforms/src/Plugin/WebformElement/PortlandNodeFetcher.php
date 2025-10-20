@@ -28,11 +28,7 @@ class PortlandNodeFetcher extends WebformElementBase {
       'node_alias_path' => '',
       'render_inline' => '1',
       'open_links_in_new_tab' => '1',
-  // Default HTML snippet appended to links when opening in a new tab.
-  // Contains a span with an invisible figure-space character (U+2007)
-  // used to detect that the icon has already been added. The icon
-  // is hidden from assistive tech via aria-hidden="true".
-  'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
+      'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
     ] + parent::defineDefaultProperties();
   }
 
@@ -54,7 +50,6 @@ class PortlandNodeFetcher extends WebformElementBase {
     // Add hyperlink if node_alias_path is populated and is a valid path.
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
     if (!empty($alias)) {
-      // Use Drupal's Url class to build the link.
       $url = \Drupal\Core\Url::fromUserInput($alias)->toString();
       $form['node_alias_link'] = [
         '#type' => 'item',
@@ -217,9 +212,9 @@ class PortlandNodeFetcher extends WebformElementBase {
     $node = NULL;
     $is_published = false;
     $value = '';
-  // Flag to indicate that the glossary_term library needs to be attached
-  // when the fetched content contains glossary term substitutions.
-  $needs_glossary_library = FALSE;
+    // Flag to indicate that the glossary_term library needs to be attached
+    // when the fetched content contains glossary term substitutions.
+    $needs_glossary_library = FALSE;
 
     // Use the resolved path for node lookup.
     if ($resolved_path && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($resolved_path), $matches)) {
@@ -247,25 +242,18 @@ class PortlandNodeFetcher extends WebformElementBase {
         $value = $node->get('field_body_content')->processed;
         // If configured, ensure links open in a new tab/window for safety add rel attributes.
         $open_links_enabled = (array_key_exists('#open_links_in_new_tab', $element) && $element['#open_links_in_new_tab'] == '1') ? TRUE : FALSE;
+
         if ($open_links_enabled && !empty($value)) {
-          // Fast path: only proceed if there's an <a> tag that contains an
-          // href attribute (attributes may appear in any order). This avoids
-          // DOM parsing for content that has anchors without hrefs or no
-          // anchors at all.
-          // If there's no <a> with an href attribute, we intentionally skip
-          // all link-rewrite work (no cache lookup, no DOM parsing, no cache
-          // write). This is an early-exit fast-path to avoid unnecessary CPU
-          // work for content without actionable links.
+          // Only proceed if there's an <a> tag that contains an href attribute (attributes may appear in any order)
           if (!preg_match('/<a\b[^>]*\bhref\s*=\s*/i', $value)) {
             // TEMP LOG: record that we skipped processing due to no href
             // anchors. Remove or lower the log level once measurement is done.
-            \Drupal::logger('portland_node_fetcher')->notice('Skipped link processing (no <a href>) for nid {nid} lang {lang}', ['nid' => $nid, 'lang' => $langcode]);
-          
+            // \Drupal::logger('portland_node_fetcher')->notice('Skipped link processing (no <a href>) for nid {nid} lang {lang}', ['nid' => $nid, 'lang' => $langcode]);
           }
-          else {
+          else 
+        {
             // Use Drupal cache to avoid reparsing HTML for the same node repeatedly.
-            // Include language in the cache id to avoid collisions between
-            // translated bodies.
+            // Include language in the cache id to avoid collisions between translated bodies.
             $cid = 'portland_node_fetcher:processed_links:' . $nid . ':' . $langcode . ':' . ($open_links_enabled ? '1' : '0');
             $cache = \Drupal::cache('data')->get($cid);
             if ($cache) {
@@ -274,7 +262,7 @@ class PortlandNodeFetcher extends WebformElementBase {
             }
             else {
               // TEMP LOG: cache miss — we'll parse and then store the result.
-              \Drupal::logger('portland_node_fetcher')->notice('Cache MISS for processed links: {cid} (nid {nid} lang {lang})', ['cid' => $cid, 'nid' => $nid, 'lang' => $langcode]);
+              // \Drupal::logger('portland_node_fetcher')->notice('Cache MISS for processed links: {cid} (nid {nid} lang {lang})', ['cid' => $cid, 'nid' => $nid, 'lang' => $langcode]);
               
               // Use DOMDocument to safely update anchor tags. Suppress warnings for malformed HTML.
               libxml_use_internal_errors(true);
@@ -286,11 +274,7 @@ class PortlandNodeFetcher extends WebformElementBase {
                 $anchors = $xpath->query('//a');
                 foreach ($anchors as $a) {
                   if ($a instanceof \DOMElement) {
-                    // If the href is empty or is just an in-page anchor (e.g. #)
-                    // or a javascript pseudo-link, treat it as not a real link
-                    // and skip icon/target modifications. Also skip non-HTTP
-                    // schemes (mailto:, tel:, sms:, etc.) — those should not
-                    // open in a new window or receive external-link icons.
+                    // Skip/continue if the href is empty, is just an in-page anchor (e.g. #) or pseudo-link, or non-http scheme (mailto:, tel:, etc.)
                     $href = $a->getAttribute('href');
                     if ($href === '' || preg_match('/^\s*(#|javascript:)/i', $href)) {
                       continue;
@@ -310,21 +294,15 @@ class PortlandNodeFetcher extends WebformElementBase {
                       }
                     }
                     $a->setAttribute('rel', trim(implode(' ', array_filter($rels))));
-                    // Append the external-link icon HTML at the end of the anchor
-                    // only if a span containing the special invisible character
-                    // is not already present. The invisible character used is
-                    // U+2007 (figure space) and is included inside the icon HTML
-                    // by default. The icon HTML is configurable via the
-                    // element configuration (see the Link icon textarea).
+                    // Append the external-link icon HTML at the end of the anchor only if a span containing the special invisible character
+                    // is not already present. The invisible character used is U+2007 (figure space) and is included inside the icon HTML
+                    // by default. The icon HTML is configurable via the element configuration (see the Link icon textarea).
                     $invisible_char = ' ';
                     $has_icon_span = FALSE;
 
-                    // Determine whether we should append the icon for this
-                    // anchor. Only append when the link opens in a new tab
-                    // (target="_blank") and the href is internal to the
-                    // allowed hosts (portland.gov, lndo.site) or is a
-                    // relative/internal URL (no host). External absolute
-                    // hosts will not get the icon.
+                    // Determine whether we should append the icon for this anchor. Only append when the link opens in a new tab
+                    // (target="_blank") and the href is internal to the allowed hosts (portland.gov, lndo.site) or is a
+                    // relative/internal URL (no host). External absolute hosts will not get the icon.
                     $href = $a->getAttribute('href');
                     $target_attr = strtolower($a->getAttribute('target'));
                     $allow_icon = TRUE;
@@ -354,17 +332,15 @@ class PortlandNodeFetcher extends WebformElementBase {
                     // 2) Exact-fragment substring check against configured icon HTML.
                     $icon_html = trim($element['#link_icon'] ?? ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>');
                     if (!$has_icon_span && $icon_html !== '') {
-                      // Use saveHTML on the anchor to get a string representation
-                      // and look for the configured fragment. This is a best-effort
-                      // string match and helps avoid duplicating identical HTML.
+                      // Use saveHTML on the anchor to get a string representation and look for the configured fragment. 
+                      // This is a best-effort string match and helps avoid duplicating identical HTML.
                       $anchor_html = $doc->saveHTML($a);
                       if (strpos($anchor_html, $icon_html) !== FALSE) {
                         $has_icon_span = TRUE;
                       }
                     }
 
-                    // 3) Class-based detection: if configured icon contains a class
-                    // token, consider the icon present when an inner span already
+                    // Class-based detection: if configured icon contains a class token, consider the icon present when an inner span already
                     // has any of those tokens.
                     if (!$has_icon_span && preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
                       $classes = preg_split('/\s+/', trim($cmatch[1]));
@@ -381,15 +357,12 @@ class PortlandNodeFetcher extends WebformElementBase {
                       }
                     }
 
-                    // Only consider appending the icon when allowed by the
-                    // target/href checks above.
+                    // Only consider appending the icon when allowed by the target/href checks above.
                     if ($allow_icon && !$has_icon_span) {
                       // Add a normal space before the icon for separation.
                       $a->appendChild($doc->createTextNode(' '));
-                      // Try to insert the configured HTML as a fragment. If the
-                      // fragment isn't valid XML/HTML, fall back to creating a
-                      // simple span element with the default class and invisible
-                      // character.
+                      // Try to insert the configured HTML as a fragment. If the fragment isn't valid XML/HTML, fall back to creating a
+                      // simple span element with the default class and invisible character.
                       $frag = $doc->createDocumentFragment();
                       $ok = FALSE;
                       // Suppress warnings from malformed fragments.
