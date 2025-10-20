@@ -288,9 +288,14 @@ class PortlandNodeFetcher extends WebformElementBase {
                   if ($a instanceof \DOMElement) {
                     // If the href is empty or is just an in-page anchor (e.g. #)
                     // or a javascript pseudo-link, treat it as not a real link
-                    // and skip icon/target modifications.
+                    // and skip icon/target modifications. Also skip non-HTTP
+                    // schemes (mailto:, tel:, sms:, etc.) — those should not
+                    // open in a new window or receive external-link icons.
                     $href = $a->getAttribute('href');
                     if ($href === '' || preg_match('/^\s*(#|javascript:)/i', $href)) {
+                      continue;
+                    }
+                    if (preg_match('/^\s*(mailto:|tel:|sms:|skype:|fax:)/i', $href)) {
                       continue;
                     }
 
