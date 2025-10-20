@@ -107,7 +107,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['show_mailing_label'] = $showMailingLabel;
 
-    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "1";
+    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) != "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['find_unincorporated'] = $findUnincorporated;
 
     $secondaryQueryUrl = array_key_exists('#secondary_query_url', $element) ? $element['#secondary_query_url'] : false;

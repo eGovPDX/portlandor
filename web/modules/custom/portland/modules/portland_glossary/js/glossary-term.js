@@ -95,10 +95,33 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           let reference;
           if (!hasLongDefinition) {
-            // Replace <a> with <span> to keep appearance but remove link
+            // Replace <a> with <span> to keep appearance but remove link.
+            // Also remove any trailing external-link icon markup that may
+            // have been added by other processors so popups for short
+            // definitions don't show link icons.
             reference = document.createElement('span');
             reference.className = link.className;
-            reference.innerHTML = link.innerHTML;
+            // Clone inner HTML and strip any <span> that contains the
+            // invisible figure-space character U+2007 or font-awesome icons.
+            let inner = link.innerHTML;
+            try {
+              const tmp = document.createElement('div');
+              tmp.innerHTML = inner;
+              // Remove spans that look like the external-link icon.
+              const spans = tmp.querySelectorAll('span');
+              spans.forEach((s) => {
+                const text = s.textContent || '';
+                // Remove if contains the special invisible figure space (U+2007)
+                // or if it has font-awesome like classes.
+                if (text.includes('\u2007') || /(fa-|fa\s|fa-solid)/.test(s.className || '')) {
+                  s.remove();
+                }
+              });
+              inner = tmp.innerHTML;
+            } catch (e) {
+              // Fallback: use raw innerHTML if DOM operations fail.
+            }
+            reference.innerHTML = inner;
             reference.setAttribute('data-entity-substitution', 'glossary_term');
             reference.setAttribute('tabindex', '0');
             link.replaceWith(reference);
@@ -109,10 +132,28 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           wrapper.prepend(reference);
           reference.setAttribute('aria-details', tooltipId);
 
+          // If this glossary term is inside a Node Fetcher that requests
+          // opening links in a new tab, ensure the learn-more link opens in
+          // a new tab and has appropriate rel attributes. We avoid adding
+          // the external-link icon to learn-more links.
+          const openLinksAncestor = wrapper.closest('[data-open-links-in-new-tab="1"]');
+
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
           const closeBtn = tooltip.querySelector('.glossary-close');
           let hideTimeout;
+
+          if (openLinksAncestor) {
+            const learnMoreEl = wrapper.querySelector('.learn-more');
+            if (learnMoreEl) {
+              learnMoreEl.setAttribute('target', '_blank');
+              // Merge or set rel attribute to include noopener noreferrer
+              const existingRel = learnMoreEl.getAttribute('rel') || '';
+              const relParts = existingRel.split(/\s+/).filter(Boolean);
+              ['noopener','noreferrer'].forEach((r) => { if (!relParts.includes(r)) relParts.push(r); });
+              learnMoreEl.setAttribute('rel', relParts.join(' '));
+            }
+          }
 
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;
