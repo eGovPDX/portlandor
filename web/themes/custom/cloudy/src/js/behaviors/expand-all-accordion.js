@@ -25,23 +25,18 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
   /**
    * Expand and scrolls to the accordion panel containing a child with a matching ID.
    */
-  scrollToPanelContainingId(id) {
-    const panelEl = document.getElementById(id)?.closest(".aria-accordion__panel");
+  expandPanelContainingId(id) {
+    const anchorEl = document.getElementById(id);
+    const panelEl = anchorEl?.closest(".aria-accordion__panel");
     if (!panelEl) return;
 
     this.toggleAccordionPanel(panelEl, true);
-    setTimeout(
-      () => document.querySelector(`[aria-controls="${panelEl.id}"]`).scrollIntoView({}),
-      0,
-    );
+    setTimeout(() => anchorEl.scrollIntoView({}), 0);
   },
 
   attach(context, drupalSettings) {
     const minRows = drupalSettings?.portland?.cloudyExpandAllAccordion?.minRows ?? 0;
     window.addEventListener("DOMContentLoaded", () => {
-      const hashId = location.hash.slice(1);
-      if (hashId) this.scrollToPanelContainingId(hashId);
-
       once("cloudyExpandAllAccordion", "div.aria-accordion", context).forEach((accordion) => {
         const accordionPanelIds = Array.from(
           accordion.querySelectorAll("div.aria-accordion__panel"),
@@ -55,14 +50,17 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           return;
         }
 
-        accordion.insertAdjacentHTML(
-          "afterbegin",
-          `
+        // Skip adding expand-all button if it's been overridden with the class "no-expand-all"
+        if (!accordion.classList.contains("no-expand-all")) {
+          accordion.insertAdjacentHTML(
+            "afterbegin",
+            `
             <button type="button" class="toggle-accordion btn btn-link d-block ms-auto mb-1 p-0" aria-expanded="false" aria-controls="${accordionPanelIds.join(
               " ",
-            )}">${this.STR_EXPAND_ALL}</a>
+            )}">${this.STR_EXPAND_ALL}</button>
           `,
-        );
+          );
+        }
         accordion.addEventListener("click", (e) => {
           const toggleControl = e.target;
           if (!toggleControl.classList.contains("toggle-accordion")) return;
@@ -75,12 +73,15 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           toggleControl.textContent = isExpanding ? this.STR_COLLAPSE_ALL : this.STR_EXPAND_ALL;
         });
       });
+
+      const hashId = location.hash.slice(1);
+      if (hashId) this.expandPanelContainingId(hashId);
     });
 
     window.addEventListener("click", (e) => {
       if (e.target.tagName !== "A" || !e.target.hash) return;
 
-      this.scrollToPanelContainingId(e.target.hash.slice(1));
+      this.expandPanelContainingId(e.target.hash.slice(1));
     });
   },
 };

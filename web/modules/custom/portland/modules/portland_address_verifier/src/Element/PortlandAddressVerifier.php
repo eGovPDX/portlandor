@@ -2,24 +2,24 @@
 
 namespace Drupal\portland_address_verifier\Element;
 
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Element\WebformCompositeBase;
 use Drupal\webform\Entity\WebformOptions;
-
 
 /**
  * Provides a 'portland_address_verifier'.
  *
  * Portland Address Verifier widget is comprised of a group of sub-elements and
- * client-side scripting to validate addresses in the Portland area using the 
+ * client-side scripting to validate addresses in the Portland area using the
  * PortlandMaps API.
- * 
+ *
  * This widget is ONLY concerned about addresses. It has no zero support for
  * lat/lon coordinates. However, location data returned from the API, such as
  * loacation types, tax lot ID, municipality name, and zipcode, are captured.
  *
  * IMPORTANT:
- * 1. This widget cannot be used for geofencing; the full Location Picker widget must be used 
+ * 1. This widget cannot be used for geofencing; the full Location Picker widget must be used
  *    for anything other than simple address verification the areas covered by Portland Maps
  * 2. Webform composite can not contain multiple value elements (i.e. checkboxes)
  *    or composites (i.e. webform_address)
@@ -35,7 +35,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    * {@inheritdoc}
    * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * //in the field config. if not, an error is thrown when trying to add an email handler.
-   * 
+   *
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
@@ -112,7 +112,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_jurisdiction'] = [
       '#type' => 'hidden',
       '#title' => t('Jurisdiction'),
-      '#id' => 'location_jurisdiction',
+      '#attributes' => [ 'id' => 'location_jurisdiction' ],
     ];
     $element['av_suggestions_modal'] = [
       '#type' => 'markup',
@@ -168,14 +168,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#attributes' => [ 'id' => 'location_address_label']
     ];
     $element['location_verification_status'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status', 'class' => ['visually-hidden']],
+      '#attributes' => [ 'id' => 'location_verification_status' ],
       '#required_error' => 'The address is not verified.',
-      '#title_display' => 'invisible',
-      '#wrapper_attributes' => [
-        'class' => ['mt-0', 'mb-0'],
-      ],
+      '#element_validate' => [[static::class, 'validateVerificationStatusElement']],
     ];
     $element['location_capture_field'] = [
       '#type' => 'hidden',
@@ -189,5 +186,19 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     ];
 
     return $element;
+  }
+
+  /**
+   * Custom validation handler for the location_verification_status element.
+   */
+  public static function validateVerificationStatusElement(array &$element, FormStateInterface $form_state, array &$complete_form) {
+    // Skip the validation if a verified address is not required.
+    if (empty($element['#required'])) return;
+
+    $value = NestedArray::getValue($form_state->getValues(), $element['#parents']);
+    if ($value !== 'Verified') {
+      // Set the error on the location address element so it displays properly for the user.
+      $form_state->setErrorByName(implode('][', array_slice($element['#parents'], 0, -1)) . '][location_address', $element['#required_error']);
+    }
   }
 }

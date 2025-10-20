@@ -46,7 +46,7 @@ function getGroupIdsByEntity($entity)
 
   $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
-    $group_ids[] = $group_content->getGroup()->id();
+    $group_ids[] = $group_content->getGroup()?->id();
   }
 
   return $group_ids;
@@ -514,7 +514,7 @@ function _build_log_message($entity)
 
   $parentGroupTitle = '';
   if ($entity->getEntityTypeId() == 'group_content') {
-    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()->label() . ',   ';
+    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()?->label() . ',   ';
     $titleText = 'Title=' . $entity->label->value . ','; // Group content didn't implement "label()"
   } else {
     $titleText = 'Title=' . $entity->label() . ',';
@@ -1045,17 +1045,25 @@ function _validate_group_group_path(&$form, FormStateInterface $form_state)
  */
 function portland_cron()
 {
-  // Send content notification email to powr@portlandoregon.gov
-  _send_content_email();
+  // Send content notification email
+  try {
+    _send_content_email();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed sending content review email: " . $e->getMessage());
+  }
 
   // Send queued GovDelivery emails
-  _process_govdelivery_queue();
+  try {
+    _process_govdelivery_queue();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed processing GovDelivery queue: " . $e->getMessage());
+  }
 }
 
 
 /**
  * Helper function to send content notification email.
- * Retrieve a view and send it to powr@portlandoregon.gov
+ * Retrieve a view and send it to BTS-eGov@portlandoregon.gov
  */
 function _send_content_email()
 {
@@ -1115,7 +1123,7 @@ function _send_content_email()
     $params['title'] = 'Portland.gov list of content to review' . $environment_name;
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
-    $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+    $sent_successfully = _send_email($key, $to, $langcode, $params, 'website@portlandoregon.gov');
     if ($sent_successfully) {
       \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
       \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
