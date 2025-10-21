@@ -89,10 +89,11 @@ elements: |-
       '#options':
         'Crime related': 'Crime related'
         'Environmental/infrastructure hazard': 'Environmental/infrastructure hazard'
-        'Employee Injury/First Aid Care': 'Employee Injury/First Aid Care'
+        'Employee Incident/Injury/First Aid Care': 'Employee Incident/Injury/First Aid Care'
         'Park violation or safety issue': 'Park violation or safety issue'
         'Trail or facility hazard': 'Trail or facility hazard'
         'Vehicle damage or collision': 'Vehicle damage or collision'
+        'Visitor Incident/Injury/First Aid Care': 'Visitor Incident/Injury/First Aid Care'
       '#required': true
     report_issue_type_crime:
       '#type': select
@@ -126,7 +127,7 @@ elements: |-
             value: 'Environmental/infrastructure hazard'
     report_issue_type_medical:
       '#type': select
-      '#title': 'What type of Employee Injury/First Aid Care'
+      '#title': 'What type of Employee or visitor Injury/First Aid Care'
       '#options':
         'Initial Injury Report': 'Initial Injury Report'
         'Medica emergency (CPR, stroke, substance OD)': 'Medical emergency (CPR, stroke, substance OD)'
@@ -134,11 +135,13 @@ elements: |-
         'Wellness check': 'Wellness check'
         'Wound care': 'Wound care'
         Other: Other
-      '#required': true
       '#states':
         visible:
-          ':input[name="report_issue_category"]':
-            value: 'Employee Injury/First Aid Care'
+          - ':input[name="report_issue_category"]':
+              value: 'Employee Incident/Injury/First Aid Care'
+          - or
+          - ':input[name="report_issue_category"]':
+              value: 'Visitor Incident/Injury/First Aid Care'
     report_issue_type_violations_safety:
       '#type': select
       '#title': 'What type of park violation or safety issue?'
@@ -175,6 +178,7 @@ elements: |-
       '#options':
         Employee: Employee
         Public: Public
+        'Both Employee and Public': 'Both Employee and Public'
       '#states':
         visible:
           ':input[name="report_issue_category"]':
@@ -200,10 +204,6 @@ elements: |-
         - or
         - ':input[name="report_issue_type_vehicle"]':
             filled: true
-    report_corrective_action:
-      '#type': textarea
-      '#title': 'Corrective actions taken as a result of this incident'
-      '#required': true
     incident_details:
       '#type': webform_section
       '#title': 'Incident details'
@@ -235,6 +235,14 @@ elements: |-
         '#required': true
         '#counter_type': character
         '#counter_maximum': 2000
+      report_corrective_action:
+        '#type': textarea
+        '#title': 'Corrective actions taken as a result of this incident'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="report_issue_category"]':
+              value: 'Employee Incident/Injury/First Aid Care'
       report_photo:
         '#type': webform_image_file
         '#title': Photo
@@ -271,6 +279,9 @@ elements: |-
           invisible:
             ':input[name="report_location_type"]':
               value: 'Office or maintenance facility'
+          optional:
+            ':input[name="report_location_type"]':
+              value: 'Not on PP&R Property. Mark the location on the map below'
         '#format': label
         '#target_type': node
         '#selection_handler': 'default:node'
@@ -280,7 +291,6 @@ elements: |-
           sort:
             field: title
             direction: ASC
-        '#required': true
       report_location_name_text:
         '#type': textfield
         '#title': 'Location Name'
@@ -338,7 +348,7 @@ elements: |-
         '#type': checkboxes
         '#title': 'What other steps have you taken?'
         '#options':
-          'I notified my supervisor. THIS IS REQUIRED!': 'I notified my supervisor. THIS IS REQUIRED!'
+          'I notified my supervisor.': 'I notified my supervisor.'
           'I placed a work order for the damage': 'I placed a work order for the damage'
           'I called 911, but no one responded': 'I called 911, but no one responded'
           'I called 911 and police or fire responded': 'I called 911 and police or fire responded'
@@ -377,6 +387,8 @@ elements: |-
     '#mode': html
     '#template': |+
       <p><strong>Reporting organization</strong>: {{ data.report_organization }}</p>
+
+      <p><strong>A copy of this Incident Report will be sent to the following recipients:</strong</p> {{ data.contact_name }}{% if data.report_injury != 'No' or 'No, but it was a near-miss incident that could have resulted in an injury or illness to a worker.'%}{{ ' and ' ~ data.report_supervisor_name }}{% endif %}
 
       <p><strong>Was someone injured?</strong>: {{ data.report_injury }}</p>
 
@@ -717,6 +729,7 @@ handlers:
     label: 'Email confirmation to requester'
     notes: ''
     status: true
+    conditions: {  }
     weight: 5
     settings:
       states:
