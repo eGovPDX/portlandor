@@ -793,6 +793,8 @@ elements: |-
         visible:
           ':input[name="permit_location_metered"]':
             value: 'false'
+          ':input[name="permit_location_parking_zone_type"]':
+            value: ''
           ':input[name="permit_amount_20ft_spaces"]':
             value:
               less_equal: '5'
@@ -2029,8 +2031,14 @@ elements: |-
       {% elseif data.wizard_permit_need == "parking" %}
         {% set permit_type = "parking_only" %}
 
-        {# not eligible for PRP/7day if moratorium and not moving #}
-        {% if data.permit_location_metered == "false" and data.permit_street_28ft_wide == "Yes" and data.permit_restricted_parking_zone == "No" and (data.hidden_moratorium_details == "" or data.moratorium_choice == "moving") %}
+        {# eligible for PRP/7day if location is non-metered, street 28ft wide, and no restricted signs #}
+        {# not eligible if moratorium, unless reason is moving #}
+        {# not eligible if inside non-metered pilot area #}
+        {% if data.permit_location_metered == "false"
+          and data.permit_street_28ft_wide == "Yes"
+          and data.permit_restricted_parking_zone == "No"
+          and (data.hidden_moratorium_details == "" or data.moratorium_choice == "moving")
+          and data.permit_location_parking_zone_type != "Non-Metered" %}
           {% set permit_type = "7day" %}
         {% endif %}
       {% elseif data.wizard_permit_need == "traffic" %}
