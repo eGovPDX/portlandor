@@ -10,7 +10,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\user\UserInterface;
-use Drupal\group\Entity\Group;
+use Drupal\group\Entity\GroupInterface;
 
 
 /**
@@ -30,13 +30,14 @@ final class AddGroupMembershipAction extends ViewsBulkOperationsActionBase imple
   /**
    * {@inheritdoc}
    */
-  public function execute(UserInterface $user = NULL) {
+  public function execute(?UserInterface $user = NULL) {
     if ($user === NULL || $this->configuration['group_id'] === 0) {
       return $this->t('Invalid entity or configuration.');
     }
 
     $group_id = $this->configuration['group_id'];
     $role_ids = $this->configuration['role_ids'];
+    /** @var GroupInterface $group */
     $group = \Drupal::entityTypeManager()->getStorage('group')->load($group_id);
     $membership = $group->getMember($user);
     if ($membership === FALSE) {
@@ -103,7 +104,9 @@ final class AddGroupMembershipAction extends ViewsBulkOperationsActionBase imple
         ];
 
         // Get the group roles associated with the selected group
-        $roles = \Drupal::entityTypeManager()->getStorage('group')->load($group_id)->getGroupType()->getRoles(FALSE);
+        /** @var GroupInterface $group */
+        $group = \Drupal::entityTypeManager()->getStorage('group')->load($group_id);
+        $roles = $group->getGroupType()->getRoles(FALSE);
         $role_options = array();
         foreach ($roles as $role) {
           $role_options[$role->id()] = $role->label();
@@ -128,7 +131,7 @@ final class AddGroupMembershipAction extends ViewsBulkOperationsActionBase imple
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
     $button = $form_state->getTriggeringElement()['#value']->getUntranslatedString();
 
     if ($button === 'Next') {

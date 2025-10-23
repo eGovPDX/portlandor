@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_groups\Plugin\Action;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Action\Attribute\Action;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
@@ -137,7 +138,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration()
+  public function defaultConfiguration(): array
   {
     return [
       'group_id' => '',
@@ -170,7 +171,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state)
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void
   {
     $this->configuration['group_id'] = $form_state->getValue('group_id');
   }
@@ -180,7 +181,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
    */
   public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE)
   {
-    if ($object instanceof \Drupal\Core\Entity\EntityInterface) {
+    if ($object instanceof EntityInterface) {
       $entity_type = $object->getEntityTypeId();
       $allowed_types = ['node', 'media'];
 
@@ -196,5 +197,5 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {}
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {}
 }
