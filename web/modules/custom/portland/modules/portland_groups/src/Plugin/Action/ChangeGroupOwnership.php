@@ -138,7 +138,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration()
+  public function defaultConfiguration(): array
   {
     return [
       'group_id' => '',
@@ -171,7 +171,7 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state)
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void
   {
     $this->configuration['group_id'] = $form_state->getValue('group_id');
   }
@@ -197,5 +197,5 @@ class ChangeGroupOwnership extends ViewsBulkOperationsActionBase implements Plug
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {}
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {}
 }
