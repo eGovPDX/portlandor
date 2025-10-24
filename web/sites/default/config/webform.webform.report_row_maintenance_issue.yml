@@ -217,8 +217,11 @@ elements: |-
     '#required': true
     '#states':
       visible:
-        ':input[name="report_issue_type_other"]':
-          checked: true
+        - ':input[name="report_issue_type_other"]':
+            checked: true
+        - or
+        - ':input[name="report_asset_type"]':
+            value: sidewalk
   report_asset_type_sidewalk:
     '#type': select
     '#title': 'What specific thing are you trying to report?'
@@ -265,8 +268,10 @@ elements: |-
     '#options':
       camera: 'Traffic or speed camera'
       hump: 'Speed bump or hump'
-      island: 'Concrete island, planter, or diverter'
-      fixed_bollard: 'Fixed bollard (metal)'
+      island: 'Concrete island'
+      planter: 'Planter (usually concrete)'
+      fixed_bollard: 'Fixed bollard (concrete/metal)'
+      diverter: 'Bike lane diverter'
       flex_bollard: 'Flexible bollard (plastic)'
     '#states':
       visible:
@@ -312,6 +317,19 @@ elements: |-
       visible:
         ':input[name="report_asset_type"]':
           value: bridge
+    '#required': true
+  report_issue_type_bridge:
+    '#type': select
+    '#title': 'Which part of the bridge?'
+    '#options':
+      traffic_attenuator: 'Traffic attenuator'
+      elevator: 'Elevator'
+      fence: 'Fence'
+      retaining_wall: 'Retaining wall'
+    '#states':
+      visible:
+        ':input[name="report_asset_type_bridge"]':
+          value: bridge_other
     '#required': true
   report_issue_bridge_description:
     '#type': textarea
@@ -456,6 +474,57 @@ elements: |-
     '#template': |-
       {% set issue_categories = [data.report_asset_type, data['report_asset_type_' ~ data.report_asset_type], data['report_issue_type_' ~ data.report_asset_type]] %}
       23923247765911_{{ issue_categories|filter(v => v is not empty)|join('__') }}
+  computed_zd_group_id:
+    '#type': webform_computed_twig
+    '#title': 'Computed Zendesk group ID'
+    '#display_on': none
+    '#mode': text
+    '#whitespace': trim
+    '#template': |-
+      {% set dispatch = '31623419540375' %}
+      {% set mo = '35280882128279' %}
+      {% if data.report_asset_type == 'sidewalk' %}
+        {% if data.report_asset_type_sidewalk == 'curb' %}
+          {# P3 #}
+          {{ mo }}
+        {% elseif data.report_asset_type_sidewalk == 'stairs' and data.report_issue_bridge == 'Yes' %}
+          {# P2 #}
+          {{ dispatch }}
+        {% elseif data.report_asset_type_sidewalk == 'stairs' and data.report_issue_bridge == 'No' %}
+          {# P3 #}
+          {{ mo }}
+        {% elseif data.report_asset_type_sidewalk == 'sidewalk_wooden' %}
+          {# P2 #}
+          {{ dispatch }}
+        {% elseif (data.report_asset_type_sidewalk == 'no_ramp' or data.report_asset_type_sidewalk == 'ramp') and data.report_issue_type_sidewalk != 'damaged' %}
+          {# P3 #}
+          {{ mo }}
+        {% elseif (data.report_asset_type_sidewalk == 'no_ramp' or data.report_asset_type_sidewalk == 'ramp') and data.report_issue_type_sidewalk == 'damaged' %}
+          {# P2 #}
+          {{ dispatch }}
+        {% endif %}
+      {% elseif data.report_asset_type == 'calming' %}
+        {% if data.report_asset_type_calming == 'camera' %}
+          {# TODO email fixedspeedsafetycamera@portlandoregon.gov #}
+        {% elseif data.report_asset_type_calming == 'hump' or data.report_asset_type_calming == 'planter' %}
+          {# P2 #}
+          {{ dispatch }}
+        {% elseif data.report_asset_type_calming == 'flex_bollard' %}
+          {# TODO this is supposed to be a "311 MO Dispatch" group? #}
+          {{ mo }}
+        {% else %}
+          {# P3 #}
+          {{ mo }}
+        {% endif %}
+      {% elseif data.report_asset_type == 'bridge' %}
+        {# P2 #}
+        {{ dispatch }}
+      {% elseif data.report_asset_type == 'other' %}
+        {# P2 #}
+        {{ dispatch }}
+      {% else %}
+        {{ mo }}
+      {% endif %}
 css: ''
 javascript: ''
 settings:
@@ -650,13 +719,13 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'ROW Maintenance Issue - [webform_submission:values:report_issue_type]'
+      subject: 'ROW Maintenance Issue - [webform_submission:values:report_asset_type]'
       comment: '[webform_submission:values:html]'
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
-      group_id: '31623419540375'
+      group_id: computed_zd_group_id
       assignee_id: ''
       type: problem
       is_child_incident: 0
