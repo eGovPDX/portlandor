@@ -49,7 +49,7 @@ elements: |-
       <div class="alert alert--info next-steps">
       <h2>Next Steps</h2>
 
-      <p class="mb-0">Please report this issue to the Portland Bureau of Transportation's maintenance dispatch at (503) 823-1700.</p>
+      <p class="mb-0">Please report this issue to PDX311 Dispatch at (503) 823-1700.</p>
       </div>
   container_issue_type:
     '#type': container
@@ -62,13 +62,16 @@ elements: |-
       '#title': 'What type of issue or object are you reporting?'
       '#options':
         Vehicle: 'Vehicle -- Including dumpsters, PODS, trailers'
-        'Construction work zone item': 'Construction work zone item -- Staging, fencing, utility cuts, traffic control and miscellaneous equipment'
+        'Construction item': 'Construction work zone item -- Staging, fencing, utility cuts, traffic control and miscellaneous equipment'
         'Permanent structure': 'Permanent structure -- Fences, planters, sheds, trash can enclosures, etc.'
         'Temporary item': 'Temporary item -- Mulch piles, basketball hoops, sports items, electrical cords, trash cans, etc.'
+        'Debris or waste': 'Loose trash, glass, debris, or hazardous waste'
         'Outdoor dining': 'Outdoor dining -- Outdoor seating, tables, sandwich boards, dining structure, etc.'
         'Trees or vegetation': 'Trees or vegetation'
-        'Unauthorized signage or other parking obstruction in the right-of-way': 'Unauthorized signage or other parking obstruction in the right-of-way'
+        'Unauthorized signage': 'Unauthorized signage or other parking obstruction in the right-of-way'
         'Sidewalk in need of repair': 'Sidewalk in need of repair'
+        E-scooter: E-scooter
+        'Biketown bike': 'Biketown bike'
       '#required': true
     report_vehicle_issue_type:
       '#type': radios
@@ -90,12 +93,12 @@ elements: |-
         Materials: 'Materials -- Building supplies, wood piles, scrap piles, etc.'
         'Cuts in the roadway surface/missing manhole covers': 'Cuts in the roadway surface/missing manhole covers -- Intentional cuts to access utilities, usually in straight lines'
         'Traffic control equipment': 'Traffic control equipment -- Cones, delineators, flaggers, barricades'
-        Other: Other
+        'Something else': 'Something else -- Please describe in the Obstruction Details box below'
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_type"]':
-            value: 'Construction work zone item'
+            value: 'Construction item'
     report_permanent_structure:
       '#type': radios
       '#title': 'What type of permanent structure?'
@@ -103,9 +106,9 @@ elements: |-
         Fence: Fence
         'Planter box': 'Planter box'
         Shed: Shed
-        'Outdoor seating, tables, dining structures': 'Outdoor seating, tables, dining structures'
+        'Outdoor seating': 'Outdoor seating, tables, dining structures'
         'Trash can enclosure': 'Trash can enclosure'
-        Other: Other
+        'Something else': 'Something else -- Please describe in the Obstruction Details box below'
       '#required': true
       '#states':
         visible:
@@ -115,28 +118,72 @@ elements: |-
       '#type': radios
       '#title': 'What type of temporary item?'
       '#options':
-        Mulch: Mulch
+        'Mulch pile': 'Mulch pile'
         'Garbage/recycling bins': 'Garbage/recycling bins'
-        'Trash, debris, or hazardous materials': 'Trash, debris, or hazardous materials'
-        'Dead animal': 'Dead animal'
         'A-board sign': 'A-board sign'
         'Basketball hoop/sports equipment': 'Basketball hoop/sports equipment'
         'Extension cord': 'Extension cord'
-        'Hazardous waste': 'Hazardous waste -- Human feces, used syringes, etc.'
-        'Messy sidewalk': 'Messy sidewalk -- Gravel, mud, debris, etc.'
-        Other: Other
-      '#other__description': 'Please describe'
+        'Abandoned or damaged publication box': 'Abandoned or damaged publication box'
+        'Something else': 'Something else -- Please describe in the Obstruction Details box below'
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_type"]':
             value: 'Temporary item'
+    report_debris:
+      '#type': radios
+      '#title': 'What type of trash, debris or hazardous waste?'
+      '#options':
+        'Loose trash': 'Loose trash'
+        'Loose glass': 'Loose glass'
+        'Gravel, mud, plant debris, etc.': 'Gravel, mud, plant debris, etc.'
+        'Dead animal': 'Dead animal'
+        'Hazardous waste': 'Hazardous waste -- Human feces, used syringes, etc.'
+        'Something else': 'Something else -- Please describe in the Obstruction Details box below'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="report_issue_type"]':
+            value: 'Debris or waste'
+    report_debris_where:
+      '#type': radios
+      '#title': 'Which part of the right of way?'
+      '#options':
+        'Vehicle lane on a city street': 'Vehicle lane on a city street'
+        'Bike lane': 'Bike lane'
+        Sidewalk: Sidewalk
+        'Interstate highway': 'Interstate highway'
+      '#required': true
+      '#states':
+        visible:
+          - ':input[name="report_debris"]':
+              value: 'Loose trash'
+          - or
+          - ':input[name="report_debris"]':
+              value: 'Loose glass'
+          - or
+          - ':input[name="report_debris"]':
+              value: 'Gravel, mud, plant debris, etc.'
+    markup_street_sweeping:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_debris_where"]':
+            value: 'Vehicle lane on a city street'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>The city has limited resources for street cleaning in vehicle lanes. <a href="/transportation/maintenance/street-sweeping">Learn more about street sweeping</a>. If this is an urgent safety hazard, please call <a href="tel:+1-503-823-1700">503-823-1700</a>.</p><p class="mb-0">To report trash in the street related to a campsite or something else, <a href="/311/report-trash">view options for reporting trash</a>.</p></div>'
+    markup_contact_odot:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_debris_where"]':
+            value: 'Interstate highway'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">If the trash or debris is causing a road hazard, please call the Oregon Department of Transportation’s Dispatch Center at <a href="tel:+1-503-283-5859">(503) 283-5859</a>. Otherwise, you can report it to the regional Maintenance District at <a href="tel:+1-971-673-6200">(971) 673-6200</a>.</p></div>'
     report_outdoor_dining_item:
       '#type': radios
       '#title': 'What type of outdoor dining item?'
       '#options':
         'A-board sign': 'A-board sign'
-        'Outdoor seating, tables, dining structure': 'Outdoor seating, tables, dining structure'
+        'Outdoor seating': 'Outdoor seating, tables, dining structure'
       '#states':
         visible:
           ':input[name="report_issue_type"]':
@@ -149,7 +196,8 @@ elements: |-
         'A tree or large branch that has fallen and is now a hazard in the street or sidewalk': 'A tree or large branch that has fallen and is now a hazard in the street or sidewalk'
         'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection': 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
         'Vegetation blocking a streetlight': 'Vegetation blocking a streetlight'
-        'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane': 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane -- For example, hanging from above or growing in from the side'
+        'Vegetation growing into the sidewalk, public pathway, or other travel lane': 'Vegetation growing into the sidewalk, public pathway, or other travel lane -- For example, hanging from above or growing in from the side'
+        'Vegetation growing into a bike lane': 'Vegetation growing into a bike lane'
         'None of the above': 'None of the above'
       '#required': true
       '#states':
@@ -160,17 +208,18 @@ elements: |-
       '#type': radios
       '#title': 'Where is the tree or vegetation growing from?'
       '#options':
-        'Private property': 'Private property'
-        'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
+        'Private property or parking strip': 'Private property or parking strip'
+        'Median, traffic island, or other parts of the street or right-of-way': 'Median, traffic island, or other parts of the street or right-of-way'
         'Park or natural area': 'Park or natural area'
-        'Something else, or unsure': 'Something else, or unsure -- Please describe in the Obstruction Details box below'
-      '#other__option_label': 'Unsure or something else...'
-      '#other__placeholder': 'Please describe...'
+        'Something else': 'Something else -- Please describe in the Obstruction Details box below'
       '#required': true
       '#states':
         visible:
           - ':input[name="report_tree_issue"]':
-              value: 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane'
+              value: 'Vegetation growing into the sidewalk, public pathway, or other travel lane'
+          - or
+          - ':input[name="report_tree_issue"]':
+              value: 'Vegetation growing into a bike lane'
           - or
           - ':input[name="report_tree_issue"]':
               value: 'None of the above'
@@ -185,7 +234,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="report_issue_type"]':
-            value: 'Unauthorized signage or other parking obstruction in the right-of-way'
+            value: 'Unauthorized signage'
     markup_vehicle:
       '#type': webform_markup
       '#states':
@@ -221,21 +270,16 @@ elements: |-
       '#type': webform_markup
       '#states':
         visible:
-          ':input[name="report_temporary_item"]':
+          ':input[name="report_debris"]':
             value: 'Hazardous waste'
       '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please report hazardous waste using the <a href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Report a Campsite form</a>, and select "Trash or debris only."</p><p class="mb-0"><a class="button button--primary" href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Continue</a></p></div>'
     markup_animal:
       '#type': webform_markup
       '#states':
         visible:
-          ':input[name="report_temporary_item"]':
+          ':input[name="report_debris"]':
             value: 'Dead animal'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p class="mb-0">Please use the Multnomah County Animal Services&nbsp;<a href="https://www.multcopets.org/form/deceased-animal-removal-request">Deceased Animal Removal Request form</a>&nbsp;to report this issue.&nbsp;&nbsp;</p>
-        </div>
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">Please use the Multnomah County Animal Services&nbsp;<a href="https://www.multcopets.org/form/deceased-animal-removal-request">Deceased Animal Removal Request form</a>&nbsp;to report this issue.&nbsp;&nbsp;</p></div>'
     markup_tree_hazards:
       '#type': webform_markup
       '#states':
@@ -255,30 +299,50 @@ elements: |-
 
         <p class="mb-0">Signs are not allowed to be posted on utility poles according to City Code 17.64.040, however the City does not have resources to enforce this code and the power utility companies own and maintain most utility poles in the City of Portland.</p>
         </div>
+    markup_continue_escooter:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_issue_type"]':
+            value: E-scooter
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>E-scooters in the right of way should be reported using our <a href="/transportation/regulatory/escooterpdx/report">Report an E-scooter form</a></p><p class="mb-0"><a class="button button--primary" href="/transportation/regulatory/escooterpdx/report" aria-label="Continue to Report an E-scooter form">Continue</a></p></div>'
+    markup_continue_biketown:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_issue_type"]':
+            value: 'Biketown bike'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Biketown bikes in the right of way should be reported using the <a href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us">Lyft Bikes &amp; Scooters customer servcie form</a></p><p><a class="button button--primary" href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us" aria-label="Continue to Report a Biketown bike form">Continue</a></p><p class="mb-0"><em>Disclaimer: This link leads to an external website. We are not responsible for its content or privacy practices.</em></p></div>'
   container_submit:
     '#type': container
     '#states':
       visible:
         - ':input[name="report_issue_type"]':
-            value: 'Construction work zone item'
+            value: 'Construction item'
         - or
         - ':input[name="report_issue_type"]':
             value: 'Permanent structure'
         - or
-        - ':input[name="report_temporary_item"]':
-            value: 'Garbage/recycling bins'
+        - ':input[name="report_issue_type"]':
+            value: 'Temporary item'
         - or
-        - ':input[name="report_temporary_item"]':
-            value: 'Basketball hoop/sports equipment'
+        - ':input[name="report_issue_type"]':
+            value: 'Sidewalk in need of repair'
         - or
-        - ':input[name="report_temporary_item"]':
-            value: 'Extension cord'
+        - ':input[name="report_debris_where"]':
+            value: 'Bike lane'
         - or
-        - ':input[name="report_temporary_item"]':
-            value: Other
+        - ':input[name="report_debris_where"]':
+            value: Sidewalk
         - or
-        - ':input[name="report_outdoor_dining_item"]':
-            value: 'Outdoor seating, tables, dining structure'
+        - ':input[name="report_debris"]':
+            value: 'Something else'
+        - or
+        - ':input[name="report_signage_type"]':
+            value: 'Unauthorized No Parking signs or obstruction to prevent parking, including unauthorized curb painting'
+        - or
+        - ':input[name="report_signage_type"]':
+            value: 'A-board sign'
         - or
         - ':input[name="report_tree_issue"]':
             value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
@@ -286,37 +350,19 @@ elements: |-
         - ':input[name="report_tree_issue"]':
             value: 'Vegetation blocking a streetlight'
         - or
-        - ':input[name="report_vegetation_source"]':
-            value: 'Private property'
+        - ':input[name="report_tree_issue"]':
+            value: 'Vegetation growing into the sidewalk, public pathway, or other travel lane'
         - or
-        - ':input[name="report_vegetation_source"]':
-            value: 'Parking strip, median, or other parts of the street or right-of-way'
+        - ':input[name="report_tree_issue"]':
+            value: 'Vegetation growing into a bike lane'
         - or
-        - ':input[name="report_vegetation_source"]':
-            value: 'Park or natural area'
-        - or
-        - ':input[name="report_vegetation_source"]':
-            value: 'Something else, or unsure'
-        - or
-        - ':input[name="report_signage_type"]':
-            value: 'Unauthorized No Parking signs or obstruction to prevent parking, including unauthorized curb painting'
-        - or
-        - ':input[name="report_temporary_item"]':
-            value: Mulch
-        - or
-        - ':input[name="report_temporary_item"]':
-            value: 'A-board sign'
-        - or
-        - ':input[name="report_temporary_item"]':
-            value: 'Messy sidewalk'
+        - ':input[name="report_tree_issue"]':
+            value: 'None of the above'
         - or
         - ':input[name="report_outdoor_dining_item"]':
-            value: 'A-board sign'
+            value: 'Outdoor seating'
         - or
-        - ':input[name="report_issue_type"]':
-            value: 'Sidewalk in need of repair'
-        - or
-        - ':input[name="report_signage_type"]':
+        - ':input[name="report_outdoor_dining_item"]':
             value: 'A-board sign'
     container_location_photos:
       '#type': container
@@ -332,7 +378,11 @@ elements: |-
         '#location_type__access': false
         '#location_private_owner__access': false
         '#require_city_limits': true
+        '#max_zoom': 21
         '#out_of_bounds_message': 'You''ve selected a location outside of the Portland city limits. Please try again, or call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> for assistance.'
+        '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Planning/MapServer/62/query?f=json&geometry={{x}},{{y}}&geometryType=esriGeometryPoint&inSR=3857&outFields=*&distance=15.24&units=esriSRUnit_Meter'
+        '#click_query_property_path': 'features[0].attributes.Facility'
+        '#click_query_destination_field': location_region_id
       report_photo:
         '#type': webform_image_file
         '#title': 'Photo of Obstruction'
@@ -359,17 +409,26 @@ elements: |-
         '#title': Name
         '#states':
           required:
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
+            - or
             - ':input[name="report_temporary_item"]':
-                value: Mulch
+                value: 'Mulch pile'
             - or
             - ':input[name="report_temporary_item"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'Something else'
             - or
             - ':input[name="report_outdoor_dining_item"]':
                 value: 'A-board sign'
             - or
             - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
@@ -380,37 +439,55 @@ elements: |-
         '#description_display': before
         '#states':
           required:
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
+            - or
             - ':input[name="report_temporary_item"]':
-                value: Mulch
+                value: 'Mulch pile'
             - or
             - ':input[name="report_temporary_item"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'Something else'
             - or
             - ':input[name="report_outdoor_dining_item"]':
                 value: 'A-board sign'
             - or
             - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
-      phone:
+      contact_phone:
         '#type': textfield
         '#title': Phone
         '#input_mask': '(999) 999-9999'
         '#states':
           required:
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
+            - or
             - ':input[name="report_temporary_item"]':
-                value: Mulch
+                value: 'Mulch pile'
             - or
             - ':input[name="report_temporary_item"]':
                 value: 'A-board sign'
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'Something else'
             - or
             - ':input[name="report_outdoor_dining_item"]':
                 value: 'A-board sign'
             - or
             - ':input[name="report_vegetation_source"]':
-                value: 'Private property'
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Something else'
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
@@ -439,42 +516,113 @@ elements: |-
       '#type': webform_actions
       '#title': 'Submit button(s)'
       '#submit__label': Submit
-  computed_email_recipient:
+  computed_routing:
     '#type': webform_computed_twig
-    '#title': 'Email Routing'
-    '#title_display': inline
-    '#admin_title': 'Computed Email Recipient'
+    '#title': 'Computed Routing'
+    '#title_display': none
+    '#wrapper_attributes':
+      class:
+        - d-none
     '#access_create_roles':
       - authenticated
     '#display_on': form
     '#mode': text
-    '#template': |
-      {% if data.report_issue_type == "Sidewalk in need of repair" %}
-        sidewalkrepair@portlandoregon.gov
-      {% elseif data.report_temporary_item == "Mulch" or data.report_temporary_item == "A-board sign" or data.report_outdoor_dining_item == "A-board sign" or data.report_vegetation_source == "Private property" or data.report_signage_type == "A-board sign" %}
-        codec@portlandoregon.gov
+    '#template': |-
+      {% set routing = "" %}
+
+      {% if data.report_construction_work_zone_item == "Construction equipment" or 
+            data.report_construction_work_zone_item == "Fencing" or 
+            data.report_construction_work_zone_item == "Materials" or 
+            data.report_construction_work_zone_item == "Traffic control equipment" or 
+            data.report_construction_work_zone_item == "Something else" or 
+            data.report_permanent_structure == "Fence" or 
+            data.report_permanent_structure == "Planter box" or 
+            data.report_permanent_structure == "Shed" or 
+            data.report_permanent_structure == "Trash can enclosure" or 
+            data.report_permanent_structure == "Something else" or 
+            data.report_temporary_item == "Basketball hoop/sports equipment" or 
+            data.report_temporary_item == "Extension cord" or 
+            data.report_temporary_item == "Abandoned or damaged publication box" or 
+            data.report_temporary_item == "Something else" or
+            data.report_debris == "Something else" or
+            data.report_debris_where == "Sidewalk"%}
+        {% set routing = "ZENDESK|ROW Compliance" %}
+        
+      {% elseif data.report_debris_where == "Bike lane" or (data.report_tree_issue == "Vegetation growing into a bike lane" and data.report_vegetation_source == "Median, traffic island, or other parts of the street or right-of-way") %}
+        {% set routing = "ZENDESK|Bike Lane Maintenance" %}
+        
       {% elseif data.report_construction_work_zone_item == "Cuts in the roadway surface/missing manhole covers" %}
-        pbotutilityinspectors@portlandoregon.gov
-      {% elseif data.report_permanent_structure == "Outdoor seating, tables, dining structures" %}
-        OutdoorDiningPDX@portlandoregon.gov
+        {% set routing = "EMAIL|pbotutilityinspectors@portlandoregon.gov" %}
+        
+      {% elseif data.report_permanent_structure == "Outdoor seating" or
+                data.report_outdoor_dining_item == "Outdoor seating"%}
+        {% set routing = "EMAIL|OutdoorDiningPDX@portlandoregon.gov" %}
+        
+      {% elseif
+            data.report_temporary_item == "Mulch pile" or 
+            data.report_temporary_item == "A-board sign" or
+            data.report_outdoor_dining_item == "A-board sign" or
+            data.report_vegetation_source == "Private property or parking strip" or
+            data.report_signage_type == "A-board sign" %}
+        {% set routing = "EMAIL|codec@portlandoregon.gov" %}
+        
       {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
-        wasteinfo@portlandoregon.gov
-      {% elseif data.report_outdoor_dining_item == "Outdoor seating, tables, dining structure" %}
-        OutdoorDiningPDX@portlandoregon.gov
-      {% elseif data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection" %}
-        tom.jensen@portlandoregon.gov
-      {% elseif data.report_tree_issue == "Vegetation blocking a streetlight" %}
-        streetlighting@portlandoregon.gov
-      {% elseif data.report_vegetation_source == "Other publicly owned land" %}
-        pdxroads@portlandoregon.gov
+        {% set routing = "EMAIL|wasteinfo@portlandoregon.gov" %}
+        
+      {% elseif data.report_vegetation_source == "Park or natural area" or
+                data.report_vegetation_source == "Something else" %}
+        {% set routing = "EMAIL|trees@portlandoregon.gov|triage" %}
+        
+      {% elseif data.report_vegetation_source == "Median, traffic island, or other parts of the street or right-of-way" %}
+        {% set routing = "EMAIL|pdxroads@portlandoregon.gov|triage" %}
+        
       {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstruction to prevent parking, including unauthorized curb painting" %}
-        PBOTparkingcontrol@portlandoregon.gov
-      {% elseif data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" %}
-        pdxroads@portlandoregon.gov
-      {% elseif data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure" %}
-        trees@portlandoregon.gov
+        {% set routing = "EMAIL|PBOTparkingcontrol@portlandoregon.gov" %}
+        
+      {% elseif data.report_issue_type == "Sidewalk in need of repair" %}
+        {% set routing = "EMAIL|sidewalkrepair@portlandoregon.gov" %}
+        
+      {% elseif data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection" %}
+        {% set routing = "EMAIL|tom.jensen@portlandoregon.gov|triage" %}
+        
+      {% elseif data.report_tree_issue == "Vegetation blocking a streetlight" %}
+        {% set routing = "EMAIL|streetlighting@portlandoregon.gov" %}
+
       {% endif %}
+
+      {{ routing }}
     '#whitespace': trim
+    '#ajax': true
+  computed_email_recipient:
+    '#type': webform_computed_twig
+    '#title': 'Computed Routing Recipient'
+    '#title_display': inline
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#access_create_roles':
+      - authenticated
+    '#mode': text
+    '#template': |-
+      {% set routing = data.computed_routing|split('|') %}
+      {% set recipient = routing[1] %}
+      {{ recipient }}
+    '#whitespace': trim
+    '#store': true
+    '#ajax': true
+  computed_requires_additional_triage:
+    '#type': webform_computed_twig
+    '#title': 'Requires Additional Triage?'
+    '#title_display': inline
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#access_create_roles':
+      - authenticated
+    '#mode': text
+    '#template': '{% set routing = data.computed_routing|split(''|'') %}{% set triage = routing[2] %}{% if triage == "triage" %}Yes{% else %}No{% endif %}'
+    '#whitespace': trim
+    '#store': true
     '#ajax': true
   report_ticket_id:
     '#type': hidden
@@ -484,11 +632,10 @@ elements: |-
     '#title': 'Computed Description'
     '#display_on': none
     '#mode': html
-    '#template': |
-      <p><strong>Obstruction in the Right-of-Way</strong></p>
-
-      <p>{% if data.report_issue_type and data.report_issue_type is not iterable %}
-        {{ data.report_issue_type }} &#151;
+    '#template': |+
+      <p><strong>Obstruction in the Right-of-Way</strong><br><br>
+      {% if data.report_issue_type and data.report_issue_type is not iterable %}
+        <strong>Issue type:</strong> {{ data.report_issue_type }} {% if data.report_issue_type != "Sidewalk in need of repair" %}&#151;{% endif %}
       {% endif %}
 
       {% if data.report_vehicle_issue_type and data.report_vehicle_issue_type is not iterable %}
@@ -507,6 +654,13 @@ elements: |-
         {{ data.report_temporary_item }}<br>
       {% endif %}
 
+      {% if data.report_debris and data.report_debris is not iterable %}
+        {{ data.report_debris }} &#151;
+        {% if data.report_debris_where and data.report_debris_where is not iterable %}
+          {{ data.report_debris_where }}
+        {% endif %}<br>
+      {% endif %}
+
       {% if data.report_outdoor_dining_item and data.report_outdoor_dining_item is not iterable %}
         {{ data.report_outdoor_dining_item }}<br>
       {% endif %}
@@ -516,24 +670,24 @@ elements: |-
       {% endif %}
 
       {% if data.report_vegetation_source and data.report_vegetation_source is not iterable %}
-        Growing from: {{ data.report_vegetation_source }}<br>
+        <strong>Growing from:</strong> {{ data.report_vegetation_source }}<br>
       {% endif %}
 
       {% if data.report_signage_type and data.report_signage_type is not iterable %}
         {{ data.report_signage_type }}<br>
       {% endif %}
 
-      {% if data.report_obstruction_details %}
-      <br><strong>Details:</strong> {{ data.report_obstruction_details }}<br>
-      {% endif %}
-
-      {% if data.contact_name or data.contact_email %}
-      <br><strong>Contact name:</strong> {{ data.contact_name ? data.contact_name : "anonymous" }}<br>
-      <strong>Email:</strong> {{ data.contact_email ? data.contact_email : "anonymous" }}
+      {% if (data.report_debris_where == "Bike lane" and data.report_location.location_region_id == "PBL") or
+            (data.report_tree_issue == "Vegetation growing into a bike lane" and data.report_vegetation_source == "Median, traffic island, or other parts of the street or right-of-way") %}
+        PROTECTED BIKE LANE<br>
       {% endif %}
       </p>
 
-      <p><strong>Location</strong><br>
+      {% if data.report_obstruction_details %}
+      <p><strong>Details:</strong> {{ data.report_obstruction_details }}</p>
+      {% endif %}
+
+      <p><strong>Location:</strong><br>
       {% if data.report_location.place_name %}
         {{ data.report_location.place_name }}<br>
       {% endif %}
@@ -546,6 +700,16 @@ elements: |-
       {% if data.report_location.location_attributes %}
         {{ data.report_location.location_attributes }}
       {% endif %}
+      </p>
+
+      {% if data.contact_name or data.contact_email or data.contact_home_address or data.contact_phone %}
+      <p><strong>Contact name:</strong> {{ data.contact_name ? data.contact_name : "anonymous" }}<br>
+      <strong>Email:</strong> {{ data.contact_email ? data.contact_email : "anonymous" }}<br>
+      {% if data.contact_home_address %}<strong>Address:</strong> {{ data.contact_home_address }}<br>{% endif %}
+      {% if data.contact_phone %}<strong>Phone:</strong> {{ data.contact_phone }}<br>{% endif %}
+      </p>
+      {% endif %}
+
     '#ajax': true
   computed_compliance_subtype:
     '#type': webform_computed_twig
@@ -553,7 +717,7 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.report_issue_type == "Construction work zone item" %}
+      {% if data.report_issue_type == "Construction item" %}
         {{ data.report_construction_work_zone_item is iterable ? "" : data.report_construction_work_zone_item }}
       {% elseif data.report_issue_type == "Permanent structure" %}
         {{ data.report_permanent_structure is iterable ? "" : data.report_permanent_structure }}
@@ -570,7 +734,7 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |
-      {% if data.report_issue_type == "Construction work zone item" %}
+      {% if data.report_issue_type == "Construction item" %}
         20710237949079_construction
       {% elseif data.report_issue_type == "Permanent structure" %}
         20710237949079_permanent_structure
@@ -581,30 +745,66 @@ elements: |-
       {% endif %}
     '#whitespace': trim
     '#ajax': true
+  computed_pbl_boolean:
+    '#type': webform_computed_twig
+    '#title': 'Computed PBL boolean'
+    '#display_on': view
+    '#template': '{% if data.report_location.location_region_id == "PBL" %}true{% else %}false{% endif %}'
+    '#ajax': true
+  computed_bike_lane_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Bike Lane Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_debris_where == "Bike lane" %}
+        {{ data.report_debris }}
+      {% elseif data.report_tree_issue == "Vegetation growing into a bike lane" %}
+        Vegetation
+      {% endif %}
+    '#whitespace': trim
+  computed_routing_display:
+    '#type': webform_computed_twig
+    '#title': 'Computed Routing Display'
+    '#title_display': none
+    '#template': |-
+      {% if data.computed_routing %}
+        <div><strong>Routing:</strong> {{ data.computed_routing }}</div>
+      {% endif %}
+    '#ajax': true
   computed_triage_message:
     '#type': webform_computed_twig
     '#title': 'Computed Triage Message'
-    '#display_on': none
-    '#mode': html
-    '#template': |
-      {% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}
-        <h3>This ticket requires additional triage</h3>
-        <p><strong>Attention 311 CSR:</strong> this ticket came from the ROW Obstruction form and may need further triage/investigation to ensure it reaches the appropriate resolving entity. If you have any issues tracking down who this should be forwarded to, contact John Dutt.</p>
-        {% if data.computed_email_recipient != "" %}
-          <p><strong>Computed recipient:</strong> {{ data.computed_email_recipient }}</p>
-        {% endif %}
-      {% endif %}
-    '#whitespace': spaceless
-    '#ajax': true
-  computed_requires_additional_triage:
-    '#type': webform_computed_twig
-    '#title': 'Requires Additional Triage?'
+    '#title_display': none
     '#access_create_roles':
       - authenticated
-    '#mode': text
-    '#template': '{% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}Yes{% else %}No{% endif %}'
-    '#whitespace': trim
+    '#display_on': form
+    '#mode': html
+    '#template': |
+      {% if data.report_tree_issue is not iterable and data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection" %}
+        <div class="alert alert--warning next-steps">
+        <h3 class="mt-0">This ticket requires additional triage</h3>
+        <p>Based on the selections in this form, the issue appears to be a <strong>visibility complaint</strong> but needs to go to 311 first for triage.</p>
+        </div>
+        
+      {% elseif data.report_vegetation_source is not iterable and data.report_vegetation_source == "Median, traffic island, or other parts of the street or right-of-way" and data.report_tree_issue != "Vegetation growing into a bike lane" %}
+        <div class="alert alert--warning next-steps">
+        <h3 class="mt-0">This ticket requires additional triage</h3>
+        <p>Based on the selections in this form, the issue appears to be a <strong>PBOT Maintenance issue</strong> but needs to go to 311 first for triage.</p>
+        </div>
+        
+      {% elseif (data.report_vegetation_source is not iterable and data.report_vegetation_source == "Park or natural area") or
+                (data.report_vegetation_source is not iterable and data.report_vegetation_source == "Something else") %}
+        <div class="alert alert--warning next-steps">
+        <h3 class="mt-0">This ticket requires additional triage</h3>
+        <p>Based on the selections in this form, the issue appears to be an <strong>Urban Forestry issue</strong> but needs to go to 311 first for triage.</p>
+        </div>
+        
+      {% endif %}
     '#ajax': true
+  ajax_indicator:
+    '#type': portland_ajax_indicator
+    '#title': 'Ajax Indicator'
 css: ''
 javascript: ''
 settings:
@@ -800,7 +1000,7 @@ handlers:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
         ':input[name="computed_email_recipient"]':
-          empty: true
+          value: 'ROW Compliance'
     weight: -50
     settings:
       requester_name: contact_name
@@ -814,12 +1014,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']"
+      custom_fields: |-
+        6353388345367: 'report_row_obstruction'
+        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
+        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
+        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
+        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
+        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
+        1500013095781: '[webform_submission:uuid]'
+        21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']
+        7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']
+        20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
   email:
     id: email
@@ -830,12 +1040,13 @@ handlers:
     conditions:
       enabled:
         ':input[name="computed_email_recipient"]':
-          filled: true
+          value:
+            pattern: '@'
         ':input[name="computed_triage_message"]':
           empty: true
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -45
     settings:
       states:
         - completed
@@ -863,6 +1074,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   test_submit_to_zendesk:
@@ -875,7 +1087,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -48
+    weight: -47
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -888,12 +1100,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']"
+      custom_fields: |-
+        6353388345367: 'report_row_obstruction'
+        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
+        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
+        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
+        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
+        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
+        1500013095781: '[webform_submission:uuid]'
+        20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']
+        21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']
+        7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
   zendesk_update_request:
     id: zendesk_update_ticket
@@ -903,9 +1125,9 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="computed_triage_message"]':
-          filled: true
-    weight: -47
+        ':input[name="computed_requires_additional_triage"]':
+          value: 'Yes'
+    weight: -46
     settings:
       comment: '[webform_submission:values:computed_triage_message:html]'
       comment_private: 1
@@ -930,9 +1152,9 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-        ':input[name="computed_triage_message"]':
-          filled: true
-    weight: -49
+        ':input[name="computed_requires_additional_triage"]':
+          value: 'Yes'
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -945,55 +1167,64 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']"
+      custom_fields: |-
+        6353388345367: 'report_row_obstruction'
+        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
+        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
+        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
+        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
+        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
+        1500013095781: '[webform_submission:uuid]'
+        21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']
+        7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']
+        20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
-  test_submit_by_email:
-    id: email
-    handler_id: test_submit_by_email
-    label: 'TEST: Submit by email'
-    notes: 'Sends a test email to gregory.clapp@portlandoregon.gov.'
+  submit_to_zendesk_bike_lane_maintenance_group:
+    id: zendesk
+    handler_id: submit_to_zendesk_bike_lane_maintenance_group
+    label: 'Submit to Zendesk (Bike Lane Maintenance group)'
+    notes: ''
     status: true
     conditions:
       enabled:
-        ':input[name="computed_email_recipient"]':
-          filled: true
-        ':input[name="computed_triage_message"]':
-          empty: true
         ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 5
+          unchecked: true
+        ':input[name="computed_email_recipient"]':
+          value: 'Bike Lane Maintenance'
+    weight: -49
     settings:
-      states:
-        - completed
-      to_mail: gregory.clapp@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
-      body: '<p><strong>This is a test. This email would normally have been sent to&nbsp;[webform_submission:values:computed_email_recipient:html].</strong></p><p>[webform_submission:values:computed_description:html]</p>'
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Obstruction in bike lane: [webform_submission:values:computed_bike_lane_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      group_id: '34499304590743'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: |-
+        6353388345367: 'report_row_obstruction'
+        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
+        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
+        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
+        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
+        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
+        1500013095781: '[webform_submission:uuid]'
+        21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']
+        7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']
+        20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']
+        34548328621335: ['[webform_submission:values:computed_pbl_boolean]', 'computed_pbl_boolean']
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '34520294472599'
+      recipient: ''
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
 variants: {  }
