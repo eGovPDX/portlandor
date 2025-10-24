@@ -1,4 +1,10 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: Steven
+ * Date: 2019-05-18
+ * Time: 10:05 AM
+ */
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
 use Drupal\Core\Form\FormStateInterface;
@@ -10,7 +16,6 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
-use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Form submission to Zendesk handler.
@@ -33,9 +38,6 @@ class ZendeskHandler extends WebformHandlerBase
 {
   private const ANONYMOUS_EMAIL = 'anonymous@portlandoregon.gov';
   private const JSON_FORM_DATA_FIELD_ID = 17698062540823;
-  private const ZD_WAIT_TIMEOUT_MS  = 2000; // total wait ~2.0s
-  private const ZD_WAIT_INTERVAL_MS = 120;  // check every 120ms
-  private const ZD_TEST_FORCE_NOT_READY = false; // set to true to force a block
 
   /**
    * The webform element plugin manager.
@@ -527,28 +529,20 @@ class ZendeskHandler extends WebformHandlerBase
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    if ($this->isRealSubmit($form_state)) {
+    // the file upload button triggers the validation handler, which is undesired.
+    // in order to prevent that, we need to determine the triggering element for the submission.
+    // call our validation function only if it's not an upload button. be extra careful about
+    // null references here, since we're not sure when/if these elements will be populated.
+    // Candiates for checking whether this is an upload submit:
+    //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
+    //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
+    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
       $this->sendToZendeskAndValidateTicket($form, $form_state);
     }
-  }
-
-  private function isRealSubmit(FormStateInterface $form_state): bool {
-    $t = $form_state->getTriggeringElement() ?? [];
-    if (($t['#type'] ?? '') !== 'submit') { return false; }
-
-    // Ignore managed_file upload/remove triggers.
-    $name = $t['#name'] ?? '';
-    if (str_starts_with($name, 'upload_button') || str_contains($name, 'remove_button')) { return false; }
-
-    $submits = array_map('strval', $t['#submit'] ?? []);
-    if (in_array('file_managed_file_submit', $submits, true)) { return false; }
-
-    // Prefer Webform key when present.
-    if (($t['#webform_key'] ?? '') === 'submit') { return true; }
-
-    // Fallback: treat as a real submit if it's a submit button without file handlers.
-    return true;
   }
 
   /**
@@ -796,22 +790,7 @@ class ZendeskHandler extends WebformHandlerBase
     // get all webform elements
     $elements = $this->getWebform()->getElementsInitializedAndFlattened();
 
-    $lock = \Drupal::lock();
-    $sid  = $webform_submission->id();
-    $key  = 'zendesk_send:' . ($sid ?: $webform_submission->uuid());
-
-    if (!$lock->acquire($key, 30)) {
-      throw new \RuntimeException('Duplicate submission in progress.');
-    }
-
     // attempt to send request to create zendesk ticket
-    $log_ctx_base = [
-      '@form' => $this->getWebform()->label(),
-      '@sid'  => $webform_submission->id(),
-      'link'  => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
-    ];
-    $log_ctx = $log_ctx_base; // will be updated per file inside the loop
-
     try {
       // initiate api client
       $client = new ZendeskClient();
@@ -853,20 +832,10 @@ class ZendeskHandler extends WebformHandlerBase
               $request['comment']['uploads'] = [];
             }
 
-            $filename = $element
-              ? $this->transformFilename($file->getFilename(), $element, $webform_submission)
-              : $file->getFilename();   // ensure it's always defined
-
-            $log_ctx = $log_ctx_base + [
-              '@field' => $field_key,
-              '@fid'   => $fid,
-              '@uri'   => $file ? $file->getFileUri() : '(null file)',
-              '@real'  => $file ? (\Drupal::service('file_system')->realpath($file->getFileUri()) ?: '(not resolved)') : '(n/a)',
-            ];
-
-            $path = $this->pathForZendeskUpload($file);   // new helper below
+            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
+            // upload file and get response
             $attachment = $client->attachments()->upload([
-              'file' => $path,                             // real path, not private://
+              'file' => $file->getFileUri(),
               'type' => $file->getMimeType(),
               'name' => $filename,
             ]);
@@ -887,72 +856,20 @@ class ZendeskHandler extends WebformHandlerBase
     }
     catch( \Exception $e ){
 
+      // Encode HTML entities to prevent broken markup from breaking the page.
       $message = nl2br(htmlentities($e->getMessage()));
 
-      $this->getLogger()->error(
-        '@form webform submission to zendesk failed (sid=@sid, field=@field, fid=@fid, uri=@uri, real=@real). ' .
-        '@exception: @message. Click to edit @link.',
-        ($log_ctx ?? $log_ctx_base) + [
-          '@exception' => get_class($e),
-          '@message'   => $message,
-        ]
-      );
-
-    } finally {
-      // always remove any temporary copies we created
-      $lock->release($key);
+      // Log error message.
+      $this->getLogger()->error('@form webform submission to zendesk failed. @exception: @message. Click to edit @link.', [
+        '@exception' => get_class($e),
+        '@form' => $this->getWebform()->label(),
+        '@message' => $message,
+        'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
+      ]);
     }
 
     return $new_ticket_id;
 
-  }
-
-  /** Wait briefly for a URI to materialize and return a real path, or null. */
-  private function waitForMaterializedPath(string $uri): ?string {
-    $fs = \Drupal::service('file_system');
-    $deadline = microtime(true) + (self::ZD_WAIT_TIMEOUT_MS / 1000);
-    do {
-      $real = $fs->realpath($uri) ?: '';
-      if ($real && file_exists($real)) {
-        return $real;
-      }
-      usleep(self::ZD_WAIT_INTERVAL_MS * 1000);
-    } while (microtime(true) < $deadline);
-    return null;
-  }
-
-  /**
-   * Return a real, readable filesystem path for a File entity.
-   * - For _sid_ URIs, poll briefly; if still not ready, throw to block submit.
-   * - For non-_sid_ URIs, require realpath() to exist immediately (no temp copies).
-   */
-  private function pathForZendeskUpload(\Drupal\file\Entity\File $file): string
-  {
-    $fs  = \Drupal::service('file_system');
-    $uri = $file->getFileUri();
-    $real = $fs->realpath($uri) ?: '';
-
-    // TEST HOOK: force a "not ready" error for _sid_ URIs.
-    if (self::ZD_TEST_FORCE_NOT_READY && str_contains($uri, '/_sid_/')) {
-      throw new \RuntimeException(sprintf('File not ready yet (forced): %s', $uri));
-    }
-
-    // Fast path: already real and readable.
-    if ($real && file_exists($real)) {
-      return $real;
-    }
-
-    // If it points into the staging folder, wait briefly for it to appear.
-    if (str_contains($uri, '/_sid_/')) {
-      $real = $this->waitForMaterializedPath($uri);
-      if ($real) {
-        return $real;
-      }
-      throw new \RuntimeException(sprintf('File not ready yet: %s', $uri));
-    }
-
-    // Non-_sid_ URIs must already resolve without copying.
-    throw new \RuntimeException(sprintf('File path could not be resolved: %s', $uri));
   }
 
   /**
