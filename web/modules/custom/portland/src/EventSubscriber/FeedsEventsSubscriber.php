@@ -12,6 +12,7 @@ use Drupal\file\Entity\File;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\File\FileExists;
 
 /**
  * Handle Feeds events
@@ -154,12 +155,23 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
         $download_dir_uri = $this->prepareDownloadDirectory();
         $destination_uri = $download_dir_uri . "/" . $fileName;
 
-        // download and save managed file
+        // Download and save managed file.
         try {
-          $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
-        }
-        catch (Exception $e) {
-          $message = "Error occurred while trying to download URL target at " . $enclosure . " and create managed file. Exception: " . $e->getMessage();
+          // Step 1: Fetch remote file contents.
+          $data = (string) \Drupal::httpClient()->get($enclosure)->getBody();
+
+          // Step 2: Save to Drupal’s file system.
+          $file_system = \Drupal::service('file_system');
+          $file_system->saveData($data, $destination_uri, FileExists::Replace);
+
+          // Step 3: Create a managed File entity.
+          $downloaded_file = File::create([
+            'uri' => $destination_uri,
+          ]);
+          $downloaded_file->save();
+
+        } catch (\Exception $e) {
+          $message = "Error occurred while trying to download URL target at {$enclosure} and create managed file. Exception: " . $e->getMessage();
           \Drupal::logger('portland_migrations')->notice($message);
         }
 
