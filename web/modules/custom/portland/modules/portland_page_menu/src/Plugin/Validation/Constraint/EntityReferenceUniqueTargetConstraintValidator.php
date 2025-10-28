@@ -2,18 +2,18 @@
 
 namespace Drupal\portland_page_menu\Plugin\Validation\Constraint;
 
-use Drupal\entity_reference_hierarchy\EntityReferenceHierarchyFieldItemList;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
 /**
- * Validates the EntityReferenceHierarchyUniqueTarget constraint.
+ * Validates the EntityReferenceUniqueTarget constraint.
  */
-class EntityReferenceHierarchyUniqueTargetConstraintValidator extends ConstraintValidator implements ContainerInjectionInterface {
+class EntityReferenceUniqueTargetConstraintValidator extends ConstraintValidator implements ContainerInjectionInterface {
   /**
    * The entity type manager service.
    *
@@ -41,7 +41,7 @@ class EntityReferenceHierarchyUniqueTargetConstraintValidator extends Constraint
    * {@inheritdoc}
    */
   public function validate($field, Constraint $constraint): void {
-    /** @var EntityReferenceHierarchyFieldItemList $field */
+    /** @var EntityReferenceFieldItemListInterface $field */
     if (!isset($field)) return;
 
     $entity = $field->getEntity();

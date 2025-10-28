@@ -7,14 +7,14 @@ use Drupal\Core\Validation\Attribute\Constraint;
 use Symfony\Component\Validator\Constraint as SymfonyConstraint;
 
 /**
- * Ensures that all referenced entities are unique across the site for this bundle+field combo.
+ * Ensures that a referenced entity is only referenced once across the site for this bundle+field combo.
  */
 #[Constraint(
-  id: 'EntityReferenceHierarchyUniqueTarget',
-  label: new TranslatableMarkup('Entity reference hierarchy unique target', [], ['context' => 'Validation']),
-  type: ['entity_reference_hierarchy'],
+  id: 'EntityReferenceUniqueTarget',
+  label: new TranslatableMarkup('Entity reference unique target', [], ['context' => 'Validation']),
+  type: ['entity_reference', 'entity_reference_hierarchy'],
 )]
-class EntityReferenceHierarchyUniqueTargetConstraint extends SymfonyConstraint {
+class EntityReferenceUniqueTargetConstraint extends SymfonyConstraint {
   /**
    * The default violation message.
    */
