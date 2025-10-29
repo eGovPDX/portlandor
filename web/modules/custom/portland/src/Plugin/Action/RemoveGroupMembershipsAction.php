@@ -29,7 +29,7 @@ final class RemoveGroupMembershipsAction extends ViewsBulkOperationsActionBase i
   /**
    * {@inheritdoc}
    */
-  public function execute(Group $group = NULL) {
+  public function execute(?Group $group = NULL) {
     if ($group === NULL || \count($this->configuration['user_id']) === 0) {
       return $this->t('Invalid entity or configuration.');
     }
