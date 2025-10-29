@@ -125,9 +125,6 @@ elements: |-
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
-  ajax_indicator:
-    '#type': portland_ajax_indicator
-    '#title': 'Ajax indicator'
   container_project_details:
     '#type': container
     '#states':
@@ -136,21 +133,25 @@ elements: |-
           filled: true
     section_location:
       '#type': webform_section
-      '#title': 'Project Details'
+      '#title': 'Property Details'
       '#attributes':
         class:
           - mb-10
       q1_project_address:
         '#type': portland_address_verifier
         '#title': Address
+        '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one.'
         '#location_address__required': true
+        '#unit_number__access': false
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
+        '#location_verification_status__required': true
         '#find_unincorporated': 1
         '#require_portland_city_limits': 1
-        '#not_verified_remedy': 'A verified address is required. Please try again.'
+        '#verify_button_text': Find
         '#lookup_taxlot': 1
+        '#not_verified_remedy_required': 'A verified address is required. Please try again. If you need assistance, contact us at <a href="mailto:ppd@portlandoregon.gov">ppd@portlandoregon.gov</a>.'
         '#secondary_queries':
           - api: 'https://www.portlandmaps.com/api/detail/'
             api_args:
@@ -187,6 +188,15 @@ elements: |-
             capture:
               - path: general.percent_slope
                 field: hidden_pmapi_site_slope
+      markup_01:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="q1_project_address[location_verification_status]"]':
+              empty: true
+            ':input[name="edit_my_project[Edit my project]"]':
+              unchecked: true
+        '#markup': '<p><strong>Find an address to begin. </strong>It must be in an area that''s managed by the <a href="https://www.portland.gov/ppd" target="_blank">Portland Permitting &amp; Development bureau</a>.</p>'
       hidden_zoning_overlays:
         '#type': hidden
         '#title': 'Hidden Zoning Overlays'
@@ -208,15 +218,113 @@ elements: |-
       hidden_base_zone:
         '#type': hidden
         '#title': 'Hidden Base Zone'
-      markup_01:
-        '#type': webform_markup
+      property_id:
+        '#type': webform_computed_twig
+        '#title': 'Property ID'
+        '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#template': |-
+          {{ data.q1_project_address.location_taxlot_id
+           }}
+        '#whitespace': trim
+        '#ajax': true
+      q1_1_environmental_overlay_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the site in an environmental overlay zone?'
+        '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': |-
+          {% set value = data.hidden_zoning_overlays %}
+          {% if 'c' in value or 'p' in value %}Yes{% else %}No{% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      q1_2_greenway_overlay_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the site in a greenway overlay zone?'
+        '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': |-
+          {% set value = data.hidden_zoning_overlays %}
+          {% if 'g' in value  %}Yes{% else %}No{% endif %}
+        '#whitespace': trim
+        '#ajax': true
+      q1_3_historic_landmark:
+        '#type': webform_computed_twig
+        '#title': 'Is the property a historic/conservation landmark or in a historic district?'
+        '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
+        '#whitespace': trim
+        '#ajax': true
+      property_summary:
+        '#type': webform_computed_twig
+        '#title': 'Property Summary'
+        '#title_display': invisible
         '#states':
           visible:
             ':input[name="q1_project_address[location_verification_status]"]':
-              empty: true
-            ':input[name="edit_my_project[Edit my project]"]':
-              unchecked: true
-        '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
+              filled: true
+        '#display_on': form
+        '#mode': html
+        '#template': |2-
+                <table class="mb-5">
+
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Property ID:"|t }}</th>
+                    <td><a href="https://portlandmaps.com/search/?query={{ data.q1_project_address.location_address }}">{{ data.property_id }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+                  </tr>
+
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Site slope"|t }}</th>
+                    <td>{{ data.hidden_pmapi_site_slope }}%</td>
+                  </tr>
+
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Base zone"|t }}</th>
+                    <td><a href="https://www.portlandmaps.com/bps/zoning/#/zones/base/{{ data.hidden_base_zone }}" target="_blank">{{ data.hidden_base_zone }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+                  </tr>
+
+                  {% if data.q1_1_environmental_overlay_zone == "Yes" or data.q1_2_greenway_overlay_zone == "Yes" or data.q1_3_historic_landmark == "Yes" %}
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Zoning overlays"|t }}</th>
+                    <td>
+                    {% set overlays = [] %}
+                    {% if data.q1_1_environmental_overlay_zone == "Yes" %}
+                      {% set overlays = overlays|merge(['Environmental']) %}
+                    {% endif %}
+                    {% if data.q1_2_greenway_overlay_zone == "Yes" %}
+                      {% set overlays = overlays|merge(['Greenway']) %}
+                    {% endif %}
+                    {% if data.q1_3_historic_landmark == "Yes" %}
+                      {% set overlays = overlays|merge(['Historic']) %}
+                    {% endif %}
+                    {{ overlays|join(', ') }}
+                    </td>
+                  </tr>
+                  {% endif %}
+                  
+                  <tr>
+                    <td colspan="2">
+                      <p><em>Address and zoning data provided by <a href="https://portlandmaps.com/search/?query={{ data.q1_project_address.location_address }}" target="_blank">PortlandMaps.com <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></em></p>
+                    </td>
+                  </tr>
+                </table>
+        '#ajax': true
       computed_valid_zone:
         '#type': webform_computed_twig
         '#title': 'Is the zone valid?'
@@ -232,6 +340,9 @@ elements: |-
         '#type': webform_computed_twig
         '#title': 'Invalid Zone Warning'
         '#title_display': none
+        '#wrapper_attributes':
+          class:
+            - mt-0
         '#display_on': form
         '#mode': html
         '#template': |-
@@ -242,59 +353,9 @@ elements: |-
           {% endif %}
         '#whitespace': trim
         '#ajax': true
-    section_property_details:
-      '#type': webform_section
-      '#title': 'Property Details'
-      '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
-      '#attributes':
-        class:
-          - mb-10
-          - d-none
-      property_id:
-        '#type': webform_computed_twig
-        '#title': 'Property ID'
-        '#title_display': inline
-        '#display_on': form
-        '#template': |-
-          {{ data.q1_project_address.location_taxlot_id
-           }}
-        '#whitespace': trim
-        '#ajax': true
-      q1_1_environmental_overlay_zone:
-        '#type': webform_computed_twig
-        '#title': 'Is the site in an environmental overlay zone?'
-        '#title_display': inline
-        '#display_on': form
-        '#mode': text
-        '#template': |-
-          {% set value = data.hidden_zoning_overlays %}
-          {% if 'c' in value or 'p' in value %}Yes{% else %}No{% endif %}
-        '#whitespace': trim
-        '#ajax': true
-      q1_2_greenway_overlay_zone:
-        '#type': webform_computed_twig
-        '#title': 'Is the site in a greenway overlay zone?'
-        '#title_display': inline
-        '#display_on': form
-        '#mode': text
-        '#template': |-
-          {% set value = data.hidden_zoning_overlays %}
-          {% if 'g' in value  %}Yes{% else %}No{% endif %}
-        '#whitespace': trim
-        '#ajax': true
-      q1_3_historic_landmark:
-        '#type': webform_computed_twig
-        '#title': 'Is the property a historic/conservation landmark or in a historic district?'
-        '#title_display': inline
-        '#display_on': form
-        '#mode': text
-        '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
-        '#whitespace': trim
-        '#ajax': true
     section_project_details:
       '#type': webform_section
       '#title': 'Project Details'
-      '#title_display': invisible
       '#states':
         invisible:
           ':input[name="q1_project_address[location_verification_status]"]':

@@ -23,6 +23,9 @@ When enabled, causes API calls to error out so that error handling can be tested
 Allowed values: 1|0
 Default value: 0
 
+**verification_required**<br>
+OBSOLETE: Verification can be required by ticking the Required checkbox on the location_verification_status sub-element (#location_verification_status__required)
+
 **verify_button_text**<br>
 Allows custom text to be used in the address verify button.
 Allowed values: [any text]
@@ -87,7 +90,7 @@ Default value: "The address you provided is outside of the Portland city limits.
 
 **not_verified_heading**<br>
 The heading displayed in bold in the not-verified dialog box.
-Default value: "We're unable to verify this address."
+Default value: "We're unable to find this address in the PortlandMaps database."
 
 **not_verified_reasons**<br>
 The reason text displayed after the bold not_verified_heading in the not-verified dialog box.
