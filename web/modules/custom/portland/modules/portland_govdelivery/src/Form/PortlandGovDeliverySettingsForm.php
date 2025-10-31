@@ -80,7 +80,7 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
     $form['status'] = [
       '#type' => 'details',
       '#title' => $this->t('GovDelivery status'),
-      '#open' => FALSE,
+      '#open' => TRUE,
     ];
 
     try {
