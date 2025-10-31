@@ -7,6 +7,7 @@
  */
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
+use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
@@ -805,7 +806,7 @@ class ZendeskHandler extends WebformHandlerBase
           $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
           // Get fids from composite sub-elements.
           // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
-          if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+          if ($element_plugin instanceof WebformCompositeBase) {
             $managed_file_keys = $element_plugin->getManagedFiles($element);
             // Convert single composite value to array of multiple composite values.
             $data = $multiple ? $field_data : [$field_data];
@@ -870,6 +871,53 @@ class ZendeskHandler extends WebformHandlerBase
 
     return $new_ticket_id;
 
+  }
+
+  /**
+   * Resolve a File entity to a real path suitable for Zendesk SDK.
+   * If private:// path isn't real yet or contains "/_sid_/", copy to temporary://.
+   */
+  private function pathForZendeskUpload(File $file): string
+  {
+    $fs = \Drupal::service('file_system');
+    $uri = $file->getFileUri();
+    $real = $fs->realpath($uri) ?: '';
+    $needs_copy = !$real || !file_exists($real) || str_contains($uri, '/_sid_/');
+
+    if ($needs_copy) {
+      $dir = 'temporary://zendesk_uploads';
+      $fs->prepareDirectory($dir, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+
+      // Create a unique temp name (Drupal wrapper around tempnam()).
+      $dest = $fs->tempnam($fs->realpath($dir), 'zd-');
+      // Convert it back to a stream wrapper URI so `copy()` can use it.
+      // If $dest is a real path, get a matching URI:
+      $dest_uri = $fs->realpath($dir) ? $dir . '/' . basename($dest) : $dest;
+
+      $copied = $fs->copy($uri, $dest_uri, FileSystemInterface::EXISTS_REPLACE);
+      $real = $fs->realpath($copied) ?: '';
+    }
+
+    if (!$real || !file_exists($real)) {
+      throw new \RuntimeException(sprintf('Upload source missing for fid=%d (uri=%s)', $file->id(), $uri));
+    }
+    return $real;
+  }
+
+  private function cleanupTempUploads(array $paths): void
+  {
+    $fs = \Drupal::service('file_system');
+    $base = rtrim($fs->realpath('temporary://zendesk_uploads'), DIRECTORY_SEPARATOR);
+
+    foreach ($paths as $p) {
+      if (!is_string($p)) {
+        continue;
+      }
+      $real = realpath($p) ?: $p;
+      if ($base && $real && str_starts_with($real, $base . DIRECTORY_SEPARATOR)) {
+        @$fs->unlink($real);
+      }
+    }
   }
 
   /**
