@@ -69,6 +69,10 @@ class FilterAccordionHeadings extends FilterBase
               break;
             }
           }
+          else {
+            // Stop processing
+            break;
+          }
         }
       }
     }
