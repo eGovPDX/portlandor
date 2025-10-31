@@ -191,6 +191,8 @@ function portland_media_embed_helper_preprocess_media__map(&$variables)
   if (isset($_REQUEST['text']) && strpos($_REQUEST['text'], '<drupal-entity ') === 0) {
     $variables['map_embeded_in_ckeditor'] = true;
   }
+  // Pass the media name to the leaflet_map template for use in the title attribute
+  $variables["content"]["field_geo_file"][0]["#map"]['media_name'] = $variables['name'];
 }
 
 /**
@@ -233,4 +235,36 @@ function portland_media_embed_helper_editor_js_settings_alter(array &$settings, 
       )
     );
   }
+}
+
+/**
+ * Implements hook_preprocess_media().
+ */
+function portland_media_embed_helper_preprocess_media(&$variables) {
+    /** @var \Drupal\media\Entity\Media $media */
+  $media = $variables['media'];
+  $view_mode = $variables['view_mode'] ?? '';
+
+  // Ensure we have a human-friendly name to use as the title.
+  $name = $variables['name'] ?? $media->label();
+
+  // If the media has the remote field and the render array exists, add title attr
+  if ($media->hasField('field_media_media_remote') && !empty($variables['content']['field_media_media_remote'])) {
+    foreach ($media->get('field_media_media_remote') as $delta => $item) {
+      if (isset($variables['content']['field_media_media_remote'][$delta])) {
+        // Ensure attributes array exists.
+        $variables['content']['field_media_media_remote'][$delta]['#attributes'] = $variables['content']['field_media_media_remote'][$delta]['#attributes'] ?? [];
+        // Set the title attribute to the media name.
+        $variables['content']['field_media_media_remote'][$delta]['#attributes']['title'] = $name;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_leaflet_map().
+ */
+function portland_media_embed_helper_preprocess_leaflet_map(&$variables)
+{
+  $variables['attributes']['title'] = $variables["map"]["media_name"] ?? 'Leaflet map';
 }
