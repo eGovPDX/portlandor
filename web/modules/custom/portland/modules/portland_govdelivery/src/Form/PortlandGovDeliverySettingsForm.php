@@ -246,8 +246,10 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
     try {
       /** @var \Drupal\portland_govdelivery\Service\GovDeliveryClient $client */
       $client = \Drupal::service('portland_govdelivery.client');
-      $client->subscribeUser($email, $topics, $langcode);
-      $this->messenger()->addStatus($this->t('Subscription created for %email.', ['%email' => $email]));
+      $result = $client->subscribeUser($email, $topics, $langcode);
+      
+      // Subscriptions endpoint handles both new and existing subscribers transparently.
+      $this->messenger()->addStatus($this->t('Successfully subscribed %email to selected topics.', ['%email' => $email]));
     }
     catch (\Throwable $e) {
       $this->messenger()->addError($this->t('Subscription failed: @msg', ['@msg' => $e->getMessage()]));

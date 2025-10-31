@@ -134,7 +134,8 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       /** @var \Drupal\portland_govdelivery\Service\GovDeliveryClient $client */
       $client = \Drupal::service('portland_govdelivery.client');
       // Use current interface language as locale, if desired in future. For MVP, omit locale.
-      $client->subscribeUser($email, $topics, NULL);
+      $result = $client->subscribeUser($email, $topics, NULL);
+      
       \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to %topics from submission %sid (webform %wid).', [
         '%email' => $email,
         '%topics' => implode(', ', $topics),

@@ -70,6 +70,11 @@ class GovDeliveryClient
 
   /**
    * Subscribe a single user immediately. Topics can be an array or single string.
+   * 
+   * Uses the Subscriptions resource (POST /subscriptions.xml) which:
+   * - Creates subscriber if they don't exist
+   * - Adds topics incrementally (doesn't remove existing ones)
+   * - Avoids 422 duplicate errors
    */
   public function subscribeUser(string $email, $topics = [], ?string $locale = NULL): array
   {
@@ -81,33 +86,33 @@ class GovDeliveryClient
     }
     $topics = array_values(array_filter((array) $topics));
 
-    // Build XML payload expected by GovDelivery Communications Cloud API.
-    // Example structure:
-    // <subscriber>
-    //   <email>foo@example.com</email>
-    //   <topics>
-    //     <topic><code>ORPORTLAND_ENT_123</code></topic>
-    //     ...
-    //   </topics>
-    //   <locale>en</locale> (optional; included only if provided)
-    // </subscriber>
+    // Build XML payload for Subscriptions resource.
+    // This creates the subscriber if missing, or adds topics if they exist.
     $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><subscriber/>');
     $xml->addChild('email', htmlspecialchars($email, ENT_XML1 | ENT_COMPAT, 'UTF-8'));
+    
+    // Disable notification emails when adding topics.
+    $sendNotification = $xml->addChild('send-notification', 'false');
+    $sendNotification->addAttribute('type', 'boolean');
+    
     if (!empty($topics)) {
       $topicsNode = $xml->addChild('topics');
+      $topicsNode->addAttribute('type', 'array');
       foreach ($topics as $code) {
         $topicNode = $topicsNode->addChild('topic');
         $topicNode->addChild('code', htmlspecialchars((string) $code, ENT_XML1 | ENT_COMPAT, 'UTF-8'));
       }
     }
+    
     if (!empty($locale)) {
-      // Locale is optional; include if provided (e.g., "en", "es").
       $xml->addChild('locale', htmlspecialchars($locale, ENT_XML1 | ENT_COMPAT, 'UTF-8'));
     }
+    
     $payload = $xml->asXML();
 
     try {
-      $response = $this->httpClient->request('POST', $endpoint . '/subscribers', [
+      // Use the Subscriptions resource - handles both new and existing subscribers.
+      $response = $this->httpClient->request('POST', $endpoint . '/subscriptions.xml', [
         'auth' => [$username, $password],
         'headers' => [
           'Accept' => 'application/xml',
@@ -119,25 +124,24 @@ class GovDeliveryClient
       ]);
       $status = (int) $response->getStatusCode();
       if ($status >= 200 && $status < 300) {
-        // Best-effort parse of XML response; return minimal info to caller.
         $respBody = (string) $response->getBody();
         $out = ['status' => $status];
         if ($respBody !== '') {
           $respXml = @simplexml_load_string($respBody);
           if ($respXml !== FALSE) {
-            // Extract subscriber email if present.
             $emailNode = $respXml->xpath('//*[local-name()="email"]');
             if (!empty($emailNode[0])) {
               $out['email'] = (string) $emailNode[0];
             }
           }
         }
+        $this->logger->info('Successfully subscribed %email to topics via Subscriptions resource.', ['%email' => $email]);
         return $out;
       }
 
       $reason = $response->getReasonPhrase();
       $body_snippet = substr((string) $response->getBody(), 0, 500);
-      $msg = "GovDelivery subscribe returned HTTP $status $reason: $body_snippet";
+      $msg = "GovDelivery subscriptions endpoint returned HTTP $status $reason: $body_snippet";
       $this->logger->error('GovDelivery subscribe failed for %email: @msg', ['%email' => $email, '@msg' => $msg]);
       throw new \RuntimeException($msg);
     } catch (\Throwable $e) {
