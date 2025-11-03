@@ -35,7 +35,7 @@ class CopyShortnameAction extends ViewsBulkOperationsActionBase {
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
+  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE) {
     // Other entity types may have different
     // access methods and properties.
     return ($return_as_object ? AccessResult::allowed() : true );

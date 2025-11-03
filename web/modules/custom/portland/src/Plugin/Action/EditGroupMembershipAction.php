@@ -29,7 +29,7 @@ final class EditGroupMembershipAction extends ViewsBulkOperationsActionBase impl
   /**
    * {@inheritdoc}
    */
-  public function execute(GroupMembership $membership = NULL) {
+  public function execute(?GroupMembership $membership = NULL) {
     if ($membership === NULL || \count($this->configuration['role_ids']) === 0) {
       return $this->t('Invalid entity or configuration.');
     }
