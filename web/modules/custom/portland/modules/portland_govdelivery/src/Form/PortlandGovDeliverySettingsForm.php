@@ -76,6 +76,23 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       '#description' => $this->t('Select the Key ID that stores the GovDelivery password.'),
     ];
 
+    // Default topic for question discovery.
+    try {
+      $topic_options = $this->topicsProvider->getWebformOptions();
+    }
+    catch (\Throwable $e) {
+      $topic_options = [];
+    }
+
+    $form['default_topic'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Default topic'),
+      '#options' => $topic_options,
+      '#default_value' => $config->get('default_topic') ?? '',
+      '#empty_option' => $this->t('- Select a topic -'),
+      '#description' => $this->t('The default topic used to discover all custom questions for API integrations. All custom questions should be assigned to this topic in the GovDelivery instance.'),
+    ];
+
     // Connection status section after credentials.
     $form['status'] = [
       '#type' => 'details',
@@ -117,144 +134,31 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       ];
     }
 
-    // Read-only topics listing.
-    $form['topics_list'] = [
-      '#type' => 'details',
-      '#title' => $this->t('GovDelivery topics (read-only)'),
-      '#open' => FALSE,
-    ];
-
-    try {
-      $options = $this->topicsProvider->getWebformOptions();
-    }
-    catch (\Throwable $e) {
-      $options = [];
-      $form['topics_list']['error'] = [
-        '#type' => 'markup',
-        '#markup' => $this->t('Unable to load topics: @msg', ['@msg' => $e->getMessage()]),
-      ];
-    }
-
-    if (!empty($options)) {
-      $rows = [];
-      foreach ($options as $code => $label) {
-        $rows[] = ['data' => [$code, $label]];
-      }
-      $form['topics_list']['table'] = [
-        '#type' => 'table',
-        '#header' => [$this->t('Code'), $this->t('Label')],
-        '#rows' => $rows,
-        '#empty' => $this->t('No topics found.'),
-        '#attributes' => [
-          'style' => 'max-height: 24em; overflow-y: auto; display: block;',
-        ],
-      ];
-    }
-    else {
-      $form['topics_list']['empty'] = [
-        '#type' => 'markup',
-        '#markup' => $this->t('No topics found.'),
-      ];
-    }
-
-    // Subscribe user panel.
-    $form['subscribe'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Subscribe a user'),
-      '#open' => FALSE,
-      // Ensure child values are grouped under 'subscribe' in form_state.
-      '#tree' => TRUE,
-    ];
-
-    $form['subscribe']['email'] = [
-      '#type' => 'email',
-      '#title' => $this->t('Email address'),
-      '#required' => TRUE,
-      '#description' => $this->t('Email address to subscribe.'),
-    ];
-
-    // Topics multiselect with Select2 enhancement if available.
-    $topic_options = $options ?? [];
-    $form['subscribe']['topics'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Topics'),
-      '#options' => $topic_options,
-      '#multiple' => TRUE,
-      '#required' => TRUE,
-      '#description' => $this->t('Select one or more topics to subscribe the user to.'),
+    $form = parent::buildForm($form, $form_state);
+    
+    // Add link to separate Subscribe User form.
+    $form['actions']['subscribe_link'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Subscribe a user to topics'),
+      '#url' => \Drupal\Core\Url::fromRoute('portland_govdelivery.subscribe_user'),
       '#attributes' => [
-        'class' => ['use-select2'],
+        'class' => ['button'],
+        'style' => 'margin-left: 1em;',
       ],
     ];
-    // Attempt to attach Select2 library gracefully; if missing, field works as normal select.
-    $form['#attached']['library'][] = 'select2/select2';
 
-    // Action button for subscription.
-    $form['subscribe']['actions'] = ['#type' => 'actions'];
-    $form['subscribe']['actions']['subscribe_user'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Subscribe user'),
-      '#name' => 'subscribe_user',
-      '#button_type' => 'primary',
-      '#submit' => ['::submitSubscribe'],
-      // Validate only subscribe sub-tree to avoid requiring config fields.
-      '#limit_validation_errors' => [['subscribe']],
-    ];
-
-    return parent::buildForm($form, $form_state);
+    return $form;
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // If subscription button triggered, skip config save.
-    $trigger = $form_state->getTriggeringElement();
-    if (!empty($trigger['#name']) && $trigger['#name'] === 'subscribe_user') {
-      return;
-    }
     $this->config('portland_govdelivery.settings')
       // Note: api_base_url is not saved from form (it's disabled/read-only)
       ->set('username_key', $form_state->getValue('username_key'))
       ->set('password_key', $form_state->getValue('password_key'))
+      ->set('default_topic', $form_state->getValue('default_topic'))
       ->save();
 
     parent::submitForm($form, $form_state);
-  }
-
-  /**
-   * Submit handler for the Subscribe user action.
-   */
-  public function submitSubscribe(array &$form, FormStateInterface $form_state): void {
-    // Read values from the subscribe subtree (requires #tree = TRUE on parent).
-    $email = trim((string) $form_state->getValue(['subscribe', 'email']));
-    $topics = (array) $form_state->getValue(['subscribe', 'topics']);
-
-    // Fallback to flat values if not present (defensive in case of form rebuilds).
-    if ($email === '' && $form_state->hasValue('email')) {
-      $email = trim((string) $form_state->getValue('email'));
-    }
-    if (empty($topics) && $form_state->hasValue('topics')) {
-      $topics = (array) $form_state->getValue('topics');
-    }
-
-    if (empty($email) || empty($topics)) {
-      $this->messenger()->addError($this->t('Please provide an email address and select at least one topic.'));
-      return;
-    }
-
-    // Determine locale from the current user.
-    $langcode = \Drupal::currentUser()->getPreferredLangcode() ?: \Drupal::languageManager()->getCurrentLanguage()->getId();
-
-    try {
-      /** @var \Drupal\portland_govdelivery\Service\GovDeliveryClient $client */
-      $client = \Drupal::service('portland_govdelivery.client');
-      $result = $client->subscribeUser($email, $topics, $langcode);
-      
-      // Subscriptions endpoint handles both new and existing subscribers transparently.
-      $this->messenger()->addStatus($this->t('Successfully subscribed %email to selected topics.', ['%email' => $email]));
-    }
-    catch (\Throwable $e) {
-      $this->messenger()->addError($this->t('Subscription failed: @msg', ['@msg' => $e->getMessage()]));
-      \Drupal::logger('portland_govdelivery')->error('Subscribe user failed for %email: @msg', ['%email' => $email, '@msg' => $e->getMessage()]);
-    }
   }
 
   /**
