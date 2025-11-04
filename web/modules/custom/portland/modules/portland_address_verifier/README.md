@@ -78,6 +78,9 @@ A dot-notated string that defines the property path to retrieve a value from a n
 The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
 This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
+**verification_required**<br>
+OBSOLETE. This custom property is no longer used. To require address verification, set the location_verification_status sub element to be required in the element configuration.
+
 **secondary_query_capture_field**<br>
 The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
