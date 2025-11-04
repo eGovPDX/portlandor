@@ -53,7 +53,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Street Address'),
       '#id' => 'location_address',
-      '#attributes' => ['autocomplete' => 'off'],
+      '#wrapper_attributes' => [
+        'class' => ['mb-0'],
+      ],
       '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
