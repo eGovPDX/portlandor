@@ -191,8 +191,10 @@ function portland_media_embed_helper_preprocess_media__map(&$variables)
   if (isset($_REQUEST['text']) && strpos($_REQUEST['text'], '<drupal-entity ') === 0) {
     $variables['map_embeded_in_ckeditor'] = true;
   }
-  // Pass the media name to the leaflet_map template for use in the title attribute
-  $variables["content"]["field_geo_file"][0]["#map"]['media_name'] = $variables['name'];
+  // Set the media name in the field_geo_file field's render array for use in the twig template
+  if (isset($variables['name']) && isset($variables['content']['field_geo_file'][0]['#map'])) {
+    $variables["content"]["field_geo_file"][0]["#map"]['media_name'] = $variables['name'];
+  }
 }
 
 /**
@@ -248,7 +250,7 @@ function portland_media_embed_helper_preprocess_media(&$variables) {
   // Ensure we have a human-friendly name to use as the title.
   $name = $variables['name'] ?? $media->label();
 
-  // If the media has the remote field and the render array exists, add title attr
+  // Set title attribute for the field_media_media_remote field in iFrame Embed media.
   if ($media->hasField('field_media_media_remote') && !empty($variables['content']['field_media_media_remote'])) {
     foreach ($media->get('field_media_media_remote') as $delta => $item) {
       if (isset($variables['content']['field_media_media_remote'][$delta])) {
@@ -266,5 +268,6 @@ function portland_media_embed_helper_preprocess_media(&$variables) {
  */
 function portland_media_embed_helper_preprocess_leaflet_map(&$variables)
 {
+  // Retrieve the media name set in portland_media_embed_helper_preprocess_media__map()
   $variables['attributes']['title'] = $variables["map"]["media_name"] ?? 'Leaflet map';
 }
