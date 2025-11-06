@@ -27,6 +27,8 @@ class PortlandNodeFetcher extends WebformElementBase {
     return [
       'node_alias_path' => '',
       'render_inline' => '1',
+      'open_links_in_new_tab' => '1',
+      'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
     ] + parent::defineDefaultProperties();
   }
 
@@ -48,7 +50,6 @@ class PortlandNodeFetcher extends WebformElementBase {
     // Add hyperlink if node_alias_path is populated and is a valid path.
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
     if (!empty($alias)) {
-      // Use Drupal's Url class to build the link.
       $url = \Drupal\Core\Url::fromUserInput($alias)->toString();
       $form['node_alias_link'] = [
         '#type' => 'item',
@@ -61,6 +62,21 @@ class PortlandNodeFetcher extends WebformElementBase {
       '#title' => $this->t('Render node content inline'),
       '#description' => $this->t('If checked, the fetched node\'s content will be rendered directly in the webform. If unchecked, it will only be available to Computed Twig elements.'),
       '#default_value' => array_key_exists('#render_inline', $element) ? $element['#render_inline'] : TRUE,
+    ];
+
+    $form['open_links_in_new_tab'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Open links in new tab'),
+      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window.'),
+      '#default_value' => array_key_exists('#open_links_in_new_tab', $element) ? $element['#open_links_in_new_tab'] : TRUE,
+    ];
+
+    $form['link_icon'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Link icon (HTML)'),
+      '#description' => $this->t('HTML snippet appended to link text when "Open links in new tab" is enabled. Provide a small <span> element. Default: the external link icon.'),
+      '#default_value' => array_key_exists('#link_icon', $element) ? $element['#link_icon'] : ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
+      '#rows' => 2,
     ];
 
     return $form;
@@ -78,6 +94,12 @@ class PortlandNodeFetcher extends WebformElementBase {
     }
     $render_inline = $user_input['render_inline'] === NULL ? '0' : $user_input['render_inline'];
     $form_state->setValue('render_inline', $render_inline);
+    // Persist open_links_in_new_tab checkbox value.
+    $open_links = $user_input['open_links_in_new_tab'] === NULL ? '0' : $user_input['open_links_in_new_tab'];
+    $form_state->setValue('open_links_in_new_tab', $open_links);
+    // Persist configured icon HTML.
+    $link_icon = isset($user_input['link_icon']) ? $user_input['link_icon'] : '';
+    $form_state->setValue('link_icon', $link_icon);
   }
 
   /**
@@ -147,6 +169,17 @@ class PortlandNodeFetcher extends WebformElementBase {
       $element['#render_inline'] = '1';
     }
 
+    // Ensure open_links_in_new_tab has a sensible default when the webform
+    // element config doesn't include it (older webforms or unset checkboxes).
+    if (!isset($element['#open_links_in_new_tab'])) {
+      $element['#open_links_in_new_tab'] = '1';
+    }
+
+    // Ensure link_icon has a sensible default when missing from saved config.
+    if (!isset($element['#link_icon'])) {
+      $element['#link_icon'] = ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>';
+    }
+
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
     $render_inline = (array_key_exists('#render_inline', $element) && $element['#render_inline'] == '1') ? '1' : '0';
     $element_name = $element['#webform_key'] ?? NULL;
@@ -179,6 +212,9 @@ class PortlandNodeFetcher extends WebformElementBase {
     $node = NULL;
     $is_published = false;
     $value = '';
+    // Flag to indicate that the glossary_term library needs to be attached
+    // when the fetched content contains glossary term substitutions.
+    $glossary_library_attached = FALSE;
 
     // Use the resolved path for node lookup.
     if ($resolved_path && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($resolved_path), $matches)) {
@@ -186,16 +222,200 @@ class PortlandNodeFetcher extends WebformElementBase {
       $nid = $matches[1];
       $node = Node::load($nid);
 
-      // Get the current content language of the form/page.
-      $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+      // Get the current content language of the form/page and use it for
+      // translation and caching to avoid language collisions.
+      $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
-      if ($node instanceof Node && $node->hasTranslation($language)) {
-        $node = $node->getTranslation($language);
+      if ($node instanceof Node && $node->hasTranslation($langcode)) {
+        $node = $node->getTranslation($langcode);
       }
+
+      // Attach render cache metadata as soon as we know the node id and
+      // content language so both successful and error/warning states vary
+      // correctly and are invalidated when the node changes.
+      $element['#cache']['tags'][] = 'node:' . $nid;
+      $element['#cache']['contexts'][] = 'languages:language_content';
+      $element['#cache']['contexts'][] = 'user.roles';
 
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
         $value = $node->get('field_body_content')->processed;
+        // If configured, ensure links open in a new tab/window for safety add rel attributes.
+        $open_links_enabled = (array_key_exists('#open_links_in_new_tab', $element) && $element['#open_links_in_new_tab'] == '1') ? TRUE : FALSE;
+
+        if ($open_links_enabled && !empty($value)) {
+          // Only proceed if there's an <a> tag that contains an href attribute (attributes may appear in any order)
+          if (!preg_match('/<a\b[^>]*\bhref\s*=\s*/i', $value)) {
+            // TEMP LOG: record that we skipped processing due to no href
+            // anchors. Remove or lower the log level once measurement is done.
+            // \Drupal::logger('portland_node_fetcher')->notice('Skipped link processing (no <a href>) for nid {nid} lang {lang}', ['nid' => $nid, 'lang' => $langcode]);
+          }
+          else 
+        {
+            // Use Drupal cache to avoid reparsing HTML for the same node repeatedly.
+            // Include language in the cache id to avoid collisions between translated bodies.
+            $cid = 'portland_node_fetcher:processed_links:' . $nid . ':' . $langcode . ':' . ($open_links_enabled ? '1' : '0');
+            $cache = \Drupal::cache('data')->get($cid);
+            if ($cache) {
+              $value = $cache->data;
+              // Cache hit: no logging to avoid noise (misses and skips are logged).
+            }
+            else {
+              // TEMP LOG: cache miss — we'll parse and then store the result.
+              // \Drupal::logger('portland_node_fetcher')->notice('Cache MISS for processed links: {cid} (nid {nid} lang {lang})', ['cid' => $cid, 'nid' => $nid, 'lang' => $langcode]);
+              
+              // Use DOMDocument to safely update anchor tags. Suppress warnings for malformed HTML.
+              libxml_use_internal_errors(true);
+              $doc = new \DOMDocument();
+              // Load wrapped HTML to ensure a single root element.
+              $loaded = $doc->loadHTML('<?xml encoding="utf-8" ?><div>' . $value . '</div>');
+              if ($loaded) {
+                $xpath = new \DOMXPath($doc);
+                $anchors = $xpath->query('//a');
+                foreach ($anchors as $a) {
+                  if ($a instanceof \DOMElement) {
+                    // Skip/continue if the href is empty, is just an in-page anchor (e.g. #) or pseudo-link, or non-http scheme (mailto:, tel:, etc.)
+                    $href = $a->getAttribute('href');
+                    if ($href === '' || preg_match('/^\s*(#|javascript:)/i', $href)) {
+                      continue;
+                    }
+                    if (preg_match('/^\s*(mailto:|tel:|sms:|skype:|fax:)/i', $href)) {
+                      continue;
+                    }
+
+                    // Set target="_blank"
+                    $a->setAttribute('target', '_blank');
+                    // Merge or set rel attribute to include noopener noreferrer
+                    $existing_rel = $a->getAttribute('rel');
+                    $rels = preg_split('/\s+/', trim($existing_rel)) ?: [];
+                    foreach (['noopener', 'noreferrer'] as $required) {
+                      if (!in_array($required, $rels)) {
+                        $rels[] = $required;
+                      }
+                    }
+                    $a->setAttribute('rel', trim(implode(' ', array_filter($rels))));
+                    // Append the external-link icon HTML at the end of the anchor only if a span containing the special invisible character
+                    // is not already present. The invisible character used is U+2007 (figure space) and is included inside the icon HTML
+                    // by default. The icon HTML is configurable via the element configuration (see the Link icon textarea).
+                    $invisible_char = ' ';
+                    $has_icon_span = FALSE;
+
+                    // Determine whether we should append the icon for this anchor. Only append when the link opens in a new tab
+                    // (target="_blank") and the href is internal to the allowed hosts (portland.gov, lndo.site) or is a
+                    // relative/internal URL (no host). External absolute hosts will not get the icon.
+                    $href = $a->getAttribute('href');
+                    $target_attr = strtolower($a->getAttribute('target'));
+                    $allow_icon = TRUE;
+                    if ($target_attr !== '_blank') {
+                      $allow_icon = FALSE;
+                    } else {
+                      $parts = @parse_url($href);
+                      if ($parts !== FALSE && isset($parts['host']) && $parts['host'] !== '') {
+                        $host = strtolower($parts['host']);
+                        // Allowed hosts: any subdomain of portland.gov,
+                        // any subdomain of lndo.site, and localhost.
+                        if (!preg_match('/(^|\.)portland\.gov$/', $host) && !preg_match('/(^|\.)lndo\.site$/', $host) && $host !== 'localhost') {
+                          $allow_icon = FALSE;
+                        }
+                      }
+                    }
+
+                    // 1) Invisible character check (existing behavior).
+                    $span_nodes = $a->getElementsByTagName('span');
+                    foreach ($span_nodes as $snode) {
+                      if ($snode instanceof \DOMElement && strpos($snode->textContent, $invisible_char) !== FALSE) {
+                        $has_icon_span = TRUE;
+                        break;
+                      }
+                    }
+
+                    // 2) Exact-fragment substring check against configured icon HTML.
+                    $icon_html = trim($element['#link_icon'] ?? ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>');
+                    if (!$has_icon_span && $icon_html !== '') {
+                      // Use saveHTML on the anchor to get a string representation and look for the configured fragment. 
+                      // This is a best-effort string match and helps avoid duplicating identical HTML.
+                      $anchor_html = $doc->saveHTML($a);
+                      if (strpos($anchor_html, $icon_html) !== FALSE) {
+                        $has_icon_span = TRUE;
+                      }
+                    }
+
+                    // Class-based detection: if configured icon contains a class token, consider the icon present when an inner span already
+                    // has any of those tokens.
+                    if (!$has_icon_span && preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
+                      $classes = preg_split('/\s+/', trim($cmatch[1]));
+                      if (!empty($classes)) {
+                        foreach ($span_nodes as $snode) {
+                          if ($snode instanceof \DOMElement) {
+                            $span_classes = preg_split('/\s+/', trim($snode->getAttribute('class')));
+                            if (array_intersect($classes, $span_classes)) {
+                              $has_icon_span = TRUE;
+                              break;
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // Only consider appending the icon when allowed by the target/href checks above.
+                    if ($allow_icon && !$has_icon_span) {
+                      // Add a normal space before the icon for separation.
+                      $a->appendChild($doc->createTextNode(' '));
+                      // Try to insert the configured HTML as a fragment. If the fragment isn't valid XML/HTML, fall back to creating a
+                      // simple span element with the default class and invisible character.
+                      $frag = $doc->createDocumentFragment();
+                      $ok = FALSE;
+                      // Suppress warnings from malformed fragments.
+                      try {
+                        $ok = @$frag->appendXML($icon_html);
+                      } catch (\Throwable $e) {
+                        $ok = FALSE;
+                      }
+                      if ($ok !== FALSE && $ok !== NULL) {
+                        $a->appendChild($frag);
+                      } else {
+                        // Fallback: attempt to extract a class attribute from
+                        // the configured HTML, otherwise use the default class.
+                        $class_attr = 'fa-solid fa-arrow-up-right-from-square';
+                        if (preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
+                          $class_attr = $cmatch[1];
+                        }
+                        $fallback_span = $doc->createElement('span', $invisible_char);
+                        $fallback_span->setAttribute('class', $class_attr);
+                        // Ensure the icon is hidden from assistive tech.
+                        $fallback_span->setAttribute('aria-hidden', 'true');
+                        $a->appendChild($fallback_span);
+                      }
+                    }
+                  }
+                }
+                // Extract innerHTML of our wrapper div.
+                $body_div = $doc->getElementsByTagName('div')->item(0);
+                $inner_html = '';
+                if ($body_div) {
+                  foreach ($body_div->childNodes as $child) {
+                    $inner_html .= $doc->saveHTML($child);
+                  }
+                  $value = $inner_html;
+                }
+              }
+              libxml_clear_errors();
+
+              // Cache the processed HTML in the data cache bin and tag by node
+              // so it's invalidated on node updates.
+              \Drupal::cache('data')->set($cid, $value, \Drupal\Core\Cache\Cache::PERMANENT, ['node:' . $nid]);
+            }
+          }
+        }
+        // Detect glossary term substitutions and attach glossary library so
+        // glossary behaviors are available when this node content is rendered
+        // inline or included in computed webform elements.
+        if (is_string($value) && str_contains($value, 'data-entity-substitution="glossary_term"')) {
+          $element['#attached']['library'][] = 'portland_glossary/glossary_term';
+          $glossary_library_attached = TRUE;
+        }
+
+        // (Cache metadata attached earlier.)
         // Add edit link for authenticated users if node is found and published.
         $current_user = \Drupal::currentUser();
         if ($current_user->isAuthenticated() && array_intersect(['glossary_editor', 'administrator'], $current_user->getRoles())) {
@@ -210,12 +430,21 @@ class PortlandNodeFetcher extends WebformElementBase {
       }
     } else {
       $error = 1;
+      // Ensure render cache contexts are present even when alias did not
+      // resolve to a node so warning output varies by language and user
+      // roles and cannot leak privileged UI into anonymous caches.
+      $element['#cache']['contexts'][] = 'languages:language_content';
+      $element['#cache']['contexts'][] = 'user.roles';
       $value = $this->buildMissingContentWarning($resolved_path ?? "[Alias missing]", $element);
     }
 
     // For computed twig/data array, group edit link and content in a parent div for authenticated users.
     if ($webform_submission && $element_name && $value) {
-      $grouped_markup = '<div class="portland-node-fetcher__wrapper">' . $edit_link . '<div class="portland-node-fetcher__inner-content">' . $value . '</div></div>';
+      $inner_attrs = '';
+      if (!empty($open_links_enabled)) {
+        $inner_attrs = ' data-open-links-in-new-tab="1"';
+      }
+      $grouped_markup = '<div class="portland-node-fetcher__wrapper">' . $edit_link . '<div class="portland-node-fetcher__inner-content"' . $inner_attrs . '>' . $value . '</div></div>';
       $webform_submission->setData([
         $element_name => $grouped_markup
       ] + $webform_submission->getData());
@@ -223,9 +452,13 @@ class PortlandNodeFetcher extends WebformElementBase {
 
     // Render content INSIDE the webform_element wrapper so #states/Conditions can hide it.
     if ($render_inline === '1' && $value) {
+      $content_attributes = ['class' => ['portland-node-fetcher__content']];
+      if (!empty($open_links_enabled)) {
+        $content_attributes['data-open-links-in-new-tab'] = '1';
+      }
       $element['content'] = [
         '#type' => 'container',
-        '#attributes' => ['class' => ['portland-node-fetcher__content']],
+        '#attributes' => $content_attributes,
         'edit_link' => [
           '#markup' => $edit_link,
           '#weight' => 0,
@@ -235,6 +468,10 @@ class PortlandNodeFetcher extends WebformElementBase {
           '#weight' => 10,
         ],
       ];
+      if (!$glossary_library_attached) {
+        $element['content']['#attached']['library'][] = 'portland_glossary/glossary_term';
+        $glossary_library_attached = TRUE;
+      }
     } else {
       // Ensure no stray child if not rendering inline.
       unset($element['content']);

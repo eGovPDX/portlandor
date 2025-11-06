@@ -103,6 +103,11 @@ elements: |-
       '#title': 'Card - Commercial - Public Right of Way Upgrades'
       '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-public-right-way-upgrades
       '#render_inline': 0
+    card_commercial_multnomah_county_food_cart_requirements:
+      '#type': portland_node_fetcher
+      '#title': 'Card - Commercial - Multnomah County Food Cart Requirements'
+      '#node_alias_path': /ppd/commercial-permitting/content-component/card-commercial-multnomah-county-food-cart-requirements
+      '#render_inline': 0
     process_step_building_permit_not_needed:
       '#type': portland_node_fetcher
       '#title': "Process Step - You Don't need a building permit"
@@ -149,21 +154,20 @@ elements: |-
       '#title_display': none
       '#node_alias_path': /ppd/content-component/disclaimer-permit-guide
       '#render_inline': 0
+      '#open_links_in_new_tab': 0
     disclaimer_permit_guide_email:
       '#type': portland_node_fetcher
       '#title': 'Disclaimer - Permit Guide - Email'
       '#title_display': none
       '#node_alias_path': /ppd/content-component/disclaimer-permit-guide-email
       '#render_inline': 0
+      '#open_links_in_new_tab': 0
   test:
     '#type': hidden
     '#title': 'Test mode'
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
-  ajax_indicator:
-    '#type': portland_ajax_indicator
-    '#title': 'Ajax Indicator'
   container_project_details:
     '#type': container
     '#states':
@@ -181,13 +185,22 @@ elements: |-
       q0_project_address:
         '#type': portland_address_verifier
         '#title': Address
+        '#location_verification_status__required': true
+        '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one.'
         '#location_address__required': true
+        '#unit_number__access': false
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
-        '#find_unincorporated': 1
-        '#require_portland_city_limits': 1
-        '#not_verified_remedy': 'A verified address is required. Please try again.'
+        '#location_state__wrapper_attributes':
+          class:
+            - d-none
+        '#find_unincorporated': 0
+        '#require_portland_city_limits': 0
+        '#not_verified_heading': "We're unable to find this address. Please try again."
+        '#not_verified_reasons': 'This guide requires a valid address within the <a href="https://www.portland.gov/ppd">Portland Permitting & Development bureau</a> service area.'
+        '#not_verified_remedy_required': 'If you need assistance, contact us at <a href="mailto:ppd@portlandoregon.gov">ppd@portlandoregon.gov</a>.'
+        '#verify_button_text': Find
         '#lookup_taxlot': 1
         '#secondary_queries':
           - api: 'https://www.portlandmaps.com/api/detail/'
@@ -248,8 +261,23 @@ elements: |-
         '#states':
           visible:
             ':input[name="q0_project_address[location_verification_status]"]':
-              '!value': Verified
-        '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
+              empty: true
+        '#markup': '<p><strong>Find an address to begin using this guide.</strong> It must be in an area that''s managed by the <a href="https://www.portland.gov/ppd" target="_blank">Portland Permitting &amp; Development bureau</a>.</p>'
+      computed_attribution_message:
+        '#type': webform_computed_twig
+        '#title': 'Computed attribution message'
+        '#title_display': none
+        '#states':
+          visible:
+            ':input[name="q0_project_address[location_verification_status]"]':
+              filled: true
+        '#wrapper_attributes':
+          class:
+            - mt-0
+        '#display_on': form
+        '#mode': html
+        '#template': "<p><em>Address and zoning data provided by <a href=\"https://portlandmaps.com/search/?query={{ data.q0_project_address.location_address }}\" target=\"_blank\">PortlandMaps.com <em class=\"fa-solid fa-arrow-up-right-from-square\">\_</em></a></em></p>"
+        '#ajax': true
     section_property_details:
       '#type': webform_section
       '#title': 'Property Details'
@@ -299,14 +327,14 @@ elements: |-
         '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
         '#whitespace': trim
         '#ajax': true
-      computed_valid_zone:
-        '#type': webform_computed_twig
-        '#title': 'Is the zone valid?'
-        '#display_on': form
-        '#mode': text
-        '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
-        '#whitespace': trim
-        '#ajax': true
+    computed_valid_zone:
+      '#type': webform_computed_twig
+      '#title': 'Is the zone valid?'
+      '#display_on': form
+      '#mode': text
+      '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
+      '#whitespace': trim
+      '#ajax': true
     computed_invalid_zone_warning:
       '#type': webform_computed_twig
       '#title': 'Invalid Zone Warning'
@@ -503,9 +531,13 @@ elements: |-
     return_link:
       '#type': webform_computed_twig
       '#title': 'Return Link'
-      '#display_on': none
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#display_on': form
       '#template': |
         https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q16_adding_2_or_more_carts={{ data.q16_adding_2_or_more_carts }}&q1_building_installing_permanent_structure={{ data.q1_building_installing_permanent_structure }}&q2_making_building_improvements={{ data.q2_making_building_improvements }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_occupancy_change={{ data.q4_occupancy_change }}&q5_include_anchoring_or_building={{ data.q5_include_anchoring_or_building }}&q6_include_drive_thru={{ data.q6_include_drive_thru }}&q7_include_restriping_parking_lot={{ data.q7_include_restriping_parking_lot }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_use_of_propane_tank={{ data.q11_use_of_propane_tank }}&q12_propane_tank_size={{ data.q12_propane_tank_size }}&q13_use_of_tent={{ data.q13_use_of_tent }}&q14_use_of_portable_sign={{ data.q14_use_of_portable_sign }}&q15_tree_pruning_in_right_of_way={{ data.q15_tree_pruning_in_right_of_way }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+      '#ajax': true
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
@@ -540,7 +572,7 @@ elements: |-
 
             {{ data.fetch_card_commercial_permitting_15_min_appointment|raw }}
             
-            {% if data.q8_electrical_work == "Yes" or data.test != "" %}
+            {% if (data.q8_electrical_work == "Yes" and data.q16_adding_2_or_more_carts == "Yes") or data.test != "" %}
               {{ data.fetch_card_electrical_permit_application|raw }}
             {% endif %}
             
@@ -548,7 +580,7 @@ elements: |-
               {{ data.fetch_card_plumbing_permit_application|raw }}
             {% endif %}
             
-            {% if data.q10_mechanical_work == "Yes" or data.test != "" %}
+            {% if (data.q10_mechanical_work == "Yes" and data.q16_adding_2_or_more_carts == "Yes") or data.test != "" %}
               {{ data.fetch_card_mechanical_permit_application|raw }}
             {% endif %}
             
@@ -585,6 +617,8 @@ elements: |-
             {% if data.q1_building_installing_permanent_structure == "Yes" or data.q2_making_building_improvements == "Yes" or data.q3_change_how_space_is_used == "Yes" or data.q4_occupancy_change == "Yes" or data.q6_include_drive_thru == "Yes" or data.q7_include_restriping_parking_lot == "Yes" or data.q16_adding_2_or_more_carts == "Yes" or data.test is not empty %}
               {{ data.fetch_card_public_row_upgrades|raw }}
             {% endif %}
+
+            {{ data.card_commercial_multnomah_county_food_cart_requirements|raw }}
       '#whitespace': trim
     markup_02:
       '#type': webform_markup
@@ -600,10 +634,6 @@ elements: |-
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
         </div>
-        {% endif %}
-
-        {% if data.computed_valid_zone == "No" %}
-          <div class="mb-5">{{ data.computed_invalid_zone_warning }}</div>
         {% endif %}
 
         <ol class="process-list mb-10">
@@ -761,6 +791,7 @@ elements: |-
               </table>
 
               <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
+      '#ajax': true
     computed_project_details_container:
       '#type': webform_computed_twig
       '#title': 'Computed Project Details Container'
@@ -768,8 +799,6 @@ elements: |-
       '#display_on': form
       '#mode': html
       '#template': |
-
-
         <div class="accordion aria-accordion no-expand-all mb-5" id="acc-1-0">
           <h3 class="aria-accordion__heading accordion-item">
             <button
@@ -852,6 +881,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes:
     class:
       - permit-guide
@@ -921,7 +951,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you'll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p>We've created a guide to help you follow the City of Portland's building rules based on the details you provided about your project.</p><div class=\"mb-10\">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>"
+  confirmation_message: '<h2>Your project guide</h2><p>We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
