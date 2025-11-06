@@ -411,7 +411,6 @@ class PortlandNodeFetcher extends WebformElementBase {
         // glossary behaviors are available when this node content is rendered
         // inline or included in computed webform elements.
         if (is_string($value) && str_contains($value, 'data-entity-substitution="glossary_term"')) {
-          $element['#attached']['library'][] = 'portland_glossary/glossary_term';
           $needs_glossary_library = TRUE;
         }
 
