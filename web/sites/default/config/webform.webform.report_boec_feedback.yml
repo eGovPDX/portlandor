@@ -1,9 +1,10 @@
-uuid: 49b937a6-fcd3-46da-a871-b8186ab7dd1a
+uuid: fdde31b1-1850-4b90-86c6-743c58876eb5
 langcode: en
 status: open
 dependencies:
   module:
     - portland
+    - portland_smartsheet
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -11,11 +12,11 @@ third_party_settings:
 weight: 0
 open: null
 close: null
-uid: 3960
+uid: 60
 template: false
 archive: false
-id: report_feedback_for_boec
-title: 'Report Feedback for BOEC (Bureau of Emergency Communications)'
+id: report_boec_feedback
+title: 'Report BOEC Feedback'
 description: ''
 categories:
   - Report
@@ -93,12 +94,13 @@ elements: |-
     public_records_statement_standard:
       '#type': webform_markup
       '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" data-renderer-mark="true" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a href="/help/about/privacy" data-renderer-mark="true" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
-    public_records_statement_required:
-      '#type': webform_markup
-      '#markup': '<p>The information you provide in this form is considered a public record under Oregon’s <a href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" data-renderer-mark="true" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.</p>'
-  support_agent_use_only:
+  customer_service_use_only:
     '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
+    '#title': 'Customer Service Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
 css: ''
 javascript: ''
 settings:
@@ -140,6 +142,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -282,5 +285,77 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        6795326099509124: report_feedback_type
+        3417626378981252: ''
+        602876611874692: report_incident_location
+        7703166355984260: report_incident_date
+        2073666821771140: report_incident_time
+        7921226006351748: report_incident_phone_number
+        6577266449141636: report_incident_number
+        4325466635456388: report_incident_response
+        1165826565296004: report_incident_description
+        8829066262826884: report_other_comments
+        5669426192666500: contact_name
+        244079473151876: contact_phone
+        4747679100522372: contact_email
+        2495879286837124: contact_preferred_method
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '7340800116477828'
+      upload_attachments: '1'
+      field_handlers: {  }
+  email:
+    id: email
+    handler_id: email
+    label: Email
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        ':input[name="customer_service_use_only[test_submission]"]':
+          checked: true
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: BOEC.team911@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
 variants: {  }
