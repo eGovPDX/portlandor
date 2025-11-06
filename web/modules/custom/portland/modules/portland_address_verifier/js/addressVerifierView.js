@@ -269,7 +269,7 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     //      lookup_taxlot = 0                   Do not lookup taxlot ID.
     //      find_unincorporated = 1             Use the postal city.
     //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
-    //      verification_required = false       Verificaiton not required by default. This is set in the element configuration.
+    //      verification_required = false       Verification not required by default. This is set in the element configuration.
 
     // The City value returned by the Suggest API is the postal city associated with the zipcode.
     // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
