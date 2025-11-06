@@ -307,6 +307,11 @@ AddressVerifierView.prototype._selectAddress = function (item) {
         self._setVerified(item);
     }
 
+    // regardless of what we're using in the city field, set unincorporated flag if applicable
+    if (item.jurisdiction.toUpperCase() == "UNINCORPORATED") {
+        self.$element.find('#location_is_unincorporated').val(1);
+    }
+
     // if configured, run secondary query // url, x, y, callback, view
     if (this.settings.secondary_query_url && this.settings.secondary_query_capture_property && this.settings.secondary_query_capture_field) {
         this.model.callSecondaryQuery(this.settings.secondary_query_url, item.x, item.y, self._processSecondaryResults, self, this.settings.secondary_query_capture_property, this.settings.secondary_query_capture_field, this.$);
