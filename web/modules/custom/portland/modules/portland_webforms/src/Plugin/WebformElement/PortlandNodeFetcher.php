@@ -240,7 +240,7 @@ class PortlandNodeFetcher extends WebformElementBase {
       $is_published = $node instanceof Node && $node->isPublished() && $node->hasField('field_body_content') && !$node->get('field_body_content')->isEmpty();
       if ($is_published) {
         $value = $node->get('field_body_content')->processed;
-        // If configured, ensure links open in a new tab/window for safety add rel attributes.
+        // If configured, ensure links open in a new tab/window for safety, add rel attributes.
         $open_links_enabled = (array_key_exists('#open_links_in_new_tab', $element) && $element['#open_links_in_new_tab'] == '1') ? TRUE : FALSE;
 
         if ($open_links_enabled && !empty($value)) {
