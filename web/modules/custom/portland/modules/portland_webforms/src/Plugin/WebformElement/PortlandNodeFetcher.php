@@ -470,7 +470,7 @@ class PortlandNodeFetcher extends WebformElementBase {
       ];
       if (!$glossary_library_attached) {
         $element['content']['#attached']['library'][] = 'portland_glossary/glossary_term';
-        $glossary_library_attached = true;
+        $glossary_library_attached = TRUE;
       }
     } else {
       // Ensure no stray child if not rendering inline.
