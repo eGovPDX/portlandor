@@ -5,6 +5,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\key\KeyRepositoryInterface;
 use Drupal\portland_govdelivery\Service\TopicsProvider;
+use Drupal\portland_govdelivery\Service\QuestionsProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -13,16 +14,19 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class PortlandGovDeliverySettingsForm extends ConfigFormBase {
   protected KeyRepositoryInterface $keyRepository;
   protected TopicsProvider $topicsProvider;
+  protected QuestionsProvider $questionsProvider;
 
-  public function __construct(KeyRepositoryInterface $key_repository, TopicsProvider $topics_provider) {
+  public function __construct(KeyRepositoryInterface $key_repository, TopicsProvider $topics_provider, QuestionsProvider $questions_provider) {
     $this->keyRepository = $key_repository;
     $this->topicsProvider = $topics_provider;
+    $this->questionsProvider = $questions_provider;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('key.repository'),
       $container->get('portland_govdelivery.topics_provider'),
+      $container->get('portland_govdelivery.questions_provider'),
     );
   }
 
@@ -134,7 +138,132 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       ];
     }
 
+    // Questions registry section.
+    $form['questions_registry'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Questions registry'),
+      '#description' => $this->t('All custom questions available in your GovDelivery account. This list is cached for performance.'),
+      '#open' => TRUE,
+    ];
+
+    $form['questions_registry']['clear_cache'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Clear questions cache'),
+      '#submit' => ['::clearQuestionsCache'],
+      '#limit_validation_errors' => [],
+      '#attributes' => [
+        'class' => ['button', 'button--danger'],
+      ],
+    ];
+
+    // Last fetched timestamp.
+    $lastFetched = $this->questionsProvider->getLastFetched();
+    $last_markup = $this->t('Never fetched');
+    if (!empty($lastFetched)) {
+      $now = \Drupal::time()->getRequestTime();
+      /** @var \Drupal\Core\Datetime\DateFormatterInterface $df */
+      $df = \Drupal::service('date.formatter');
+      $last_markup = $this->t('Last fetched: @date (@ago ago)', [
+        '@date' => $df->format($lastFetched, 'short'),
+        '@ago' => $df->formatInterval(max(1, $now - $lastFetched)),
+      ]);
+    }
+    $form['questions_registry']['last_fetched'] = [
+      '#type' => 'item',
+      '#markup' => '<span class="gd-meta">' . $last_markup . '</span>',
+    ];
+
+    try {
+      $all_questions = $this->questionsProvider->getAllQuestions();
+      
+      \Drupal::logger('portland_govdelivery')->debug('Retrieved @count questions from provider', [
+        '@count' => count($all_questions),
+      ]);
+      
+      if (empty($all_questions)) {
+        $form['questions_registry']['empty'] = [
+          '#markup' => '<p><em>' . $this->t('No questions found. If you recently added public questions in GovDelivery, click "Clear questions cache" and reload this page. Ensure questions are public at the account level.') . '</em></p>',
+        ];
+      }
+      else {
+        // Sort questions alphabetically by name, then by id for stability.
+        uasort($all_questions, function($a, $b) {
+          $c = strcasecmp($a['name'], $b['name']);
+          if ($c !== 0) { return $c; }
+          return ($a['id'] ?? '') <=> ($b['id'] ?? '');
+        });
+
+        $rows = [];
+        foreach ($all_questions as $question) {
+          $name = $question['name'] ?? '';
+          $text = $question['question_text'] ?? '';
+          $type = $question['response_type'] ?? '';
+          $topics = $question['topics'] ?? [];
+          $answers = $question['answers'] ?? [];
+
+          // Format topics as comma-delimited list.
+          $topics_display = !empty($topics) ? implode(', ', $topics) : '<em>None</em>';
+
+          // Format answers as comma-delimited list (for select questions).
+          $answers_display = '';
+          if (!empty($answers)) {
+            $answer_texts = array_map(function($ans) {
+              return $ans['text'] ?? '';
+            }, $answers);
+            $answers_display = implode(', ', array_filter($answer_texts));
+          }
+
+          // Response type badge.
+          $type_label = $type ?: 'Unknown';
+          $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $type_label));
+          $variant = (stripos($type_label, 'text') !== FALSE) ? 'text' : ((stripos($type_label, 'choice') !== FALSE || stripos($type_label, 'select') !== FALSE) ? 'choice' : 'default');
+          $badge_class = 'gd-badge gd-badge--' . $variant . ' gd-badge--' . $slug;
+
+          $rows[] = [
+            'name' => ['data' => ['#markup' => '<strong>' . htmlspecialchars($name) . '</strong>']],
+            'text' => ['data' => ['#markup' => htmlspecialchars($text)]],
+            'type' => ['data' => ['#markup' => '<span class="' . $badge_class . '">' . htmlspecialchars($type_label) . '</span>']],
+            'topics' => ['data' => ['#markup' => $topics_display]],
+            'answers' => ['data' => ['#markup' => $answers_display ?: '<em>N/A</em>']],
+          ];
+        }
+
+        $form['questions_registry']['table'] = [
+          '#type' => 'table',
+          '#header' => [
+            'name' => $this->t('Question Name'),
+            'text' => $this->t('Question Text'),
+            'type' => $this->t('Response Type'),
+            'topics' => $this->t('Topics'),
+            'answers' => $this->t('Answer Choices'),
+          ],
+          '#rows' => $rows,
+          '#attributes' => [
+            'class' => ['govdelivery-questions-table'],
+          ],
+          '#prefix' => '<div class="govdelivery-questions-wrapper">',
+          '#suffix' => '</div>',
+          '#attached' => [
+            'library' => [
+              'portland_govdelivery/admin',
+            ],
+          ],
+        ];
+      }
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('portland_govdelivery')->error('Exception in questions registry: @msg', [
+        '@msg' => $e->getMessage(),
+        '@trace' => $e->getTraceAsString(),
+      ]);
+      $form['questions_registry']['error'] = [
+        '#markup' => '<p><strong style="color:red;">' . $this->t('Error loading questions: @msg', ['@msg' => $e->getMessage()]) . '</strong></p>',
+      ];
+    }
+
     $form = parent::buildForm($form, $form_state);
+    
+    // Remove the clear cache button from actions since it's now in the panel.
     
     // Add link to separate Subscribe User form.
     $form['actions']['subscribe_link'] = [
@@ -148,6 +277,14 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
     ];
 
     return $form;
+  }
+
+  /**
+   * Submit handler to clear the questions cache.
+   */
+  public function clearQuestionsCache(array &$form, FormStateInterface $form_state) {
+    $this->questionsProvider->clearCache();
+    $this->messenger()->addStatus($this->t('GovDelivery questions cache has been cleared.'));
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {

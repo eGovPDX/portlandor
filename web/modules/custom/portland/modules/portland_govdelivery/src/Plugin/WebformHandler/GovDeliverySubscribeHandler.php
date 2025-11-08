@@ -30,7 +30,6 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       'topics_source' => 'select',
       'topics' => [],
       'topics_element' => '',
-      'question_mappings' => [],
     ] + parent::defaultConfiguration();
   }
 
@@ -108,140 +107,7 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       ],
     ];
 
-    // Question mappings - manual configuration.
-    $form['question_mappings'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Question mappings'),
-      '#description' => $this->t('Map webform fields to GovDelivery custom question codes.'),
-      '#open' => TRUE,
-    ];
-
-    // Build webform field options.
-    $webform_fields = $this->getWebform()->getElementsInitializedFlattenedAndHasValue();
-    $field_options = ['' => '- ' . $this->t('None') . ' -'];
-    foreach ($webform_fields as $key => $value) {
-      $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
-      if (empty($title)) continue;
-      if (array_key_exists('#webform_composite_elements', $value)) {
-        foreach ($value['#webform_composite_elements'] as $composite_element) {
-          if (isset($composite_element['#webform_composite_key'])) {
-            $composite_key = $composite_element['#webform_composite_key'];
-            $field_options[$composite_key] = $title . ' > ' . ($composite_element['#title'] ?? $composite_key);
-          }
-        }
-      }
-      else {
-        $field_options[$key] = $title;
-      }
-    }
-
-    // Get existing mappings or create default empty rows.
-    $mappings = $config['question_mappings'] ?? [];
-    $num_mappings = max(3, count($mappings));
-
-    $form['question_mappings']['table'] = [
-      '#type' => 'table',
-      '#header' => [
-        $this->t('Webform field'),
-        $this->t('GovDelivery question code'),
-        $this->t('Operations'),
-      ],
-      '#prefix' => '<div id="question-mappings-wrapper">',
-      '#suffix' => '</div>',
-    ];
-
-    // Add rows for existing mappings plus empty rows to reach minimum of 3.
-    $row_index = 0;
-    foreach ($mappings as $question_code => $field_key) {
-      $form['question_mappings']['table'][$row_index]['field'] = [
-        '#type' => 'select',
-        '#options' => $field_options,
-        '#default_value' => $field_key,
-        '#empty_option' => '- None -',
-      ];
-      $form['question_mappings']['table'][$row_index]['question_code'] = [
-        '#type' => 'textfield',
-        '#default_value' => $question_code,
-        '#size' => 40,
-        '#maxlength' => 255,
-        '#placeholder' => $this->t('e.g., QUESTION_CODE_123'),
-      ];
-      $form['question_mappings']['table'][$row_index]['remove'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Remove'),
-        '#name' => 'remove_mapping_' . $row_index,
-        '#submit' => ['::removeMapping'],
-        '#ajax' => [
-          'callback' => '::ajaxRefreshMappings',
-          'wrapper' => 'question-mappings-wrapper',
-        ],
-        '#limit_validation_errors' => [],
-        '#row_index' => $row_index,
-      ];
-      $row_index++;
-    }
-
-    // Add empty rows to reach minimum of 3.
-    while ($row_index < $num_mappings) {
-      $form['question_mappings']['table'][$row_index]['field'] = [
-        '#type' => 'select',
-        '#options' => $field_options,
-        '#empty_option' => '- None -',
-      ];
-      $form['question_mappings']['table'][$row_index]['question_code'] = [
-        '#type' => 'textfield',
-        '#size' => 40,
-        '#maxlength' => 255,
-        '#placeholder' => $this->t('e.g., QUESTION_CODE_123'),
-      ];
-      $form['question_mappings']['table'][$row_index]['remove'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Remove'),
-        '#name' => 'remove_mapping_' . $row_index,
-        '#submit' => ['::removeMapping'],
-        '#ajax' => [
-          'callback' => '::ajaxRefreshMappings',
-          'wrapper' => 'question-mappings-wrapper',
-        ],
-        '#limit_validation_errors' => [],
-        '#row_index' => $row_index,
-      ];
-      $row_index++;
-    }
-
-    $form['question_mappings']['add_more'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Add another mapping'),
-      '#submit' => ['::addMoreMapping'],
-      '#ajax' => [
-        'callback' => '::ajaxRefreshMappings',
-        'wrapper' => 'question-mappings-wrapper',
-      ],
-      '#limit_validation_errors' => [],
-    ];
-
     return parent::buildConfigurationForm($form, $form_state);
-  }
-
-  /**
-   * Submit handler to add another mapping row.
-   */
-  public function addMoreMapping(array &$form, FormStateInterface $form_state) {
-    $form_state->setRebuild();
-  }
-
-  /**
-   * Submit handler to remove a mapping row.
-   */
-  public function removeMapping(array &$form, FormStateInterface $form_state) {
-    $form_state->setRebuild();
-  }
-
-  /**
-   * AJAX callback to refresh the mappings table.
-   */
-  public function ajaxRefreshMappings(array &$form, FormStateInterface $form_state) {
-    return $form['settings']['question_mappings']['table'];
   }
 
   /**
@@ -278,18 +144,6 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
     $this->configuration['topics_source'] = $form_state->getValue('topics_source');
     $this->configuration['topics'] = (array) $form_state->getValue('topics');
     $this->configuration['topics_element'] = trim((string) $form_state->getValue('topics_element'));
-    
-    // Process question mappings from table.
-    $mappings = [];
-    $table_values = $form_state->getValue(['question_mappings', 'table']) ?? [];
-    foreach ($table_values as $row) {
-      $field = $row['field'] ?? '';
-      $question_code = trim($row['question_code'] ?? '');
-      if ($field !== '' && $question_code !== '') {
-        $mappings[$question_code] = $field;
-      }
-    }
-    $this->configuration['question_mappings'] = $mappings;
   }
 
   /**
@@ -348,57 +202,17 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       return;
     }
 
-    // Build question answers from mappings.
-    $answers = [];
-    $question_mappings = $this->configuration['question_mappings'] ?? [];
-    foreach ($question_mappings as $question_code => $field_key) {
-      if (!array_key_exists($field_key, $data)) {
-        continue;
-      }
-      
-      $field_value = $data[$field_key];
-      
-      // Handle composite fields (e.g., address__city).
-      if (strpos($field_key, '__') !== false) {
-        $parts = explode('__', $field_key);
-        $parent_key = $parts[0];
-        $child_key = $parts[1];
-        if (isset($data[$parent_key][$child_key])) {
-          $field_value = $data[$parent_key][$child_key];
-        }
-      }
-      
-      // Convert arrays to comma-separated string.
-      if (is_array($field_value)) {
-        $field_value = implode(', ', array_filter($field_value));
-      }
-      
-      $field_value = trim((string) $field_value);
-      if ($field_value !== '') {
-        $answers[$question_code] = $field_value;
-      }
-    }
-
     try {
       /** @var \Drupal\portland_govdelivery\Service\GovDeliveryClient $client */
       $client = \Drupal::service('portland_govdelivery.client');
-      // Pass answers as the 4th parameter.
-      $result = $client->subscribeUser($email, $topics, NULL, $answers);
+      $result = $client->subscribeUser($email, $topics);
       
-      $log_context = [
+      \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to %topics from submission %sid (webform %wid).', [
         '%email' => $email,
         '%topics' => implode(', ', $topics),
         '%sid' => $sid,
         '%wid' => $webform_id,
-      ];
-      
-      if (!empty($answers)) {
-        $log_context['%answers'] = json_encode($answers);
-        \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to %topics with answers %answers from submission %sid (webform %wid).', $log_context);
-      }
-      else {
-        \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to %topics from submission %sid (webform %wid).', $log_context);
-      }
+      ]);
     }
     catch (\Throwable $e) {
       \Drupal::logger('portland_govdelivery')->error('GovDelivery handler: Failed subscribing %email on submission %sid (webform %wid): @msg', [

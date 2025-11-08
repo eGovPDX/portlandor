@@ -31,7 +31,7 @@ class GovDeliveryClient
    * Get credentials using key IDs configured in portland_govdelivery.settings.
    * Returns [username, password].
    */
-  protected function getCredentials(): array
+  public function getCredentials(): array
   {
     $config = $this->configFactory->get('portland_govdelivery.settings');
     $username_key_id = $config->get('username_key') ?: 'govdelivery_username';
@@ -52,7 +52,7 @@ class GovDeliveryClient
   /**
    * Determine the API endpoint.
    */
-  protected function getAccountApiBase(): string
+  public function getAccountApiBase(): string
   {
     // Only use api_base_url + account_code from portland_govdelivery.settings
     $config = $this->configFactory->get('portland_govdelivery.settings');
@@ -485,4 +485,17 @@ class GovDeliveryClient
     $queue->createItem($item);
     return TRUE;
   }
+
+  /**
+   * Fetch all account-level questions via JSON endpoint.
+   *
+   * Endpoint: GET {account_base}/questions.json
+   * Returns a normalized array:
+   * [
+   *   [ 'id' => '123', 'name' => 'Preferred language', 'topic_codes' => ['TOPIC_A','TOPIC_B'] ],
+   *   ...
+   * ]
+   *
+   * Any additional fields present in the JSON will be retained under 'raw'.
+   */
 }
