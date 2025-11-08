@@ -121,6 +121,18 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
         '#markup' => $test_result,
       ];
 
+      // Clear metadata cache button (questions + topics).
+      $form['status']['clear_metadata'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Clear metadata cache'),
+        '#submit' => ['::clearMetadataCache'],
+        '#limit_validation_errors' => [],
+        '#attributes' => [
+          'class' => ['button', 'button--danger'],
+          'style' => 'margin-top: 0.5em;',
+        ],
+      ];
+
       // Instance stats removed per request.
     }
     catch (\RuntimeException $e) {
@@ -138,40 +150,85 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       ];
     }
 
+    // Topics registry section (shown above questions).
+    $form['topics_registry'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Topics'),
+      '#description' => $this->t('All topics available in your GovDelivery account.'),
+      '#open' => FALSE,
+    ];
+
+    try {
+      /** @var \Drupal\portland_govdelivery\Service\TopicsProvider $tp */
+      $tp = \Drupal::service('portland_govdelivery.topics_provider');
+      $topics = $tp->getAllTopics();
+
+      if (empty($topics)) {
+        $form['topics_registry']['empty'] = [
+          '#markup' => '<p><em>' . $this->t('No topics found.') . '</em></p>',
+        ];
+      }
+      else {
+        // Sort by name then code for stability.
+        usort($topics, function($a, $b) {
+          $c = strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+          if ($c !== 0) { return $c; }
+          return strcasecmp($a['code'] ?? '', $b['code'] ?? '');
+        });
+
+        $rows = [];
+        foreach ($topics as $t) {
+          $code = $t['code'] ?? '';
+          $name = $t['name'] ?? '';
+          $desc = $t['description'] ?? '';
+          $rows[] = [
+            'code' => ['data' => ['#markup' => '<code>' . htmlspecialchars($code) . '</code>']],
+            'name' => ['data' => ['#markup' => htmlspecialchars($name)]],
+            'description' => ['data' => ['#markup' => htmlspecialchars($desc)]],
+          ];
+        }
+
+        $form['topics_registry']['table'] = [
+          '#type' => 'table',
+          '#header' => [
+            'code' => $this->t('Code'),
+            'name' => $this->t('Name'),
+            'description' => $this->t('Description'),
+          ],
+          '#rows' => $rows,
+          '#attributes' => [
+            'class' => ['govdelivery-topics-table'],
+          ],
+          '#prefix' => '<div class="govdelivery-topics-wrapper">',
+          '#suffix' => '</div>',
+          '#attached' => [
+            'library' => [
+              'portland_govdelivery/admin',
+            ],
+          ],
+        ];
+      }
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('portland_govdelivery')->error('Exception in topics registry: @msg', [
+        '@msg' => $e->getMessage(),
+      ]);
+      $form['topics_registry']['error'] = [
+        '#markup' => '<p><strong style="color:red;">' . $this->t('Error loading topics: @msg', ['@msg' => $e->getMessage()]) . '</strong></p>',
+      ];
+    }
+
     // Questions registry section.
     $form['questions_registry'] = [
       '#type' => 'details',
       '#title' => $this->t('Questions registry'),
       '#description' => $this->t('All custom questions available in your GovDelivery account. This list is cached for performance.'),
-      '#open' => TRUE,
+      '#open' => FALSE,
     ];
 
-    $form['questions_registry']['clear_cache'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Clear questions cache'),
-      '#submit' => ['::clearQuestionsCache'],
-      '#limit_validation_errors' => [],
-      '#attributes' => [
-        'class' => ['button', 'button--danger'],
-      ],
-    ];
+    // Clear cache button moved to status panel above.
 
-    // Last fetched timestamp.
-    $lastFetched = $this->questionsProvider->getLastFetched();
-    $last_markup = $this->t('Never fetched');
-    if (!empty($lastFetched)) {
-      $now = \Drupal::time()->getRequestTime();
-      /** @var \Drupal\Core\Datetime\DateFormatterInterface $df */
-      $df = \Drupal::service('date.formatter');
-      $last_markup = $this->t('Last fetched: @date (@ago ago)', [
-        '@date' => $df->format($lastFetched, 'short'),
-        '@ago' => $df->formatInterval(max(1, $now - $lastFetched)),
-      ]);
-    }
-    $form['questions_registry']['last_fetched'] = [
-      '#type' => 'item',
-      '#markup' => '<span class="gd-meta">' . $last_markup . '</span>',
-    ];
+    // (Moved) Last fetched timestamps are displayed under the Status panel now.
 
     try {
       $all_questions = $this->questionsProvider->getAllQuestions();
@@ -182,7 +239,7 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       
       if (empty($all_questions)) {
         $form['questions_registry']['empty'] = [
-          '#markup' => '<p><em>' . $this->t('No questions found. If you recently added public questions in GovDelivery, click "Clear questions cache" and reload this page. Ensure questions are public at the account level.') . '</em></p>',
+          '#markup' => '<p><em>' . $this->t('No questions found. If you recently added public questions in GovDelivery, click "Clear metadata cache" above and reload this page. Ensure questions are public at the account level.') . '</em></p>',
         ];
       }
       else {
@@ -261,6 +318,36 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       ];
     }
 
+    // Add Last Fetched timestamp for metadata under Status.
+    try {
+      /** @var \Drupal\portland_govdelivery\Service\TopicsProvider $tp */
+      $tp = \Drupal::service('portland_govdelivery.topics_provider');
+      $tLast = $tp->getLastFetched();
+      $qLast = $this->questionsProvider->getLastFetched();
+      // Use the more recent of the two timestamps.
+      $lastFetched = max($tLast ?: 0, $qLast ?: 0);
+      if ($lastFetched > 0) {
+        $now = \Drupal::time()->getRequestTime();
+        /** @var \Drupal\Core\Datetime\DateFormatterInterface $df */
+        $df = \Drupal::service('date.formatter');
+        $last_markup = $this->t('@date (@ago ago)', [
+          '@date' => $df->format($lastFetched, 'short'),
+          '@ago' => $df->formatInterval(max(1, $now - $lastFetched)),
+        ]);
+      }
+      else {
+        $last_markup = $this->t('Never fetched');
+      }
+      $form['status']['last_fetched'] = [
+        '#type' => 'item',
+        '#title' => $this->t('Last fetched'),
+        '#markup' => '<div class="gd-meta">' . $last_markup . '</div>',
+      ];
+    }
+    catch (\Throwable $e) {
+      // Non-fatal; ignore.
+    }
+
     $form = parent::buildForm($form, $form_state);
     
     // Remove the clear cache button from actions since it's now in the panel.
@@ -280,11 +367,31 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Submit handler to clear the questions cache.
+   * Submit handler to clear metadata cache (questions + topics).
+   */
+  public function clearMetadataCache(array &$form, FormStateInterface $form_state): void {
+    // Clear questions cache.
+    $this->questionsProvider->clearCache();
+    // Clear topics cache.
+    try {
+      /** @var \Drupal\portland_govdelivery\Service\TopicsProvider $tp */
+      $tp = \Drupal::service('portland_govdelivery.topics_provider');
+      if (method_exists($tp, 'clearCache')) {
+        $tp->clearCache();
+      }
+    }
+    catch (\Throwable $e) {
+      // Log but don't fail the submission.
+      \Drupal::logger('portland_govdelivery')->error('Error clearing topics cache: @msg', ['@msg' => $e->getMessage()]);
+    }
+    $this->messenger()->addStatus($this->t('GovDelivery metadata cache (questions and topics) has been cleared.'));
+  }
+
+  /**
+   * Backward-compatible wrapper for legacy button (if any).
    */
   public function clearQuestionsCache(array &$form, FormStateInterface $form_state) {
-    $this->questionsProvider->clearCache();
-    $this->messenger()->addStatus($this->t('GovDelivery questions cache has been cleared.'));
+    $this->clearMetadataCache($form, $form_state);
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {

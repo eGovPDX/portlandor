@@ -72,82 +72,146 @@ class QuestionsProvider {
   }
 
   /**
-   * Fetch all public account-level questions via /questions.xml.
+   * Fetch all public account-level and topic-specific questions.
    */
   protected function fetchAllQuestionsFromApi(): array {
     try {
       $account_base = $this->client->getAccountApiBase();
       [$username, $password] = $this->client->getCredentials();
-      $url = rtrim($account_base, '/') . '/questions.xml';
-      $response = \Drupal::httpClient()->request('GET', $url, [
+      
+      // 1. Fetch account-level public questions.
+      $questions = $this->fetchAccountLevelQuestions($account_base, $username, $password);
+      
+      // 2. Fetch all topics.
+      /** @var \Drupal\portland_govdelivery\Service\TopicsProvider $tp */
+      $tp = \Drupal::service('portland_govdelivery.topics_provider');
+      $topics = $tp->getAllTopics();
+      
+      // 3. Iterate topics and fetch their questions.
+      foreach ($topics as $topic) {
+        $code = $topic['code'] ?? NULL;
+        if (!$code) { continue; }
+        $topicQuestions = $this->fetchTopicQuestions($code, $account_base, $username, $password);
+        foreach ($topicQuestions as $qid => $q) {
+          if (isset($questions[$qid])) {
+            // Merge topic association into existing question.
+            if (!in_array($code, $questions[$qid]['topics'])) {
+              $questions[$qid]['topics'][] = $code;
+            }
+          }
+          else {
+            // New question discovered via topic.
+            $q['topics'][] = $code;
+            $questions[$qid] = $q;
+          }
+        }
+      }
+      
+      if (empty($questions)) {
+        $this->logger->warning('No questions found after fetching account-level and topic questions.');
+      }
+      return $questions;
+    } catch (\Throwable $e) {
+      $this->logger->error('Error fetching questions: @msg', ['@msg' => $e->getMessage()]);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch account-level public questions from /questions.xml.
+   */
+  protected function fetchAccountLevelQuestions(string $account_base, string $username, string $password): array {
+    $url = rtrim($account_base, '/') . '/questions.xml';
+    $response = \Drupal::httpClient()->request('GET', $url, [
+      'auth' => [$username, $password],
+      'headers' => ['Accept' => 'application/xml'],
+      'http_errors' => FALSE,
+      'timeout' => 15,
+    ]);
+    if ((int) $response->getStatusCode() !== 200) {
+      return [];
+    }
+    $xml = @simplexml_load_string((string) $response->getBody());
+    if ($xml === FALSE) {
+      return [];
+    }
+    return $this->extractQuestionsFromListingXml($xml, $account_base, $username, $password);
+  }
+
+  /**
+   * Fetch questions for a specific topic from /topics/{CODE}/questions.xml.
+   */
+  protected function fetchTopicQuestions(string $topic_code, string $account_base, string $username, string $password): array {
+    $url = rtrim($account_base, '/') . '/topics/' . rawurlencode($topic_code) . '/questions.xml';
+    $response = \Drupal::httpClient()->request('GET', $url, [
+      'auth' => [$username, $password],
+      'headers' => ['Accept' => 'application/xml'],
+      'http_errors' => FALSE,
+      'timeout' => 15,
+    ]);
+    if ((int) $response->getStatusCode() !== 200) {
+      return [];
+    }
+    $xml = @simplexml_load_string((string) $response->getBody());
+    if ($xml === FALSE) {
+      return [];
+    }
+    return $this->extractQuestionsFromListingXml($xml, $account_base, $username, $password);
+  }
+
+  /**
+   * Extract questions from a listing XML (account or topic).
+   */
+  protected function extractQuestionsFromListingXml(\SimpleXMLElement $xml, string $account_base, string $username, string $password): array {
+    // Prefer <question-uri> elements which include the .xml detail URL.
+    $uri_nodes = $xml->xpath('//*[local-name()="question-uri"]');
+    if (empty($uri_nodes)) {
+      // Fallback to link hrefs if question-uri missing.
+      $uri_nodes = $xml->xpath('//*[local-name()="link" and contains(@href, "/questions/")]');
+    }
+    if (empty($uri_nodes)) {
+      return [];
+    }
+    $questions = [];
+    foreach ($uri_nodes as $node) {
+      $raw = trim((string) $node);
+      if ($raw === '') { continue; }
+      // Build absolute detail URL.
+      if (strpos($raw, 'http') === 0) {
+        $qUrl = $raw;
+      }
+      elseif (strpos($raw, '/') === 0) {
+        $parts = parse_url($account_base);
+        $scheme = $parts['scheme'] ?? 'https';
+        $host = $parts['host'] ?? parse_url($account_base, PHP_URL_HOST);
+        $qUrl = $scheme . '://' . $host . $raw;
+      }
+      else {
+        $qUrl = rtrim($account_base, '/') . '/' . ltrim($raw, '/');
+      }
+      // Ensure .xml suffix for detail if missing.
+      if (!str_ends_with($qUrl, '.xml')) {
+        $qUrl .= '.xml';
+      }
+      $qRes = \Drupal::httpClient()->request('GET', $qUrl, [
         'auth' => [$username, $password],
         'headers' => ['Accept' => 'application/xml'],
         'http_errors' => FALSE,
         'timeout' => 15,
       ]);
-      if ((int) $response->getStatusCode() !== 200) {
-        return [];
+      $status = (int) $qRes->getStatusCode();
+      if ($status !== 200) {
+        $this->logger->warning('Question detail fetch failed @status for @url', ['@status' => $status, '@url' => $qUrl]);
+        continue;
       }
-      $xml = @simplexml_load_string((string) $response->getBody());
-      if ($xml === FALSE) {
-        return [];
+      $qXml = @simplexml_load_string((string) $qRes->getBody());
+      if ($qXml === FALSE) { continue; }
+      $parsed = $this->parseQuestionXml($qXml);
+      if (!empty($parsed)) {
+        $questions[$parsed['id']] = $parsed;
       }
-      // Prefer <question-uri> elements which include the .xml detail URL.
-      $uri_nodes = $xml->xpath('//*[local-name()="question-uri"]');
-      if (empty($uri_nodes)) {
-        // Fallback to link hrefs if question-uri missing.
-        $uri_nodes = $xml->xpath('//*[local-name()="link" and contains(@href, "/questions/")]');
-      }
-      if (empty($uri_nodes)) {
-        $this->logger->warning('Account questions listing returned no question-uri/link nodes.');
-        return [];
-      }
-      $questions = [];
-      foreach ($uri_nodes as $node) {
-        $raw = trim((string) $node);
-        if ($raw === '') { continue; }
-        // Build absolute detail URL.
-        if (strpos($raw, 'http') === 0) {
-          $qUrl = $raw;
-        }
-        elseif (strpos($raw, '/') === 0) {
-          $parts = parse_url($account_base);
-          $scheme = $parts['scheme'] ?? 'https';
-          $host = $parts['host'] ?? parse_url($account_base, PHP_URL_HOST);
-          $qUrl = $scheme . '://' . $host . $raw;
-        }
-        else {
-          $qUrl = rtrim($account_base, '/') . '/' . ltrim($raw, '/');
-        }
-        // Ensure .xml suffix for detail if missing.
-        if (!str_ends_with($qUrl, '.xml')) {
-          $qUrl .= '.xml';
-        }
-        $qRes = \Drupal::httpClient()->request('GET', $qUrl, [
-          'auth' => [$username, $password],
-          'headers' => ['Accept' => 'application/xml'],
-          'http_errors' => FALSE,
-          'timeout' => 15,
-        ]);
-        $status = (int) $qRes->getStatusCode();
-        if ($status !== 200) {
-          $this->logger->warning('Question detail fetch failed @status for @url', ['@status' => $status, '@url' => $qUrl]);
-          continue;
-        }
-        $qXml = @simplexml_load_string((string) $qRes->getBody());
-        if ($qXml === FALSE) { continue; }
-        $parsed = $this->parseQuestionXml($qXml);
-        if (!empty($parsed)) {
-          $questions[$parsed['id']] = $parsed;
-        }
-      }
-      if (empty($questions)) {
-        $this->logger->warning('No questions parsed from detail endpoints.');
-      }
-      return $questions;
-    } catch (\Throwable $e) {
-      return [];
     }
+    return $questions;
   }
 
   /**
