@@ -41,16 +41,42 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $config = $this->configuration;
 
-    $form['email_element'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Email element machine name'),
-      '#description' => $this->t('Enter the machine name of the webform element that contains the subscriber\'s email address.'),
+    // Build element options for selects (email + question mappings) early.
+    $webform_for_email = $this->getWebform();
+    $elements_for_email = $webform_for_email ? $webform_for_email->getElementsInitializedFlattenedAndHasValue() : [];
+    $email_element_options = ['' => $this->t('Choose...')];
+    foreach ($elements_for_email as $ekey => $element) {
+      $label = isset($element['#title']) ? strip_tags($element['#title']) : $ekey;
+      $email_element_options[$ekey] = $label . ' [' . $ekey . ']';
+    }
+
+    // Group basic subscription settings (email + topics) in a container to ensure
+    // they display before the question mappings panel.
+    $form['subscription_settings'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Subscription settings'),
+      '#open' => TRUE,
+      '#weight' => 0,
+    ];
+
+    $form['subscription_settings']['email_element'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Email element'),
+      '#description' => $this->t('Select the webform element that contains the subscriber\'s email address.'),
+      '#options' => $email_element_options,
       '#default_value' => $config['email_element'] ?? '',
       '#required' => TRUE,
     ];
 
+    // Topics settings panel (nested under subscription settings, must appear above mappings).
+    $form['subscription_settings']['topics_settings'] = [
+      '#type' => 'details',
+      '#title' => $this->t('GovDelivery topics'),
+      '#open' => TRUE,
+    ];
+
     // Topics source selection.
-    $form['topics_source'] = [
+    $form['subscription_settings']['topics_settings']['topics_source'] = [
       '#type' => 'radios',
       '#title' => $this->t('Topics source'),
       '#description' => $this->t('Choose how to determine which topics to subscribe the user to.'),
@@ -76,7 +102,7 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
 
     // Note: Removed temporary generation of test topics.
 
-    $form['topics'] = [
+    $form['subscription_settings']['topics_settings']['topics'] = [
       '#type' => 'select',
       '#title' => $this->t('Topics'),
       '#description' => $this->t('Select the GovDelivery topic(s) to subscribe the user to. Hold Ctrl/Cmd to select multiple.'),
@@ -94,7 +120,7 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       ],
     ];
 
-    $form['topics_element'] = [
+    $form['subscription_settings']['topics_settings']['topics_element'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Topics element machine name'),
       '#description' => $this->t('Enter the machine name of the webform element that contains topic code(s). The element can contain a single topic code or multiple codes. For multiple values, separate topic codes with commas, pipes (|), or newlines. Example: "ORPORTLAND_ENT_BUDGET_FINANCE,ORPORTLAND_ENT_DISTRICT_1"'),
@@ -109,8 +135,29 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       ],
     ];
 
+    // Build question mappings using helper method.
+    $this->buildQuestionMappings($form, $form_state);
+
+    // Force question mappings to the bottom explicitly by re-appending and applying
+    // a high weight. This guards against any unexpected reordering logic.
+    if (isset($form['zz_question_mappings'])) {
+      $qm = $form['zz_question_mappings'];
+      unset($form['zz_question_mappings']);
+      $qm['#weight'] = 1000; // Very high weight to ensure it is last.
+      $form['zz_question_mappings'] = $qm;
+    }
+
+    return $this->setSettingsParents($form);
+  }
+
+  /**
+   * Build question mappings section.
+   */
+  protected function buildQuestionMappings(array &$form, FormStateInterface $form_state) {
+    $config = $this->configuration;
+    
     // Build question mapping list (A: global questions + B: questions for selected topics).
-    $question_rows = [];
+  $question_rows = [];
     try {
       /** @var \Drupal\portland_govdelivery\Service\QuestionsProvider $qp */
       $qp = \Drupal::service('portland_govdelivery.questions_provider');
@@ -153,36 +200,54 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       // Existing mappings.
       $existing_map = (array) ($config['question_element_map'] ?? []);
 
-        foreach ($filtered as $qid => $q) {
-          $name = $q['name'] ?? $qid;
-          $topics_list = empty($q['topics']) ? $this->t('Global') : implode(', ', $q['topics']);
-          // Only set default_value if a mapping exists, otherwise leave it empty so the empty option is selected.
-          $default_value = isset($existing_map[$qid]) && $existing_map[$qid] !== '' ? $existing_map[$qid] : '';
-          $question_rows[$qid] = [
-            'question' => ['data' => ['#markup' => '<strong>' . htmlspecialchars($name) . '</strong><br/><small>' . htmlspecialchars($q['question_text'] ?? '') . '</small>']],
-            'topics' => ['data' => ['#markup' => htmlspecialchars($topics_list)]],
-            'element' => [
+      foreach ($filtered as $qid => $q) {
+        $name = $q['name'] ?? $qid;
+        $topics_list = empty($q['topics']) ? $this->t('Global') : implode(', ', $q['topics']);
+        // Only set default_value if a mapping exists, otherwise leave it empty so the empty option is selected.
+        $default_value = isset($existing_map[$qid]) && $existing_map[$qid] !== '' ? $existing_map[$qid] : '';
+
+        // Row 1: Question + Topics (no bottom border)
+        $question_rows[] = [
+          'data' => [
+            ['data' => ['#markup' => '<strong>' . htmlspecialchars($name) . '</strong><br/><small>' . htmlspecialchars($q['question_text'] ?? '') . '</small>'], 'class' => ['gd-question-cell']],
+            ['data' => ['#markup' => htmlspecialchars($topics_list)], 'class' => ['gd-topics-cell']],
+          ],
+          'no_striping' => TRUE,
+          'class' => ['gd-question-row'],
+        ];
+
+        // Row 2: Webform element selector stacked beneath, spanning both columns (with bottom border to separate blocks)
+        $question_rows[] = [
+          'data' => [
+            [
               'data' => [
                 '#type' => 'select',
-                '#options' => ['' => $this->t('Choose...')] + $element_options,
+                '#options' => ['' => $this->t('Choose a webform element...')] + $element_options,
                 // Use explicit name/value so the element posts like Smartsheet handler.
                 '#name' => "settings[question_element_map][$qid]",
                 '#value' => $default_value,
                 '#attributes' => [
-                  'style' => 'max-width: 300px;',
+                  'style' => 'width:100%; max-width: 100%;',
                 ],
                 '#required' => FALSE,
               ],
+              'colspan' => 2,
+              'class' => ['gd-mapping-element-cell'],
             ],
-          ];
-        }
+          ],
+          'no_striping' => TRUE,
+          'class' => ['gd-element-row'],
+        ];
+      }
     }
     catch (\Throwable $e) {
       // Log and proceed without mapping table.
       \Drupal::logger('portland_govdelivery')->error('Unable to build question mapping table: @msg', ['@msg' => $e->getMessage()]);
     }
 
-    $form['question_mappings'] = [
+    // Add question mappings section to form. Rename key with 'zz_' prefix so lexical ordering
+    // (if applied by parent logic) keeps it at the bottom. (#weight also set later.)
+    $form['zz_question_mappings'] = [
       '#type' => 'details',
       '#title' => $this->t('GovDelivery question to element mappings'),
       '#description' => $this->t('Map GovDelivery questions to webform element machine names. Only global questions and those associated with the selected topics are shown. Leave blank to skip sending a response for a question.'),
@@ -190,25 +255,24 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
     ];
 
     if (!empty($question_rows)) {
-      $form['question_mappings']['table'] = [
+      $form['zz_question_mappings']['table'] = [
         '#type' => 'table',
         '#header' => [
           'question' => $this->t('Question'),
           'topics' => $this->t('Topics'),
-          'element' => $this->t('Webform element'),
         ],
         '#rows' => $question_rows,
         '#attributes' => ['class' => ['govdelivery-questions-map-table']],
-        '#tree' => TRUE,
+        '#attached' => [
+          'library' => ['portland_govdelivery/handler_admin'],
+        ],
       ];
     }
     else {
-      $form['question_mappings']['empty'] = [
+      $form['zz_question_mappings']['empty'] = [
         '#markup' => '<p><em>' . $this->t('No questions available for mapping (check topics selection or admin cache).') . '</em></p>',
       ];
     }
-
-    return parent::buildConfigurationForm($form, $form_state);
   }
 
   /**
@@ -388,8 +452,8 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
    */
   public function ajaxRebuildQuestionMappings(array &$form, FormStateInterface $form_state) {
     // Ensure the element exists before returning.
-    if (isset($form['question_mappings'])) {
-      return $form['question_mappings'];
+    if (isset($form['zz_question_mappings'])) {
+      return $form['zz_question_mappings'];
     }
     // Fallback: return empty response if element not built yet.
     return ['#markup' => ''];
