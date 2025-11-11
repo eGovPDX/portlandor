@@ -212,6 +212,14 @@ elements: |-
     markup_verbal_testimony:
       '#type': webform_markup
       '#markup': '<p>Members of the public must sign up in advance to provide verbal testimony during the meeting by completing the form below or by calling <a href="tel:+1-503-823-4000">311 (503-823-4000)</a>. Registration for virtual testimony closes one hour prior to the start of the meeting. In-person testifiers must sign up before the agenda item is heard.</p>'
+    computed_verbal_testimony_info:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Verbal Testimony Info'
+      '#title_display': none
+      '#display_on': form
+      '#mode': html
+      '#template': "{{ drupal_field('field_verbal_testimony_info', 'relation', data.computed_latest_agenda_item_id ?? 0, { label: 'hidden' })|render }}"
+      '#whitespace': trim
     contact_first_name:
       '#type': textfield
       '#title': 'First Name'
@@ -378,6 +386,13 @@ elements: |-
     '#template': "{{ drupal_field('field_committee', 'node', data.doc_id ?? 0, { label: 'hidden' })|render|striptags|trim }}"
     '#mode': text
     '#whitespace': spaceless
+  computed_committee_tid:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Committee TID'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ drupal_field('field_committee', 'node', data.doc_id ?? 0, { label: 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim }}"
+    '#whitespace': spaceless
   computed_latest_agenda_item_id:
     '#type': webform_computed_twig
     '#title': 'Computed - Latest Agenda Item ID for Verbal Testimony'
@@ -433,6 +448,7 @@ elements: |-
         <hr>
         <h3>How to testify</h3>
         <p>The Council Clerk will call your name when it's your turn to testify. You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. State your name for the record when testifying during the meeting.</p>
+        <p><a class="btn-cta-outline" href="{{ drupal_url('node/' ~ (data.doc_id ?? 0) ~ '/testimony-order') }}"><strong>View testimony order for this item</strong></a></p>
         <p>If you are a lobbyist appearing on behalf of a lobbying entity, you must also declare which lobbying entity you are authorized to represent in your testimony. (The City's lobbying regulations can be found in <a href="/code/2/12">City Code Chapter 2.12</a>.)</p>
         <h4>Testifying virtually</h4>
         {% if data.contact_email %}
@@ -648,7 +664,7 @@ handlers:
         -
           ':input[name="testimony_type_no_verbal"]':
             value: written
-    weight: -50
+    weight: -49
     settings:
       column_mappings:
         3628542514122628: doc_id
@@ -679,9 +695,10 @@ handlers:
         -
           ':input[name="testimony_type_no_written"]':
             value: verbal
-    weight: -49
+    weight: -48
     settings:
       column_mappings:
+        5830527429595012: computed_committee_tid
         2344826964758404: doc_id
         6681077722965892: contact_first_name
         4963020357035908: contact_last_name
@@ -712,7 +729,7 @@ handlers:
         -
           ':input[name="testimony_type_no_written"]':
             value: verbal
-    weight: -48
+    weight: -46
     settings:
       column_mappings:
         6566033213050756: race_ethnicity
@@ -736,4 +753,45 @@ handlers:
     settings:
       element_id: doc_id
       error_message: 'The item you selected is no longer available for testimony.'
+  email_verbal:
+    id: email
+    handler_id: email_verbal
+    label: 'Send confirmation email (verbal testimony)'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="contact_email"]':
+          filled: true
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: _default
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Testimony Registration Received'
+      body: '<p>[webform_submission:values:computed_confirmation_message:raw]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
 variants: {  }
