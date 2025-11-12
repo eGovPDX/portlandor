@@ -214,9 +214,43 @@ class GovDeliveryClient
 
     // Build a lookup map of the subscriber's questions: name => details.
     $questionMap = $this->fetchSubscriberQuestionMap($encodedSubscriber, $username, $password, $endpoint);
-    if (empty($questionMap)) {
-      $this->logger->warning('No subscriber questions returned for %email; cannot map responses.', ['%email' => $email]);
-      return FALSE;
+    $fetchedEmpty = empty($questionMap);
+    if ($fetchedEmpty) {
+      $this->logger->warning('Subscriber questions list empty for %email; attempting account-level question fallback.', ['%email' => $email]);
+      // Fallback: attempt to load all questions from QuestionsProvider (cached account + topic level).
+      try {
+        /** @var \Drupal\portland_govdelivery\Service\QuestionsProvider $qp */
+        $qp = \Drupal::service('portland_govdelivery.questions_provider');
+        $allQuestions = $qp->getAllQuestions();
+        foreach ($allQuestions as $q) {
+          $name = strtolower($q['name'] ?? '');
+          $qid  = $q['id'] ?? '';
+          if ($name === '' || $qid === '') { continue; }
+          // Build simple map (answers only for select questions if present).
+          $ansLookup = [];
+          if (!empty($q['answers'])) {
+            foreach ($q['answers'] as $ans) {
+              $aText = strtolower($ans['text'] ?? '');
+              $aId = $ans['id'] ?? '';
+              if ($aText !== '' && $aId !== '') {
+                $ansLookup[$aText] = $aId;
+              }
+            }
+          }
+          $questionMap[$name] = [
+            'id' => $qid,
+            'type' => $q['response_type'] ?? '',
+            'answers' => $ansLookup,
+          ];
+        }
+        if (empty($questionMap)) {
+          $this->logger->warning('Fallback account-level questions empty for %email; aborting responses update.', ['%email' => $email]);
+          return FALSE;
+        }
+      } catch (\Throwable $e) {
+        $this->logger->error('Fallback questions load failed for %email: @msg', ['%email' => $email, '@msg' => $e->getMessage()]);
+        return FALSE;
+      }
     }
 
     // Construct responses payload.
@@ -224,16 +258,19 @@ class GovDeliveryClient
     $responses->addAttribute('type', 'array');
 
     $added = 0;
+    $matchedCodes = [];
+    $unmatchedCodes = [];
     foreach ($normalized as $code => $values) {
       $lookupKey = strtolower(trim((string) $code));
       if (!isset($questionMap[$lookupKey])) {
-        $this->logger->warning('Question code "%code" not found among subscriber questions for %email.', ['%email' => $email, '%code' => $code]);
+        $unmatchedCodes[] = $lookupKey;
         continue;
       }
       $qInfo = $questionMap[$lookupKey];
       $qType = $qInfo['type'];
       $qId = $qInfo['id']; // Base64-encoded question ID (to-param).
       $answerLookup = $qInfo['answers']; // map lower(answer-text) => encoded answer id.
+      $matchedCodes[] = $lookupKey;
 
       foreach ($values as $v) {
         $vStr = (string) $v;
@@ -262,13 +299,24 @@ class GovDeliveryClient
     }
 
     if ($added === 0) {
+      $this->logger->warning('No responses added for %email. Matched: @matched Unmatched: @unmatched', [
+        '%email' => $email,
+        '@matched' => implode(', ', $matchedCodes) ?: '[none]',
+        '@unmatched' => implode(', ', $unmatchedCodes) ?: '[none]',
+      ]);
       return FALSE;
     }
 
     $payload = $responses->asXML();
     // Log a small snippet for debugging; avoid angle-bracket stripping by encoding.
-    $this->logger->debug('GovDelivery responses PUT payload (base64-xml): @payload', [
-      '@payload' => base64_encode(substr($payload, 0, 3000)),
+    $this->logger->debug('GovDelivery responses PUT payload (first 1.5k chars): @snippet', [
+      '@snippet' => substr($payload, 0, 1500),
+    ]);
+    $this->logger->debug('GovDelivery responses detail for %email: matched=@matched unmatched=@unmatched total_added=@added', [
+      '%email' => $email,
+      '@matched' => implode(', ', $matchedCodes) ?: '[none]',
+      '@unmatched' => implode(', ', $unmatchedCodes) ?: '[none]',
+      '@added' => $added,
     ]);
 
     try {

@@ -384,17 +384,135 @@ class GovDeliverySubscribeHandler extends WebformHandlerBase {
       return;
     }
 
+    // Build question answers array from mapped elements.
+    $answers = [];
+    $question_map = (array) ($this->configuration['question_element_map'] ?? []);
+    
+    // Build a lookup from question ID to question name for the answers array.
+    // GovDeliveryClient::updateSubscriberResponses expects question names as keys.
+    $all_questions = [];
+    try {
+      /** @var \Drupal\portland_govdelivery\Service\QuestionsProvider $qp */
+      $qp = \Drupal::service('portland_govdelivery.questions_provider');
+      $all_questions = $qp->getAllQuestions();
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('portland_govdelivery')->error('GovDelivery handler: Failed to load questions for mapping: @msg', ['@msg' => $e->getMessage()]);
+    }
+    
+    foreach ($question_map as $question_id => $element_key) {
+      if ($element_key === '' || !array_key_exists($element_key, $data)) {
+        // Skip unmapped or missing elements.
+        continue;
+      }
+      
+      // Look up the question name from the question ID.
+      $question_name = NULL;
+      $question_def = NULL;
+      if (isset($all_questions[$question_id])) {
+        $question_def = $all_questions[$question_id];
+        $question_name = $question_def['name'] ?? NULL;
+      }
+      
+      if (!$question_name) {
+        \Drupal::logger('portland_govdelivery')->warning('GovDelivery handler: Question ID %qid not found or has no name; skipping.', ['%qid' => $question_id]);
+        continue;
+      }
+      
+      $raw_value = $data[$element_key];
+
+      // If this is a select-style GovDelivery question, normalize values to answer texts.
+      $is_select = FALSE;
+      $id_to_text = [];
+      $text_lookup = [];
+      if (is_array($question_def)) {
+        $rt = strtolower((string) ($question_def['response_type'] ?? ''));
+        $is_select = str_starts_with($rt, 'select_') || in_array($rt, ['select_one', 'select_multi'], TRUE);
+        if (!empty($question_def['answers']) && is_array($question_def['answers'])) {
+          foreach ($question_def['answers'] as $ans) {
+            $aid = (string) ($ans['id'] ?? '');
+            $atext = (string) ($ans['text'] ?? '');
+            if ($aid !== '' && $atext !== '') {
+              $id_to_text[$aid] = $atext;
+              $text_lookup[strtolower($atext)] = $atext;
+            }
+          }
+        }
+      }
+
+      // Expand into a list of values.
+      $vals = [];
+      if (is_array($raw_value)) {
+        $vals = array_values(array_filter(array_map('strval', $raw_value), static fn($v) => trim($v) !== ''));
+      }
+      else {
+        $s = trim((string) $raw_value);
+        if ($s !== '') {
+          // Split common delimiters
+          $vals = preg_split('/[\r\n,|;]+/', $s);
+          $vals = array_values(array_filter(array_map('trim', $vals), static fn($v) => $v !== ''));
+        }
+      }
+
+      if (empty($vals)) {
+        continue;
+      }
+
+      if ($is_select) {
+        // Map codes/ids to display texts when possible so client can resolve answer-id.
+        $mapped = [];
+        foreach ($vals as $v) {
+          $vl = strtolower($v);
+          if (isset($text_lookup[$vl])) {
+            $mapped[] = $text_lookup[$vl];
+          }
+          elseif (isset($id_to_text[$v])) {
+            $mapped[] = $id_to_text[$v];
+          }
+          else {
+            // Fallback: keep as-is; client may still send with nil answer-id.
+            $mapped[] = $v;
+          }
+        }
+        // De-duplicate while preserving order.
+        $seen = [];
+        $norm = [];
+        foreach ($mapped as $m) {
+          if (!isset($seen[$m])) { $seen[$m] = TRUE; $norm[] = $m; }
+        }
+        // For multi-values, pass as array; for single, pass as string.
+        $answers[$question_name] = (count($norm) === 1) ? $norm[0] : $norm;
+      }
+      else {
+        // Non-select questions: join arrays back to a string.
+        $answers[$question_name] = (count($vals) === 1) ? $vals[0] : implode(', ', $vals);
+      }
+    }
+
     try {
       /** @var \Drupal\portland_govdelivery\Service\GovDeliveryClient $client */
       $client = \Drupal::service('portland_govdelivery.client');
-      $result = $client->subscribeUser($email, $topics);
+      if (!empty($answers)) {
+        \Drupal::logger('portland_govdelivery')->debug('GovDelivery handler prepared answers keys: @keys', [
+          '@keys' => implode(', ', array_keys($answers)),
+        ]);
+      } else {
+        \Drupal::logger('portland_govdelivery')->debug('GovDelivery handler: No non-empty answers prepared for submission.');
+      }
+      $result = $client->subscribeUser($email, $topics, NULL, $answers);
       
-      \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to %topics from submission %sid (webform %wid).', [
+      $log_context = [
         '%email' => $email,
         '%topics' => implode(', ', $topics),
         '%sid' => $sid,
         '%wid' => $webform_id,
-      ]);
+      ];
+      if (!empty($answers)) {
+        $log_context['%answers'] = implode(', ', array_keys($answers));
+        \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to topics %topics with answers for questions %answers from submission %sid (webform %wid).', $log_context);
+      } else {
+        \Drupal::logger('portland_govdelivery')->info('GovDelivery handler: Subscribed %email to topics %topics from submission %sid (webform %wid).', $log_context);
+      }
     }
     catch (\Throwable $e) {
       \Drupal::logger('portland_govdelivery')->error('GovDelivery handler: Failed subscribing %email on submission %sid (webform %wid): @msg', [
