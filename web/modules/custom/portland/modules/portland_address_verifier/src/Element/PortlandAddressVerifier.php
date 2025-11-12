@@ -42,11 +42,20 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
 
+    $element['location_verification_status'] = [
+      '#type' => 'hidden',
+      '#title' => t('Address Verification'),
+      '#attributes' => [ 'id' => 'location_verification_status' ],
+      '#required_error' => 'The address is not verified.',
+      '#element_validate' => [[static::class, 'validateVerificationStatusElement']],
+    ];
     $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Street Address'),
       '#id' => 'location_address',
-      '#attributes' => ['autocomplete' => 'off'],
+      '#wrapper_attributes' => [
+        'class' => ['mb-0'],
+      ],
       '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
@@ -166,13 +175,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => t('Address Label'),
       '#attributes' => [ 'id' => 'location_address_label']
-    ];
-    $element['location_verification_status'] = [
-      '#type' => 'hidden',
-      '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status' ],
-      '#required_error' => 'The address is not verified.',
-      '#element_validate' => [[static::class, 'validateVerificationStatusElement']],
     ];
     $element['location_capture_field'] = [
       '#type' => 'hidden',

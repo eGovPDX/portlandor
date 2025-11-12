@@ -81,6 +81,9 @@ A dot-notated string that defines the property path to retrieve a value from a n
 The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
 This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
+**verification_required**<br>
+OBSOLETE. This custom property is no longer used. To require address verification, set the location_verification_status sub element to be required in the element configuration.
+
 **secondary_query_capture_field**<br>
 The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
@@ -105,7 +108,9 @@ The remedy text displayed after the bold not_verified_reasons in the not-verifie
 Default value: "A verified address is required. Please try again."
 
 **secondary_queries**<br>
-An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either a detail_id (taxlotId) or geometry (x, y) must be passed. See the examples below. 
+An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either geometry (x, y) or a detail_id (taxlotId) must be passed. When querying by geometry, pass the string `{"x":${x}, "y":${y}}`. The query functions will replace ${x} and ${y} with the coordinates that were provided by the autocomplete and verification functions. When querying by detail_id, the API expects the taxlotId. Pass an empty string or "taxlotId" as the value, and the function will use the previously retrieved taxlotId value.
+
+See the examples below. 
 
 The path property is dot-notated string that defines the property path to retrieve a value from a nested JSON object. The path must exactly match the structure of the JSON object. If any part of the path is invalid or missing, the function will return `undefined`. Supports:
 - **Nested properties** using dot syntax  
@@ -149,5 +154,13 @@ secondary_queries:
     capture:
       - path: 'general.percent_slope'
         field: 'hidden_percent_slope'
-</pre>
+  - api: 'https://www.portlandmaps.com/api/detail/'
+    api_args:
+      - detail_type: hazard-flood
+      - sections: general
+      - detail_id: taxlotId
+      - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+    capture:
+      - path: general.percent_slope
+        field: q6_project_site_slope</pre>
  
