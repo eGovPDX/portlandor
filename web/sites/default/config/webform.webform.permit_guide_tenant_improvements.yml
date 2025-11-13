@@ -169,21 +169,20 @@ elements: |-
       '#title_display': none
       '#node_alias_path': /ppd/content-component/disclaimer-permit-guide
       '#render_inline': 0
+      '#open_links_in_new_tab': 0
     disclaimer_permit_guide_email:
       '#type': portland_node_fetcher
       '#title': 'Disclaimer - Permit Guide - Email'
       '#title_display': none
       '#node_alias_path': /ppd/content-component/disclaimer-permit-guide-email
       '#render_inline': 0
+      '#open_links_in_new_tab': 0
   test:
     '#type': hidden
     '#title': 'Test mode'
   returning_user:
     '#type': hidden
     '#title': 'Returning User?'
-  ajax_indicator:
-    '#type': portland_ajax_indicator
-    '#title': 'Ajax Indicator'
   container_project_details:
     '#type': container
     '#states':
@@ -201,13 +200,22 @@ elements: |-
       q0_project_address:
         '#type': portland_address_verifier
         '#title': Address
+        '#location_verification_status__required': true
+        '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one.'
         '#location_address__required': true
+        '#unit_number__access': false
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
-        '#find_unincorporated': 1
-        '#require_portland_city_limits': 1
-        '#not_verified_remedy': 'A verified address is required. Please try again.'
+        '#location_state__wrapper_attributes':
+          class:
+            - d-none
+        '#find_unincorporated': 0
+        '#require_portland_city_limits': 0
+        '#not_verified_heading': "We're unable to find this address. Please try again."
+        '#not_verified_reasons': 'This guide requires a valid address within the <a href="https://www.portland.gov/ppd">Portland Permitting & Development bureau</a> service area.'
+        '#not_verified_remedy_required': 'If you need assistance, contact us at <a href="mailto:ppd@portlandoregon.gov">ppd@portlandoregon.gov</a>.'
+        '#verify_button_text': Find
         '#lookup_taxlot': 1
         '#secondary_queries':
           - api: 'https://www.portlandmaps.com/api/detail/'
@@ -268,8 +276,23 @@ elements: |-
         '#states':
           visible:
             ':input[name="q0_project_address[location_verification_status]"]':
-              '!value': Verified
-        '#markup': '<p><strong>Please enter and verify a property address in Portland to begin.</strong></p>'
+              empty: true
+        '#markup': '<p><strong>Find an address to begin using this guide.</strong> It must be in an area that''s managed by the <a href="https://www.portland.gov/ppd" target="_blank">Portland Permitting &amp; Development bureau</a>.</p>'
+      computed_attribution_message:
+        '#type': webform_computed_twig
+        '#title': 'Computed attribution message'
+        '#title_display': none
+        '#states':
+          visible:
+            ':input[name="q0_project_address[location_verification_status]"]':
+              filled: true
+        '#wrapper_attributes':
+          class:
+            - mt-0
+        '#display_on': form
+        '#mode': html
+        '#template': "<p><em>Address and zoning data provided by <a href=\"https://portlandmaps.com/search/?query={{ data.q0_project_address.location_address }}\" target=\"_blank\">PortlandMaps.com <em class=\"fa-solid fa-arrow-up-right-from-square\">\_</em></a></em></p>"
+        '#ajax': true
       computed_valid_zone:
         '#type': webform_computed_twig
         '#title': 'Is the zone valid?'
@@ -278,7 +301,7 @@ elements: |-
             - d-none
         '#display_on': form
         '#mode': text
-        '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX','IR','CI1','IG1','IG2','IH'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
+        '#template': "{% if data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX','IR','CI1','IG1','IG2','IH'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
         '#whitespace': trim
         '#ajax': true
       computed_invalid_zone_warning:
@@ -354,8 +377,7 @@ elements: |-
           - mb-10
       q2_change_the_building_structure_or_size:
         '#type': radios
-        '#title': 'Will this project change, move, enlarge, or repair the building?'
-        '#description': '<p>This includes physical changes to the building.</p>'
+        '#title': 'Will this project add, remove, or change any fixed structure like a wall, platform, or stage?'
         '#description_display': before
         '#options': yes_no
         '#required': true
@@ -496,9 +518,13 @@ elements: |-
     return_link:
       '#type': webform_computed_twig
       '#title': 'Return Link'
-      '#display_on': none
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#display_on': form
       '#template': |
         https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}{{ webform_token('[current-page:url:path]', webform_submission, [], options) }}?returning_user=1&q0_project_address[location_address]={{ data.q0_project_address.location_address }}&q0_project_address[location_city]={{ data.q0_project_address.location_city }}&q0_project_address[location_state]={{ data.q0_project_address.location_state }}&q0_project_address[location_zip]={{ data.q0_project_address.location_zip }}&q0_1_environmental_overlay_zone={{ data.q0_1_environmental_overlay_zone }}&q0_2_greenway_overlay_zone={{ data.q0_2_greenway_overlay_zone }}&q0_3_historic_landmark={{ data.q0_3_historic_landmark }}&q2_change_the_building_structure_or_size={{ data.q2_change_the_building_structure_or_size }}&q3_change_how_space_is_used={{ data.q3_change_how_space_is_used }}&q4_structural_changes={{ data.q4_structural_changes }}&q5_occupancy_change={{ data.q5_occupancy_change }}&q6_occupancy_change_increase_or_decrease={{ data.q6_occupancy_change_increase_or_decrease }}&q7_include_restaurant={{ data.q7_include_restaurant }}&q8_electrical_work={{ data.q8_electrical_work }}&q9_plumbing_work={{ data.q9_plumbing_work }}&q10_mechanical_work={{ data.q10_mechanical_work }}&q11_fire_alarm_changes={{ data.q11_fire_alarm_changes }}&q12_tall_racks_shelves={{ data.q12_tall_racks_shelves }}&q13_empty_unfinished_space={{ data.q13_empty_unfinished_space }}&q14_street_trees={{ data.q14_street_trees }}&email_address_optional={{ data.email_address_optional }}&disclaimer_confirmation={{ data.disclaimer_confirmation }}
+      '#ajax': true
     computed_permit_required:
       '#type': webform_computed_twig
       '#title': 'Computed Permit Required'
@@ -620,10 +646,6 @@ elements: |-
         <div class="bg-info p-3 mb-5">
           NOTE: These results are being viewed in reviewer mode, with all possible options displayed for testing purposes. To exit reviewer mode, remove the parameter <strong>test=true</strong> from the URL.
         </div>
-        {% endif %}
-
-        {% if data.computed_valid_zone == "No" %}
-          <div class="mb-5">{{ data.computed_invalid_zone_warning }}</div>
         {% endif %}
 
         <ol class="process-list mb-10">
@@ -868,6 +890,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes:
     class:
       - permit-guide
@@ -937,7 +960,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<p>This permit guide has been generated based on the details of your project. If you provided an email address in the form, you'll get a copy by email too.&nbsp;</p><h2>Your project guide</h2><p>We've created a guide to help you follow the City of Portland's building rules based on the details you provided about your project.</p><div class=\"mb-10\">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>"
+  confirmation_message: '<h2>Your project guide</h2><p>We''ve created a guide to help you follow the City of Portland''s building rules based on the details you provided about your project.</p><div class="mb-10">[webform_submission:values:computed_results:html]</div><h3>Your project details</h3><div>[webform_submission:values:computed_project_details:html]</div>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -1049,6 +1072,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
 variants: {  }
