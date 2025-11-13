@@ -966,14 +966,6 @@ switch ($env) {
 
 $settings['search_api_solr.site_hash'] = 'portland';
 
-// Overwrite Google Tag Manager environment setting in 'live' production site.
-if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
-  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_tag.container.portland.gov']['environment_id'] = 'env-1';
-    $config['google_tag.container.portland.gov']['environment_token'] = 'gX0sWBBfUHwzWER-y90CyQ';
-  }
-}
-
 // Pantheon workaround for New Relic segmentation fault issue (https://discuss.newrelic.com/t/segmentation-fault-in-9-7-0-258/94830/20)
 // Disables New Relic for CLI context to prevent CircleCI build failures
 if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
