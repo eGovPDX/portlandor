@@ -38,19 +38,81 @@ elements: |-
           ':input[name="report_staff_reason"]':
             value: staff_existing_request
       '#required': true
-    report_staff_issue_resolution:
-      '#type': webform_select_other
-      '#title': 'Issue resolution'
+    report_staff_resolution_status:
+      '#type': select
+      '#title': 'Resolution status'
       '#options':
-        'No findings; no action taken': 'No findings; no action taken'
-        'No findings; action taken': 'No findings; action taken'
-        'Findings; action taken': 'Findings; action taken'
         Dismissed: Dismissed
-        'Accommodation made': 'Accommodation made'
+        'No findings, No action': 'No findings, No action'
+        'No findings, Action taken': 'No findings, Action taken'
+        'Findings, Action taken': 'Findings, Action taken'
       '#states':
         visible:
           ':input[name="report_staff_issue_resolved"]':
             value: 'Yes'
+      '#required': true
+    report_staff_resolution_substatus_dismissed:
+      '#type': webform_select_other
+      '#title': 'Dismissal reason'
+      '#options':
+        'Does not meet criteria - not based on disability, race, color or national origin': 'Does not meet criteria - not based on disability, race, color or national origin'
+        "Does not meet criteria - outside of the City's jurisdiction": "Does not meet criteria - outside of the City's jurisdiction"
+        'Complainant nonresponsive to requests for additional information': 'Complainant nonresponsive to requests for additional information'
+        'Complainant did not provide any contact information, or all forms of contact information are non-functioning': 'Complainant did not provide any contact information, or all forms of contact information are non-functioning'
+        'Withdrawn by complainant': 'Withdrawn by complainant'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_status"]':
+            value:
+              pattern: Dismissed|No findings, No action
+      '#required': true
+    report_staff_nonresponsive_attempts:
+      '#type': select
+      '#title': 'How many attempts were made?'
+      '#options':
+        'One attempt': 'One attempt'
+        'Two attempts': 'Two attempts'
+        'Three or more attempts': 'Three or more attempts'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_dismissed[select]"]':
+            value: 'Complainant nonresponsive to requests for additional information'
+      '#required': true
+    report_staff_date_withdrawn:
+      '#type': date
+      '#title': 'Date withdrawn?'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_dismissed[select]"]':
+            value: 'Withdrawn by complainant'
+      '#required': true
+    report_staff_resolution_substatus_action_taken:
+      '#type': webform_select_other
+      '#title': 'Action taken'
+      '#options':
+        'Public Policy, program, service, activity, etc. change': 'Public Policy, program, service, activity, etc. change'
+        'Event accommodation': 'Event accommodation'
+        'Effective and meaningful communication (including City materials)': 'Effective and meaningful communication (including City materials)'
+        'Engagement / Community Involvement changes': 'Engagement / Community Involvement changes'
+        'Remove barrier': 'Remove barrier'
+        'Administrative, operational, decision-making, governance, performance management, etc. changes': 'Administrative, operational, decision-making, governance, performance management, etc. changes'
+        'Employee training and development': 'Employee training and development'
+        'Program performance monitoring and evaluation': 'Program performance monitoring and evaluation'
+        'Staff performance monitoring and evaluation': 'Staff performance monitoring and evaluation'
+        'Coordination with BHR for investigation and actions': 'Coordination with BHR for investigation and actions'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_status"]':
+            value:
+              pattern: No findings, Action taken|Findings, Action taken
+      '#required': true
+    report_staff_admin_changes:
+      '#type': textarea
+      '#title': 'Please describe action(s) taken'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_action_taken[select]"]':
+            value: 'Administrative, operational, decision-making, governance, performance management, etc. changes'
       '#required': true
     report_staff_resolution_date:
       '#type': date
@@ -62,11 +124,20 @@ elements: |-
       '#required': true
     report_staff_responsible_party:
       '#type': textfield
-      '#title': 'Primary bureau, office, employee, event, or program associated with the resolution.'
+      '#title': 'Primary bureau, office, event, or program associated with the resolution'
       '#states':
         visible:
           ':input[name="report_staff_issue_resolved"]':
-            value: 'Yes'
+            checked: true
+      '#required': true
+    report_staff_email:
+      '#type': textfield
+      '#title': 'Email of City staff member completing this form'
+      '#default_value': '[current-user:mail]'
+      '#states':
+        visible:
+          ':input[name="report_staff_issue_resolved"]':
+            checked: true
       '#required': true
     report_staff_resolution_details:
       '#type': textarea
@@ -80,7 +151,7 @@ elements: |-
       '#required': true
     report_staff_issue_date:
       '#type': date
-      '#title': 'Date of reported issue'
+      '#title': 'Date issue reported to the City'
       '#required': true
       '#states':
         visible:
@@ -660,7 +731,7 @@ handlers:
       tags: 'drupal webform discrimination'
       priority: normal
       status: new
-      group_id: '4763233132567'
+      group_id: '4549352062487'
       assignee_id: ''
       type: incident
       collaborators: ''
@@ -703,20 +774,17 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: ''
       parent_ticket_id_field: ''
-  zendesk_update_interaction_request:
+  zendesk_update_request_with_resolution_url:
     id: zendesk_update_ticket
-    handler_id: zendesk_update_interaction_request
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    handler_id: zendesk_update_request_with_resolution_url
+    label: 'Update Zendesk request with resolution URL'
+    notes: 'Updates the new ticket with the resolution URL including ticket ID in a private note.'
     status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -46
+    weight: 0
     settings:
-      comment: "<h1>Discrimination Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment: '<a href="https://[site:url-brief]/form/report-discrimination-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]">Resolution form</a>'
       comment_private: 1
+      skip_attachments: 1
       tags: ''
       priority: ''
       status: ''
@@ -724,10 +792,9 @@ handlers:
       assignee_id: ''
       type: ''
       collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
+      custom_fields: ''
+      ticket_id_field: report_ticket_id
       ticket_form_id: ''
-      skip_attachments: false
   zendesk_new_request_if_disability_checked:
     id: zendesk
     handler_id: zendesk_new_request_if_disability_checked
@@ -749,13 +816,13 @@ handlers:
       tags: 'drupal webform discrimination'
       priority: normal
       status: new
-      group_id: '4763233132567'
+      group_id: '4549352062487'
       assignee_id: ''
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_discrimination'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '12923141466007'
+      ticket_form_id: ''
       recipient: ''
       ticket_fork_field: ''
       is_child_incident: ''

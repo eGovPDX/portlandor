@@ -318,7 +318,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     if(!empty($ticket_forms) ){
       $form['ticket_form_id']['#type'] = 'select';
-      $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
+      $form['ticket_form_id']['#options'] = ['' => '- No Change -'] + array_column($ticket_forms, 'name', 'id');
       $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
     }
 
@@ -642,6 +642,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // don't send empty assignee; get it from previous ticket
       if (!isset($request['assignee_id']) || $request['assignee_id'] == "") {
         $request['assignee_id'] = $ticket->assignee_id;
+      }
+      // don't send empty ticket form; get it from previous ticket
+      if (!isset($request['ticket_form_id']) || $request['ticket_form_id'] == "") {
+        $request['ticket_form_id'] = $ticket->ticket_form_id;
       }
       // if tags not set, use previous value
       if (!isset($request['tags']) || $request['tags'] == "") {
