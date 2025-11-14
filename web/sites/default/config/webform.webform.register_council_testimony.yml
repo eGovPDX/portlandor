@@ -197,9 +197,9 @@ elements: |-
             value: verbal
           ':input[name="computed_verbal_testimony_link"]':
             value: ''
-    is_gt_1hr_before:
+    is_lt_1hr_before:
       '#type': webform_computed_twig
-      '#title': 'Computed - Greater than 1 hour before session'
+      '#title': 'Computed - Less than 1 hour before session'
       '#title_display': none
       '#display_on': form
       '#template': |-
@@ -434,35 +434,43 @@ elements: |-
     '#mode': text
     '#template': |-
       {% if data.testimony_type == 'written' or data.testimony_type_no_verbal == 'written' %}
-        <h2>Your testimony has been received</h2>
+        <p><strong>Your testimony has been received.</strong></p>
         <p><a href="/node/{{ data.doc_id }}/testimony">View all testimony submitted for <strong>Council Document {{ data.computed_council_document }}</strong></a></p>
       {% else %}
         {% set session_id = drupal_field('field_council_session', 'relation', data.computed_latest_agenda_item_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
         {% set agenda_id = drupal_field('field_council_agenda', 'relation', session_id ?? 0, { 'label': 'hidden', 'type': 'entity_reference_entity_id' })|render|striptags|trim %}
-        <h2>Your registration has been received</h2>
+        <p>
+          <strong>Your registration has been received.</strong><br>
+          Please see below for important information about participating in the meeting.
+        </p>
         <p><strong>Document: </strong> <strong><a href="/node/{{ data.doc_id }}">{{ data.computed_council_document }}</a></strong> - {{ drupal_field('field_full_document_title', 'node', data.doc_id ?? 0, { 'label': 'hidden' })|render|striptags|trim }}</p>
-        <hr>
-        <h3>{{ data.computed_committee_name }} meeting</h3>
+        <p><a class="btn-cta" href="{{ drupal_url('node/' ~ (data.doc_id ?? 0) ~ '/testimony-order') }}">View testimony order for this item</a></p>
+        <div class="border-top border-light border-2 my-8"></div>
+        <h2>Meeting information</h2>
         <p><strong>Date/time: </strong>{{ data.computed_latest_session_date }}</p>
         <p><a class="btn-cta-outline" href="{{ drupal_url('node/' ~ agenda_id, { 'fragment': 'relation-' ~ data.computed_latest_agenda_item_id }) }}">View agenda for {{ data.computed_committee_name }}</a></p>
-        <hr>
-        <h3>How to testify</h3>
-        <p>The Council Clerk will call your name when it's your turn to testify. You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. State your name for the record when testifying during the meeting.</p>
-        <p><a class="btn-cta-outline" href="{{ drupal_url('node/' ~ (data.doc_id ?? 0) ~ '/testimony-order') }}"><strong>View testimony order for this item</strong></a></p>
+        <div class="border-top border-light border-2 my-8"></div>
+        <h2>How to testify</h2>
+        <p>City Council meetings are held in a hybrid format with both in-person and virtual participation (virtual testimony registration closes one hour before the meeting start time). The Council Clerk will call your name when it's your turn to testify. State your name for the record when testifying during the meeting.</p>
+        <p>You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. A timer in the meeting will count down your remaining time with an audible alert when 30 seconds remain and again when your time is finished.</p>
         <p>If you are a lobbyist appearing on behalf of a lobbying entity, you must also declare which lobbying entity you are authorized to represent in your testimony. (The City's lobbying regulations can be found in <a href="/code/2/12">City Code Chapter 2.12</a>.)</p>
-        <h4>Testifying virtually</h4>
-        {% if data.contact_email %}
+        <h3>Testifying virtually</h3>
+        {% if data.is_lt_1hr_before != "" %}
+        <p>You registered less than one hour before the meeting, <strong>so you must appear in-person to testify.</strong></p>
+        {% elseif data.contact_email %}
         <p>Testifiers have the option to participate in-person or virtually. Since you provided your email address, you will receive information to participate in the meeting and a Zoom link no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invitation).</p>
         {% else %}
         <p>Testifiers have the option to participate in-person or virtually. Since you didn't provide an email address, you cannot testify virtually. Please see the instructions below to testify in-person, or register again with your email address.</p>
         {% endif %}
-        <h4>Testifying in-person</h4>
-        <p>Council meetings are held at City Hall, in the Council Chambers on the second floor. The address is <strong>1221 SW Fourth Avenue, Portland, OR 97204</strong> <a href="https://www.google.com/maps/dir//1221%20SW%20Fourth%20Avenue,%20Portland,%20OR%2097204">(get directions)</a>.</p>
-        <p>Wheelchair access is available via the Fourth Avenue entrance; there are two lobby elevators to access chambers on the second floor.</p>
-        <p>Council Chambers open 15 minutes before the meeting starts.</p>
-        <p><a href="/auditor/council-clerk/city-hall">Learn more about visiting City Hall to attend a Council meeting</a></p>
-        <hr>
-        <p><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p>
+        <h3>Testifying in-person</h3>
+        <p>
+          Council meetings are held at City Hall, in the Council Chambers on the second floor. The address is <strong>1221 SW Fourth Avenue, Portland, OR 97204</strong> <a href="https://www.google.com/maps/dir//1221%20SW%20Fourth%20Avenue,%20Portland,%20OR%2097204">(get directions)</a>.<br>
+          Wheelchair access is available via the Fourth Avenue entrance; there are two lobby elevators to access chambers on the second floor.
+        </p>
+        <p>
+          Council Chambers open 15 minutes before the meeting starts.<br>
+          <a href="/auditor/council-clerk/city-hall">Learn more about visiting City Hall to attend a Council meeting</a>
+        </p>
       {% endif %}
 css: ''
 javascript: ''
@@ -505,6 +513,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -571,7 +580,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message:raw]</p>'
+  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message:raw]</p><hr><p><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -767,21 +776,21 @@ handlers:
     settings:
       states:
         - completed
-      to_mail: _default
+      to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
       bcc_mail: ''
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
-      from_mail: _default
+      from_mail: councilclerk@portlandoregon.gov
       from_options: {  }
-      from_name: _default
+      from_name: 'Council Clerk'
       reply_to: ''
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: 'Testimony Registration Received'
-      body: '<p>[webform_submission:values:computed_confirmation_message:raw]</p>'
+      subject: 'Portland City Council Public Testimony Confirmation'
+      body: '<p>[webform_submission:values:computed_confirmation_message:raw]</p><p>Please reply to this email with any questions.</p><p>Thank you,<br><strong>Council Clerk’s Office</strong><br>City Hall, 1221 SW 4th Avenue, Room 130<br>Portland, OR 97204<br><a href="https://www.portland.gov/council-clerk">portland.gov/council-clerk</a><br><a href="/council-clerk/resources/sign-receive-weekly-agenda-updates">Subscribe to receive City Council agenda notifications</a></p><p><img alt="" src="https://www.portland.gov/sites/default/files/2023/council-clerk-logo-for-email-signature.png" width="300"></p><p>Traducción e Interpretación | Biên Dịch và Thông Dịch | अनुवादन तथा व्याख्या<br>口笔译服务 | Устный и письменный перевод | Turjumaad iyo Fasiraad<br>Письмовий і усний переклад | Traducere și interpretariat | Chiaku me Awewen Kapas</p><p>Translation and Interpretation: 503-823-3561</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
