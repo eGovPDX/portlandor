@@ -203,7 +203,7 @@ elements: |-
       '#title_display': none
       '#display_on': form
       '#template': |-
-        {% if data.computed_latest_session_date and data.computed_latest_session_date|date('U') - 'now'|date('U') < 3600%}
+        {% if data.computed_latest_session_date and data.computed_latest_session_date|date('U') - 'now'|date('U') < 3600 %}
         <div class="webform-alert alert alert--warning">
         <p><strong>Virtual testimony registration is now closed. Complete the form below to testify in-person.</strong></p>
         </div>
@@ -445,6 +445,7 @@ elements: |-
         </p>
         <p><strong>Document: </strong> <strong><a href="/node/{{ data.doc_id }}">{{ data.computed_council_document }}</a></strong> - {{ drupal_field('field_full_document_title', 'node', data.doc_id ?? 0, { 'label': 'hidden' })|render|striptags|trim }}</p>
         <p><a class="btn-cta" href="{{ drupal_url('node/' ~ (data.doc_id ?? 0) ~ '/testimony-order') }}">View testimony order for this item</a></p>
+        {{ drupal_field('field_verbal_testimony_info', 'relation', data.computed_latest_agenda_item_id ?? 0, { label: 'hidden' })|render }}
         <div class="border-top border-light border-2 my-8"></div>
         <h2>Meeting information</h2>
         <p><strong>Date/time: </strong>{{ data.computed_latest_session_date }}</p>
@@ -455,7 +456,8 @@ elements: |-
         <p>You'll have three minutes to testify unless otherwise stated on the agenda or at the meeting. A timer in the meeting will count down your remaining time with an audible alert when 30 seconds remain and again when your time is finished.</p>
         <p>If you are a lobbyist appearing on behalf of a lobbying entity, you must also declare which lobbying entity you are authorized to represent in your testimony. (The City's lobbying regulations can be found in <a href="/code/2/12">City Code Chapter 2.12</a>.)</p>
         <h3>Testifying virtually</h3>
-        {% if data.is_lt_1hr_before != "" %}
+        {% set is_lt_1hr_before = data.computed_latest_session_date and data.computed_latest_session_date|date('U') - 'now'|date('U') < 3600 %}
+        {% if is_lt_1hr_before %}
         <p>You registered less than one hour before the meeting, <strong>so you must appear in-person to testify.</strong></p>
         {% elseif data.contact_email %}
         <p>Testifiers have the option to participate in-person or virtually. Since you provided your email address, you will receive information to participate in the meeting and a Zoom link no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invitation).</p>
