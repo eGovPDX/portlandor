@@ -996,10 +996,9 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
   $settings['cache_prefix']['default'] = 'pantheon-redis';
 
   $settings['cache']['bins']['form'] = 'cache.backend.database'; // Use the database for forms
-  $settings['cache']['bins']['bootstrap'] = 'cache.backend.redis';
-  $settings['cache']['bins']['render'] = 'cache.backend.redis';
-  $settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.redis';
-  $settings['cache']['bins']['page'] = 'cache.backend.redis';
+  $settings['cache']['bins']['bootstrap'] = 'cache.backend.memory';
+  $settings['cache']['bins']['render'] = 'cache.backend.memory';
+  $settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.memory';
   
   // Apply changes to the container configuration to make better use of Redis.
   // This includes using Redis for the lock and flood control systems, as well
