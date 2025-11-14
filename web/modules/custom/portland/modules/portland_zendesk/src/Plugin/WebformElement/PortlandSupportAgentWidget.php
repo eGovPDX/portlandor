@@ -4,6 +4,8 @@ namespace Drupal\portland_zendesk\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\Component\Utility\Html;
 
 /**
  * Provides a 'portland_support_agent_widget' element.
@@ -31,24 +33,35 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
    */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
+    $e = static fn($s) => Html::escape($s);
 
-    // this text string is used as a display value for the field value, and is what is returned by the parent
-    // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
-    // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
-    // specified in the token, such as [webform_submission:values:location:place_name].
-    $lines = [];
-    $line = "<h2>Customer Service Details</h2>";
-    if (isset($value['employee_email']) && $value['employee_email']) {
-      $line .= 'Form submitted by: ' . $value['employee_email'];
+    $parts = [];
+
+    if (!empty($value['employee_email'])) {
+      $parts[] = '<strong>Form submitted by:</strong> ' . $e($value['employee_email']);
     }
-    if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
-      $line .= 'Zendesk request number: ' . $value['zendesk_request_number'];
+
+    if (!empty($value['zendesk_request_number'])) {
+      $parts[] = '<strong>Zendesk request number:</strong> ' . $e($value['zendesk_request_number']);
     }
-    if (isset($value['employee_notes_panel']['employee_notes']) && $value['employee_notes_panel']['employee_notes']) {
-      $line .= 'Employee notes: ' . $value['employee_notes_panel']['employee_notes'];
+
+    if (!empty($value['employee_notes_panel']['employee_notes'])) {
+      // Preserve line breaks in notes.
+      $notes = nl2br($e($value['employee_notes_panel']['employee_notes']));
+      $parts[] = '<strong>Employee notes:</strong> ' . $notes;
     }
-    $lines[] = $line;
-    return $lines;
+
+    $markup = '<h2>Customer Service Details</h2>';
+    if ($parts) {
+      $markup .= '<p>' . implode('<br />', $parts) . '</p>';
+    }
+
+    // For composites, return a LIST of render arrays.
+    return [
+      [
+        '#markup' => Markup::create($markup),
+      ],
+    ];
   }
 
   /**

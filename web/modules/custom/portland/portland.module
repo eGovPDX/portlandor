@@ -46,7 +46,7 @@ function getGroupIdsByEntity($entity)
 
   $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
-    $group_ids[] = $group_content->getGroup()->id();
+    $group_ids[] = $group_content->getGroup()?->id();
   }
 
   return $group_ids;
@@ -180,6 +180,7 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('EventDateTime', []);
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
+  $node->addConstraint('LinkUrl', []);
 }
 
 /**
@@ -514,7 +515,7 @@ function _build_log_message($entity)
 
   $parentGroupTitle = '';
   if ($entity->getEntityTypeId() == 'group_content') {
-    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()->label() . ',   ';
+    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()?->label() . ',   ';
     $titleText = 'Title=' . $entity->label->value . ','; // Group content didn't implement "label()"
   } else {
     $titleText = 'Title=' . $entity->label() . ',';
@@ -642,7 +643,7 @@ function portland_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInt
   }
 
   $node = $route_match->getParameter('node');
-  if(!empty($node) && ($node instanceof Drupal\node\Entity\Node) && $node->bundle() == "park_facility") {
+  if(!empty($node) && ($node instanceof Node) && $node->bundle() == "park_facility") {
     $breadcrumb->addLink(Link::createFromRoute(t("Find a park"), "view.park_finder.page_1"));
   }
 }

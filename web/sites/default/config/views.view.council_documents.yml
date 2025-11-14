@@ -3,19 +3,18 @@ langcode: en
 status: true
 dependencies:
   config:
-    - field.storage.node.field_admin_complete_date
-    - field.storage.node.field_agenda_type
     - field.storage.node.field_amended_by_council
     - field.storage.node.field_bureau
+    - field.storage.node.field_committee
     - field.storage.node.field_confirmed_time_certain
     - field.storage.node.field_council_document_status
     - field.storage.node.field_council_document_type
     - field.storage.node.field_date_of_final_disposition
+    - field.storage.node.field_doc_published_date
     - field.storage.node.field_document_number
     - field.storage.node.field_full_document_title
     - field.storage.node.field_introduced_by
     - field.storage.node.field_is_emergency_ordinance
-    - field.storage.node.field_president_committee
     - field.storage.node.field_requested_council_date
     - field.storage.node.field_requested_start_time
     - field.storage.node.field_time_requested
@@ -934,6 +933,77 @@ display:
     display_options:
       title: 'Assigned documents'
       fields:
+        id:
+          id: id
+          table: relation
+          field: id
+          relationship: field_council_session
+          group_type: max
+          admin_label: ''
+          entity_type: relation
+          entity_field: id
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: number_unformatted
+          settings: {  }
+          group_column: entity_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ''
+          field_api_classes: false
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: 0
+          format_plural_string: !!binary MQNAY291bnQ=
+          prefix: ''
+          suffix: ''
         view_node:
           id: view_node
           table: node
@@ -1050,71 +1120,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_session_start_datetime:
-          id: field_session_start_datetime
-          table: relation__field_session_start_datetime
-          field: field_session_start_datetime
-          relationship: field_council_session
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_time_ago
-          settings:
-            future_format: 'Upcoming meeting in @interval'
-            past_format: 'Last action @interval ago'
-            granularity: 1
-          group_column: entity_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
         field_full_document_title:
           id: field_full_document_title
           table: node__field_full_document_title
@@ -1127,7 +1132,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"d-flex w-100 align-items-center justify-content-between mb-1\">\r\n  <h3 class=\"h5 mb-0\">{{ field_document_number }}</h3>\r\n  <small class=\"text-muted\">{{ field_session_start_datetime ?: 'Unscheduled'|t }}</small>\r\n</div>\r\n<a class=\"stretched-link\" href=\"{{ view_node }}\">{{ field_full_document_title }}</a>"
+            text: "{% set last_action = drupal_field(\r\n  'field_session_start_datetime',\r\n  'relation',\r\n  id,\r\n  {\r\n    'label': 'hidden',\r\n    'type': 'datetime_time_ago',\r\n    'settings': {\r\n      'future_format': 'Upcoming meeting in @interval'|t,\r\n      'past_format': 'Last action @interval ago'|t,\r\n      'granularity': 1,\r\n    },\r\n  }\r\n)|render|striptags|trim %}\r\n<div class=\"d-flex w-100 align-items-center justify-content-between mb-1\">\r\n  <h3 class=\"h5 mb-0\">{{ field_document_number }}</h3>\r\n  <small class=\"text-muted\">{{ last_action ?: 'Unscheduled'|t }}</small>\r\n</div>\r\n<a class=\"stretched-link\" href=\"{{ view_node }}\">{{ field_full_document_title }}</a>"
             make_link: false
             path: ''
             absolute: false
@@ -1184,7 +1189,7 @@ display:
           table: relation__field_session_start_datetime
           field: field_session_start_datetime_value_null_sort
           relationship: field_council_session
-          group_type: group
+          group_type: max
           admin_label: ''
           plugin_id: null_sort
           order: ASC
@@ -1200,7 +1205,7 @@ display:
           group_type: max
           admin_label: ''
           plugin_id: datetime
-          order: ASC
+          order: DESC
           expose:
             label: ''
             field_identifier: ''
@@ -1475,7 +1480,6 @@ display:
       tags:
         - 'config:field.storage.node.field_document_number'
         - 'config:field.storage.node.field_full_document_title'
-        - 'config:field.storage.relation.field_session_start_datetime'
   block_date_time_requested:
     id: block_date_time_requested
     display_title: 'Block: Date and Time Information'
@@ -3694,10 +3698,10 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_admin_complete_date:
-          id: field_admin_complete_date
-          table: node__field_admin_complete_date
-          field: field_admin_complete_date
+        field_doc_published_date:
+          id: field_doc_published_date
+          table: node__field_doc_published_date
+          field: field_doc_published_date
           relationship: none
           group_type: group
           admin_label: ''
@@ -3770,7 +3774,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<p><a href=\"{{ view_node }}\">{{ field_full_document_title }}</a>{% if field_council_document_type %} ({{ field_council_document_type }}){% endif %}</p>\r\n<p>\r\n{% if field_introduced_by %}<strong>{{ 'Introduced by:'|t }}</strong> {{ field_introduced_by }}<br>{% endif %}\r\n<em>{{ 'Published on @date'|t({ '@date': field_admin_complete_date }) }}\r\n</p>\r\n"
+            text: "<p><a href=\"{{ view_node }}\">{{ field_full_document_title }}</a>{% if field_council_document_type %} ({{ field_council_document_type }}){% endif %}</p>\r\n<p>\r\n{% if field_introduced_by %}<strong>{{ 'Introduced by:'|t }}</strong> {{ field_introduced_by }}<br>{% endif %}\r\n<em>{{ 'Published on @date'|t({ '@date': field_doc_published_date }) }}\r\n</p>\r\n"
             make_link: false
             path: ''
             absolute: false
@@ -3883,77 +3887,15 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_agenda_type:
-          id: field_agenda_type
-          table: node__field_agenda_type
-          field: field_agenda_type
+        field_committee:
+          id: field_committee
+          table: node__field_committee
+          field: field_committee
           relationship: none
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: list_default
-          settings: {  }
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        field_president_committee:
-          id: field_president_committee
-          table: node__field_president_committee
-          field: field_president_committee
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: ''
+          label: 'Assigned committee'
           exclude: true
           alter:
             alter_text: false
@@ -4020,7 +3962,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<strong>{{ field_requested_council_date }}</strong><br>\r\n{{ field_agenda_type }}<br>\r\n<span class=\"badge rounded-pill bg-light text-dark mt-2\">{{ field_president_committee }}</span>\r\n"
+            text: "<strong>{{ field_requested_council_date }}</strong><br>\r\n<span class=\"badge rounded-pill bg-light text-dark mt-2\">{{ field_committee }}</span>\r\n"
             make_link: false
             path: ''
             absolute: false
@@ -4053,7 +3995,7 @@ display:
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
-          empty: Unscheduled
+          empty: "Unscheduled<br>\r\n<span class=\"badge rounded-pill bg-light text-dark mt-2\">{{ field_committee }}</span>"
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
@@ -4131,10 +4073,51 @@ display:
           expose:
             operator_limit_selection: false
             operator_list: {  }
-        field_admin_complete_date_value:
-          id: field_admin_complete_date_value
-          table: node__field_admin_complete_date
-          field: field_admin_complete_date_value
+        moderation_state:
+          id: moderation_state
+          table: node_field_data
+          field: moderation_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: node
+          plugin_id: moderation_state_filter
+          operator: in
+          value:
+            council_document_workflow-published: council_document_workflow-published
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+        field_doc_published_date_value:
+          id: field_doc_published_date_value
+          table: node__field_doc_published_date
+          field: field_doc_published_date_value
           relationship: none
           group_type: group
           admin_label: ''
@@ -4164,48 +4147,6 @@ display:
             min_placeholder: ''
             max_placeholder: ''
             placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        moderation_state:
-          id: moderation_state
-          table: node_field_data
-          field: moderation_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          plugin_id: moderation_state_filter
-          operator: in
-          value:
-            council_document_workflow-ready_for_agenda: council_document_workflow-ready_for_agenda
-            council_document_workflow-published: council_document_workflow-published
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
           is_grouped: false
           group_info:
             label: ''
@@ -4514,12 +4455,11 @@ display:
         - url.query_args
         - 'user.node_grants:view'
       tags:
-        - 'config:field.storage.node.field_admin_complete_date'
-        - 'config:field.storage.node.field_agenda_type'
+        - 'config:field.storage.node.field_committee'
         - 'config:field.storage.node.field_council_document_type'
+        - 'config:field.storage.node.field_doc_published_date'
         - 'config:field.storage.node.field_document_number'
         - 'config:field.storage.node.field_full_document_title'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:workflow_list'

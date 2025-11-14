@@ -9,7 +9,6 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
-    this._verificationRequired = false;
     this._serverError = false;
 
     // this.$checkmark;
@@ -25,7 +24,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
-const VERIFIED_MESSAGE = "Address is verified!";
+const VERIFIED_MESSAGE = "Address found!";
 const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for maintenance or outage alerts, or try again later.";
 const INPUT_FIELDS = [
     '#location_address',
@@ -53,11 +52,6 @@ const IGNORE_FIELDS = [
 ]; // these fields can be ignored for the purposes of address verification
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
-
-    var self = this; // preserve refernece to "this" for use inside functions.
-
-    this._checkIfVerificationRequired();
-
     if (this.settings && this.settings.address_suggest) {
         this._setUpVerifyButton();
         this._setUpInputFieldAndAutocomplete();
@@ -65,13 +59,6 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     this._setUpUnitNumberField();
     // this._handlePostback();
 };
-
-AddressVerifierView.prototype._checkIfVerificationRequired = function () {
-    // check if the verification is required
-    if (this.$verificationStatus.attr('required') == "required") {
-        this._verificationRequired = true;
-    }
-}
 
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
@@ -277,19 +264,52 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 AddressVerifierView.prototype._selectAddress = function (item) {
     var self = this;
 
-    // if the city is unincorporated or the widget is configured to need taxlot ID,
-    // we need to perform a call to the intersects API do so some reverse geocoding.
-    if ((self.settings.find_unincorporated && (!item.city || item.city.toUpperCase() == "UNINCORPORATED")) || self.settings.lookup_taxlot) {
+    // DEFAULT ADDRESS VERIFIER SETTINGS:
+    //      address_suggest = 1                 Suggest addresses in autocomplete and Verify button results.
+    //      lookup_taxlot = 0                   Do not lookup taxlot ID.
+    //      find_unincorporated = 1             Use the postal city.
+    //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
+    //      verification_required = false       Verification not required by default. This is set in the element configuration.
 
-        if (!item.city || item.city.toUpperCase() == "UNINCORPORATED") {
-            self.$element.find('#location_is_unincorporated').val(1);
-        }
+    // The City value returned by the Suggest API is the postal city associated with the zipcode.
+    // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
 
+    // This needs to cover 3 main use cases:
+    // 1. Require verified City of Portland address.
+    // 2. Allow any address anywhere, including unincorporated areas. (DEFAULT)
+    // 3. Verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
+
+    // Use case 1 is the only one that sets the item.city with the value from item.jurisdiction.
+    // Additional logic can be built into the form using conditional fields or computed twig, 
+    // and individual city/state/zip fields can be required in the element configuration.
+
+    if ((self.settings.require_portland_city_limits && self.settings.verification_required) || !self.settings.find_unincorporated) {
+        // USE CASE 1: only allow verified addresses within Portland city limits.
+        // use jurisdiction value as city, then verify jurisdiction/city is PORTLAND in _setVerified.
+        item.city = item.jurisdiction.toUpperCase();
+    }
+    
+    // USE CASE 2: allow any address anywhere, including unincorporated areas. 
+    // if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required)
+    // do nothing here--item.city is already set to postal city by Suggest API.
+    // city/state/zip can be required in the element configuration.
+
+    // USE CASE 3: verification is required, but address can be anywhere that's 
+    // if (self.settings.verification_required)
+    // in the PortlandMaps database, including unincorporated areas.
+    // do nothing here--item.city is already set to postal city by Suggest API.
+    
+    // need to get taxlot? requires call to intersects API.
+    if (self.settings.lookup_taxlot) {
         // _setVerified is the callback; need to pass self/view reference with it
         this.model.updateLocationFromIntersects(item.lat, item.lon, item, self._setVerified, self);
-
     } else {
         self._setVerified(item);
+    }
+
+    // regardless of what we're using in the city field, set unincorporated flag if applicable
+    if (item.jurisdiction.toUpperCase() == "UNINCORPORATED") {
+        self.$element.find('#location_is_unincorporated').val(1);
     }
 
     // if configured, run secondary query // url, x, y, callback, view
@@ -336,7 +356,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.isVerified = false; // reset to false until we know it's verified
 
     // show error modal if invalid location /////////////////////////
-    if (view.settings.require_portland_city_limits && item.city.toUpperCase() != "PORTLAND") {
+    if (view.settings.require_portland_city_limits && item.jurisdiction.toUpperCase() != "PORTLAND") {
         view._showOutOfBoundsErrorModal(item.fullAddress);
         view.$element.find('#location_address').val('');
         return false;
@@ -409,7 +429,7 @@ AddressVerifierView.prototype._runSecondaryQueries = function (item) {
                             queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
                             break;
                         case 'detail_id':
-                            queryUrl += "&detail_id" + item.taxlotId;
+                            queryUrl += "&detail_id=" + item.taxlotId;
                             break;
                         default:
                             queryUrl += "&" + key + "=" + encodeURIComponent(value);
@@ -563,7 +583,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
-    var remedyMessage = this._verificationRequired ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
+    var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
@@ -573,7 +593,7 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
             click: function () {
                 self.$notFoundModal.dialog('close');
                 // if verification is not required, set the status to "Forced"
-                if (!self._verificationRequired) {
+                if (!self.settings.verification_required) {
                     self._useUnverified();
                 }
             }
@@ -659,7 +679,7 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$checkmark.addClass("invisible");
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-    var unverifiedMessage = this._verificationRequired ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
+    var unverifiedMessage = this.settings.verification_required ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
     this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
     // var input = this.$notFoundModal.find("#enteredAddress").val();
     // this.$input.val(input);

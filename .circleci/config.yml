@@ -31,7 +31,7 @@ commands:
       - run:
           name: Get latest Terminus release
           command: |
-            echo 'export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)'  >> $BASH_ENV && source $BASH_ENV
+            echo 'export TERMINUS_RELEASE=$(curl -H"Authorization:Bearer $COMPOSER_TOKEN" --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)'  >> $BASH_ENV && source $BASH_ENV
             echo $TERMINUS_RELEASE > ~/terminus_release.txt
             echo "Latest Terminus release: $TERMINUS_RELEASE"
       - restore_cache:
@@ -143,8 +143,8 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore Composer Cache
         keys:
-          - v3-dependencies-{{ checksum "composer.lock" }}
-          - v3-dependencies-
+          - v4-dependencies-{{ checksum "composer.lock" }}
+          - v4-dependencies-
     - run:
         name: Composer install
         command: |
@@ -239,7 +239,7 @@ build_and_deploy: &build_and_deploy
               #   - Extract PR number from pull request URL
               #   - Query GitHub API for PR data and extract base branch from JSON base.ref property
               [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]
-              BASE=$(curl -s https://api.github.com/repos/egovPDX/$CIRCLE_PROJECT_REPONAME/pulls/${BASH_REMATCH[1]} | grep -Pzo '(?s)"base":.*?"ref": "\K[A-Za-z0-9_-]+' | tr -d '\0')
+              BASE=$(curl -H"Authorization:Bearer $COMPOSER_TOKEN" -s https://api.github.com/repos/egovPDX/$CIRCLE_PROJECT_REPONAME/pulls/${BASH_REMATCH[1]} | grep -Pzo '(?s)"base":.*?"ref": "\K[A-Za-z0-9_-]+' | tr -d '\0')
               if [[ $BASE = "master" ]]; then
                 BASE=dev
               fi
@@ -567,6 +567,7 @@ workflows:
             branches:
               only:
                 - master
+                - pgov-1676
   # The update database workflow runs when the following scheduled pipelines run.
   # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers

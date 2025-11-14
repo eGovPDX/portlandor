@@ -1,8 +1,12 @@
 <?php
 
+use Drupal\linkit\ProfileInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 
 /**
@@ -26,7 +30,7 @@ function portland_glossary_preprocess_field__field_body_content(&$variables) {
 /**
  * Implements hook_linkit_suggestions_alter().
  */
-function portland_glossary_linkit_suggestions_alter(array &$suggestions, \Drupal\linkit\ProfileInterface $profile, $search_string) {
+function portland_glossary_linkit_suggestions_alter(array &$suggestions, ProfileInterface $profile, $search_string) {
   foreach ($suggestions as &$suggestion) {
     if (!empty($suggestion['label']) && mb_strlen($suggestion['label']) > 90) {
       $suggestion['label'] = mb_substr($suggestion['label'], 0, 87) . '…';
@@ -42,7 +46,7 @@ function portland_glossary_linkit_suggestions_alter(array &$suggestions, \Drupal
  * - Only show expand all/collapse all starting at 3 rows.
  * TODO: Remove this if we decide to expand behavior to all pages.
  */
-function portland_glossary_node_view(array &$build, \Drupal\node\Entity\Node $node, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+function portland_glossary_node_view(array &$build, Node $node, EntityViewDisplayInterface $display, $view_mode) {
   if ($view_mode !== 'full') {
     return;
   }
@@ -75,3 +79,27 @@ function portland_glossary_node_access(NodeInterface $node, $op, AccountInterfac
   return AccessResult::neutral();
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function portland_glossary_form_views_exposed_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+
+  // Only target your specific view (adjust ID and display).
+  $view = $form_state->get('view');
+  if (!$view || $view->id() !== 'manage_group_content_revision' || $view->current_display !== 'page_manage_group_content') {
+    return;
+  }
+
+  // Only show this widget to Administrators and Glossary Editors.
+  $account = \Drupal::currentUser();
+  $allowed_roles = ['administrator', 'glossary_editor'];
+  if (empty(array_intersect($allowed_roles, $account->getRoles()))) {
+    // Replace 'field_foo_value' with the exposed filter element key.
+    if (isset($form['field_fragment_type_target_id'])) {
+      $form['field_fragment_type_target_id']['#access'] = FALSE;
+    }
+  }
+
+  // Make sure the form render cache varies by role.
+  $form['#cache']['contexts'][] = 'user.roles';
+}
