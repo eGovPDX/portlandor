@@ -996,9 +996,6 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
  $settings['cache_prefix']['default'] = 'pantheon-redis';
 
  $settings['cache']['bins']['form'] = 'cache.backend.database'; // Use the database for forms
-  $settings['cache']['bins']['bootstrap'] = 'cache.backend.database';
-  $settings['cache']['bins']['render'] = 'cache.backend.database';
-  $settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.database';
 
  // Apply changes to the container configuration to make better use of Redis.
  // This includes using Redis for the lock and flood control systems, as well
@@ -1094,9 +1091,3 @@ $settings['dont_remove_files_when_image_style_config_changes'] = TRUE;
 # if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
 #   include $app_root . '/' . $site_path . '/settings.local.php';
 # }
-
-// In settings.php
-error_reporting(E_ALL);
-ini_set('display_errors', TRUE);
-ini_set('display_startup_errors', TRUE);
-$config['system.logging']['error_level'] = 'all';
