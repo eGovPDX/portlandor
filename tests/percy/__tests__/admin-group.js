@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer');
 var fs = require('fs');
 
 const SITE_NAME = process.env.SITE_NAME;
@@ -7,7 +7,7 @@ const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox", "--disabled-setupid-sandbox"],
+  args: ["--no-sandbox", "--disabled-setupid-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
 };
@@ -15,9 +15,9 @@ var BROWSER_OPTION = {
 describe('SuperAdmin user test', () => {
   var browser, page, login_url;
   beforeAll(async () => {
-    browser = await puppeteer.launch(BROWSER_OPTION)
-    page = await browser.newPage()
-    await page.setDefaultTimeout(30000)
+    browser = await puppeteer.launch(BROWSER_OPTION);
+    page = await browser.newPage();
+    await page.setDefaultTimeout(30000);
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL

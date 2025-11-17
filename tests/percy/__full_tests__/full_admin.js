@@ -16,7 +16,7 @@ const TEST_GROUP_NAME = 'Full Regression Test Group';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ['--no-sandbox'],
+  args: ["--no-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
   // To watch tests locally on MacOS:

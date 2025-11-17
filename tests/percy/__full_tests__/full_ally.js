@@ -9,7 +9,7 @@ let text_content = '', selector = '';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ["--no-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
 };

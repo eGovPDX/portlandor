@@ -8,7 +8,7 @@ const HOME_PAGE = SITE_NAME
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ["--no-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
 };

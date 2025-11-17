@@ -7,7 +7,7 @@ const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ["--no-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
 };
