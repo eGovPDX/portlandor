@@ -22,6 +22,7 @@ describe('SuperAdmin user test', () => {
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.SUPERADMIN_LOGIN;
+      login_url = login_url.replace('http://', 'https://');
       await page.goto(login_url);
     }
     else {
@@ -33,7 +34,7 @@ describe('SuperAdmin user test', () => {
   })
 
   afterAll(async () => {
-    await browser.close()
+    await browser.close();
   })
 
   it(

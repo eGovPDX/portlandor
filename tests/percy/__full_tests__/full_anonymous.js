@@ -19,7 +19,7 @@ describe("Full regression test suite for anonymous", () => {
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
     page = await browser.newPage();
-    await page.setDefaultTimeout(30000)
+    await page.setDefaultTimeout(30000);
   })
 
   afterAll(async () => {

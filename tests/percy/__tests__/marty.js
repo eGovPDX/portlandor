@@ -25,6 +25,7 @@ describe('Marty Member user test', () => {
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.MARTY_LOGIN;
+      login_url = login_url.replace('http://', 'https://');
       await page.goto(login_url);
     }
     else {
