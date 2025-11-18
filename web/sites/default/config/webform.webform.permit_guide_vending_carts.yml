@@ -178,7 +178,7 @@ elements: |-
           unchecked: true
     section_location:
       '#type': webform_section
-      '#title': 'Project Details'
+      '#title': 'Property Details'
       '#attributes':
         class:
           - mb-10
@@ -238,6 +238,13 @@ elements: |-
             capture:
               - path: general.percent_slope
                 field: q4_project_deck_site_slope
+      markup_01:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="q0_project_address[location_verification_status]"]':
+              empty: true
+        '#markup': '<p><strong>Find an address to begin using this guide.</strong> It must be in an area that''s managed by the <a href="https://www.portland.gov/ppd" target="_blank">Portland Permitting &amp; Development bureau</a>.</p>'
       hidden_zoning_overlays:
         '#type': hidden
         '#title': 'Hidden Zoning Overlays'
@@ -256,43 +263,16 @@ elements: |-
       hidden_base_zone:
         '#type': hidden
         '#title': 'Hidden Base Zone'
-      markup_01:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="q0_project_address[location_verification_status]"]':
-              empty: true
-        '#markup': '<p><strong>Find an address to begin using this guide.</strong> It must be in an area that''s managed by the <a href="https://www.portland.gov/ppd" target="_blank">Portland Permitting &amp; Development bureau</a>.</p>'
-      computed_attribution_message:
-        '#type': webform_computed_twig
-        '#title': 'Computed attribution message'
-        '#title_display': none
-        '#states':
-          visible:
-            ':input[name="q0_project_address[location_verification_status]"]':
-              filled: true
-        '#wrapper_attributes':
-          class:
-            - mt-0
-        '#display_on': form
-        '#mode': html
-        '#template': "<p><em>Address and zoning data provided by <a href=\"https://portlandmaps.com/search/?query={{ data.q0_project_address.location_address }}\" target=\"_blank\">PortlandMaps.com <em class=\"fa-solid fa-arrow-up-right-from-square\">\_</em></a></em></p>"
-        '#ajax': true
-    section_property_details:
-      '#type': webform_section
-      '#title': 'Property Details'
-      '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
-      '#attributes':
-        class:
-          - mb-10
-          - d-none
       property_id:
         '#type': webform_computed_twig
         '#title': 'Property ID'
         '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-nonex
         '#display_on': form
         '#template': |-
-          {{ data.q1_project_address.location_taxlot_id
+          {{ data.q0_project_address.location_taxlot_id
            }}
         '#whitespace': trim
         '#ajax': true
@@ -300,6 +280,9 @@ elements: |-
         '#type': webform_computed_twig
         '#title': 'Is the site in an environmental overlay zone?'
         '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#display_on': form
         '#mode': text
         '#template': |-
@@ -311,6 +294,9 @@ elements: |-
         '#type': webform_computed_twig
         '#title': 'Is the site in a greenway overlay zone?'
         '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#display_on': form
         '#mode': text
         '#template': |-
@@ -322,33 +308,96 @@ elements: |-
         '#type': webform_computed_twig
         '#title': 'Is the property a historic/conservation landmark or in a historic district?'
         '#title_display': inline
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#display_on': form
         '#mode': text
         '#template': '{% if data.hidden_historic_district != "" or data.hidden_national_register_district != "" or data.hidden_conservation_district != "" or data.hidden_historic_resource != "" %}Yes{% else %}No{% endif %}'
         '#whitespace': trim
         '#ajax': true
-    computed_valid_zone:
-      '#type': webform_computed_twig
-      '#title': 'Is the zone valid?'
-      '#display_on': form
-      '#mode': text
-      '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
-      '#whitespace': trim
-      '#ajax': true
-    computed_invalid_zone_warning:
-      '#type': webform_computed_twig
-      '#title': 'Invalid Zone Warning'
-      '#title_display': none
-      '#wrapper_attributes':
+      computed_valid_zone:
+        '#type': webform_computed_twig
+        '#title': 'Is the zone valid?'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': "{% if data.q0_project_address.location_verification_status == 'Verified' and data.hidden_base_zone in ['CR','CM1','CM2','CM3','CE','CX','CI2','EG1','EG2','EX'] %}Yes{% elseif data.q0_project_address.location_verification_status == 'Verified' %}No{% endif %}"
+        '#whitespace': trim
+        '#ajax': true
+      computed_invalid_zone_warning:
+        '#type': webform_computed_twig
+        '#title': 'Invalid Zone Warning'
+        '#title_display': none
+        '#wrapper_attributes':
+          class:
+            - mb-10
+        '#display_on': form
+        '#mode': html
+        '#template': |-
+          {% if data.computed_valid_zone == "No" %}
+            {{ data.warning_invalid_zone|raw }}
+          {% endif %}
+        '#ajax': true
+      property_summary:
+        '#type': webform_computed_twig
+        '#title': 'Property Summary'
+        '#title_display': invisible
+        '#states':
+          invisible:
+            ':input[name="q0_project_address[location_verification_status]"]':
+              empty: true
+        '#display_on': form
+        '#mode': html
+        '#template': |2-
+                <table class="mb-5">
+
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Property ID:"|t }}</th>
+                    <td><a href="https://portlandmaps.com/search/?query={{ data.q0_project_address.location_address }}" target="_blank">{{ data.property_id }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+                  </tr>
+
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Base zone"|t }}</th>
+                    <td><a href="https://www.portlandmaps.com/bps/zoning/#/zones/base/{{ data.hidden_base_zone }}" target="_blank">{{ data.hidden_base_zone }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+                  </tr>
+
+                  {% if data.q0_1_environmental_overlay_zone == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_3_historic_landmark == "Yes" %}
+                  <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+                    <th style="text-align: left;">{{ "Zoning overlays"|t }}</th>
+                    <td>
+                    {% set overlays = [] %}
+                    {% if data.q0_1_environmental_overlay_zone == "Yes" %}
+                      {% set overlays = overlays|merge(['Environmental']) %}
+                    {% endif %}
+                    {% if data.q0_2_greenway_overlay_zone == "Yes" %}
+                      {% set overlays = overlays|merge(['Greenway']) %}
+                    {% endif %}
+                    {% if data.q0_3_historic_landmark == "Yes" %}
+                      {% set overlays = overlays|merge(['Historic']) %}
+                    {% endif %}
+                    {{ overlays|join(', ') }}
+                    </td>
+                  </tr>
+                  {% endif %}
+
+                  <tr>
+                    <td colspan="2">
+                      <p><em>Address and zoning data provided by <a href="https://portlandmaps.com/search/?query={{ data.q0_project_address.location_address }}" target="_blank">PortlandMaps.com <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></em></p>
+                    </td>
+                  </tr>
+                </table>
+        '#ajax': true
+    section_property_details:
+      '#type': webform_section
+      '#title': 'Property Details'
+      '#description': '<p><em>Information provided by </em><a href="https://portlandmaps.com" target="_blank"><em>PortlandMaps</em></a><em>.</em></p>'
+      '#attributes':
         class:
           - mb-10
-      '#display_on': form
-      '#mode': html
-      '#template': |-
-        {% if data.computed_valid_zone == "No" %}
-          {{ data.warning_invalid_zone|raw }}
-        {% endif %}
-      '#ajax': true
+          - d-none
     section_project_details:
       '#type': webform_section
       '#title': 'Project Details'
@@ -699,98 +748,127 @@ elements: |-
       '#template': |
         <table class="mb-5">
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Project address:"|t }}</th>
-                  <td>{{ data.q0_project_address.location_address }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Project address:"|t }}</th>
+            <td>{{ data.q0_project_address.location_address }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "2 or more carts:"|t }}</th>
-                  <td>{{ data.q16_adding_2_or_more_carts }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Property ID:"|t }}</th>
+            <td><a href="https://portlandmaps.com/search/?query={{ data.property_id }}" target="_blank">{{ data.property_id }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Permanent structure:"|t }}</th>
-                  <td>{{ data.q1_building_installing_permanent_structure }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Base zone"|t }}</th>
+            <td><a href="https://www.portlandmaps.com/bps/zoning/#/zones/base/{{ data.hidden_base_zone }}" target="_blank">{{ data.hidden_base_zone }} <em class="fa-solid fa-arrow-up-right-from-square"> </em></a></td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Building improvements or reuse:"|t }}</th>
-                  <td>{{ data.q2_making_building_improvements }}</td>
-                </tr>
+          {% if data.q0_1_environmental_overlay_zone == "Yes" or data.q0_2_greenway_overlay_zone == "Yes" or data.q0_3_historic_landmark == "Yes" %}
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Zoning overlays"|t }}</th>
+            <td>
+              {% set items = [] %}
+              {% if data.q0_1_environmental_overlay_zone == "Yes" %}
+                {% set items = items|merge(['Environmental']) %}
+              {% endif %}
+              {% if data.q0_2_greenway_overlay_zone == "Yes" %}
+                {% set items = items|merge(['Greenway']) %}
+              {% endif %}
+              {% if data.q0_3_historic_landmark == "Yes" %}
+                {% set items = items|merge(['Historic']) %}
+              {% endif %}
+              {{ items|join(', ') }}
+            </td>
+          </tr>
+          {% endif %}
 
-                {% if data.q2 == "Yes" or data.test is not empty %}
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Change in use:"|t }}</th>
-                  <td>{{ data.q3_change_how_space_is_used }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "2 or more carts:"|t }}</th>
+            <td>{{ data.q16_adding_2_or_more_carts }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Change in occupancy:"|t }}</th>
-                  <td>{{ data.q4_occupancy_change }}</td>
-                </tr>
-                {% endif %}
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Permanent structure:"|t }}</th>
+            <td>{{ data.q1_building_installing_permanent_structure }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Anchoring/building into site:"|t }}</th>
-                  <td>{{ data.q5_include_anchoring_or_building }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Building improvements or reuse:"|t }}</th>
+            <td>{{ data.q2_making_building_improvements }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Drive-through feature: "|t }}</th>
-                  <td>{{ data.q6_include_drive_thru }}</td>
-                </tr>
+          {% if data.q2 == "Yes" or data.test is not empty %}
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Change in use:"|t }}</th>
+            <td>{{ data.q3_change_how_space_is_used }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Parking lot re-striping:"|t }}</th>
-                  <td>{{ data.q7_include_restriping_parking_lot }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Change in occupancy:"|t }}</th>
+            <td>{{ data.q4_occupancy_change }}</td>
+          </tr>
+          {% endif %}
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Electrical work:"|t }}</th>
-                  <td>{{ data.q8_electrical_work }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Anchoring/building into site:"|t }}</th>
+            <td>{{ data.q5_include_anchoring_or_building }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Plumbing work:"|t }}</th>
-                  <td>{{ data.q9_plumbing_work }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Drive-through feature: "|t }}</th>
+            <td>{{ data.q6_include_drive_thru }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Mechanical work:"|t }}</th>
-                  <td>{{ data.q10_mechanical_work }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Parking lot re-striping:"|t }}</th>
+            <td>{{ data.q7_include_restriping_parking_lot }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Propane tank use:"|t }}</th>
-                  <td>{{ data.q11_use_of_propane_tank }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Electrical work:"|t }}</th>
+            <td>{{ data.q8_electrical_work }}</td>
+          </tr>
 
-                {% if data.q11_use_of_propane_tank == "Yes" or data.test is not empty %}
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Propane tank size:"|t }}</th>
-                  <td>{{ data.q12_propane_tank_size }}</td>
-                </tr>
-                {% endif %}
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Plumbing work:"|t }}</th>
+            <td>{{ data.q9_plumbing_work }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Tent use:"|t }}</th>
-                  <td>{{ data.q13_use_of_tent }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Mechanical work:"|t }}</th>
+            <td>{{ data.q10_mechanical_work }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Portable A-board sign:"|t }}</th>
-                  <td>{{ data.q14_use_of_portable_sign }}</td>
-                </tr>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Propane tank use:"|t }}</th>
+            <td>{{ data.q11_use_of_propane_tank }}</td>
+          </tr>
 
-                <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
-                  <th style="text-align: left;">{{ "Tree pruning in right-of-way:"|t }}</th>
-                  <td>{{ data.q15_tree_pruning_in_right_of_way }}</td>
-                </tr>
+          {% if data.q11_use_of_propane_tank == "Yes" or data.test is not empty %}
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Propane tank size:"|t }}</th>
+            <td>{{ data.q12_propane_tank_size }}</td>
+          </tr>
+          {% endif %}
 
-              </table>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Tent use:"|t }}</th>
+            <td>{{ data.q13_use_of_tent }}</td>
+          </tr>
 
-              <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Portable A-board sign:"|t }}</th>
+            <td>{{ data.q14_use_of_portable_sign }}</td>
+          </tr>
+
+          <tr class="border-top border-1 border-dark border-bottom-1 border-start-0 border-end-0">
+            <th style="text-align: left;">{{ "Tree pruning in right-of-way:"|t }}</th>
+            <td>{{ data.q15_tree_pruning_in_right_of_way }}</td>
+          </tr>
+
+        </table>
+
+        <a href="{{ data.return_link|replace({'returning_user=1&':''}) }}" class="btn btn-outline-primary ms-auto rounded rounded-1 border-2">{{ 'Edit details'|t }}</a>
       '#ajax': true
     computed_project_details_container:
       '#type': webform_computed_twig

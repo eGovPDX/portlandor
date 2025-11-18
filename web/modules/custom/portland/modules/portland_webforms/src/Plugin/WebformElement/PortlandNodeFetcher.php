@@ -221,7 +221,7 @@ class PortlandNodeFetcher extends WebformElementBase
     $value = '';
     // Flag to indicate that the glossary_term library needs to be attached
     // when the fetched content contains glossary term substitutions.
-    $needs_glossary_library = FALSE;
+    $glossary_library_attached = FALSE;
 
     // Use the resolved path for node lookup.
     if ($resolved_path && preg_match('/^\/node\/(\d+)$/', \Drupal::service('path_alias.manager')->getPathByAlias($resolved_path), $matches)) {
@@ -419,7 +419,7 @@ class PortlandNodeFetcher extends WebformElementBase
         // inline or included in computed webform elements.
         if (is_string($value) && str_contains($value, 'data-entity-substitution="glossary_term"')) {
           $element['#attached']['library'][] = 'portland_glossary/glossary_term';
-          $needs_glossary_library = TRUE;
+          $glossary_library_attached = TRUE;
         }
 
         // (Cache metadata attached earlier.)
@@ -475,8 +475,9 @@ class PortlandNodeFetcher extends WebformElementBase
           '#weight' => 10,
         ],
       ];
-      if (!empty($needs_glossary_library)) {
+      if (!$glossary_library_attached) {
         $element['content']['#attached']['library'][] = 'portland_glossary/glossary_term';
+        $glossary_library_attached = TRUE;
       }
     } else {
       // Ensure no stray child if not rendering inline.

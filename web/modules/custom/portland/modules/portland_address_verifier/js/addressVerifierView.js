@@ -22,7 +22,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
 // var $suggestModal;
 // var $statusModal;
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
-const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
+const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, verification_required."
 const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
 const VERIFIED_MESSAGE = "Address found!";
 const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for maintenance or outage alerts, or try again later.";
@@ -105,7 +105,7 @@ AddressVerifierView.prototype._handlePostback = function () {
             });
             list.append(listItem);
         });
-        var listInfo = self.$('<p><em>Select one of the verified addresses below.</em></p>');
+        var listInfo = self.$('<p><em>Select one of the addresses below.</em></p>');
         self.$suggestModal.append(listInfo);
         var notFound = self.$(`<li><a href=\"#\" class="pick-not-found btn btn-secondary not-found"
                     data-item=''>My address is not listed</a></li>`);
@@ -269,7 +269,11 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     //      lookup_taxlot = 0                   Do not lookup taxlot ID.
     //      find_unincorporated = 1             Use the postal city.
     //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
+<<<<<<< HEAD
     //      verification_required = false       Verificaiton not required by default. This is set in the element configuration.
+=======
+    //      verification_required = false       Verification not required by default. This is set in the element configuration.
+>>>>>>> pgov-1823
 
     // The City value returned by the Suggest API is the postal city associated with the zipcode.
     // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
@@ -305,6 +309,11 @@ AddressVerifierView.prototype._selectAddress = function (item) {
         this.model.updateLocationFromIntersects(item.lat, item.lon, item, self._setVerified, self);
     } else {
         self._setVerified(item);
+    }
+
+    // regardless of what we're using in the city field, set unincorporated flag if applicable
+    if (item.jurisdiction.toUpperCase() == "UNINCORPORATED") {
+        self.$element.find('#location_is_unincorporated').val(1);
     }
 
     // if configured, run secondary query // url, x, y, callback, view
