@@ -310,16 +310,6 @@ describe('Full regression test suite for Admin', () => {
           'Full regression test city Service'
         );
 
-        // Click on "Actions"
-        //TODO: Need a more robust way to work with Select2 options
-        selector = 'ul.select2-selection__rendered';
-        await this.page.evaluate(
-          (selector) => document.querySelector(selector).click(),
-          selector
-        );
-        // Select the first option "Apply"
-        await this.page.keyboard.press('Enter');
-
         await this.page.type(
           '#edit-field-summary-0-value',
           'Summary for the test service'
