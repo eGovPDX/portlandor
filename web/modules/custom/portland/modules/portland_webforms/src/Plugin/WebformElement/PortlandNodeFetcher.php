@@ -2,6 +2,8 @@
 
 namespace Drupal\portland_webforms\Plugin\WebformElement;
 
+use Drupal\Core\Url;
+use Drupal\Core\Cache\Cache;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\WebformSubmissionInterface;
@@ -50,7 +52,7 @@ class PortlandNodeFetcher extends WebformElementBase {
     // Add hyperlink if node_alias_path is populated and is a valid path.
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
     if (!empty($alias)) {
-      $url = \Drupal\Core\Url::fromUserInput($alias)->toString();
+      $url = Url::fromUserInput($alias)->toString();
       $form['node_alias_link'] = [
         '#type' => 'item',
         '#markup' => $this->t('Current node link: <a href=":url" target="_blank">:url</a>', [':url' => $url]),
@@ -403,7 +405,7 @@ class PortlandNodeFetcher extends WebformElementBase {
 
               // Cache the processed HTML in the data cache bin and tag by node
               // so it's invalidated on node updates.
-              \Drupal::cache('data')->set($cid, $value, \Drupal\Core\Cache\Cache::PERMANENT, ['node:' . $nid]);
+              \Drupal::cache('data')->set($cid, $value, Cache::PERMANENT, ['node:' . $nid]);
             }
           }
         }
