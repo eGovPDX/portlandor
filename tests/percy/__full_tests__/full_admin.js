@@ -310,6 +310,13 @@ describe('Full regression test suite for Admin', () => {
           'Full regression test city Service'
         );
 
+        // Select "Apply or File" in "Service Type"
+        selector = '#edit-field-community-actions';
+        await this.page.evaluate(
+          (selector) => document.querySelector(selector).value = "11",
+          selector
+        );
+
         await this.page.type(
           '#edit-field-summary-0-value',
           'Summary for the test service'
