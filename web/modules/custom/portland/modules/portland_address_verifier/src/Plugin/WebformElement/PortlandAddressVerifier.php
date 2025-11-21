@@ -143,7 +143,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_field'] = $secondaryQueryCaptureField;
 
-    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to verify this address.";
+    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to find this address in the PortlandMaps database.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_heading'] = $notVerifiedHeading;
 
     $notVerifiedReasons = array_key_exists('#not_verified_reasons', $element) ? $element['#not_verified_reasons'] : "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";

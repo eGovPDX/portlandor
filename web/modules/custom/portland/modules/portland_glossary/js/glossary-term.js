@@ -104,23 +104,23 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             // Clone inner HTML and strip any <span> that contains the
             // invisible figure-space character U+2007 or font-awesome icons.
             let inner = link.innerHTML;
-            try {
-              const tmp = document.createElement('div');
-              tmp.innerHTML = inner;
-              // Remove spans that look like the external-link icon.
-              const spans = tmp.querySelectorAll('span');
-              spans.forEach((s) => {
-                const text = s.textContent || '';
-                // Remove if contains the special invisible figure space (U+2007)
-                // or if it has font-awesome like classes.
-                if (text.includes('\u2007') || /(fa-|fa\s|fa-solid)/.test(s.className || '')) {
-                  s.remove();
-                }
-              });
-              inner = tmp.innerHTML;
-            } catch (e) {
-              // Fallback: use raw innerHTML if DOM operations fail.
-            }
+            // try {
+            //   const tmp = document.createElement('div');
+            //   tmp.innerHTML = inner;
+            //   // Remove spans that look like the external-link icon.
+            //   const spans = tmp.querySelectorAll('span');
+            //   spans.forEach((s) => {
+            //     const text = s.textContent || '';
+            //     // Remove if contains the special invisible figure space (U+2007)
+            //     // or if it has font-awesome like classes.
+            //     if (text.includes('\u2007') || /(fa-|fa\s|fa-solid)/.test(s.className || '')) {
+            //       s.remove();
+            //     }
+            //   });
+            //   inner = tmp.innerHTML;
+            // } catch (e) {
+            //   // Fallback: use raw innerHTML if DOM operations fail.
+            // }
             reference.innerHTML = inner;
             reference.setAttribute('data-entity-substitution', 'glossary_term');
             reference.setAttribute('tabindex', '0');
