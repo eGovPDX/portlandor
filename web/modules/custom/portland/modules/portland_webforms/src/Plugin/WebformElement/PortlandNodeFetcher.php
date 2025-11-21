@@ -67,7 +67,7 @@ class PortlandNodeFetcher extends WebformElementBase {
     $form['open_links_in_new_tab'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Open links in new tab'),
-      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window.'),
+      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window, and the text "opens in new tab or window" will be added to their title attribute.'),
       '#default_value' => array_key_exists('#open_links_in_new_tab', $element) ? $element['#open_links_in_new_tab'] : TRUE,
     ];
 
@@ -89,9 +89,6 @@ class PortlandNodeFetcher extends WebformElementBase {
     // Persist open_links_in_new_tab checkbox value.
     $open_links = $user_input['open_links_in_new_tab'] === NULL ? '0' : $user_input['open_links_in_new_tab'];
     $form_state->setValue('open_links_in_new_tab', $open_links);
-    // // Persist configured icon HTML.
-    // $link_icon = isset($user_input['link_icon']) ? $user_input['link_icon'] : '';
-    // $form_state->setValue('link_icon', $link_icon);
   }
 
   /**
@@ -270,8 +267,21 @@ class PortlandNodeFetcher extends WebformElementBase {
                       continue;
                     }
 
-                    // Set target="_blank"
-                    $a->setAttribute('target', '_blank');
+                    // Set target="_blank" only if not already present
+                    $existing_target = $a->getAttribute('target');
+                    if (empty($existing_target) || strtolower($existing_target) !== '_blank') {
+                      $a->setAttribute('target', '_blank');
+                    }
+
+                    // If target="_blank" is present (either just added or already existing),
+                    // add title attribute if not already present
+                    if (strtolower($a->getAttribute('target')) === '_blank') {
+                      $existing_title = $a->getAttribute('title');
+                      if (empty($existing_title)) {
+                        $a->setAttribute('title', 'Opens in new tab or window');
+                      }
+                    }
+
                     // Merge or set rel attribute to include noopener noreferrer
                     $existing_rel = $a->getAttribute('rel');
                     $rels = preg_split('/\s+/', trim($existing_rel)) ?: [];
