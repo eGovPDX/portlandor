@@ -1,10 +1,222 @@
 <?php
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\webform\WebformInterface;
 
 /**
  * Implements hook_webform_element_ELEMENT_TYPE_alter() for our custom element.
  */
-function portland_webforms_webform_element_portland_ajax_indicator_alter(array &$element, FormStateInterface $form_state, array $context) {
+function portland_webforms_webform_element_portland_ajax_indicator_alter(array &$element, FormStateInterface $form_state, array $context): void {
   $element['#attached']['library'][] = 'portland_webforms/portland_ajax_indicator';
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form.
+ */
+function portland_webforms_form_node_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  $form_object = $form_state->getFormObject();
+
+  // Ensure we have a content entity form with a node entity.
+  if (!$form_object instanceof \Drupal\Core\Entity\ContentEntityFormInterface) {
+    return;
+  }
+
+  /** @var \Drupal\node\NodeInterface $node */
+  $node = $form_object->getEntity();
+
+  // Only act on existing nodes (not new ones).
+  if ($node->isNew()) {
+    return;
+  }
+
+  // Add webform usage warning if applicable.
+  _portland_webforms_add_node_usage_warning(
+    $form,
+    $node,
+    t('This content is used in the following webforms: @webforms. Changes here will affect all of them.')
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for node_delete_confirm.
+ */
+function portland_webforms_form_node_delete_confirm_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  $form_object = $form_state->getFormObject();
+
+  // Ensure we have a content entity form with a node entity.
+  if (!$form_object instanceof \Drupal\Core\Entity\ContentEntityFormInterface) {
+    return;
+  }
+
+  /** @var \Drupal\node\NodeInterface $node */
+  $node = $form_object->getEntity();
+
+  // Add webform usage warning if applicable.
+  _portland_webforms_add_node_usage_warning(
+    $form,
+    $node,
+    t('Deleting this content will affect the following webforms: @webforms. The content will no longer be displayed in these forms.')
+  );
+}
+
+/**
+ * Adds a webform usage warning to a node form if applicable.
+ *
+ * This helper checks if the given node is referenced by any webforms via
+ * Entity Usage and adds a warning message to the form if so.
+ *
+ * @param array &$form
+ *   The form array to add the warning to.
+ * @param \Drupal\node\NodeInterface $node
+ *   The node entity being edited or deleted.
+ * @param string $message
+ *   The message template with @webforms placeholder.
+ */
+function _portland_webforms_add_node_usage_warning(array &$form, \Drupal\node\NodeInterface $node, string $message): void {
+  // Check if entity_usage service is available.
+  if (!\Drupal::hasService('entity_usage.usage')) {
+    return;
+  }
+
+  /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
+  $usage_service = \Drupal::service('entity_usage.usage');
+
+  // Get all sources that reference this node.
+  $sources = $usage_service->listSources($node);
+
+  // Check if there are any webform sources.
+  if (empty($sources['webform'])) {
+    return;
+  }
+
+  // Load the webform entities and build links.
+  /** @var \Drupal\webform\WebformInterface[] $webforms */
+  $webforms = \Drupal::entityTypeManager()
+    ->getStorage('webform')
+    ->loadMultiple(array_keys($sources['webform']));
+
+  if (empty($webforms)) {
+    return;
+  }
+
+  // Build comma-separated list of webform links as safe markup.
+  $links = [];
+  foreach ($webforms as $webform) {
+    $links[] = $webform->toLink()->toString();
+  }
+
+  $webform_list = Markup::create(implode(', ', $links));
+
+  // Inject warning message near the top of the form.
+  $form['webform_usage_warning'] = [
+    '#type' => 'container',
+    '#attributes' => [
+      'class' => ['messages', 'messages--warning'],
+    ],
+    '#markup' => t($message, [
+      '@webforms' => $webform_list,
+    ]),
+    '#weight' => -100,
+  ];
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function portland_webforms_entity_insert(EntityInterface $entity): void {
+  if ($entity instanceof WebformInterface) {
+    _portland_webforms_sync_node_fetcher_usages($entity);
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function portland_webforms_entity_update(EntityInterface $entity): void {
+  if ($entity instanceof WebformInterface) {
+    _portland_webforms_sync_node_fetcher_usages($entity);
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function portland_webforms_entity_delete(EntityInterface $entity): void {
+  if ($entity instanceof WebformInterface) {
+    // Get the entity_usage service. If the module is not installed, bail out.
+    if (!\Drupal::hasService('entity_usage.usage')) {
+      return;
+    }
+
+    /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
+    $usage_service = \Drupal::service('entity_usage.usage');
+
+    // Remove all usage records where this webform is the source.
+    $usage_service->deleteBySourceEntity(
+      $entity->id(),
+      $entity->getEntityTypeId()
+    );
+  }
+}
+
+/**
+ * Syncs Entity Usage records for nodes referenced by portland_node_fetcher elements.
+ *
+ * This helper is called whenever a webform is inserted or updated. It removes
+ * all existing Entity Usage records where this webform is the source, then
+ * re-registers usage for each node referenced by portland_node_fetcher elements
+ * in the webform.
+ *
+ * @param \Drupal\webform\WebformInterface $webform
+ *   The webform entity to sync usage records for.
+ */
+function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform): void {
+  static $processed = [];
+  $webform_id = $webform->id();
+  if (isset($processed[$webform_id])) {
+    return;
+  }
+  $processed[$webform_id] = TRUE;
+
+  if (!\Drupal::hasService('entity_usage.usage') || !\Drupal::hasService('portland_webforms.node_fetcher_usage_helper')) {
+    return;
+  }
+
+  /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
+  $usage_service = \Drupal::service('entity_usage.usage');
+  /** @var \Drupal\portland_webforms\NodeFetcherUsageHelper $helper */
+  $helper = \Drupal::service('portland_webforms.node_fetcher_usage_helper');
+
+  // Nodes referenced by node fetcher elements.
+  $node_ids = $helper->getTargetNodeIdsFromWebform($webform);
+  $langcode = $webform->language()->getId();
+
+  // PRIMARY KEY for entity_usage does NOT include source_id_string (webform ID string),
+  // so all webforms have source_id=0. Different webforms referencing the same node
+  // collide if method + field_name identical. Make method unique per webform.
+  $method = 'portland_node_fetcher__' . $webform_id;
+  $field_name = '';
+
+  // Remove prior usages for this webform.
+  $usage_service->deleteBySourceEntity(
+    $webform->id(),
+    $webform->getEntityTypeId()
+  );
+
+  // Register usages (count=1 creates or updates).
+  foreach ($node_ids as $node_id) {
+    $usage_service->registerUsage(
+      $node_id,           // target_id
+      'node',             // target_type
+      $webform->id(),     // source_id_string (stored separately; not in PK)
+      'webform',          // source_type
+      $langcode,          // source_langcode
+      0,                  // source_vid (config entity -> 0)
+      $method,            // method (unique per webform)
+      $field_name,        // field_name kept blank to avoid field definition lookups
+      1                   // count
+    );
+  }
 }
