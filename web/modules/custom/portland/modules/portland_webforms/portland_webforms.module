@@ -184,47 +184,71 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
     return;
   }
 
+  $lock = \Drupal::lock();
+  $lock_key = 'portland_webforms:usage_sync:' . $webform_id;
+  if (!$lock->acquire($lock_key, 30.0)) {
+    return;
+  }
+
   /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
   $usage_service = \Drupal::service('entity_usage.usage');
   /** @var \Drupal\portland_webforms\NodeFetcherUsageHelper $helper */
   $helper = \Drupal::service('portland_webforms.node_fetcher_usage_helper');
 
-  // Get nodes with their element keys: [node_id => ['element_key1', 'element_key2']].
-  $node_element_map = $helper->getTargetNodeIdsWithElementKeys($webform);
+  $raw_map = $helper->getTargetNodeIdsWithElementKeys($webform);
   $langcode = $webform->language()->getId();
+  $method = 'portland_node_fetcher__' . $webform_id;
 
-  // Remove ALL prior usage records for this webform as source with portland_node_fetcher method.
-  // Use direct database delete to ensure we catch all variants.
-  $deleted = \Drupal::database()->delete('entity_usage')
-    ->condition('source_type', 'webform')
-    ->condition('source_id_string', $webform->id())
-    ->condition('method', 'portland_node_fetcher%', 'LIKE')
-    ->execute();
-
-  // Register usages with element machine names as field_name.
-  // Each node gets ONE record, even if referenced by multiple elements.
-  foreach ($node_element_map as $node_id => $element_keys) {
-    // Combine multiple element keys with a delimiter if same node is used multiple times.
-    $field_name = implode(', ', $element_keys);
-    
-    // Truncate if combined name exceeds field limit (128 chars).
-    // Use a stable hash suffix to avoid collisions when truncated.
-    if (strlen($field_name) > 128) {
-      $hash = substr(md5($field_name), 0, 8);
-      $field_name = substr($field_name, 0, 116) . '...' . $hash;
+  // Normalize: merge duplicates, dedup keys, stable sort.
+  $node_element_map = [];
+  foreach ($raw_map as $nid => $keys) {
+    if (!isset($node_element_map[$nid])) {
+      $node_element_map[$nid] = [];
     }
-    
-    $usage_service->registerUsage(
-      $node_id,           // target_id
-      'node',             // target_type
-      $webform->id(),     // source_id_string
-      'webform',          // source_type
-      $langcode,          // source_langcode
-      0,                  // source_vid (config entity -> 0)
-      'portland_node_fetcher', // method (consistent across all)
-      $field_name,        // field_name = element machine name(s)
-      count($element_keys) // count = number of elements referencing this node
-    );
+    foreach ($keys as $k) {
+      $node_element_map[$nid][$k] = TRUE;
+    }
+  }
+  foreach ($node_element_map as $nid => $set) {
+    $keys = array_keys($set);
+    sort($keys, SORT_STRING);
+    $node_element_map[$nid] = $keys;
+  }
+
+  try {
+    // One delete for this webform’s prior fetcher usages.
+    \Drupal::database()->delete('entity_usage')
+      ->condition('source_type', 'webform')
+      ->condition('source_id_string', $webform_id)
+      ->condition('method', 'portland_node_fetcher__' . $webform_id)
+      ->execute();
+
+    foreach ($node_element_map as $nid => $keys) {
+      if (empty($keys)) {
+        continue;
+      }
+      $field_name = implode(', ', $keys);
+      if (strlen($field_name) > 128) {
+        $hash = substr(md5($field_name), 0, 8);
+        $field_name = substr($field_name, 0, 116) . '...' . $hash;
+      }
+
+      // Register (MERGE handles existing row if any).
+      $usage_service->registerUsage(
+        $nid,
+        'node',
+        $webform_id,
+        'webform',
+        $langcode,
+        0,
+        $method,
+        $field_name,
+        count($keys)
+      );
+    }
+  }
+  finally {
+    $lock->release($lock_key);
   }
 }
-}
+
