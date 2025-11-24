@@ -63,6 +63,30 @@ final class NodeFetcherUsageHelper {
   }
 
   /**
+   * Gets node IDs with their element keys from portland_node_fetcher elements.
+   *
+   * @param \Drupal\webform\WebformInterface $webform
+   *   The webform entity to analyze.
+   *
+   * @return array
+   *   An associative array keyed by node ID, where each value is an array of
+   *   element machine names that reference that node. Example:
+   *   [123 => ['about_content', 'footer_content'], 456 => ['header_block']]
+   */
+  public function getTargetNodeIdsWithElementKeys(WebformInterface $webform): array {
+    $elements = $webform->getElementsDecoded();
+    
+    if (empty($elements) || !is_array($elements)) {
+      return [];
+    }
+
+    $node_element_map = [];
+    $this->traverseElementsWithKeys($elements, $node_element_map);
+    
+    return $node_element_map;
+  }
+
+  /**
    * Recursively traverses webform elements to find portland_node_fetcher types.
    *
    * @param array $elements
@@ -87,6 +111,43 @@ final class NodeFetcherUsageHelper {
 
       // Recursively traverse child elements.
       $this->traverseElements($element, $node_ids);
+    }
+  }
+
+  /**
+   * Recursively traverses elements, collecting node IDs with element keys.
+   *
+   * @param array $elements
+   *   The elements array or sub-array to traverse.
+   * @param array $node_element_map
+   *   Array passed by reference, keyed by node ID with element keys as values.
+   */
+  private function traverseElementsWithKeys(array $elements, array &$node_element_map): void {
+    foreach ($elements as $key => $element) {
+      // Skip non-array elements and keys starting with '#' (properties).
+      if (!is_array($element) || str_starts_with((string) $key, '#')) {
+        continue;
+      }
+
+      // Check if this is a portland_node_fetcher element.
+      if (isset($element['#type']) && $element['#type'] === 'portland_node_fetcher') {
+        $nid = $this->resolveNodeIdFromElement($element);
+        if ($nid !== NULL) {
+          // Initialize array for this node if not exists.
+          if (!isset($node_element_map[$nid])) {
+            $node_element_map[$nid] = [];
+          }
+          // Add this element's machine name only if not already present (prevent duplicates).
+          if (!in_array($key, $node_element_map[$nid], TRUE)) {
+            $node_element_map[$nid][] = $key;
+          }
+        }
+        // Don't recurse into portland_node_fetcher elements - they're leaf nodes.
+        continue;
+      }
+
+      // Recursively traverse child elements.
+      $this->traverseElementsWithKeys($element, $node_element_map);
     }
   }
 

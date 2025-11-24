@@ -189,34 +189,42 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
   /** @var \Drupal\portland_webforms\NodeFetcherUsageHelper $helper */
   $helper = \Drupal::service('portland_webforms.node_fetcher_usage_helper');
 
-  // Nodes referenced by node fetcher elements.
-  $node_ids = $helper->getTargetNodeIdsFromWebform($webform);
+  // Get nodes with their element keys: [node_id => ['element_key1', 'element_key2']].
+  $node_element_map = $helper->getTargetNodeIdsWithElementKeys($webform);
   $langcode = $webform->language()->getId();
 
-  // PRIMARY KEY for entity_usage does NOT include source_id_string (webform ID string),
-  // so all webforms have source_id=0. Different webforms referencing the same node
-  // collide if method + field_name identical. Make method unique per webform.
-  $method = 'portland_node_fetcher__' . $webform_id;
-  $field_name = '';
+  // Remove ALL prior usage records for this webform as source with portland_node_fetcher method.
+  // Use direct database delete to ensure we catch all variants.
+  $deleted = \Drupal::database()->delete('entity_usage')
+    ->condition('source_type', 'webform')
+    ->condition('source_id_string', $webform->id())
+    ->condition('method', 'portland_node_fetcher%', 'LIKE')
+    ->execute();
 
-  // Remove prior usages for this webform.
-  $usage_service->deleteBySourceEntity(
-    $webform->id(),
-    $webform->getEntityTypeId()
-  );
-
-  // Register usages (count=1 creates or updates).
-  foreach ($node_ids as $node_id) {
+  // Register usages with element machine names as field_name.
+  // Each node gets ONE record, even if referenced by multiple elements.
+  foreach ($node_element_map as $node_id => $element_keys) {
+    // Combine multiple element keys with a delimiter if same node is used multiple times.
+    $field_name = implode(', ', $element_keys);
+    
+    // Truncate if combined name exceeds field limit (128 chars).
+    // Use a stable hash suffix to avoid collisions when truncated.
+    if (strlen($field_name) > 128) {
+      $hash = substr(md5($field_name), 0, 8);
+      $field_name = substr($field_name, 0, 116) . '...' . $hash;
+    }
+    
     $usage_service->registerUsage(
       $node_id,           // target_id
       'node',             // target_type
-      $webform->id(),     // source_id_string (stored separately; not in PK)
+      $webform->id(),     // source_id_string
       'webform',          // source_type
       $langcode,          // source_langcode
       0,                  // source_vid (config entity -> 0)
-      $method,            // method (unique per webform)
-      $field_name,        // field_name kept blank to avoid field definition lookups
-      1                   // count
+      'portland_node_fetcher', // method (consistent across all)
+      $field_name,        // field_name = element machine name(s)
+      count($element_keys) // count = number of elements referencing this node
     );
   }
+}
 }
