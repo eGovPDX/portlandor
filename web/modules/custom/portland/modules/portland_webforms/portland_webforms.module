@@ -197,7 +197,10 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
 
   $raw_map = $helper->getTargetNodeIdsWithElementKeys($webform);
   $langcode = $webform->language()->getId();
-  $method = 'portland_node_fetcher__' . $webform_id;
+  // Use a single, custom tracking method ID. This MUST correspond to a valid
+  // entity_usage track plugin ID (we rely on the generic handler), so we do
+  // not include the webform ID here.
+  $method = 'portland_node_fetcher';
 
   // Normalize: merge duplicates, dedup keys, stable sort.
   $node_element_map = [];
@@ -220,7 +223,7 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
     \Drupal::database()->delete('entity_usage')
       ->condition('source_type', 'webform')
       ->condition('source_id_string', $webform_id)
-      ->condition('method', 'portland_node_fetcher__' . $webform_id)
+      ->condition('method', $method)
       ->execute();
 
     foreach ($node_element_map as $nid => $keys) {
