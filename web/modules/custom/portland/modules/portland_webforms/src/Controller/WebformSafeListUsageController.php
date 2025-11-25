@@ -10,10 +10,19 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 
 /**
- * Safe override of Entity Usage listing to handle config source entities.
+ * Safe clone of the Entity Usage list controller.
  *
- * Avoids LogicException when source_type is a config entity (like webform) by
- * skipping field definition lookups for non-content entities.
+ * This controller was introduced to work around historical issues where the
+ * upstream Entity Usage listing could throw LogicException when the
+ * source_type was a config entity (for example, a webform). It guards field
+ * definition lookups so that usages registered from config entities do not
+ * break the page.
+ *
+ * As of this commit, no routes point at this controller; the standard
+ * Entity Usage route from the contrib module still powers the "Usage" tab.
+ * If future changes in contrib reintroduce config-entity failures, or if we
+ * want a custom usage report for webforms, we can wire this controller to a
+ * new route or override the existing one.
  */
 class WebformSafeListUsageController extends ControllerBase {
 
