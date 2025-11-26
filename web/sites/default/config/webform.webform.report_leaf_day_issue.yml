@@ -76,7 +76,6 @@ elements: |-
       '#type': portland_address_verifier
       '#title': 'Street Address'
       '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one. '
-      '#unit_number__access': false
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -89,25 +88,36 @@ elements: |-
   computed_description:
     '#type': webform_computed_twig
     '#title': 'Computed Description'
-    '#display_on': none
+    '#display_on': form
     '#mode': html
     '#template': |-
       <h2>Leaf day feedback details</h2>
       <p>
       <strong>What is the nature of this report?</strong><br> {{ webform_token('[webform_submission:values:report_type:clear]', webform_submission)|default('A question, comment or feedback about the Leaf Day Program') }}<br>
       <strong>Please detail your question, issue, or program feedback:</strong><br>
-      {{ data.report_description }}<br>
-      </p><br>
+      {{ data.report_description }}</p>
       <h2>Contact Information</h2>
       <p>
       {% if data.report_leaf_day_address.location_address %}<strong>What is your home address?</strong><br> {{ data.report_leaf_day_address.location_address }}<br>{% endif %}
       <strong>Name:</strong> {{ data.contact_name }}<br>
       <strong>Email:</strong> {{ data.contact_email }}<br>
       <strong>Phone:</strong> {{ data.contact_phone }}<br>
+
+      {% if data.street_address.location_address or data.street_address.unit_number or data.street_address.location_city %}
+      <strong>Street Address:</strong> 
+      {{ data.street_address.location_address }}{% if data.street_address.unit_number %} {{ data.street_address.unit_number }}{% endif %}, 
+      {% if data.street_address.location_city %}{{ data.street_address.location_city }}, {% endif %}
+      {% if data.street_address.location_state %}{{ data.street_address.location_state }} {% endif %}
+      {% if data.street_address.location_zip %}{{ data.street_address.location_zip }}{% endif %}
+      {% endif %}
+      </p>
+
+      <p>
       {% if data.support_agent_use_only.employee_email %}
       <strong>Employee Email (report submitted by):</strong> {{ data.support_agent_use_only.employee_email }}<br>
       {% endif %}
       </p>
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
