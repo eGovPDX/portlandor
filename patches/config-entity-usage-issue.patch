@@ -1,0 +1,45 @@
+diff --git a/web/modules/contrib/entity_usage/src/Controller/ListUsageController.php b/web/modules/contrib/entity_usage/src/Controller/ListUsageController.php
+index XXXXXXX..YYYYYYY 100644
+--- a/web/modules/contrib/entity_usage/src/Controller/ListUsageController.php
++++ b/web/modules/contrib/entity_usage/src/Controller/ListUsageController.php
+@@ public function getRows($entity_type_id, $entity_id) {
+-      // Get field label if possible.
+-      if (!empty($usage->field_name)) {
+-        $field_definitions = $this->entityFieldManager->getFieldDefinitions($usage->source_type, $usage->source_type);
+-        if (isset($field_definitions[$usage->field_name])) {
+-          $field_label = $field_definitions[$usage->field_name]->getLabel();
+-        }
+-      }
++      // Get field label only for content entity source types.
++      $field_label = NULL;
++      $source_definition = $this->entityTypeManager->getDefinition($usage->source_type, FALSE);
++      if ($source_definition && is_subclass_of($source_definition->getClass(), \Drupal\Core\Entity\ContentEntityInterface::class)) {
++        if (!empty($usage->field_name)) {
++          try {
++            $field_definitions = $this->entityFieldManager->getFieldDefinitions($usage->source_type, $usage->source_type);
++            if (isset($field_definitions[$usage->field_name])) {
++              $field_label = $field_definitions[$usage->field_name]->getLabel();
++            }
++          }
++          catch (\LogicException $e) {
++            // Config entities (or unexpected types) can throw; ignore gracefully.
++            $field_label = NULL;
++          }
++        }
++      }
+@@
+-      $rows[] = [
+-        'data' => [
+-          $this->buildEntityLink($usage->source_type, $usage->source_id),
+-          $field_label ?? $usage->field_name,
+-          $usage->method,
+-        ],
+-      ];
++      $rows[] = [
++        'data' => [
++          $this->buildEntityLink($usage->source_type, $usage->source_id),
++          // If no field label (config entity), show method or a fallback.
++          $field_label ?? ($usage->field_name ?: $usage->method ?: ''),
++          $usage->method,
++        ],
++      ];

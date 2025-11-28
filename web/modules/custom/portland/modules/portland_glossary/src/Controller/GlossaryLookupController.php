@@ -38,13 +38,11 @@ class GlossaryLookupController extends ControllerBase {
 
       // Prepare see_also array.
       $see_also = array_map(fn($ref_node) => [
-        'title' => $ref_node->label(),
         'url' => $ref_node->toUrl()->toString(),
       ], $node->get('field_see_also')->referencedEntities());
 
       $result[$node->uuid()] = [
         'nid' => $node->id(),
-        'title' => $node->label(),
         'short_definition' => $node->get('field_summary')->value,
         'url' => $node->toUrl()->toString(),
         'pronunciation' => $node->get('field_english_pronunciation')->value,
