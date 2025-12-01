@@ -14,10 +14,13 @@ Drupal.behaviors.cloudyBackToTop = {
         "scroll",
         throttle(() => {
           const scrollTop = docEl.scrollTop;
+          const ed11yEl = document.querySelector('ed11y-element-panel');
           if (scrollTop >= minHeightToShow) {
             btnEl.classList.remove("d-none");
+            ed11yEl?.classList.add("ed11y-element-panel__above-back-to-top");
           } else if (scrollTop < minHeightToShow) {
             btnEl.classList.add("d-none");
+            ed11yEl?.classList.remove("ed11y-element-panel__above-back-to-top");
           }
         }, 300),
       );
