@@ -30,6 +30,9 @@ function portland_page_menu_entity_bundle_field_info_alter(&$fields, EntityTypeI
   if ($entity_type->id() === 'node' && $bundle === 'page') {
     if (isset($fields['field_menu'])) {
       $fields['field_menu']->addConstraint('EntityReferenceHierarchyMaxDepth', ['max_depth' => 1]);
+      $fields['field_menu']->addConstraint('EntityReferenceNoDuplicates');
+      $fields['field_menu']->addConstraint('EntityReferenceNoSelfReference');
+      $fields['field_menu']->addConstraint('EntityReferenceUniqueTarget');
     }
   }
 }
@@ -98,6 +101,27 @@ function _add_child_to_parent(EntityInterface $entity) {
  */
 function portland_page_menu_node_insert($entity) {
   _add_child_to_parent($entity);
+}
+
+/**
+ * When a node is deleted, remove the parent reference from any children in its menu field.
+ */
+function _remove_parent_reference_from_children(EntityInterface $entity) {
+  if ($entity->bundle() === "page" && $entity->field_menu->count() > 0) {
+    $menu_children_nodes = $entity->field_menu->referencedEntities();
+    foreach ($menu_children_nodes as $menu_child_node) {
+      $menu_child_node->set('field_parent', null);
+      $menu_child_node->save();
+      \Drupal::service('pathauto.generator')->updateEntityAlias($menu_child_node, 'update');
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete().
+ */
+function portland_page_menu_node_predelete($entity) {
+  _remove_parent_reference_from_children($entity);
 }
 
 function _hide_menu_if_parent(&$form, Node $node) {

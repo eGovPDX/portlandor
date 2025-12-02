@@ -71,7 +71,7 @@ class MigrateEmbeddedMediaAction extends ViewsBulkOperationsActionBase
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
+  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE)
   {
     if ($object->getEntityTypeId() === 'node' || $object->getEntityTypeId() === 'media') {
       // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.

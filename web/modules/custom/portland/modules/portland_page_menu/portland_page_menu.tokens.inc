@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\node\NodeInterface;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\entity_reference_hierarchy\EntityReferenceHierarchyFieldItemList;
 
@@ -80,7 +81,7 @@ function portland_page_menu_tokens($type, $tokens, array $data = array(), array 
     foreach ($tokens as $name => $original) {
       switch ($name) {
         case 'portland-menu-path':
-          if (array_key_exists('node', $data) && $data['node'] instanceof \Drupal\node\NodeInterface) {
+          if (array_key_exists('node', $data) && $data['node'] instanceof NodeInterface) {
             $node = $data['node'];
             $parent_node = $node->field_parent->entity;
             if ($parent_node) {

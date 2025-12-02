@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer');
 var fs = require('fs');
 const { fail } = require('assert');
 
@@ -9,7 +9,7 @@ let text_content = '', selector = '';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox", "--disabled-setupid-sandbox"],
+  args: ["--no-sandbox", "--disabled-setupid-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
 };
@@ -17,9 +17,9 @@ var BROWSER_OPTION = {
 describe('Ally Admin user test', () => {
   var browser, page, login_url;
   beforeAll(async () => {
-    browser = await puppeteer.launch(BROWSER_OPTION)
-    page = await browser.newPage()
-    await page.setDefaultTimeout(30000)
+    browser = await puppeteer.launch(BROWSER_OPTION);
+    page = await browser.newPage();
+    await page.setDefaultTimeout(30000);
 
     // Print browser version
     // await page.browser().version().then(function (version) {
@@ -30,6 +30,7 @@ describe('Ally Admin user test', () => {
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.ALLY_LOGIN;
+      login_url = login_url.replace('http://', 'https://');
       await page.goto(login_url);
     }
     else {
@@ -41,7 +42,7 @@ describe('Ally Admin user test', () => {
   })
 
   afterAll(async () => {
-    await browser.close()
+    await browser.close();
   })
 
   it('Ally can view My Groups', async function () {

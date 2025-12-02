@@ -27,7 +27,7 @@ class FileHeadersSubscriber implements EventSubscriberInterface {
     }
   }
 
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[KernelEvents::RESPONSE][] = array('onRespond');
     return $events;
   }

@@ -4,6 +4,9 @@
  * @file
  * Functions to support Portland.gov theming
  */
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -20,8 +23,8 @@ function cloudy_preprocess_html(&$variables) {
   $route_match = \Drupal::service('current_route_match');
   // if this is a node
   if ($node = $route_match->getParameter('node')) {
-    if (!$node instanceof \Drupal\Core\Entity\ContentEntityInterface) {
-      $node = \Drupal\node\Entity\Node::load($node);
+    if (!$node instanceof ContentEntityInterface) {
+      $node = Node::load($node);
     }
     // that is group content
     foreach (GroupRelationship::loadByEntity($node) as $group_content) {
@@ -124,7 +127,7 @@ function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form
 	// Theme suggestion for form elements
 	$form['actions']['submit']['#attributes']['data-twig-suggestion'] = $form['#id'];
 
-	foreach (\Drupal\Core\Render\Element::children($form) as $key) {
+	foreach (Element::children($form) as $key) {
 		$form[$key]['#attributes']['data-twig-suggestion'] = $form['#id'];
 	}
 }

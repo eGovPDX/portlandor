@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_webforms\Controller;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -168,7 +169,7 @@ class WebformReportController extends ControllerBase {
 
         // Safely parse the custom_fields YAML or JSON into an array.
         try {
-          $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
+          $custom_fields_array = Yaml::decode($custom_fields);
         } catch (\Exception $e) {
           \Drupal::logger('webform_report')->error('Failed to parse custom fields: @error', ['@error' => $e->getMessage()]);
           continue;

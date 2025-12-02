@@ -62,7 +62,7 @@ class GlossaryTermMatcher extends MatcherBase
         if ($nids) {
             $nodes = $storage->loadMultiple($nids);
             foreach ($nodes as $node) {
-                if ($node instanceof \Drupal\node\NodeInterface) {
+                if ($node instanceof NodeInterface) {
                     $suggestion = new EntitySuggestion(); //DescriptionSuggestion();
                     // Limit label to 90 characters with ellipsis if needed.
                     $label = $node->label();
