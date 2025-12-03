@@ -35,6 +35,26 @@ function AddressVerifierModel(jQuery, element, apiKey) {
   this.element = element;
   this.apiKey = apiKey;
   this.intersectsLocation = null;
+    this.view = null; // injected from main.js
+    this._serverError = 0;
+}
+
+// Centralized error reporting to keep network errors consistent
+AddressVerifierModel.prototype._reportError = function(view, jqXHR, textStatus, message) {
+    try {
+        const errorObj = new Error();
+        if (view && typeof view._logError === 'function') {
+            view._logError(jqXHR, textStatus, message, errorObj);
+        }
+        if (view && typeof view._displayError === 'function') {
+            view._displayError(view, jqXHR, textStatus, message);
+        }
+        if (view && typeof view._resetVerified === 'function') {
+            view._resetVerified(view.$checkmark, view.$button);
+        }
+    } finally {
+        this._serverError = 1;
+    }
 }
 
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
@@ -66,20 +86,14 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
                 }
             } else {
                 if (!self._serverError) {
-                    self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                    self.view._resetVerified(self.view.$checkmark, self.view.$button);
-                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
-                    self._serverError = 1;
+                    self._reportError(self.view, jqXHR, textStatus, (response && response.status) ? response.status : 'Autocomplete API error');
                     return false;
                 }
             }
         },
         function (jqXHR, textStatus, errorThrown) {
             if (!self._serverError) {
-                self.view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                self.view._resetVerified(self.view.$checkmark, self.view.$button);
-                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
-                self._serverError = 1;
+                self._reportError(self.view, jqXHR, textStatus, errorThrown || jqXHR?.responseText || 'Network error');
                 return false;
             }
         }
@@ -150,7 +164,7 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
   var xy = this._getSphericalMercCoords(lat, lon);
   let url = REVERSE_GEOCODE_URL;
   url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
-  // var self = this;
+  var self = this;
 
     this.$.ajax({
         url: url, success: function (results, textStatus, jqXHR) {
@@ -163,47 +177,89 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
                 callback(item, view);
             } else {
                 if (!self._serverError) {
-                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                    view._resetVerified(view.$checkmark, view.$button);
-                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
-                    self._serverError = 1;
+                    const message = (results && results.status) ? results.status : 'Intersects API error';
+                    self._reportError(view, jqXHR, textStatus, message);
                 }
             }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             if (!self._serverError) {
-                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                view._resetVerified(view.$checkmark, view.$button);
-                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
-                self._serverError = 1;
+                self._reportError(view, jqXHR, textStatus, errorThrown || jqXHR?.responseText || 'Network error');
             }
         }
     });
 }
 
 AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
+    var self = this;
     url = url + "&geometry=" + x + "," + y;
     this.$.ajax({
         url: url, success: function (results, textStatus, jqXHR) {
             // some secondary queries return a status object, some do not, so check for the existence of results.status.
-            if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !view.settings.error_test)) {
+            if (textStatus == "success" && (!results.status || (results.status == "success" && !view.settings.error_test))) {
                 callback(results, view, capturePath, captureField, $);
             } else {
                 if (!self._serverError) {
-                    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                    view._resetVerified(view.$checkmark, view.$button);
-                    console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, results?.status, results?.message);
-                    self._serverError = 1;
+                    const message = (results && results.status) ? results.status : 'Secondary query error';
+                    self._reportError(view, jqXHR, textStatus, message);
                 }
             }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             if (!self._serverError) {
-                view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${jqXHR?.status || 'Unknown'}`);
-                view._resetVerified(view.$checkmark, view.$button);
-                console.log(SERVER_ERROR_MESSAGE, "Status:", jqXHR?.status, textStatus, errorThrown);
-                self._serverError = 1;
+                self._reportError(view, jqXHR, textStatus, errorThrown || jqXHR?.responseText || 'Network error');
             }
+        }
+    });
+}
+
+// New: run an array of secondary queries (API calls and field captures) in the Model
+AddressVerifierModel.prototype.runSecondaryQueries = function (item, queries, view) {
+    var self = this;
+    if (!Array.isArray(queries) || queries.length === 0) return;
+
+    queries.forEach(function (query) {
+        if (query.api) {
+            let queryUrl = query.api + "?format=json";
+            if (Array.isArray(query.api_args)) {
+                for (const arg of query.api_args) {
+                    const [key, value] = Object.entries(arg)[0];
+                    switch (key) {
+                        case 'geometry':
+                            queryUrl += "&geometry=" + String(value).replace('${x}', item.x).replace('${y}', item.y);
+                            break;
+                        case 'detail_id':
+                            queryUrl += "&detail_id=" + item.taxlotId;
+                            break;
+                        default:
+                            queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    }
+                }
+            }
+
+            self.$.ajax({
+                url: queryUrl,
+                success: function (results, textStatus, jqXHR) {
+                    if (textStatus == "success" && (!results.status || (results.status == "success" && !view.settings.error_test))) {
+                        // Process captures if present
+                        if (query.capture && query.capture.length > 0) {
+                            query.capture.forEach(function (cap) {
+                                let value = AddressVerifierModel.getPropertyByPathNew(results, cap.path, cap.parse, cap.omit_null_properties);
+                                view.$('input[name="' + cap.field + '"]').val(value).trigger('change');
+                            });
+                        }
+                    } else {
+                        const message = (results && results.status) ? results.status : 'API call failed';
+                        self._reportError(view, jqXHR, textStatus, message);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    self._reportError(view, jqXHR, textStatus, errorThrown || jqXHR?.responseText || 'Network error');
+                }
+            });
+        } else if (query.url && query.capture_property && query.capture_field) {
+            // Legacy single secondary query support
+            self.callSecondaryQuery(query.url, item.x, item.y, view._processSecondaryResults, view, query.capture_property, query.capture_field, self.$);
         }
     });
 }

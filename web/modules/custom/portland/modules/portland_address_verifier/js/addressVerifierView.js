@@ -411,59 +411,9 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 }
 
 AddressVerifierView.prototype._runSecondaryQueries = function (item) {
-    var self = this;
-
-    for (let i = 0; i < this.settings.secondary_queries.length; i++) {
-        let query = this.settings.secondary_queries[i];
-
-        if (query.api) {
-            // new method using array of secondary queries
-            // there may not be args or captures, just a URL we need to hit, such as for testing error codes or health checks
-            let queryUrl = query.api + "?format=json";
-            if (query.api_args && query.api_args.length > 0) {
-                for (const arg of query.api_args) {
-                    const [key, value] = Object.entries(arg)[0];
-
-                    switch (key) {
-                        case 'geometry':
-                            queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
-                            break;
-                        case 'detail_id':
-                            queryUrl += "&detail_id=" + item.taxlotId;
-                            break;
-                        default:
-                            queryUrl += "&" + key + "=" + encodeURIComponent(value);
-                    }
-                }
-            }
-
-            // TODO: This call belongs in the model, not the view
-            this.$.ajax({
-                url: queryUrl,
-                success: function (results, textStatus, jqXHR) {
-                    if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !self.settings.error_test)) {
-                        self._processSecondaryResultsNew(results, self, query);
-                    } else {
-                        const message = "API call failed";
-                        const error = new Error();
-                        self._logError(jqXHR, SERVER_ERROR_MESSAGE, results?.status || message, error);
-                        self._displayError(self, jqXHR, SERVER_ERROR_MESSAGE, results?.status || message);
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    const message = "API call failed";
-                    const error = new Error(); // captures accurate stack location
-                    self._logError(jqXHR, textStatus, jqXHR?.responseText, error);
-                    self._displayError(self, jqXHR, textStatus, jqXHR?.responseText);
-                }
-            });
-
-        } else {
-            // old method using single secondary query settings
-            if (query.url && query.capture_property && query.capture_field) {
-                this.model.callSecondaryQuery(query.url, self.$element.find('#location_x').val(), self.$element.find('#location_y').val(), self._processSecondaryResults, self, query.capture_property, query.capture_field, this.$);
-            }
-        }
+    // Delegate to Model to keep network logic out of the View
+    if (this.settings.secondary_queries && this.settings.secondary_queries.length > 0) {
+        this.model.runSecondaryQueries(item, this.settings.secondary_queries, this);
     }
 }
 

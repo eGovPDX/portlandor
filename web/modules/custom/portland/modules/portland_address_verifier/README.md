@@ -12,7 +12,35 @@ To require verification, mark the Verification Status field required in the elem
 
 This widget handles both street addresses and mailing addresses, though unit numbers and PO boxes are not verified against any sort of database. Street addresses (those that are associated with a taxlot ID), are verified against the PortlandMaps database. For addresses with a unit number, the base address can be validated, but not the unit number. PO boxes cannot be validated.
 
+## Architecture and Error Handling
+
+- MVC split: Model runs Suggest/Intersects/secondary queries, parsing, and error routing; View manages UI; Controller wires elements.
+- Centralized errors: the Model reports failures through a single handler that logs to Drupal via `AddressVerifierModel.logClientErrorToDrupal` (`/log-api-error`), shows a dialog, and resets verification state.
+- Testing: enable `error_test` to force error flows for QA.
+
+## Migration Tips
+
+- Prefer `secondary_queries` over legacy `secondary_query_url/...` for new lookups and captures.
+- Use `${x}`/`${y}` placeholders to inject geometry; use `taxlotId` for `detail_id` queries.
+- To require verification, set the `location_verification_status` sub-element to Required in the Webform element config.
+
 ## Configuration
+
+### Quick Settings Reference
+
+- error_test: 0|1 (default 0) — simulate API errors for testing.
+- verify_button_text: string (default "Verify").
+- address_suggest: 0|1 (default 1) — enable autocomplete.
+- lookup_taxlot: 0|1 (default 0) — fetch taxlotId via Intersects API.
+- find_unincorporated: 0|1 (default 0) — use postal city for UNINCORPORATED.
+- require_portland_city_limits: 0|1 (default 0) — restrict to Portland.
+- out_of_bounds_message: string — message when outside city limits.
+- not_verified_heading / not_verified_reasons / not_verified_remedy / not_verified_remedy_required: strings — customize dialogs.
+- address_type: street|mailing|any (not yet implemented).
+- show_mailing_label: 0|1 (not yet implemented).
+- verification_required: OBSOLETE — make `location_verification_status` required instead.
+- secondary_query_url / secondary_query_capture_property / secondary_query_capture_field: legacy single-query support.
+- secondary_queries: preferred array-based queries; see examples below.
 
 ### Custom configuration properties
 
