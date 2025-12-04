@@ -57,7 +57,7 @@ elements: |-
       '#title': 'What would you like to do?'
       '#options':
         written: 'Submit written testimony'
-        verbal: 'Register for verbal testimony on <strong>[webform_submission:values:computed_latest_session_date]</strong> at <strong>[webform_submission:values:computed_committee_name]</strong>'
+        verbal: 'Register for [webform_submission:values:computed_verbal_testimony_string] on <strong>[webform_submission:values:computed_latest_session_date]</strong> at <strong>[webform_submission:values:computed_committee_name]</strong>'
       '#states':
         visible:
           ':input[name="computed_latest_agenda_item_id"]':
@@ -186,6 +186,7 @@ elements: |-
   section_verbal_testimony:
     '#type': webform_section
     '#title': 'Register for verbal testimony'
+    '#title_display': none
     '#states':
       visible:
         - ':input[name="testimony_type"]':
@@ -211,10 +212,23 @@ elements: |-
       '#whitespace': spaceless
     markup_verbal_testimony:
       '#type': webform_markup
-      '#markup': '<p>Members of the public must sign up in advance to provide verbal testimony during the meeting by completing the form below or by calling <a href="tel:+1-503-823-4000">311 (503-823-4000)</a>. Registration for virtual testimony closes one hour prior to the start of the meeting. In-person testifiers must sign up before the agenda item is heard.</p>'
-    verbal_testimony_topic:
+      '#markup': '<h2>Register for verbal testimony</h2><p>Members of the public must sign up in advance to provide verbal testimony during the meeting by completing the form below or by calling <a href="tel:+1-503-823-4000">311 (503-823-4000)</a>. Registration for virtual testimony closes one hour prior to the start of the meeting. In-person testifiers must sign up before the agenda item is heard.</p>'
+      '#states':
+        visible:
+          ':input[name="computed_council_document_type"]':
+            '!value': '326'
+    markup_public_communications:
+      '#type': webform_markup
+      '#markup': '<h2>Register for public communications</h2><p>Members of the public must sign up in advance to provide public comment during the meeting by completing the form below or by calling <a href="tel:+1-503-823-4000">311 (503-823-4000)</a>. The Council Clerk schedules up to five public communications for regular, non-recessed meetings. Two additional community members may sign up as alternates in case of cancellation. Confirmed public communications should notify the Council Clerk if they cannot attend the meeting so an alternate may take their place.</p><p>The names of confirmed public communications and their general subjects will be added to the agenda. Confirmed and alternate public communications will receive an email confirmation with participation information.</p><p>Registration for available public communications closes one hour before the start of the meeting. Only those listed on the agenda may provide public comment during the meeting.</p>'
+      '#states':
+        visible:
+          ':input[name="computed_council_document_type"]':
+            value: '326'
+    verbal_testimony_communication_subject:
       '#type': textfield
-      '#title': Topic
+      '#title': 'Brief subject (less than 10 words)'
+      '#description': '<p>Please spell out acronyms and abbreviations. Third party names will not be published on the agenda.</p>'
+      '#description_display': before
       '#required': true
       '#states':
         visible:
@@ -376,6 +390,13 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': "{{ drupal_field('field_council_document_type', 'node', data.doc_id ?? 0, { label: 'hidden', type: 'entity_reference_entity_id' })|render|striptags|trim }}"
+    '#whitespace': trim
+  computed_verbal_testimony_string:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Verbal Testimony/Public Comment string'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.computed_council_document_type == '326' ? 'public comment' : 'verbal testimony' }}"
     '#whitespace': trim
   computed_allows_written_testimony:
     '#type': webform_computed_twig
