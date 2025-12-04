@@ -152,12 +152,12 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#attributes' => [ 'id' => 'location_lon']
     ];
     $element['location_x'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Coordinates X'),
       '#attributes' => [ 'id' => 'location_x']
     ];
     $element['location_y'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Coordinates Y'),
       '#attributes' => [ 'id' => 'location_y']
     ];
