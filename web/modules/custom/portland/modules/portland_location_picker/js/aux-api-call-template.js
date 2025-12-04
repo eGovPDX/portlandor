@@ -73,6 +73,11 @@
                 return;
               }
 
+              if (response.error) {
+                console.log('customApiLookup: API error - ' + response.error.message + ' or taxlot not found at selected location.');
+                return;
+              }
+
               // Map response → target fields. Adjust keys to match your JSON.
               if ($target1.length && typeof response.zoning.base !== 'undefined') {
                 $target1.val(response.zoning.base[0].code).trigger('change');
