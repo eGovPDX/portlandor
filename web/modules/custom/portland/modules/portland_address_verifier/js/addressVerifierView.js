@@ -389,6 +389,16 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_taxlot_id').val(item.taxlotId);
     view.$element.find('#location_data').val(JSON.stringify(item));
 
+    // Notify map (if present) to drop a pin using item's lat/lon
+    try {
+        const el = view.$element[0];
+        if (el && typeof CustomEvent !== 'undefined' && item.lat && item.lon) {
+            el.dispatchEvent(new CustomEvent('address-verifier:latlon', {
+                detail: { lat: Number(item.lat), lon: Number(item.lon) }
+            }));
+        }
+    } catch (e) { /* noop */ }
+
     // show visual "verified" indicators /////////////////////////
     view.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
     view.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");

@@ -15,6 +15,8 @@
 
         // ✅ Expose the view to the DOM for the postback behavior to use
         $element[0].addressVerifierInstance = view;
+
+        // Map logic moved to map-specific MVC library loaded conditionally.
       });
     }
   };

@@ -106,6 +106,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
+    // Always attach the base verifier library.
+    $element['#attached']['library'][] = 'portland_address_verifier/portland_address_verifier';
+
     $key = isset($element['#webform_key']) ? $element['#webform_key'] : "";
 
     $machine_name = "edit-" . $key . "--wrapper";
@@ -130,6 +133,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       'require_portland_city_limits' => false,
       'out_of_bounds_message' => 'The address you provided is outside of the Portland city limits. Please try a different address.',
       'secondary_queries' => false,
+      'use_map' => false,
+      'max_zoom' => 18,
     ];
 
     $map = [
@@ -151,6 +156,17 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       'require_portland_city_limits' => function($el) { return (array_key_exists('#require_portland_city_limits', $el) && strtolower($el['#require_portland_city_limits']) == '1'); },
       'out_of_bounds_message' => function($el) { return array_key_exists('#out_of_bounds_message', $el) ? $el['#out_of_bounds_message'] : NULL; },
       'secondary_queries' => function($el) { return array_key_exists('#secondary_queries', $el) ? $el['#secondary_queries'] : NULL; },
+      'use_map' => function($el) { return (array_key_exists('#use_map', $el) && strtolower($el['#use_map']) == '1'); },
+      'max_zoom' => function($el) {
+        if (array_key_exists('#max_zoom', $el)) {
+          $val = is_numeric($el['#max_zoom']) ? (int) $el['#max_zoom'] : NULL;
+          if ($val !== NULL) {
+            // Cap at 21 per Leaflet hard limit.
+            return ($val > 21) ? 21 : $val;
+          }
+        }
+        return NULL;
+      },
     ];
 
     $settings =& $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name];
@@ -160,6 +176,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
         $val = $map[$key]($element);
       }
       $settings[$key] = ($val !== NULL) ? $val : $default;
+    }
+
+    // Conditionally attach map library only when maps are enabled; no new properties added.
+    if ((isset($map['use_map']) && is_callable($map['use_map'])) && $map['use_map']($element)) {
+      $element['#attached']['library'][] = 'portland_address_verifier/portland_address_verifier.map';
     }
   }
 }
