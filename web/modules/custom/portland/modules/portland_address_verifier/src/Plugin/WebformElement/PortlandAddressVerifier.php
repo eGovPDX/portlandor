@@ -111,57 +111,55 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $machine_name = "edit-" . $key . "--wrapper";
     $machine_name = str_replace("_", "-", $machine_name);
 
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['verification_required'] = !empty($element['#location_verification_status__required']);
+    $defaults = [
+      'verification_required' => false,
+      'error_test' => 0,
+      'address_type' => false,
+      'address_suggest' => true,
+      'verify_button_text' => 'Verify',
+      'lookup_taxlot' => false,
+      'show_mailing_label' => false,
+      'find_unincorporated' => true,
+      'secondary_query_url' => false,
+      'secondary_query_capture_property' => false,
+      'secondary_query_capture_field' => false,
+      'not_verified_heading' => "We're unable to verify this address.",
+      'not_verified_reasons' => "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.",
+      'not_verified_remedy' => "If you're certain the address is correct, you may use it without verification.",
+      'not_verified_remedy_required' => "A verified address is required. Please try again.",
+      'require_portland_city_limits' => false,
+      'out_of_bounds_message' => 'The address you provided is outside of the Portland city limits. Please try a different address.',
+      'secondary_queries' => false,
+    ];
 
-    $errorTest = array_key_exists('#error_test', $element) && strtolower($element['#error_test']) == "1" ? 1 : 0;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['error_test'] = $errorTest;
+    $map = [
+      'verification_required' => function($el) { return !empty($el['#location_verification_status__required']); },
+      'error_test' => function($el) { return (array_key_exists('#error_test', $el) && strtolower($el['#error_test']) == '1') ? 1 : 0; },
+      'address_type' => function($el) { return (array_key_exists('#address_type', $el) && strtolower($el['#address_type']) == 'any'); },
+      'address_suggest' => function($el) { return (array_key_exists('#address_suggest', $el) && strtolower($el['#address_suggest']) == '0') ? false : true; },
+      'verify_button_text' => function($el) { return array_key_exists('#verify_button_text', $el) ? $el['#verify_button_text'] : NULL; },
+      'lookup_taxlot' => function($el) { return (array_key_exists('#lookup_taxlot', $el) && strtolower($el['#lookup_taxlot']) == 1); },
+      'show_mailing_label' => function($el) { return (array_key_exists('#show_mailing_label', $el) && strtolower($el['#show_mailing_label']) == '0'); },
+      'find_unincorporated' => function($el) { return (array_key_exists('#find_unincorporated', $el) && strtolower($el['#find_unincorporated']) != '0'); },
+      'secondary_query_url' => function($el) { return array_key_exists('#secondary_query_url', $el) ? $el['#secondary_query_url'] : NULL; },
+      'secondary_query_capture_property' => function($el) { return array_key_exists('#secondary_query_capture_property', $el) ? $el['#secondary_query_capture_property'] : NULL; },
+      'secondary_query_capture_field' => function($el) { return array_key_exists('#secondary_query_capture_field', $el) ? $el['#secondary_query_capture_field'] : NULL; },
+      'not_verified_heading' => function($el) { return array_key_exists('#not_verified_heading', $el) ? $el['#not_verified_heading'] : NULL; },
+      'not_verified_reasons' => function($el) { return array_key_exists('#not_verified_reasons', $el) ? $el['#not_verified_reasons'] : NULL; },
+      'not_verified_remedy' => function($el) { return array_key_exists('#not_verified_remedy', $el) ? $el['#not_verified_remedy'] : NULL; },
+      'not_verified_remedy_required' => function($el) { return array_key_exists('#not_verified_remedy_required', $el) ? $el['#not_verified_remedy_required'] : NULL; },
+      'require_portland_city_limits' => function($el) { return (array_key_exists('#require_portland_city_limits', $el) && strtolower($el['#require_portland_city_limits']) == '1'); },
+      'out_of_bounds_message' => function($el) { return array_key_exists('#out_of_bounds_message', $el) ? $el['#out_of_bounds_message'] : NULL; },
+      'secondary_queries' => function($el) { return array_key_exists('#secondary_queries', $el) ? $el['#secondary_queries'] : NULL; },
+    ];
 
-    $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_type'] = $addressType;
-
-    $addressSuggest = array_key_exists('#address_suggest', $element) && strtolower($element['#address_suggest']) == "0" ? false : true;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_suggest'] = $addressSuggest;
-
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['verify_button_text'] = $verifyButtonText;
-
-    $lookupTaxlot = array_key_exists('#lookup_taxlot', $element) && strtolower($element['#lookup_taxlot']) == 1;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['lookup_taxlot'] = $lookupTaxlot;
-
-    $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['show_mailing_label'] = $showMailingLabel;
-
-    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) != "0";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['find_unincorporated'] = $findUnincorporated;
-
-    $secondaryQueryUrl = array_key_exists('#secondary_query_url', $element) ? $element['#secondary_query_url'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_url'] = $secondaryQueryUrl;
-
-    $secondaryQueryCaptureProperty = array_key_exists('#secondary_query_capture_property', $element) ? $element['#secondary_query_capture_property'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_property'] = $secondaryQueryCaptureProperty;
-
-    $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_field'] = $secondaryQueryCaptureField;
-
-    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to verify this address.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_heading'] = $notVerifiedHeading;
-
-    $notVerifiedReasons = array_key_exists('#not_verified_reasons', $element) ? $element['#not_verified_reasons'] : "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_reasons'] = $notVerifiedReasons;
-
-    $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy'] = $notVerifiedRemedy;
-
-    $notVerifiedRemedyRequired = array_key_exists('#not_verified_remedy_required', $element) ? $element['#not_verified_remedy_required'] : "A verified address is required. Please try again.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy_required'] = $notVerifiedRemedyRequired;
-
-    $requirePortlandCityLimits = array_key_exists('#require_portland_city_limits', $element) && strtolower($element['#require_portland_city_limits']) == "1";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['require_portland_city_limits'] = $requirePortlandCityLimits;
-
-    $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The address you provided is outside of the Portland city limits. Please try a different address.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['out_of_bounds_message'] = $outOfBoundsMessage;
-
-    $secondaryQueries = array_key_exists('#secondary_queries', $element) ? $element['#secondary_queries'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_queries'] = $secondaryQueries;
+    $settings =& $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name];
+    foreach ($defaults as $key => $default) {
+      $val = NULL;
+      if (isset($map[$key]) && is_callable($map[$key])) {
+        $val = $map[$key]($element);
+      }
+      $settings[$key] = ($val !== NULL) ? $val : $default;
+    }
   }
 }
