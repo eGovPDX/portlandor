@@ -169,17 +169,11 @@ function portland_webforms_webform_delete(EntityInterface $entity): void {
 function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform): void {
   if (!$webform instanceof WebformInterface) return;
 
-  static $processed = [];
-  $webform_id = $webform->id();
-  if (isset($processed[$webform_id])) {
-    return;
-  }
-  $processed[$webform_id] = TRUE;
-
   if (!\Drupal::hasService('entity_usage.usage') || !\Drupal::hasService('portland_webforms.node_fetcher_usage_helper')) {
     return;
   }
 
+  $webform_id = $webform->id();
   $lock = \Drupal::lock();
   $lock_key = 'portland_webforms:usage_sync:' . $webform_id;
   if (!$lock->acquire($lock_key, 30.0)) {
