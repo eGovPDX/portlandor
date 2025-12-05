@@ -91,10 +91,12 @@ When enabled, only allows addresses within Portland city limits.
 Allowed values: 1|0
 Default value: 0
 
-**secondary_query_url**<br>
+**secondary_query_url - DEPRECATED**<br>
 When populated, a second API call is made to the specified API URL with the x/y coordinates passed in the geometry parameter. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
-**secondary_query_capture_property**<br>
+DEPRECATED: Use the secondary_queries array instead.
+
+**secondary_query_capture_property - DEPRECATED**<br>
 A dot-notated string that defines the property path to retrieve a value from a nested JSON object. Supports:
 
 - **Nested properties** using dot syntax  
@@ -106,11 +108,15 @@ A dot-notated string that defines the property path to retrieve a value from a n
 The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
 This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
+DEPRECATED: Use the secondary_queries array instead.
+
+**secondary_query_capture_field - DEPRECATED**<br>
+The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
+
+DEPRECATED: Use the secondary_queries array instead.
+
 **verification_required**<br>
 OBSOLETE. This custom property is no longer used. To require address verification, set the location_verification_status sub element to be required in the element configuration.
-
-**secondary_query_capture_field**<br>
-The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
 **out_of_bounds_message**<br>
 The message displayed if an address is outside the city boundary when require_portland_city_limits is enabled.
