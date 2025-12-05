@@ -75,6 +75,7 @@
 
               if (response.error) {
                 console.log('customApiLookup: API error - ' + response.error.message + ' or taxlot not found at selected location.');
+                $target1.val('').trigger('change');
                 return;
               }
 
