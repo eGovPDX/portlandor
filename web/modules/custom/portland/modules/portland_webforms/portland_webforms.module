@@ -123,42 +123,36 @@ function _portland_webforms_add_node_usage_warning(array &$form, \Drupal\node\No
 }
 
 /**
- * Implements hook_entity_insert().
+ * Implements hook_ENTITY_TYPE_update().
  */
-function portland_webforms_entity_insert(EntityInterface $entity): void {
-  if ($entity instanceof WebformInterface) {
-    _portland_webforms_sync_node_fetcher_usages($entity);
-  }
+function portland_webforms_webform_insert(EntityInterface $entity): void {
+  _portland_webforms_sync_node_fetcher_usages($entity);
 }
 
 /**
- * Implements hook_entity_update().
+ * Implements hook_ENTITY_TYPE_update().
  */
-function portland_webforms_entity_update(EntityInterface $entity): void {
-  if ($entity instanceof WebformInterface) {
-    _portland_webforms_sync_node_fetcher_usages($entity);
-  }
+function portland_webforms_webform_update(EntityInterface $entity): void {
+  _portland_webforms_sync_node_fetcher_usages($entity);
 }
 
 /**
- * Implements hook_entity_delete().
+ * Implements hook_ENTITY_TYPE_update().
  */
-function portland_webforms_entity_delete(EntityInterface $entity): void {
-  if ($entity instanceof WebformInterface) {
-    // Get the entity_usage service. If the module is not installed, bail out.
-    if (!\Drupal::hasService('entity_usage.usage')) {
-      return;
-    }
-
-    /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
-    $usage_service = \Drupal::service('entity_usage.usage');
-
-    // Remove all usage records where this webform is the source.
-    $usage_service->deleteBySourceEntity(
-      $entity->id(),
-      $entity->getEntityTypeId()
-    );
+function portland_webforms_webform_delete(EntityInterface $entity): void {
+  // Get the entity_usage service. If the module is not installed, bail out.
+  if (!\Drupal::hasService('entity_usage.usage')) {
+    return;
   }
+
+  /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
+  $usage_service = \Drupal::service('entity_usage.usage');
+
+  // Remove all usage records where this webform is the source.
+  $usage_service->deleteBySourceEntity(
+    $entity->id(),
+    $entity->getEntityTypeId()
+  );
 }
 
 /**
@@ -173,6 +167,8 @@ function portland_webforms_entity_delete(EntityInterface $entity): void {
  *   The webform entity to sync usage records for.
  */
 function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform): void {
+  if (!$webform instanceof WebformInterface) return;
+
   static $processed = [];
   $webform_id = $webform->id();
   if (isset($processed[$webform_id])) {
@@ -190,8 +186,6 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
     return;
   }
 
-  /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
-  $usage_service = \Drupal::service('entity_usage.usage');
   /** @var \Drupal\portland_webforms\NodeFetcherUsageHelper $helper */
   $helper = \Drupal::service('portland_webforms.node_fetcher_usage_helper');
 
