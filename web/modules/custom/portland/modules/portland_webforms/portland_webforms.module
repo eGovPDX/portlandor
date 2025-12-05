@@ -180,6 +180,8 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
     return;
   }
 
+  /** @var \Drupal\entity_usage\EntityUsageInterface $usage_service */
+  $usage_service = \Drupal::service('entity_usage.usage');
   /** @var \Drupal\portland_webforms\NodeFetcherUsageHelper $helper */
   $helper = \Drupal::service('portland_webforms.node_fetcher_usage_helper');
 
@@ -217,33 +219,20 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
       ->condition('method', $method)
       ->execute();
 
-    // Re-insert normalized rows, one per field_name, defensively ignoring duplicates
-    // by catching constraint violations.
-    $connection = \Drupal::database();
     foreach ($node_element_map as $nid => $keys) {
       foreach ($keys as $field_name) {
-        try {
-          $connection->insert('entity_usage')
-            ->fields([
-              'target_id' => (int) $nid,
-              'target_type' => 'node',
-              'source_id_string' => $webform_id,
-              'source_type' => 'webform',
-              'source_langcode' => $langcode,
-              'source_vid' => 0,
-              'method' => $method,
-              'field_name' => $field_name,
-              'count' => 1,
-            ])
-            ->execute();
-        }
-        catch (\Exception $e) {
-          // Ignore duplicate key errors; any other exception should bubble.
-          $message = $e->getMessage();
-          if (strpos($message, 'Integrity constraint violation') === FALSE) {
-            throw $e;
-          }
-        }
+        // since source_id_string is not part of the primary key, we include the webform_id in the field_name to ensure uniqueness
+        $usage_service->registerUsage(
+          $nid,
+          'node',
+          $webform_id,
+          'webform',
+          $langcode,
+          0,
+          $method,
+          substr("{$field_name} - {$webform_id}", 0, 128), // limit to varchar(128)
+          1,
+        );
       }
     }
   }
