@@ -63,6 +63,90 @@
           this._marker = L.marker([lat, lng]).addTo(map);
           console.log('[AddressVerifier] Clicked location:', { lat, lon: lng });
           map.setView([lat, lng], maxZoom);
+
+          // Reverse geocode click to populate address fields
+          try {
+            const sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
+            const x = sphericalMerc.x;
+            const y = sphericalMerc.y;
+            const apiKey = drupalSettings.portlandmaps_api_key;
+            const url = `https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}`;
+
+            console.log('[AddressVerifier] Reverse geocode URL:', url);
+            fetch(url)
+              .then((res) => res.json())
+              .then((data) => {
+                console.log('[AddressVerifier] Reverse geocode raw response:', data);
+                const addr = data && data.address ? data.address : null;
+                if (addr) {
+                  const street = addr.Street || '';
+                  const city = addr.City || '';
+                  const state = addr.State || '';
+                  const zip = addr.ZIP || '';
+                  console.log('[AddressVerifier] Reverse geocode address:', addr);
+                  console.log('[AddressVerifier] Parsed:', { street, city, state, zip });
+                  // TEMP: stop here to verify data before populating fields
+                  return;
+
+                  // Populate fields inside this element wrapper only
+                  const $el = this.$element;
+                  $el.find('#location_address').val(street.toUpperCase()).trigger('change');
+                  $el.find('#location_city').val(city.toUpperCase()).trigger('change');
+                  if (state) {
+                    const $state = $el.find('#location_state');
+                    const st = state.toUpperCase();
+                    // Try match by value first (abbr like OR)
+                    let matched = false;
+                    const byValue = $state.find(`option[value="${st}"]`);
+                    if (byValue.length) {
+                      $state.val(byValue.val()).trigger('change');
+                      matched = true;
+                    }
+                    if (!matched) {
+                      // Try match by text (full name)
+                      let $opt = $state.find('option').filter(function () {
+                        const txt = (this.text || '').toUpperCase();
+                        return txt === st;
+                      });
+                      if ($opt.length) {
+                        $state.val($opt.val()).trigger('change');
+                        matched = true;
+                      }
+                    }
+                    if (!matched) {
+                      // Map abbr to full name and try text match
+                      const STATE_NAMES = {
+                        'AL':'ALABAMA','AK':'ALASKA','AZ':'ARIZONA','AR':'ARKANSAS','CA':'CALIFORNIA','CO':'COLORADO','CT':'CONNECTICUT','DE':'DELAWARE','FL':'FLORIDA','GA':'GEORGIA','HI':'HAWAII','ID':'IDAHO','IL':'ILLINOIS','IN':'INDIANA','IA':'IOWA','KS':'KANSAS','KY':'KENTUCKY','LA':'LOUISIANA','ME':'MAINE','MD':'MARYLAND','MA':'MASSACHUSETTS','MI':'MICHIGAN','MN':'MINNESOTA','MS':'MISSISSIPPI','MO':'MISSOURI','MT':'MONTANA','NE':'NEBRASKA','NV':'NEVADA','NH':'NEW HAMPSHIRE','NJ':'NEW JERSEY','NM':'NEW MEXICO','NY':'NEW YORK','NC':'NORTH CAROLINA','ND':'NORTH DAKOTA','OH':'OHIO','OK':'OKLAHOMA','OR':'OREGON','PA':'PENNSYLVANIA','RI':'RHODE ISLAND','SC':'SOUTH CAROLINA','SD':'SOUTH DAKOTA','TN':'TENNESSEE','TX':'TEXAS','UT':'UTAH','VT':'VERMONT','VA':'VIRGINIA','WA':'WASHINGTON','WV':'WEST VIRGINIA','WI':'WISCONSIN','WY':'WYOMING','DC':'DISTRICT OF COLUMBIA'
+                      };
+                      const full = STATE_NAMES[st] || st;
+                      const $optFull = $state.find('option').filter(function () {
+                        const txt = (this.text || '').toUpperCase();
+                        return txt === full;
+                      });
+                      if ($optFull.length) {
+                        $state.val($optFull.val()).trigger('change');
+                      }
+                    }
+                  }
+                  if (zip) {
+                    $el.find('#location_zip').val(zip).trigger('change');
+                  }
+                  // Also set composed full address and coordinates
+                  const fullAddress = `${street}, ${city} ${zip}`.toUpperCase();
+                  $el.find('#location_full_address').val(fullAddress);
+                  $el.find('#location_lat').val(lat);
+                  $el.find('#location_lon').val(lng);
+                  const sphericalMerc2 = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
+                  $el.find('#location_x').val(sphericalMerc2.x);
+                  $el.find('#location_y').val(sphericalMerc2.y);
+                }
+              })
+              .catch((err) => {
+                console.error('[AddressVerifier] Reverse geocode failed', err);
+              });
+          } catch (err) {
+            console.error('[AddressVerifier] Reverse geocode error', err);
+          }
         });
 
         // Store map instance for external updates
