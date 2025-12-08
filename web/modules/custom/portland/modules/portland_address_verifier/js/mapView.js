@@ -9,7 +9,7 @@ class PortlandAddressMapView {
     let $container = this.$('#' + mapId);
     if ($container.length === 0) {
       $container = this.$('<div/>', { id: mapId, class: 'portland-address-verifier--map' })
-        .css({ height: '360px' })
+        .css({ height: '500px' })
         .appendTo(this.$element);
     }
     return $container[0];

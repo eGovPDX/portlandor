@@ -41,6 +41,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public static function getCompositeElements(array $element) {
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
+    // Determine if verification is required and whether to always include unit number.
+    $verification_required = !empty($element['#location_verification_status__required']);
+    $use_unit_number = !empty($element['#use_unit_number']) && in_array(strtolower((string) $element['#use_unit_number']), ['1', 'true', 'yes']);
 
     $element['location_verification_status'] = [
       '#type' => 'hidden',
@@ -56,7 +59,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
       ],
-      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.'),
+      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
     ];
@@ -94,6 +97,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
       ],
+      // Show unit number only if verification is NOT required, or if explicitly enabled.
+      '#access' => (!$verification_required) || $use_unit_number,
     ];
     $element['location_city'] = [
       '#type' => 'textfield',
@@ -102,6 +107,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#wrapper_attributes' => [
         'class' => ['webform-city', 'mb-0'],
       ],
+      // Hide when verification is required.
+      '#access' => !$verification_required,
     ];
     $element['location_state'] = [
       '#type' => 'select',
@@ -110,6 +117,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#default_value' => 'OR',
       '#id' => 'location_state',
       '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
+      // Hide when verification is required.
+      '#access' => !$verification_required,
     ];
     $element['location_zip'] = [
       '#type' => 'textfield',
@@ -117,6 +126,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#id' => 'location_zip',
       '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
+      // Hide when verification is required.
+      '#access' => !$verification_required,
     ];
     $element['location_jurisdiction'] = [
       '#type' => 'hidden',

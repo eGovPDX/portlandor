@@ -8,9 +8,49 @@ Because there may be address that are not able to be validated due to errors in 
 
 To require verification, mark the Verification Status field required in the element config. In that case, the user may not submit the form without providing a verified address, and the messaging will tell them to try again.
 
+# Use Cases
+
+The Address Verifier handles a number of use cases:
+
+1. Basic address collection, with or without required fields; does not perform any verfication or address lookups, and supports any U.S. street or mailing address (DEFAULT)
+    - Individual sub-elements can be made required in the element configuration panel.
+    - Make sure the `location_verification_status` sub-element is not required.
+    - All address fields visible (address, unit, city, state, zip)
+
+1. Address collection within the Portland metro area, with verification from the PortlandMaps database.
+    - To enable and require verification, set the `location_verification_status` sub-element to be required in the element config panel. If not required, non-verified addresses will be accepted. TODO: 
+    - Returns UNINCORPORATED for the city name in unincororated areas. To return the postal city for unincorporated areas, set `find_unincorporated: 1` in the custom properties.
+    - To allow searching by map, set `use_map: 1`.
+    - City/State/Zip fields hidden.
+
+1. Address collection within Portland only (geofenced), with verification from the PortlandMaps database
+    - Set the location_verification_status sub-element to be required in the element config panel.
+    - Set `require_portland_city_limits: 1` in custom properties.
+    - To allow searching by map, set `use_map: 1`.
+    - City/State/Zip fields hidden.
+
+1. Collection of lat/lon or x/y location coordinates that may or may not be tied to a specific property or mailing address
+    - Set `use_map: 1`.
+    - Make sure the `location_verification_status` sub-element is not required.
+
+1. Collection of additional data associated with the location or property ID using supplemental API calls
+    - Use the `secondary_queries` property to configure the queries and specify which field will capture the data.
+
+1. Display and/or collection of location coordinates associated with an asset or feature, such as public trash cans or park amenities. This requires use of a custom assets layer.
+    - TBD
+
+1. Display of existing reports/tickets, such as open Graffiti reports. 
+    - TBD
+
+## Rules
+
+- The first use case, basic address collection without verification, is the only one that allows editable city, state, zip fields.
+
 ## Address types
 
 This widget handles both street addresses and mailing addresses, though unit numbers and PO boxes are not verified against any sort of database. Street addresses (those that are associated with a taxlot ID), are verified against the PortlandMaps database. For addresses with a unit number, the base address can be validated, but not the unit number. PO boxes cannot be validated.
+
+TODO: Implement `address_type` property, postal|taxlot
 
 ## Architecture and Error Handling
 

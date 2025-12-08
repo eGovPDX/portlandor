@@ -119,7 +119,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       'error_test' => 0,
       'address_type' => false,
       'address_suggest' => true,
-      'verify_button_text' => 'Verify',
+      'verify_button_text' => 'Find',
       'lookup_taxlot' => false,
       'show_mailing_label' => false,
       'find_unincorporated' => true,

@@ -77,68 +77,94 @@
               .then((res) => res.json())
               .then((data) => {
                 console.log('[AddressVerifier] Reverse geocode raw response:', data);
-                const addr = data && data.address ? data.address : null;
-                if (addr) {
-                  const street = addr.Street || '';
-                  const city = addr.City || '';
-                  const state = addr.State || '';
-                  const zip = addr.ZIP || '';
-                  console.log('[AddressVerifier] Reverse geocode address:', addr);
-                  console.log('[AddressVerifier] Parsed:', { street, city, state, zip });
-                  // TEMP: stop here to verify data before populating fields
-                  return;
+                const describe = (data && typeof data.describe === 'string') ? data.describe : null;
 
-                  // Populate fields inside this element wrapper only
-                  const $el = this.$element;
-                  $el.find('#location_address').val(street.toUpperCase()).trigger('change');
-                  $el.find('#location_city').val(city.toUpperCase()).trigger('change');
-                  if (state) {
-                    const $state = $el.find('#location_state');
-                    const st = state.toUpperCase();
-                    // Try match by value first (abbr like OR)
-                    let matched = false;
-                    const byValue = $state.find(`option[value="${st}"]`);
-                    if (byValue.length) {
-                      $state.val(byValue.val()).trigger('change');
+                // Interpret detail structure from Intersects API
+                const detail = (data && typeof data.detail === 'object') ? data.detail : {};
+                const cityArray = Array.isArray(detail.city) ? detail.city : null;
+                const zipArray = Array.isArray(detail.zipcode) ? detail.zipcode : null;
+                const cityFromDetail = (cityArray && cityArray.length > 0 && cityArray[0] && typeof cityArray[0].name === 'string') ? cityArray[0].name : null;
+                const postalCity = (zipArray && zipArray.length > 0 && zipArray[0] && typeof zipArray[0].name === 'string') ? zipArray[0].name : null;
+                const postalZip = (zipArray && zipArray.length > 0 && zipArray[0] && typeof zipArray[0].zip === 'string') ? zipArray[0].zip : null;
+
+                // Determine unincorporated logic and whether to use postal city/zip
+                const truthy = (v) => v === true || v === 1 || (typeof v === 'string' && (v.toLowerCase() === 'true' || v === '1'));
+                const findUnincorporated = truthy(this.settings.find_unincorporated);
+                const isUnincorporated = !(cityArray && cityArray.length > 0);
+
+                const city = (isUnincorporated && findUnincorporated) ? (postalCity || '') : (cityFromDetail || '');
+                const zip = (isUnincorporated && findUnincorporated) ? (postalZip || '') : '';
+                const state = 'OR';
+                console.log('[AddressVerifier] Parsed:', { describe, city, state, zip, isUnincorporated, findUnincorporated });
+
+                // Populate fields inside this element wrapper only
+                const $el = this.$element;
+                // Helper: find field by id or webform composite name.
+                const findField = (id, nameSuffix) => {
+                  const byId = $el.find('#' + id);
+                  if (byId.length) return byId;
+                  // Drupal Webform composites often render names like "name[location_address]".
+                  const byName = $el.find(`[name$='[${nameSuffix}]']`);
+                  if (byName.length) return byName;
+                  // Fallback to global search by id if wrapper scoping misses.
+                  const globalById = $(document).find('#' + id);
+                  if (globalById.length) return globalById;
+                  return $el.find(`[name$='[${nameSuffix}]']`);
+                };
+
+                // Prefer `describe` from API if provided.
+                const addressValue = (describe && describe.trim().length > 0) ? describe : '';
+                if (addressValue) {
+                  findField('location_address', 'location_address').val(addressValue.toUpperCase()).trigger('change');
+                }
+                if (city) {
+                  findField('location_city', 'location_city').val(city.toUpperCase()).trigger('change');
+                }
+                if (state) {
+                  const $state = findField('location_state', 'location_state');
+                  const st = state.toUpperCase();
+                  // Try match by value first (abbr like OR)
+                  let matched = false;
+                  const byValue = $state.find(`option[value="${st}"]`);
+                  if (byValue.length) {
+                    $state.val(byValue.val()).trigger('change');
+                    matched = true;
+                  }
+                  if (!matched) {
+                    // Try match by text (full name)
+                    let $opt = $state.find('option').filter(function () {
+                      const txt = (this.text || '').toUpperCase();
+                      return txt === st;
+                    });
+                    if ($opt.length) {
+                      $state.val($opt.val()).trigger('change');
                       matched = true;
                     }
-                    if (!matched) {
-                      // Try match by text (full name)
-                      let $opt = $state.find('option').filter(function () {
-                        const txt = (this.text || '').toUpperCase();
-                        return txt === st;
-                      });
-                      if ($opt.length) {
-                        $state.val($opt.val()).trigger('change');
-                        matched = true;
-                      }
-                    }
-                    if (!matched) {
-                      // Map abbr to full name and try text match
-                      const STATE_NAMES = {
-                        'AL':'ALABAMA','AK':'ALASKA','AZ':'ARIZONA','AR':'ARKANSAS','CA':'CALIFORNIA','CO':'COLORADO','CT':'CONNECTICUT','DE':'DELAWARE','FL':'FLORIDA','GA':'GEORGIA','HI':'HAWAII','ID':'IDAHO','IL':'ILLINOIS','IN':'INDIANA','IA':'IOWA','KS':'KANSAS','KY':'KENTUCKY','LA':'LOUISIANA','ME':'MAINE','MD':'MARYLAND','MA':'MASSACHUSETTS','MI':'MICHIGAN','MN':'MINNESOTA','MS':'MISSISSIPPI','MO':'MISSOURI','MT':'MONTANA','NE':'NEBRASKA','NV':'NEVADA','NH':'NEW HAMPSHIRE','NJ':'NEW JERSEY','NM':'NEW MEXICO','NY':'NEW YORK','NC':'NORTH CAROLINA','ND':'NORTH DAKOTA','OH':'OHIO','OK':'OKLAHOMA','OR':'OREGON','PA':'PENNSYLVANIA','RI':'RHODE ISLAND','SC':'SOUTH CAROLINA','SD':'SOUTH DAKOTA','TN':'TENNESSEE','TX':'TEXAS','UT':'UTAH','VT':'VERMONT','VA':'VIRGINIA','WA':'WASHINGTON','WV':'WEST VIRGINIA','WI':'WISCONSIN','WY':'WYOMING','DC':'DISTRICT OF COLUMBIA'
-                      };
-                      const full = STATE_NAMES[st] || st;
-                      const $optFull = $state.find('option').filter(function () {
-                        const txt = (this.text || '').toUpperCase();
-                        return txt === full;
-                      });
-                      if ($optFull.length) {
-                        $state.val($optFull.val()).trigger('change');
-                      }
-                    }
                   }
-                  if (zip) {
-                    $el.find('#location_zip').val(zip).trigger('change');
-                  }
-                  // Also set composed full address and coordinates
-                  const fullAddress = `${street}, ${city} ${zip}`.toUpperCase();
-                  $el.find('#location_full_address').val(fullAddress);
-                  $el.find('#location_lat').val(lat);
-                  $el.find('#location_lon').val(lng);
-                  const sphericalMerc2 = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
-                  $el.find('#location_x').val(sphericalMerc2.x);
-                  $el.find('#location_y').val(sphericalMerc2.y);
+                }
+                if (zip) {
+                  findField('location_zip', 'location_zip').val(zip).trigger('change');
+                }
+                // Also set composed full address and coordinates
+                const fullAddressBase = (describe && describe.trim().length > 0) ? describe : '';
+                if (fullAddressBase) {
+                  const fullAddress = `${fullAddressBase}${city ? ', ' + city : ''}${zip ? ' ' + zip : ''}`.toUpperCase();
+                  findField('location_full_address', 'location_full_address').val(fullAddress);
+                }
+                findField('location_lat', 'location_lat').val(lat);
+                findField('location_lon', 'location_lon').val(lng);
+                // Use the same projected mercator values from above
+                findField('location_x', 'location_x').val(x);
+                findField('location_y', 'location_y').val(y);
+                // Set unincorporated flag for downstream handlers/logic
+                findField('location_is_unincorporated', 'location_is_unincorporated').val(isUnincorporated ? '1' : '0');
+                // Set jurisdiction: if unincorporated and not using postal city, use "UNINCORPORATED".
+                // Otherwise prefer actual city (incorporated) or postal city when find_unincorporated is true.
+                const jurisdiction = (isUnincorporated)
+                  ? (findUnincorporated ? (postalCity || 'UNINCORPORATED') : 'UNINCORPORATED')
+                  : (cityFromDetail || '');
+                if (typeof jurisdiction === 'string') {
+                  findField('location_jurisdiction', 'location_jurisdiction').val(jurisdiction.toUpperCase()).trigger('change');
                 }
               })
               .catch((err) => {
