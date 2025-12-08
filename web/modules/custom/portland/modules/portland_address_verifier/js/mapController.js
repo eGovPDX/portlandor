@@ -93,7 +93,8 @@
                 const isUnincorporated = !(cityArray && cityArray.length > 0);
 
                 const city = (isUnincorporated && findUnincorporated) ? (postalCity || '') : (cityFromDetail || '');
-                const zip = (isUnincorporated && findUnincorporated) ? (postalZip || '') : '';
+                // Always prefer postal ZIP from detail.zipcode when available, regardless of incorporation status.
+                const zip = postalZip || '';
                 const state = 'OR';
                 console.log('[AddressVerifier] Parsed:', { describe, city, state, zip, isUnincorporated, findUnincorporated });
 
