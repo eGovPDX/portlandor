@@ -675,6 +675,7 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
   // PGOV-488 Convert image alt text field to textarea
   if(isset($entity_form['image'])) {
     $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+    $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
   }
 }
 
@@ -762,13 +763,22 @@ function portland_form_alter(&$form, &$form_state, $form_id)
   if ($form_id === "media_image_add_form" || $form_id === "media_image_edit_form") {
     if(isset($form['image'])) {
       $form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+      $form['#validate'][] = '_remove_linebreak_from_image_alt';
     }
   }
 }
 
 /**
+ * Remove line breaks from image alt text
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
+  $form_state->getValue('image')[0]['alt'] = preg_replace('/\s+/', ' ', $form_state->getValue('image')[0]['alt']);
+}
+
+/**
  * Change image alt text field to textarea
- * @see portland_form_alter()
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
  */
 function _convert_image_alt_to_textarea($element, FormStateInterface $form_state, &$complete_form) {
   // Do nothing if alt field doesn't exist
@@ -780,8 +790,11 @@ function _convert_image_alt_to_textarea($element, FormStateInterface $form_state
     $element['alt']['#rows'] = 6;
     $element['alt']['#description'] = new TranslatableMarkup('@original_text @additional_text', [
       '@original_text' => $element['alt']['#description'],
-      '@additional_text' => t(" If the alt text has multiple lines, it will be merged into one line when the image is embedded."),
+      '@additional_text' => t(" If the alt text has multiple lines, it will be merged into one line with line breaks converted into blank spaces."),
     ]);
+    $element['alt']['#attributes']['data-maxlength'] = 512;
+    $element['alt']['#attributes']['class'][] = 'maxlength';
+    $element['alt']['#attached']['library'][] = 'maxlength/maxlength';
   }
   return $element;
 }
