@@ -80,22 +80,7 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       '#description' => $this->t('Select the Key ID that stores the GovDelivery password.'),
     ];
 
-    // Default topic for question discovery.
-    try {
-      $topic_options = $this->topicsProvider->getWebformOptions();
-    }
-    catch (\Throwable $e) {
-      $topic_options = [];
-    }
-
-    $form['default_topic'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Default topic'),
-      '#options' => $topic_options,
-      '#default_value' => $config->get('default_topic') ?? '',
-      '#empty_option' => $this->t('- Select a topic -'),
-      '#description' => $this->t('The default topic used to discover all custom questions for API integrations. All custom questions should be assigned to this topic in the GovDelivery instance.'),
-    ];
+    // Removed default_topic field.
 
     // Connection status section after credentials.
     $form['status'] = [
@@ -399,7 +384,6 @@ class PortlandGovDeliverySettingsForm extends ConfigFormBase {
       // Note: api_base_url is not saved from form (it's disabled/read-only)
       ->set('username_key', $form_state->getValue('username_key'))
       ->set('password_key', $form_state->getValue('password_key'))
-      ->set('default_topic', $form_state->getValue('default_topic'))
       ->save();
 
     parent::submitForm($form, $form_state);
