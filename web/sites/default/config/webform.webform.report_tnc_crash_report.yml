@@ -124,6 +124,7 @@ elements: |-
     report_file_upload:
       '#type': managed_file
       '#title': 'Please upload any relevant incident and/or police reports'
+      '#file_extensions': 'jpg jpeg png txt pdf doc docx '
   page_contact_information:
     '#type': webform_wizard_page
     '#title': 'Contact Information'
@@ -195,9 +196,6 @@ elements: |-
       <p><strong>Listed violations:</strong><br> {{ webform_token('[webform_submission:values:report_violation]', webform_submission) }}</p>
       {% endif %}
       <p><strong>Claim status:</strong> {{ webform_token('[webform_submission:values:report_claim_status]', webform_submission) }}</p>
-      {% if data.report_file_upload %}
-      <p><strong>Uploaded documents:</strong> {{ webform_token('[webform_submission:values:report_file_upload]', webform_submission) }}</p>
-      {% endif %}
       <hr>
       <h2>Contact Information</h2>
       <p><strong>Name:</strong> {{ webform_token('[webform_submission:values:contact_name]', webform_submission) }}</p>
@@ -205,6 +203,13 @@ elements: |-
       {% if data.contact_phone %}
       <p><strong>Phone:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
       {% endif %}
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - administrator
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
 css: ''
 javascript: ''
 settings:
@@ -396,7 +401,10 @@ handlers:
     label: 'Zendesk new request'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -412,19 +420,37 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: |
-        6353388345367: 'report_a_tnc_crash_report'
-        5873310799383:  ['[webform_submission:values:report_vehicle_license_plate]', 'report_vehicle_license_plate']
-        18716068517783:  ['[webform_submission:values:report_state_plate_issued]', 'report_state_plate_issued']
-        1900004448785:  ['[webform_submission:values:computed_crash_company]', 'computed_crash_company']
-        37034756592023:  ['[webform_submission:values:contact_tnc_permit_number]', 'contact_tnc_permit_number']
-        1500012743961:  ['[webform_submission:values:portland_location_picker:location_address]', 'portland_location_picker']
-        37035028878871:  ['[webform_submission:values:report_towing_vehicle]', 'report_towing_vehicle']
-        37035050067479:  ['[webform_submission:values:report_customers_passengers]', 'report_customers_passengers']
-        37034861443223:  ['[webform_submission:values:report_filed_with_state]', 'report_filed_with_state']
-        37034970941975:  ['[webform_submission:values:report_police_citation]', 'report_police_citation']
-        37034973831319: ['[webform_submission:values:report_claim_status]', 'report_claim_status']
-        37035121144727:  ['[webform_submission:values:report_date_and_time_of_incident]', 'report_date_and_time_of_incident']
+      custom_fields: "6353388345367: 'report_a_tnc_crash_report'\r\n5873310799383:  ['[webform_submission:values:report_vehicle_license_plate]', 'report_vehicle_license_plate']\r\n18716068517783:  ['[webform_submission:values:report_state_plate_issued]', 'report_state_plate_issued']\r\n1900004448785:  ['[webform_submission:values:computed_crash_company]', 'computed_crash_company']\r\n37034756592023:  ['[webform_submission:values:contact_tnc_permit_number]', 'contact_tnc_permit_number']\r\n1500012743961:  ['[webform_submission:values:portland_location_picker:location_address]', 'portland_location_picker']\r\n37035028878871:  ['[webform_submission:values:report_towing_vehicle]', 'report_towing_vehicle']\r\n37035050067479:  ['[webform_submission:values:report_customers_passengers]', 'report_customers_passengers']\r\n37034861443223:  ['[webform_submission:values:report_filed_with_state]', 'report_filed_with_state']\r\n37034970941975:  ['[webform_submission:values:report_police_citation]', 'report_police_citation']\r\n37034973831319: ['[webform_submission:values:report_claim_status]', 'report_claim_status']\r\n37035121144727:  ['[webform_submission:values:report_date_and_time_of_incident:html_date]', 'report_date_and_time_of_incident']\r\n"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '36989211694999'
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'PFHT Crash Report'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_a_tnc_crash_report'\r\n5873310799383:  ['[webform_submission:values:report_vehicle_license_plate]', 'report_vehicle_license_plate']\r\n18716068517783:  ['[webform_submission:values:report_state_plate_issued]', 'report_state_plate_issued']\r\n1900004448785:  ['[webform_submission:values:computed_crash_company]', 'computed_crash_company']\r\n37034756592023:  ['[webform_submission:values:contact_tnc_permit_number]', 'contact_tnc_permit_number']\r\n1500012743961:  ['[webform_submission:values:portland_location_picker:location_address]', 'portland_location_picker']\r\n37035028878871:  ['[webform_submission:values:report_towing_vehicle]', 'report_towing_vehicle']\r\n37035050067479:  ['[webform_submission:values:report_customers_passengers]', 'report_customers_passengers']\r\n37034861443223:  ['[webform_submission:values:report_filed_with_state]', 'report_filed_with_state']\r\n37034970941975:  ['[webform_submission:values:report_police_citation]', 'report_police_citation']\r\n37034973831319: ['[webform_submission:values:report_claim_status]', 'report_claim_status']\r\n37035121144727:  ['[webform_submission:values:report_date_and_time_of_incident:html_date]', 'report_date_and_time_of_incident']\r\n"
       ticket_id_field: ''
       parent_ticket_id_field: ''
       ticket_fork_field: ''
