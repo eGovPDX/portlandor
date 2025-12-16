@@ -30,7 +30,7 @@ class PortlandNodeFetcher extends WebformElementBase {
       'node_alias_path' => '',
       'render_inline' => '1',
       'open_links_in_new_tab' => '1',
-      'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
+      // 'link_icon' => ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
     ] + parent::defineDefaultProperties();
   }
 
@@ -69,16 +69,8 @@ class PortlandNodeFetcher extends WebformElementBase {
     $form['open_links_in_new_tab'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Open links in new tab'),
-      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window.'),
+      '#description' => $this->t('If checked, any links in the fetched node will be modified to open in a new tab/window, and the text "opens in new tab or window" will be added to their title attribute.'),
       '#default_value' => array_key_exists('#open_links_in_new_tab', $element) ? $element['#open_links_in_new_tab'] : TRUE,
-    ];
-
-    $form['link_icon'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Link icon (HTML)'),
-      '#description' => $this->t('HTML snippet appended to link text when "Open links in new tab" is enabled. Provide a small <span> element. Default: the external link icon.'),
-      '#default_value' => array_key_exists('#link_icon', $element) ? $element['#link_icon'] : ' <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"> </span>',
-      '#rows' => 2,
     ];
 
     return $form;
@@ -99,9 +91,6 @@ class PortlandNodeFetcher extends WebformElementBase {
     // Persist open_links_in_new_tab checkbox value.
     $open_links = $user_input['open_links_in_new_tab'] === NULL ? '0' : $user_input['open_links_in_new_tab'];
     $form_state->setValue('open_links_in_new_tab', $open_links);
-    // Persist configured icon HTML.
-    $link_icon = isset($user_input['link_icon']) ? $user_input['link_icon'] : '';
-    $form_state->setValue('link_icon', $link_icon);
   }
 
   /**
@@ -175,11 +164,6 @@ class PortlandNodeFetcher extends WebformElementBase {
     // element config doesn't include it (older webforms or unset checkboxes).
     if (!isset($element['#open_links_in_new_tab'])) {
       $element['#open_links_in_new_tab'] = '1';
-    }
-
-    // Ensure link_icon has a sensible default when missing from saved config.
-    if (!isset($element['#link_icon'])) {
-      $element['#link_icon'] = ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>';
     }
 
     $alias = array_key_exists('#node_alias_path', $element) ? $element['#node_alias_path'] : '';
@@ -285,8 +269,21 @@ class PortlandNodeFetcher extends WebformElementBase {
                       continue;
                     }
 
-                    // Set target="_blank"
-                    $a->setAttribute('target', '_blank');
+                    // Set target="_blank" only if not already present
+                    $existing_target = $a->getAttribute('target');
+                    if (empty($existing_target) || strtolower($existing_target) !== '_blank') {
+                      $a->setAttribute('target', '_blank');
+                    }
+
+                    // If target="_blank" is present (either just added or already existing),
+                    // add title attribute if not already present
+                    if (strtolower($a->getAttribute('target')) === '_blank') {
+                      $existing_title = $a->getAttribute('title');
+                      if (empty($existing_title)) {
+                        $a->setAttribute('title', 'Opens in new tab or window');
+                      }
+                    }
+
                     // Merge or set rel attribute to include noopener noreferrer
                     $existing_rel = $a->getAttribute('rel');
                     $rels = preg_split('/\s+/', trim($existing_rel)) ?: [];
@@ -296,99 +293,6 @@ class PortlandNodeFetcher extends WebformElementBase {
                       }
                     }
                     $a->setAttribute('rel', trim(implode(' ', array_filter($rels))));
-                    // Append the external-link icon HTML at the end of the anchor only if a span containing the special invisible character
-                    // is not already present. The invisible character used is U+2007 (figure space) and is included inside the icon HTML
-                    // by default. The icon HTML is configurable via the element configuration (see the Link icon textarea).
-                    $invisible_char = ' ';
-                    $has_icon_span = FALSE;
-
-                    // Determine whether we should append the icon for this anchor. Only append when the link opens in a new tab
-                    // (target="_blank") and the href is internal to the allowed hosts (portland.gov, lndo.site) or is a
-                    // relative/internal URL (no host). External absolute hosts will not get the icon.
-                    $href = $a->getAttribute('href');
-                    $target_attr = strtolower($a->getAttribute('target'));
-                    $allow_icon = TRUE;
-                    if ($target_attr !== '_blank') {
-                      $allow_icon = FALSE;
-                    } else {
-                      $parts = @parse_url($href);
-                      if ($parts !== FALSE && isset($parts['host']) && $parts['host'] !== '') {
-                        $host = strtolower($parts['host']);
-                        // Allowed hosts: any subdomain of portland.gov,
-                        // any subdomain of lndo.site, and localhost.
-                        if (!preg_match('/(^|\.)portland\.gov$/', $host) && !preg_match('/(^|\.)lndo\.site$/', $host) && $host !== 'localhost') {
-                          $allow_icon = FALSE;
-                        }
-                      }
-                    }
-
-                    // 1) Invisible character check (existing behavior).
-                    $span_nodes = $a->getElementsByTagName('span');
-                    foreach ($span_nodes as $snode) {
-                      if ($snode instanceof \DOMElement && strpos($snode->textContent, $invisible_char) !== FALSE) {
-                        $has_icon_span = TRUE;
-                        break;
-                      }
-                    }
-
-                    // 2) Exact-fragment substring check against configured icon HTML.
-                    $icon_html = trim($element['#link_icon'] ?? ' <span class="fa-solid fa-arrow-up-right-from-square"> </span>');
-                    if (!$has_icon_span && $icon_html !== '') {
-                      // Use saveHTML on the anchor to get a string representation and look for the configured fragment. 
-                      // This is a best-effort string match and helps avoid duplicating identical HTML.
-                      $anchor_html = $doc->saveHTML($a);
-                      if (strpos($anchor_html, $icon_html) !== FALSE) {
-                        $has_icon_span = TRUE;
-                      }
-                    }
-
-                    // Class-based detection: if configured icon contains a class token, consider the icon present when an inner span already
-                    // has any of those tokens.
-                    if (!$has_icon_span && preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
-                      $classes = preg_split('/\s+/', trim($cmatch[1]));
-                      if (!empty($classes)) {
-                        foreach ($span_nodes as $snode) {
-                          if ($snode instanceof \DOMElement) {
-                            $span_classes = preg_split('/\s+/', trim($snode->getAttribute('class')));
-                            if (array_intersect($classes, $span_classes)) {
-                              $has_icon_span = TRUE;
-                              break;
-                            }
-                          }
-                        }
-                      }
-                    }
-
-                    // Only consider appending the icon when allowed by the target/href checks above.
-                    if ($allow_icon && !$has_icon_span) {
-                      // Add a normal space before the icon for separation.
-                      $a->appendChild($doc->createTextNode(' '));
-                      // Try to insert the configured HTML as a fragment. If the fragment isn't valid XML/HTML, fall back to creating a
-                      // simple span element with the default class and invisible character.
-                      $frag = $doc->createDocumentFragment();
-                      $ok = FALSE;
-                      // Suppress warnings from malformed fragments.
-                      try {
-                        $ok = @$frag->appendXML($icon_html);
-                      } catch (\Throwable $e) {
-                        $ok = FALSE;
-                      }
-                      if ($ok !== FALSE && $ok !== NULL) {
-                        $a->appendChild($frag);
-                      } else {
-                        // Fallback: attempt to extract a class attribute from
-                        // the configured HTML, otherwise use the default class.
-                        $class_attr = 'fa-solid fa-arrow-up-right-from-square';
-                        if (preg_match('/class=["\']([^"\']+)["\']/', $icon_html, $cmatch)) {
-                          $class_attr = $cmatch[1];
-                        }
-                        $fallback_span = $doc->createElement('span', $invisible_char);
-                        $fallback_span->setAttribute('class', $class_attr);
-                        // Ensure the icon is hidden from assistive tech.
-                        $fallback_span->setAttribute('aria-hidden', 'true');
-                        $a->appendChild($fallback_span);
-                      }
-                    }
                   }
                 }
                 // Extract innerHTML of our wrapper div.

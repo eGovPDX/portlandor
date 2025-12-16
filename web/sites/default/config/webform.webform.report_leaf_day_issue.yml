@@ -25,11 +25,11 @@ elements: |-
     '#title': 'What is the nature of this report?'
     '#help_title': 'CSR Note'
     '#help': '<p>Options 2 and 3 are CSR only. CMs can only leave feedback</p>'
-    '#required': true
     '#options':
-      'leafday_feedback': "A question, comment or feedback about the Leaf Day Program -- ex. I don't like that my neighborhood was removed, general kudos or feedback"
-      'leafday_future_request': 'Request to be included in a future Leaf Day -- i.e. you would like your address to be included in a future coverage area'
-      'leafday_service_issue': 'A problem with Leaf Day service -- ex. missed my house, towing issue, parking issue'
+      leafday_feedback: "A question, comment or feedback about the Leaf Day Program -- ex. I don't like that my neighborhood was removed, general kudos or feedback"
+      leafday_future_request: 'Request to be included in a future Leaf Day -- i.e. you would like your address to be included in a future coverage area'
+      leafday_service_issue: "A problem with Leaf Day service -- ex. missed my house, request a 'hot spot,' towing issue, parking issue"
+    '#required': true
     '#access_create_roles':
       - authenticated
   report_description:
@@ -51,7 +51,7 @@ elements: |-
         visible:
           ':input[name="report_type"]':
             value:
-              pattern: 'leafday_service_issue|leafday_future_request'
+              pattern: leafday_service_issue|leafday_future_request
       '#access_create_roles':
         - authenticated
     contact_name:
@@ -72,6 +72,10 @@ elements: |-
       '#title': Phone
       '#description_display': before
       '#input_mask': '(999) 999-9999'
+    street_address:
+      '#type': portland_address_verifier
+      '#title': 'Street Address'
+      '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one. '
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -91,14 +95,24 @@ elements: |-
       <p>
       <strong>What is the nature of this report?</strong><br> {{ webform_token('[webform_submission:values:report_type:clear]', webform_submission)|default('A question, comment or feedback about the Leaf Day Program') }}<br>
       <strong>Please detail your question, issue, or program feedback:</strong><br>
-      {{ data.report_description }}<br>
-      </p><br>
+      {{ data.report_description }}</p>
       <h2>Contact Information</h2>
       <p>
       {% if data.report_leaf_day_address.location_address %}<strong>What is your home address?</strong><br> {{ data.report_leaf_day_address.location_address }}<br>{% endif %}
       <strong>Name:</strong> {{ data.contact_name }}<br>
       <strong>Email:</strong> {{ data.contact_email }}<br>
       <strong>Phone:</strong> {{ data.contact_phone }}<br>
+
+      {% if data.street_address.location_address or data.street_address.unit_number or data.street_address.location_city %}
+      <strong>Street Address:</strong> 
+      {{ data.street_address.location_address }}{% if data.street_address.unit_number %} {{ data.street_address.unit_number }}{% endif %}, 
+      {% if data.street_address.location_city %}{{ data.street_address.location_city }}, {% endif %}
+      {% if data.street_address.location_state %}{{ data.street_address.location_state }} {% endif %}
+      {% if data.street_address.location_zip %}{{ data.street_address.location_zip }}{% endif %}
+      {% endif %}
+      </p>
+
+      <p>
       {% if data.support_agent_use_only.employee_email %}
       <strong>Employee Email (report submitted by):</strong> {{ data.support_agent_use_only.employee_email }}<br>
       {% endif %}
