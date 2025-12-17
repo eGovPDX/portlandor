@@ -86,7 +86,7 @@ elements: |-
         '#location_zip__attributes':
           maxlength: 5
         '#require_portland_city_limits': 1
-        '#out_of_bounds_message': 'The address you provided is outside of the Portland city limits. A Portland address is require to use this service.'
+        '#out_of_bounds_message': 'The address you provided is outside of the Portland city limits. A Portland address is required to participate in the Transportation Wallet: Access for All program. Please reach out to community-based organization staff for assistance.'
       markup_03:
         '#type': webform_markup
         '#states':
@@ -1818,50 +1818,62 @@ elements: |-
 
       <h3>Hop card details</h3>
 
-      <strong>Do you have a Hop card?</strong> {{ data.apply_has_hop_card }}<br>
+      {# if Option 1 + Yes + Adult/LIFT, they don't really have a Hop card in the context of processing #}
 
-      <p>
-      {% if data.apply_has_hop_card == "Yes" %}
-        <strong>What type of Hop card does this person have?</strong> 
-        
-        {% if data.apply_current_hop_card == "27985321767319_adult_hop_card" %}
-          Adult Hop card
-        {% elseif data.apply_current_hop_card == "27985321767319_honored_citizen_hop_card" %}
-          Honored Citizen Hop card
-        {% elseif data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
-          TriMet LIFT Hop card
-        {% else %}
-          ERROR: Unspecified
-        {% endif %}<br>
-        
-        {% if data.apply_hop_card_number or data.apply_hop_card_number_opt_2 or data.apply_hop_card_number_opt_3 %}<strong>Hop card number:</strong> {{ data.apply_hop_card_number ? data.apply_hop_card_number : data.apply_hop_card_number_opt_2 ? data.apply_hop_card_number_opt_2 : data.apply_hop_card_number_opt_3 }}<br>{% endif %}
-        
+      {% if data.apply_wallet_package == "wallet_option_1" and data.apply_has_hop_card == "Yes" and (data.apply_current_hop_card == "27985321767319_adult_hop_card" or data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card") %}
+
+        <strong>Do you have a Hop card?</strong> No<br>
+        <p><strong>What type of Hop card does this person need?</strong> Honored Citizen Hop card</p>
+
       {% else %}
-        <strong>What type of Hop card does this person need?</strong> 
-        
-        {% if data.apply_hop_card_needed %}
-          {% if data.apply_hop_card_needed == "27985321767319_honored_citizen_hop_card" %}
+
+        <strong>Do you have a Hop card?</strong> {{ data.apply_has_hop_card }}<br>
+
+        <p>
+        {% if data.apply_has_hop_card == "Yes" %}
+          <strong>What type of Hop card does this person have?</strong> 
+
+          {% if data.apply_current_hop_card == "27985321767319_adult_hop_card" %}
+            Adult Hop card
+          {% elseif data.apply_current_hop_card == "27985321767319_honored_citizen_hop_card" %}
             Honored Citizen Hop card
-          {% elseif data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" %}
-            Personalized Honored Citizen Hop card (apply through TriMet)
+          {% elseif data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
+            TriMet LIFT Hop card
           {% else %}
             ERROR: Unspecified
           {% endif %}<br>
-          
-        {% elseif data.apply_hop_card_needed_opt_2_3 %}
-          {% if data.apply_hop_card_needed_opt_2_3 == "27985321767319_adult_hop_card" %}
-            I need an Adult Hop card (18+)
-          {% elseif data.apply_hop_card_needed_opt_2_3 == "27985321767319_honored_citizen_hop_card" %}
-            Honored Citizen Hop card
-          {% elseif data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
-            Personalized Honored Citizen Hop card (apply through TriMet)
-          {% else %}
-            ERROR: Unspecified
-          {% endif %}<br>
-        
+
+          {% if data.apply_hop_card_number or data.apply_hop_card_number_opt_2 or data.apply_hop_card_number_opt_3 %}<strong>Hop card number:</strong> {{ data.apply_hop_card_number ? data.apply_hop_card_number : data.apply_hop_card_number_opt_2 ? data.apply_hop_card_number_opt_2 : data.apply_hop_card_number_opt_3 }}<br>{% endif %}
+
+        {% else %}
+          <strong>What type of Hop card does this person need?</strong> 
+
+          {% if data.apply_hop_card_needed %}
+            {% if data.apply_hop_card_needed == "27985321767319_honored_citizen_hop_card" %}
+              Honored Citizen Hop card
+            {% elseif data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" %}
+              Personalized Honored Citizen Hop card (apply through TriMet)
+            {% else %}
+              ERROR: Unspecified
+            {% endif %}<br>
+
+          {% elseif data.apply_hop_card_needed_opt_2_3 %}
+            {% if data.apply_hop_card_needed_opt_2_3 == "27985321767319_adult_hop_card" %}
+              I need an Adult Hop card (18+)
+            {% elseif data.apply_hop_card_needed_opt_2_3 == "27985321767319_honored_citizen_hop_card" %}
+              Honored Citizen Hop card
+            {% elseif data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
+              Personalized Honored Citizen Hop card (apply through TriMet)
+            {% else %}
+              ERROR: Unspecified
+            {% endif %}<br>
+
+          {% endif %}
+
         {% endif %}
-        
+
       {% endif %}
+
       {% if data.computed_card_amount_1 and data.apply_wallet_package == "wallet_option_3" %}
         <strong>Hop card amount: </strong> {{ data.computed_card_amount_1 }}<br>
       {% endif %}
