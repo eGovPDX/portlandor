@@ -178,8 +178,13 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       $settings[$key] = ($val !== NULL) ? $val : $default;
     }
 
-    // Conditionally attach map library only when maps are enabled; no new properties added.
-    if ((isset($map['use_map']) && is_callable($map['use_map'])) && $map['use_map']($element)) {
+    // Ensure map is only enabled when verification is required.
+    // If the location_verification_status sub-element is not required,
+    // force maps off even if use_map is set in configuration.
+    $settings['use_map'] = !empty($settings['verification_required']) && !empty($settings['use_map']);
+
+    // Conditionally attach map library only when maps are enabled and verification is required.
+    if (!empty($settings['use_map'])) {
       $element['#attached']['library'][] = 'portland_address_verifier/portland_address_verifier.map';
     }
   }
