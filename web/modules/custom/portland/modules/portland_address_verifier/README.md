@@ -8,11 +8,93 @@ Because there may be address that are not able to be validated due to errors in 
 
 To require verification, mark the Verification Status field required in the element config. In that case, the user may not submit the form without providing a verified address, and the messaging will tell them to try again.
 
+## Use Cases
+
+The Address Verifier handles a number of use cases:
+
+### 1. Basic unverified address collection (DEFAULT CONFIGURATION)
+
+- Supports any type of US address
+- No verification or API lookups; no geolocation; no mapping support
+- All address fields visible: address, unit, city, state, zip
+- Configuration:
+  - Set `location_verification_status` sub-element to not required 
+
+### 2. Address verification and collection of mailing addresses within the Portland metro area
+
+- Uses PortlandMaps data to verify addresses in Portland and surrounding municipalities.
+- Addresses in unincorporated areas use the city associated with the postal code.
+- Optionally supports searching by map and displaying selected addresses on the map.
+- City/State/Zip fields are hidden; address is displayed in an overlay on the map.
+- Can be configured to bypass verification.
+  - If bypass enabled, city/state/zip fields are displayed so user can enter/modify values.
+- Configuration:
+  - Set `location_verification_status` sub-element to required.
+  - Set property `allow_verification_exceptions: 1` to allow verification exceptions.
+
+2. Address collection within the Portland metro area, with verification from the PortlandMaps database.
+    - Returns UNINCORPORATED for the city name in unincororated areas. To return the postal city for unincorporated areas, set `find_unincorporated: 1` in the custom properties.
+  - To allow searching by map, set `use_map: 1`. The map only displays if `location_verification_status` is Required.
+    - City/State/Zip fields hidden.
+
+3. Address collection within Portland only (geofenced), with verification from the PortlandMaps database
+    - Set the location_verification_status sub-element to be required in the element config panel.
+    - Set `require_portland_city_limits: 1` in cusftom properties.
+  - To allow searching by map, set `use_map: 1`. The map only displays if `location_verification_status` is Required.
+    - City/State/Zip fields hidden.
+
+4. Collection of lat/lon or x/y location coordinates that may or may not be tied to a specific property or mailing address
+  - The Address Verifier map only displays when `location_verification_status` is Required. For lat/lon without verification, use the Location Picker widget instead.
+
+5. Collection of additional data associated with the location or property ID using supplemental API calls
+    - Use the `secondary_queries` property to configure the queries and specify which field will capture the data.
+
+6. Display and/or collection of location coordinates associated with an asset or feature, such as public trash cans or park amenities. This requires use of a custom assets layer.
+    - TBD
+
+7. Display of existing reports/tickets, such as open Graffiti reports. 
+    - TBD
+
+## Rules
+
+- The first use case, basic address collection without verification, is the only one that allows editable city, state, zip fields.
+- Map is only shown in use cases that verify the address because that lookup is required to fetch location data.
+
 ## Address types
 
 This widget handles both street addresses and mailing addresses, though unit numbers and PO boxes are not verified against any sort of database. Street addresses (those that are associated with a taxlot ID), are verified against the PortlandMaps database. For addresses with a unit number, the base address can be validated, but not the unit number. PO boxes cannot be validated.
 
+TODO: Implement `address_type` property, postal|taxlot
+
+## Architecture and Error Handling
+
+- MVC split: Model runs Suggest/Intersects/secondary queries, parsing, and error routing; View manages UI; Controller wires elements.
+- Centralized errors: the Model reports failures through a single handler that logs to Drupal via `AddressVerifierModel.logClientErrorToDrupal` (`/log-api-error`), shows a dialog, and resets verification state.
+- Testing: enable `error_test` to force error flows for QA.
+
+## Migration Tips
+
+- Prefer `secondary_queries` over legacy `secondary_query_url/...` for new lookups and captures.
+- Use `${x}`/`${y}` placeholders to inject geometry; use `taxlotId` for `detail_id` queries.
+- To require verification, set the `location_verification_status` sub-element to Required in the Webform element config.
+
 ## Configuration
+
+### Quick Settings Reference
+
+- error_test: 0|1 (default 0) — simulate API errors for testing.
+- verify_button_text: string (default "Verify").
+- address_suggest: 0|1 (default 1) — enable autocomplete.
+- lookup_taxlot: 0|1 (default 0) — fetch taxlotId via Intersects API.
+- find_unincorporated: 0|1 (default 0) — use postal city for UNINCORPORATED.
+- require_portland_city_limits: 0|1 (default 0) — restrict to Portland.
+- out_of_bounds_message: string — message when outside city limits.
+- not_verified_heading / not_verified_reasons / not_verified_remedy / not_verified_remedy_required: strings — customize dialogs.
+- address_type: street|mailing|any (not yet implemented).
+- show_mailing_label: 0|1 (not yet implemented).
+- verification_required: OBSOLETE — make `location_verification_status` required instead.
+- secondary_query_url / secondary_query_capture_property / secondary_query_capture_field: legacy single-query support.
+- secondary_queries: preferred array-based queries; see examples below.
 
 ### Custom configuration properties
 
@@ -66,10 +148,12 @@ When enabled, only allows addresses within Portland city limits.
 Allowed values: 1|0
 Default value: 0
 
-**secondary_query_url**<br>
+**secondary_query_url - DEPRECATED**<br>
 When populated, a second API call is made to the specified API URL with the x/y coordinates passed in the geometry parameter. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
-**secondary_query_capture_property**<br>
+DEPRECATED: Use the secondary_queries array instead.
+
+**secondary_query_capture_property - DEPRECATED**<br>
 A dot-notated string that defines the property path to retrieve a value from a nested JSON object. Supports:
 
 - **Nested properties** using dot syntax  
@@ -81,11 +165,15 @@ A dot-notated string that defines the property path to retrieve a value from a n
 The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
 This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
+DEPRECATED: Use the secondary_queries array instead.
+
+**secondary_query_capture_field - DEPRECATED**<br>
+The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
+
+DEPRECATED: Use the secondary_queries array instead.
+
 **verification_required**<br>
 OBSOLETE. This custom property is no longer used. To require address verification, set the location_verification_status sub element to be required in the element configuration.
-
-**secondary_query_capture_field**<br>
-The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
 **out_of_bounds_message**<br>
 The message displayed if an address is outside the city boundary when require_portland_city_limits is enabled.
