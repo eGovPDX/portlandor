@@ -753,7 +753,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // loop through fields to display an at-a-glance summary of settings
     foreach($configNames as $configName){
       if(! in_array($configName, $excluded_fields) ) {
-        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . ($this->configuration[$configName]);
+        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . htmlentities($this->configuration[$configName]);
       }
     }
 
