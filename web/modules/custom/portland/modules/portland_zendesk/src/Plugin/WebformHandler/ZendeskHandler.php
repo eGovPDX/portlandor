@@ -17,7 +17,6 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
-use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Form submission to Zendesk handler.
@@ -792,16 +791,7 @@ class ZendeskHandler extends WebformHandlerBase
     // get all webform elements
     $elements = $this->getWebform()->getElementsInitializedAndFlattened();
 
-    $lock = \Drupal::lock();
-    $sid  = $webform_submission->id();
-    $key  = 'zendesk_send:' . ($sid ?: $webform_submission->uuid());
-
-    if (!$lock->acquire($key, 30)) {
-      throw new \RuntimeException('Duplicate submission in progress.');
-    }
-
     // attempt to send request to create zendesk ticket
-    $__temp_paths = [];
     try {
       // initiate api client
       $client = new ZendeskClient();
@@ -843,12 +833,10 @@ class ZendeskHandler extends WebformHandlerBase
               $request['comment']['uploads'] = [];
             }
 
-            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);
-
-            $path = $this->pathForZendeskUpload($file);   // new helper below
-            $__temp_paths[] = $path;                      // remember to clean up
+            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
+            // upload file and get response
             $attachment = $client->attachments()->upload([
-              'file' => $path,                             // real path, not private://
+              'file' => $file->getFileUri(),
               'type' => $file->getMimeType(),
               'name' => $filename,
             ]);
@@ -879,10 +867,6 @@ class ZendeskHandler extends WebformHandlerBase
         '@message' => $message,
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
-    } finally {
-      // always remove any temporary copies we created
-      $this->cleanupTempUploads($__temp_paths);
-      $lock->release($key);
     }
 
     return $new_ticket_id;
