@@ -93,7 +93,7 @@ elements: |-
         'Park or natural area': 'Park or natural area'
         'Community center': 'Community center'
         'Community garden': 'Community garden'
-      '#default_value': 'Park or natural area'
+        'Golf course': 'Golf course'
     report_community_center:
       '#type': select
       '#title': 'Community Center'
@@ -126,6 +126,20 @@ elements: |-
           ':input[name="report_is_park"]':
             value: 'Community garden'
       '#required': true
+    report_golf_course:
+      '#type': select
+      '#title': 'Golf Course'
+      '#options':
+        'Colwood Golf Center': 'Colwood Golf Center'
+        'Eastmoreland Golf Course': 'Eastmoreland Golf Course'
+        'Heron Lakes Golf Course': 'Heron Lakes Golf Course'
+        'RedTail Golf Course': 'RedTail Golf Course'
+        'Rose City Golf Course': 'Rose City Golf Course'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="report_is_park"]':
+            value: 'Golf course'
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of Issue'
@@ -134,7 +148,10 @@ elements: |-
         visible:
           ':input[name="report_is_park"]':
             value: 'Park or natural area'
+      '#location_search__description': 'Search for an address or cross streets, or use the map to click a location.'
       '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
+      '#location_lat__required': true
+      '#location_lon__required': true
       '#place_name__title': 'Park Name'
       '#location_details__access': false
       '#location_details__help': 'Please provide information to help us find this site.'
@@ -150,8 +167,11 @@ elements: |-
       '#description_display': before
       '#states':
         invisible:
-          ':input[name="what_are_you_trying_to_report"]':
-            value: 'Feedback about a staff encounter'
+          - ':input[name="what_are_you_trying_to_report"]':
+              value: 'Feedback about a staff encounter'
+          - or
+          - ':input[name="report_is_park"]':
+              unchecked: true
     container_not_garden:
       '#type': container
       '#states':
@@ -489,6 +509,8 @@ elements: |-
         {{ data.community_garden_name_location }}
       {% elseif data.report_is_park == "Community center" %}
         {{ data.report_community_center }}
+      {% elseif data.report_is_park == "Golf course" %}
+        {{ data.report_golf_course }}
       {% else %}
         {{ data.report_location.place_name }}
       {% endif %}
@@ -506,16 +528,19 @@ elements: |-
     '#title': 'Computed Subject'
     '#display_on': none
     '#mode': text
-    '#template': |
+    '#template': |+
       {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden") %}
         Maintenance issue in community garden
       {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community center") %}
         Maintenance issue at {{ data.report_community_center and data.report_community_center is iterable ? '' : webform_token('[webform_submission:values:report_community_center]', webform_submission) }}
+      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Golf course") %}
+        Maintenance issue at {{ data.report_golf_course }}
       {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Art/mural/monument/sculpture") %}
         Park maintenance issue: Art/mural/monument/sculpture
       {% else %}
         Park maintenance issue: {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
       {% endif %}
+
     '#whitespace': spaceless
     '#ajax': true
   computed_issue_description:
@@ -533,13 +558,15 @@ elements: |-
 
       {# Location name #}
       {% if data.report_community_center %}
-      	{{ data.report_community_center }}<br>
+        {{ data.report_community_center }}<br>
       {% elseif data.community_garden_name_location %}
-      	{{ data.community_garden_name_location }}<br>
+        {{ data.community_garden_name_location }}<br>
       {% elseif data.report_location.place_name %}
-      	{{ data.report_location.place_name }}<br>
+        {{ data.report_location.place_name }}<br>
       {% elseif data.report_location.location_address %}
-      	{{ data.report_location.location_address }}<br>
+        {{ data.report_location.location_address }}<br>
+      {% elseif data.report_golf_course %}
+        {{ data.report_golf_course }}<br>
       {% endif %}
 
       {# Location picker data #}
@@ -555,7 +582,9 @@ elements: |-
       Location notes: {{ data.report_location_notes }}<br>
       {% endif %}
 
+      {% if data.report_location.location_x and data.report_location.location_y %}
       <p><a href="https://www.portlandmaps.com/detail/property/{{ data.report_location.location_x }}_{{ data.report_location.location_y}}_xy/">View in PortlandMaps</a></p>
+      {% endif %}
 
       {% set staffIssue = 0 %}
       {% if data.what_are_you_trying_to_report and data.what_are_you_trying_to_report is not iterable and data.what_are_you_trying_to_report == "Feedback about a staff encounter" %}
@@ -647,13 +676,13 @@ elements: |-
       {% if data.contact_name or data.contact_email %}
       <br><strong>Contact information:</strong><br>
       {% if data.contact_name %}
-      	{{ data.contact_name }}<br>
+        {{ data.contact_name }}<br>
       {% endif %}
       {% if data.contact_email %}
-      	<a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a><br>
+        <a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a><br>
       {% endif %}
       {% if data.contact_phone %}
-      	{{ data.contact_phone }}<br>
+        {{ data.contact_phone }}<br>
       {% endif %}
       {% endif %}
     '#ajax': true
@@ -662,27 +691,31 @@ elements: |-
     '#title': 'Computed Tags'
     '#display_on': none
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden")
-      	or (data.report_what_needs_attention and data.report_what_needs_attention is not iterable and data.report_what_needs_attention == "Unpaved trail or soft-surface path") %}
-      	land_steward
+        or (data.report_what_needs_attention and data.report_what_needs_attention is not iterable and data.report_what_needs_attention == "Unpaved trail or soft-surface path") %}
+        land_steward
       {% elseif (data.report_restroom and data.report_restroom is not iterable and data.report_restroom == "Toilet paper, soap, or other items")
-      		   or (data.report_paved_area and data.report_paved_area is not iterable and data.report_paved_area == "Paved trail or path")
-      		   or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Grass or turf, including irrigation")
-      		   or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Bushes, flower beds, or natural areas")
-      		   or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Splash pad or spray park") %}
-      	land_steward
+             or (data.report_paved_area and data.report_paved_area is not iterable and data.report_paved_area == "Paved trail or path")
+             or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Grass or turf, including irrigation")
+             or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Bushes, flower beds, or natural areas")
+             or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Splash pad or spray park") %}
+        land_steward
       {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Drinking fountain")
-      		   or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Drinking fountain") %}
-      	prms
+             or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Drinking fountain") %}
+        prms
       {% elseif (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Swimming pool")
-      		or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Interactive fountain") %}
-      	recreation_aquatics
+          or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Interactive fountain") %}
+        recreation_aquatics
       {% elseif (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "There is trash or it needs to be cleaned") %}
-      	land_steward
+        land_steward
       {% elseif (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Something is missing, broken or needs repair") %}
-      	prms
+        prms
       {% endif %}
+
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Golf course" %}parks_golf_report{% endif %}
+
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden" %}community_garden_report{% endif %}
     '#whitespace': trim
     '#ajax': true
   resolution_url:
@@ -919,11 +952,13 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_maintenance_issue_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_maintenance_issue_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
   route_to_parks_maintenance_zendesk:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
@@ -939,10 +974,6 @@ handlers:
         -
           ':input[name="report_basic_amenity[radios]"]':
             value: Art/mural/monument/sculpture
-        - or
-        -
-          ':input[name="report_is_park"]':
-            value: 'Community garden'
         - or
         -
           ':input[name="support_agent_use_only[test_submission]"]':
@@ -964,11 +995,13 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n"
+      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
   art_mural_monument_sculpture_issue_email:
     id: email
     handler_id: art_mural_monument_sculpture_issue_email
@@ -1009,6 +1042,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   community_gardens_issue_email:
@@ -1051,6 +1085,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   zendesk_update_request:
@@ -1131,6 +1166,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   non_urgent_tree_issue_email:
@@ -1173,6 +1209,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
 variants: {  }

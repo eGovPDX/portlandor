@@ -16,7 +16,7 @@ const TEST_GROUP_NAME = 'Full Regression Test Group';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ['--no-sandbox'],
+  args: ["--no-sandbox", '--ignore-certificate-errors'],
   defaultViewport: null,
   headless: "new",
   // To watch tests locally on MacOS:
@@ -39,6 +39,7 @@ describe('Full regression test suite for Admin', () => {
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.SUPERADMIN_LOGIN;
+      login_url = login_url.replace('http://', 'https://');
       await page.goto(login_url);
     } else {
       var drush_uli_result = fs.readFileSync('superAdmin_uli.log').toString();
@@ -748,10 +749,10 @@ describe('Full regression test suite for Admin', () => {
         await fileElement.uploadFile(filePath);
         // await this.page.waitForSelector('div.form-managed-file__main span.file');
         await this.page.waitForSelector(
-          'div.form-item--image-0-alt input[type="text"]'
+          'div.form-item--image-0-alt textarea'
         );
         await this.page.type(
-          'div.form-item--image-0-alt input[type="text"]',
+          'div.form-item--image-0-alt textarea',
           'Alternative text for the test image'
         );
 

@@ -4,7 +4,8 @@ namespace Drupal\portland_address_verifier\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
-use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\Component\Utility\Html;
 
 /**
  * Provides a 'portland_address_verifier' element.
@@ -32,26 +33,49 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
+    $e = static fn($s) => Html::escape($s);
 
-    // this content is used as a display value for the field value, and is what is returned by the parent
-    // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
-    // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
-    // specified in the token, such as [webform_submission:values:location:place_name].
+    // Builds the display string used by [webform_submission:values:location].
     $lines = [];
-    $address = "";
 
-    if ($value['location_verification_status'] == 'Verified' && array_key_exists('address_label', $value)) {
-      $address = $value['address_label'];
-      $address = str_replace("\r\n", "<br>", $address);
-    } else {
-      $address = $value['location_address'];
+    $address = '';
+    $verified = (!empty($value['location_verification_status']) && $value['location_verification_status'] === 'Verified')
+      ? 'Verified '
+      : '';
+
+    if (!empty($value['location_address'])) {
+      $address = '<strong>' . $verified . 'Address:</strong> ' . $e($value['location_address']);
     }
 
-    $lines[] = $address;
-    //$lines[] = '<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
-    return $lines;
-  }
+    if (!empty($value['unit_number'])) {
+      $address .= ' ' . $e($value['unit_number']);
+    }
 
+    if (!empty($value['location_city'])) {
+      $address .= ', ' . $e($value['location_city']);
+    }
+
+    if (!empty($value['location_state'])) {
+      $address .= ', ' . $e($value['location_state']);
+    }
+
+    if (!empty($value['location_zip'])) {
+      $address .= ' ' . $e($value['location_zip']);
+    }
+
+    if ($address !== '') {
+      $lines[] = $address;
+    }
+
+    // IMPORTANT for composites: return a LIST of render arrays.
+    // Single item containing the full block:
+    return [
+      [
+        '#markup' => Markup::create('<p>' . implode('<br />', $lines) . '</p>'),
+      ],
+    ];
+  }
+  
   /**
    * {@inheritdoc}
    */
@@ -107,7 +131,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['show_mailing_label'] = $showMailingLabel;
 
-    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "1";
+    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) != "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['find_unincorporated'] = $findUnincorporated;
 
     $secondaryQueryUrl = array_key_exists('#secondary_query_url', $element) ? $element['#secondary_query_url'] : false;
@@ -119,7 +143,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_field'] = $secondaryQueryCaptureField;
 
-    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to verify this address.";
+    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to find this address in the PortlandMaps database.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_heading'] = $notVerifiedHeading;
 
     $notVerifiedReasons = array_key_exists('#not_verified_reasons', $element) ? $element['#not_verified_reasons'] : "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";

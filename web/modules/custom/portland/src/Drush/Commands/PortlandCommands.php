@@ -96,4 +96,56 @@ class PortlandCommands extends DrushCommands {
 
     echo "Done deleting orphaned group content. Processed $processed nodes." . PHP_EOL;
   }
+
+  /**
+   * Drush command to set usernames to email address.
+   * @command portland:set_username_to_email
+   * @aliases pgov-set-username-to-email
+   * @description Set usernames to email address.
+   */
+  public function set_username_to_email() {
+    $user_storage = \Drupal::entityTypeManager()->getStorage('user');
+    $memory_cache = \Drupal::service('entity.memory_cache');
+    $batch_size = 1000;
+    $last_uid = 1; // Skip user 1
+    $processed = 0;
+    $updated = 0;
+
+    do {
+      $query = $user_storage->getQuery()
+        ->accessCheck(FALSE)
+        ->sort('uid', 'ASC')
+        ->condition('uid', $last_uid, '>')
+        ->range(0, $batch_size);
+
+      $uids = $query->execute();
+
+      if (empty($uids)) {
+        break;
+      }
+
+      echo "Processing user batch " . $last_uid . "-" . ($last_uid + $batch_size) . PHP_EOL;
+      $users = $user_storage->loadMultiple($uids);
+      foreach ($users as $user) {
+        $email = $user->getEmail();
+        if (str_contains($user->getAccountName(), ",")) {
+          echo "Updating username for user ID " . $user->id() . " from " . $user->getAccountName() ." to " . $email . PHP_EOL;
+          $user->setUsername($email);
+          $user->save();
+          $updated++;
+        }
+        $last_uid = $user->id();
+        $processed++;
+      }
+
+      // Free up memory.
+      unset($users);
+      unset($query);
+      unset($uids);
+      gc_collect_cycles();
+      $memory_cache->deleteAll();
+    } while (TRUE);
+
+    echo "Done updating $updated usernames. Processed $processed users." . PHP_EOL;
+  }
 }

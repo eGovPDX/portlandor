@@ -42,9 +42,9 @@ class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase implements
 
     $role_ids = $this->configuration['role_ids'];
     foreach (\Drupal::entityTypeManager()->getStorage('user')->loadMultiple($user_ids) as $user) {
-      if ($entity instanceof \Drupal\group\Entity\Group) {
+      if ($entity instanceof Group) {
         $group = $entity;
-      } elseif ($entity instanceof \Drupal\group\Entity\GroupMembership) {
+      } elseif ($entity instanceof GroupMembership) {
         $group = $entity->getGroup();
       }
 

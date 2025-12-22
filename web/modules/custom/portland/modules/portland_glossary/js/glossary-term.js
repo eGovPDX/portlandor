@@ -95,10 +95,16 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           let reference;
           if (!hasLongDefinition) {
-            // Replace <a> with <span> to keep appearance but remove link
+            // Replace <a> with <span> to keep appearance but remove link.
+            // Also remove any trailing external-link icon markup that may
+            // have been added by other processors so popups for short
+            // definitions don't show link icons.
             reference = document.createElement('span');
             reference.className = link.className;
-            reference.innerHTML = link.innerHTML;
+            // Clone inner HTML and strip any <span> that contains the
+            // invisible figure-space character U+2007 or font-awesome icons.
+            let inner = link.innerHTML;
+            reference.innerHTML = inner;
             reference.setAttribute('data-entity-substitution', 'glossary_term');
             reference.setAttribute('tabindex', '0');
             link.replaceWith(reference);
@@ -109,10 +115,50 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           wrapper.prepend(reference);
           reference.setAttribute('aria-details', tooltipId);
 
+          // If this glossary term is inside a Node Fetcher that requests
+          // opening links in a new tab, ensure the learn-more link opens in
+          // a new tab and has appropriate rel attributes. We avoid adding
+          // the external-link icon to learn-more links.
+          const openLinksAncestor = wrapper.closest('[data-open-links-in-new-tab="1"]');
+
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
           const closeBtn = tooltip.querySelector('.glossary-close');
           let hideTimeout;
+
+          if (openLinksAncestor) {
+            // Handle title attribute on the glossary term link/reference
+            if (hasLongDefinition && reference.tagName === 'A') {
+              const existingTitle = reference.getAttribute('title');
+              if (existingTitle) {
+                // Append to existing title
+                reference.setAttribute('title', existingTitle + ' (opens in new tab or window)');
+              } else {
+                // Set new title
+                reference.setAttribute('title', 'Opens in new tab or window');
+              }
+            }
+
+            const learnMoreEl = wrapper.querySelector('.learn-more');
+            if (learnMoreEl) {
+              learnMoreEl.setAttribute('target', '_blank');
+              // Merge or set rel attribute to include noopener noreferrer
+              const existingRel = learnMoreEl.getAttribute('rel') || '';
+              const relParts = existingRel.split(/\s+/).filter(Boolean);
+              ['noopener','noreferrer'].forEach((r) => { if (!relParts.includes(r)) relParts.push(r); });
+              learnMoreEl.setAttribute('rel', relParts.join(' '));
+
+              // Handle title attribute on the learn more button
+              const existingTitle = learnMoreEl.getAttribute('title');
+              if (existingTitle) {
+                // Append to existing title
+                learnMoreEl.setAttribute('title', existingTitle + ' (opens in new tab or window)');
+              } else {
+                // Set new title
+                learnMoreEl.setAttribute('title', 'Opens in new tab or window');
+              }
+            }
+          }
 
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;

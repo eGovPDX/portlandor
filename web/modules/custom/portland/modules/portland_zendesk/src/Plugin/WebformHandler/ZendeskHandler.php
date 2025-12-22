@@ -7,6 +7,7 @@
  */
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
+use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
@@ -815,7 +816,7 @@ class ZendeskHandler extends WebformHandlerBase
           $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
           // Get fids from composite sub-elements.
           // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
-          if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+          if ($element_plugin instanceof WebformCompositeBase) {
             $managed_file_keys = $element_plugin->getManagedFiles($element);
             // Convert single composite value to array of multiple composite values.
             $data = $multiple ? $field_data : [$field_data];
@@ -892,7 +893,7 @@ class ZendeskHandler extends WebformHandlerBase
    * Resolve a File entity to a real path suitable for Zendesk SDK.
    * If private:// path isn't real yet or contains "/_sid_/", copy to temporary://.
    */
-  private function pathForZendeskUpload(\Drupal\file\Entity\File $file): string
+  private function pathForZendeskUpload(File $file): string
   {
     $fs = \Drupal::service('file_system');
     $uri = $file->getFileUri();
