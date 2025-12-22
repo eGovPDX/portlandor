@@ -1,20 +1,11 @@
-From 2beca2a366b05267a89020cfe5f94a57707f74c6 Mon Sep 17 00:00:00 2001
-From: Oden <hello@odensc.com>
-Date: Thu, 4 Dec 2025 18:50:46 -0800
-Subject: [PATCH] Add support for non-fieldable entities in ListUsageController
-
----
- src/Controller/ListUsageController.php | 18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
-
 diff --git a/src/Controller/ListUsageController.php b/src/Controller/ListUsageController.php
-index d5a8eaf..13a4009 100644
+index 065612f..e3cf422 100644
 --- a/src/Controller/ListUsageController.php
 +++ b/src/Controller/ListUsageController.php
-@@ -242,7 +242,11 @@ class ListUsageController extends ControllerBase {
-           // If for some reason this record is broken, just skip it.
-           continue;
+@@ -292,7 +292,11 @@ class ListUsageController extends ControllerBase {
+           }
          }
+ 
 -        $field_definitions = $this->entityFieldManager->getFieldDefinitions($source_type, $source_entity->bundle());
 +        try {
 +          $field_definitions = $this->entityFieldManager->getFieldDefinitions($source_type, $source_entity->bundle());
@@ -24,10 +15,11 @@ index d5a8eaf..13a4009 100644
          $default_langcode = $source_entity->language()->getId();
          $used_in = [];
          $revisions = [];
-@@ -273,7 +277,17 @@ class ListUsageController extends ControllerBase {
+@@ -323,7 +327,16 @@ class ListUsageController extends ControllerBase {
                '#list_type' => 'ul',
              ];
            }
+-        }
 +        } else {
 +          // If the entity is not revisionable, just pick the first record.
 +          if (array_key_exists(0, $records)) {
@@ -37,20 +29,17 @@ index d5a8eaf..13a4009 100644
 +            ] = $records[0];
 +            $revisions[static::REVISION_DEFAULT][$source_langcode] = $field_name;
 +          }
-         }
-+
++         }
          $link = $this->getSourceEntityLink($source_entity);
          // If the label is empty it means this usage shouldn't be shown
          // on the UI, just skip this row.
-@@ -289,7 +303,7 @@ class ListUsageController extends ControllerBase {
+@@ -339,8 +352,7 @@ class ListUsageController extends ControllerBase {
            }
          };
          $field_name = $get_field_name($revisions);
 -        $field_label = isset($field_definitions[$field_name]) ? $field_definitions[$field_name]->getLabel() : $this->t('Unknown');
+-        $type = $entity_types[$source_type]->getLabel();
 +        $field_label = isset($field_definitions[$field_name]) ? $field_definitions[$field_name]->getLabel() : $field_name ?? $this->t('Unknown');
-         $type = $entity_types[$source_type]->getLabel();
          if ($source_bundle_key = $source_entity->getEntityType()->getKey('bundle')) {
            $bundle_field = $source_entity->{$source_bundle_key};
--- 
-2.34.1
-
+           if ($bundle_field->getFieldDefinition()->getType() === 'entity_reference') {
