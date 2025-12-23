@@ -39,6 +39,11 @@ class Smartsheet extends QueryPluginBase {
   private $whereRowId = [];
 
   /**
+   * Holds filter condition groups. Currently unused.
+   */
+  protected $where = [];
+
+  /**
    * {@inheritdoc}
    */
   public function build(ViewExecutable $view) {
@@ -52,6 +57,9 @@ class Smartsheet extends QueryPluginBase {
       switch ($filter['op']) {
         case 'equals':
           if ($value != $filter['value']) return true;
+          break;
+        case 'not_equals':
+          if ($value == $filter['value']) return true;
           break;
         default:
           return false; // Keep the row by default if op not found
@@ -77,6 +85,23 @@ class Smartsheet extends QueryPluginBase {
     array_multisort(...$multisort_args);
   }
 
+  public function getSheet(ViewExecutable $view, SmartsheetPagingStrategy $paging_strategy): object {
+    $client = new SmartsheetClient($this->options['sheet_id']);
+    $current_page = $view->pager?->getCurrentPage() ?? 0;
+    $items_per_page = $view->pager?->getItemsPerPage() ?? 0;
+
+    return $client->getSheet([
+      'exclude' => 'filteredOutRows',
+      'filterId' => $this->options['filter_id'],
+      'include' => 'attachments',
+      // smartsheet pages are 1-indexed
+      'page' => $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY ? 1 : $current_page + 1,
+      // if in-mem, load API max of 10,000 rows
+      'pageSize' => ($items_per_page === 0 || $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) ? 10000 : $items_per_page,
+      'rowIds' => join(',', $this->whereRowId),
+    ]);
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -86,19 +111,9 @@ class Smartsheet extends QueryPluginBase {
     if ($sheet_id === "") return;
 
     try {
-      $client = new SmartsheetClient($sheet_id);
+      $sheet = $this->getSheet($view, $paging_strategy);
       $current_page = $view->pager->getCurrentPage();
       $items_per_page = $view->pager->getItemsPerPage();
-      $sheet = $client->getSheet([
-        'exclude' => 'filteredOutRows',
-        'filterId' => $this->options['filter_id'],
-        'include' => 'attachments',
-        // smartsheet pages are 1-indexed
-        'page' => $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY ? 1 : $current_page + 1,
-        // if in-mem, load API max of 10,000 rows
-        'pageSize' => ($items_per_page === 0 || $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) ? 10000 : $items_per_page,
-        'rowIds' => join(',', $this->whereRowId),
-      ]);
       $pager_offset = $view->pager->getOffset();
       $sheet_raw_rows = $sheet->rows;
       // only apply offset if set using API paging. if in-memory, it's applied after filtering/sorting
