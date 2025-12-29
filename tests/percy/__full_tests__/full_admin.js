@@ -749,10 +749,10 @@ describe('Full regression test suite for Admin', () => {
         await fileElement.uploadFile(filePath);
         // await this.page.waitForSelector('div.form-managed-file__main span.file');
         await this.page.waitForSelector(
-          'div.form-item--image-0-alt input[type="text"]'
+          'div.form-item--image-0-alt textarea'
         );
         await this.page.type(
-          'div.form-item--image-0-alt input[type="text"]',
+          'div.form-item--image-0-alt textarea',
           'Alternative text for the test image'
         );
 
