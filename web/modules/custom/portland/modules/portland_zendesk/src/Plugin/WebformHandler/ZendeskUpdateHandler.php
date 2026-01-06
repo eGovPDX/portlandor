@@ -446,7 +446,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // Candiates for checking whether this is an upload submit:
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
-    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
+    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#parents'][0] === "submit") {
 
       // // does it help to put the report_ticket_id in the user input? will that get it to
       // // be used in token replacement in the 2nd handler? if not, we may need to do some
