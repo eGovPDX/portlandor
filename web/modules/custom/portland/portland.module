@@ -29,6 +29,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
 use Drupal\node\Entity\Node;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -46,7 +47,7 @@ function getGroupIdsByEntity($entity)
 
   $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
-    $group_ids[] = $group_content->getGroup()->id();
+    $group_ids[] = $group_content->getGroup()?->id();
   }
 
   return $group_ids;
@@ -180,6 +181,7 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('EventDateTime', []);
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
+  $node->addConstraint('LinkUrl', []);
 }
 
 /**
@@ -341,7 +343,8 @@ function _add_node_to_govdelivery_queue($node)
   }
 
   // Build the email content
-  $body = sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
+  $body = '<div class="emailBody">';
+  $body .= sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
   $body .= sprintf('<h2>%s</h2>', $node->getTitle());
   $body .= sprintf('%s', $image_html);
 
@@ -366,18 +369,18 @@ function _add_node_to_govdelivery_queue($node)
 
   $body .= sprintf('<p>%s</p>', $node->get("field_summary")->value);
   $body .= sprintf('<p><a href="%s">Read more</a></p>', $node->toUrl()->setAbsolute()->toString());
+  $body .= '</div>';
   $body .= '<div class="clear" />';
   $body .= "
     <style>
+      .emailBody {
+        max-width: 53em;
+      }
       .groupHeading {
         margin-bottom: -1rem;
         font-size: .9rem;
         text-transform: uppercase;
         color: #666;
-      }
-      div.field--type-image {
-        float: right;
-        margin-left: 1em;
       }
       .clear {
         clear: both;
@@ -514,7 +517,7 @@ function _build_log_message($entity)
 
   $parentGroupTitle = '';
   if ($entity->getEntityTypeId() == 'group_content') {
-    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()->label() . ',   ';
+    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()?->label() . ',   ';
     $titleText = 'Title=' . $entity->label->value . ','; // Group content didn't implement "label()"
   } else {
     $titleText = 'Title=' . $entity->label() . ',';
@@ -642,7 +645,7 @@ function portland_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInt
   }
 
   $node = $route_match->getParameter('node');
-  if(!empty($node) && ($node instanceof Drupal\node\Entity\Node) && $node->bundle() == "park_facility") {
+  if(!empty($node) && ($node instanceof Node) && $node->bundle() == "park_facility") {
     $breadcrumb->addLink(Link::createFromRoute(t("Find a park"), "view.park_finder.page_1"));
   }
 }
@@ -667,6 +670,12 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
     if ($entity_form['#bundle'] == 'document') {
       $entity_form['#element_validate'][] = '_validate_document';
     }
+  }
+
+  // PGOV-488 Convert image alt text field to textarea
+  if(isset($entity_form['image'])) {
+    $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+    $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
   }
 }
 
@@ -750,6 +759,45 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     }
   }
 
+  // PGOV-488 Convert image alt text field to textarea
+  if ($form_id === "media_image_add_form" || $form_id === "media_image_edit_form") {
+    if(isset($form['image'])) {
+      $form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+      $form['#validate'][] = '_remove_linebreak_from_image_alt';
+    }
+  }
+}
+
+/**
+ * Remove line breaks from image alt text
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
+  $form_state->getValue('image')[0]['alt'] = preg_replace('/\s+/', ' ', $form_state->getValue('image')[0]['alt']);
+}
+
+/**
+ * Change image alt text field to textarea
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _convert_image_alt_to_textarea($element, FormStateInterface $form_state, &$complete_form) {
+  // Do nothing if alt field doesn't exist
+  if(! isset($element['alt'])) return $element;
+
+  // Alt field exists → convert to textarea
+  if (!empty($element['alt']) && $element['alt']['#type'] === 'textfield') {
+    $element['alt']['#type'] = 'textarea';
+    $element['alt']['#rows'] = 6;
+    $element['alt']['#description'] = new TranslatableMarkup('@original_text @additional_text', [
+      '@original_text' => $element['alt']['#description'],
+      '@additional_text' => t(" If the alt text has multiple lines, it will be merged into one line with line breaks converted into blank spaces."),
+    ]);
+    $element['alt']['#attributes']['data-maxlength'] = 160;
+    $element['alt']['#attributes']['class'][] = 'maxlength';
+    $element['alt']['#attached']['library'][] = 'maxlength/maxlength';
+    $element['alt']['#attributes']['maxlength_js_label'] = 'The suggested max length of alternative text is @limit characters, remaining: <strong>@remaining</strong>';
+  }
+  return $element;
 }
 
 /**
@@ -1045,17 +1093,25 @@ function _validate_group_group_path(&$form, FormStateInterface $form_state)
  */
 function portland_cron()
 {
-  // Send content notification email to powr@portlandoregon.gov
-  _send_content_email();
+  // Send content notification email
+  try {
+    _send_content_email();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed sending content review email: " . $e->getMessage());
+  }
 
   // Send queued GovDelivery emails
-  _process_govdelivery_queue();
+  try {
+    _process_govdelivery_queue();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed processing GovDelivery queue: " . $e->getMessage());
+  }
 }
 
 
 /**
  * Helper function to send content notification email.
- * Retrieve a view and send it to powr@portlandoregon.gov
+ * Retrieve a view and send it to BTS-eGov@portlandoregon.gov
  */
 function _send_content_email()
 {
@@ -1115,7 +1171,7 @@ function _send_content_email()
     $params['title'] = 'Portland.gov list of content to review' . $environment_name;
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
-    $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+    $sent_successfully = _send_email($key, $to, $langcode, $params, 'website@portlandoregon.gov');
     if ($sent_successfully) {
       \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
       \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
@@ -1300,7 +1356,6 @@ function portland_mail_alter(&$message)
         $user_name = $config->get('name');
         $user_email = $config->get('mail');
       }
-      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
       break;
   }
 }
@@ -1613,5 +1668,30 @@ function portland_field_widget_single_element_form_alter(array &$element, FormSt
   if (isset($context["widget"]) && isset($context["items"]) &&
     $context['widget']->getPluginId() === 'link_default' && $context["items"]->getName() === "field_efiles_link") {
     $element['uri']['#description'] = t('Enter a valid eFiles URL in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.');
+  }
+}
+
+/**
+ * Implements hook_preprocess_media().
+ * Only show additional properties of a banner image in Node and Group add/edit forms.
+ */
+function portland_preprocess_media(&$variables) {
+  /** @var \Drupal\media\Entity\Media $media */
+  $media = $variables['media'];
+  $view_mode = $variables['view_mode'] ?? '';
+  if ($media?->bundle() === 'image' && $view_mode === 'banner') {
+    // Only display the additional fields in Node and Group add/edit forms
+    $route_name = \Drupal::routeMatch()->getRouteName();
+    if( in_array($route_name, [
+      'node.add',
+      'entity.node.edit_form',
+      'entity.group_content.create_form',
+      'entity.group.add_form',
+      'entity.group.edit_form',
+    ]) ) {
+      return;
+    }
+
+    unset($variables["content"]["media_eva_banner_image_info"]);
   }
 }

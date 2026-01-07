@@ -1,14 +1,13 @@
 <?php
 
+use Drupal\editor\Entity\Editor;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
-use Drupal\media\Entity\Media;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Implements hook_form_alter().
  */
-function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id) {
+function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id)
+{
   $entity = $form_state->get('entity');
   $entity_element = $form_state->get('entity_element');
   // if no entity has been selected yet or we're not on the embed dialog, there's nothing for us to do
@@ -23,6 +22,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     'image' => ['data-align', 'data-caption'],
     'map' => ['data-align', 'data-caption'],
     'video' => ['data-align', 'data-caption', 'data-start-cue'],
+    'content_fragment' => [],
   ];
   $attributes_enabled = $attributes_enabled_by_bundle[$entity->bundle()];
 
@@ -131,7 +131,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       '#title' => t('Translate this media item'),
       '#weight' => 0,
       '#markup' => $user_can_translate
-        ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
+        ? '<a target="_blank" href="/media/' . $entity->id() . '/translations">Translate</a>'
         : 'You do not have the translator role.',
       '#description' => (count($entity_translations) > 0
         ? 'Already translated in: ' .  join(', ', $entity_translation_names)
@@ -146,7 +146,8 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
 /**
  * Adds responsive-right alignment if document "embedded with thumbnail" view mode is selected
  */
-function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, FormStateInterface $form_state) {
+function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, FormStateInterface $form_state)
+{
   $entity = $form_state->get('entity');
   if ($entity->bundle() === 'document') {
     if ($form_state->getValue(['attributes', 'data-entity-embed-display']) === 'view_mode:media.embedded_with_thumbnail') {
@@ -157,7 +158,8 @@ function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, Fo
   }
 }
 
-function portland_media_embed_helper_after_build($form, &$form_state) {
+function portland_media_embed_helper_after_build($form, &$form_state)
+{
   $form['actions']['back']['#value'] = t("Select a different entity");
   return $form;
 }
@@ -166,7 +168,8 @@ function portland_media_embed_helper_after_build($form, &$form_state) {
  * Implements hook_form_alter().
  * Causes media form submit to redirect to the group media page, if media is created in the context of a group.
  */
-function portland_media_embed_helper_form_media_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+function portland_media_embed_helper_form_media_form_alter(array &$form, FormStateInterface $form_state, $form_id)
+{
   $route_match = \Drupal::service('current_route_match');
   $group = $route_match->getParameter('group');
   if (isset($group)) {
@@ -174,7 +177,8 @@ function portland_media_embed_helper_form_media_form_alter(array &$form, FormSta
   }
 }
 
-function _portland_media_embed_helper_redirect_to_group_media(array $form, FormStateInterface $form_state) {
+function _portland_media_embed_helper_redirect_to_group_media(array $form, FormStateInterface $form_state)
+{
   $route_match = \Drupal::service('current_route_match');
   $group = $route_match->getParameter('group');
   $url = \Drupal::service('path.validator')->getUrlIfValid('/group/' . $group->id->value . '/media');
@@ -182,20 +186,88 @@ function _portland_media_embed_helper_redirect_to_group_media(array $form, FormS
 }
 
 // Add a variable so Twig template media--map.html.twig can check if it's being used inside CKEditor
-function portland_media_embed_helper_preprocess_media__map(&$variables) {
-  if(isset($_REQUEST['text']) && strpos($_REQUEST['text'], '<drupal-entity ') === 0) {
+function portland_media_embed_helper_preprocess_media__map(&$variables)
+{
+  if (isset($_REQUEST['text']) && strpos($_REQUEST['text'], '<drupal-entity ') === 0) {
     $variables['map_embeded_in_ckeditor'] = true;
+  }
+  // Set the media name in the field_geo_file field's render array for use in the twig template
+  if (isset($variables['name']) && isset($variables['content']['field_geo_file'][0]['#map'])) {
+    $variables["content"]["field_geo_file"][0]["#map"]['media_name'] = $variables['name'];
   }
 }
 
 /**
  * Implements hook_media_presave()
  */
-function portland_media_embed_helper_media_presave($media) {
+function portland_media_embed_helper_media_presave($media)
+{
   // Copy Preview Image file into Thumbnail. Do nothing if Preview Image is empty.
-  if($media->hasField('field_preview_image') &&
-      $media->hasField('thumbnail') &&
-      ! empty($media->field_preview_image->target_id)) {
+  if (
+    $media->hasField('field_preview_image') &&
+    $media->hasField('thumbnail') &&
+    ! empty($media->field_preview_image->target_id)
+  ) {
     $media->thumbnail->target_id = $media->field_preview_image->target_id;
   }
+}
+
+/**
+ * Implements hook_editor_js_settings_alter().
+ * 
+ * TEMPORARY: This is a temporary workaround to remove the insert_content_fragment button from the simplified_editor_with_media_embed format's toolbar
+ * unless the user is in the glossary_editor or administrator roles. This is necessary because the button is not yet ready for rollout to the
+ * rest of the organiation. Once the feature is ready for widespread release, this code should be removed. 
+ */
+function portland_media_embed_helper_editor_js_settings_alter(array &$settings, Editor $editor = NULL) {
+  $account = \Drupal::currentUser();
+
+  // Only show the button if the user is in glossary_editor or administrator roles.
+  $roles = $account->getRoles();
+  if (in_array('glossary_editor', $roles, true) || in_array('administrator', $roles, true)) {
+    return;
+  }
+
+  // Remove the insert_content_fragment button from this format's toolbar.
+  if (isset($settings["editor"]["formats"]["simplified_editor_with_media_embed"])) {
+    $settings["editor"]["formats"]["simplified_editor_with_media_embed"]["editorSettings"]["toolbar"]["items"] = array_values(
+      array_filter(
+        $settings["editor"]["formats"]["simplified_editor_with_media_embed"]["editorSettings"]["toolbar"]["items"],
+        fn($item) => $item !== 'insert_content_fragment'
+      )
+    );
+  }
+}
+
+/**
+ * Implements hook_preprocess_media().
+ */
+function portland_media_embed_helper_preprocess_media(&$variables) {
+    /** @var \Drupal\media\Entity\Media $media */
+  $media = $variables['media'];
+  $view_mode = $variables['view_mode'] ?? '';
+
+  // Ensure we have a human-friendly name to use as the title.
+  $name = $variables['name'] ?? $media->label();
+
+  // Set title attribute for the field_media_media_remote field in iFrame Embed media.
+  if ($media->hasField('field_media_media_remote') && !empty($variables['content']['field_media_media_remote'])) {
+    foreach ($media->get('field_media_media_remote') as $delta => $item) {
+      if (isset($variables['content']['field_media_media_remote'][$delta])) {
+        // Ensure attributes array exists.
+        $variables['content']['field_media_media_remote'][$delta]['#attributes'] = $variables['content']['field_media_media_remote'][$delta]['#attributes'] ?? [];
+        // Set the title attribute to the media name.
+        $variables['content']['field_media_media_remote'][$delta]['#attributes']['title'] = $name;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_leaflet_map().
+ */
+function portland_media_embed_helper_preprocess_leaflet_map(&$variables)
+{
+  // Retrieve the media name set in portland_media_embed_helper_preprocess_media__map()
+  $variables['attributes']['title'] = $variables["map"]["media_name"] ?? 'Leaflet map';
 }

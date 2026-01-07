@@ -1,6 +1,7 @@
 <?php
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
+use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -445,7 +446,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // Candiates for checking whether this is an upload submit:
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
-    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
+    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#parents'][0] === "submit") {
 
       // // does it help to put the report_ticket_id in the user input? will that get it to
       // // be used in token replacement in the 2nd handler? if not, we may need to do some
@@ -579,7 +580,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             $multiple = $element_plugin->hasMultipleValues($element);
             // Get fids from composite sub-elements.
             // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
-            if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+            if ($element_plugin instanceof WebformCompositeBase) {
               $managed_file_keys = $element_plugin->getManagedFiles($element);
               // Convert single composite value to array of multiple composite values.
               $data = $multiple ? $field_data : [$field_data];

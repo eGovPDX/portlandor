@@ -1,0 +1,89 @@
+From ccd2d23c0ddf300a52205ac15e5282559044aa58 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Wed, 30 Jul 2025 15:00:02 -0700
+Subject: [PATCH 1/2] Issue #3535538: fix double-encoded HTML in description
+
+---
+ templates/views-view-row-rss.html.twig | 2 +-
+ templates/views-view-rss.html.twig     | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/templates/views-view-row-rss.html.twig b/templates/views-view-row-rss.html.twig
+index ba5165b..1e99014 100644
+--- a/templates/views-view-row-rss.html.twig
++++ b/templates/views-view-row-rss.html.twig
+@@ -18,7 +18,7 @@
+ <item>
+   <title>{{ title -}}</title>
+   <link>{{ link -}}</link>
+-  <description><![CDATA[{{ description -}}]]></description>
++  <description><![CDATA[{{ description|replace({ ']]>': ']]]]><![CDATA[>' })|raw -}}]]></description>
+   {% for item in item_elements -%}
+     <{{ item.key -}}{{ item.attributes -}}
+     {% if item.value -%}
+diff --git a/templates/views-view-rss.html.twig b/templates/views-view-rss.html.twig
+index 441b258..3a3f749 100644
+--- a/templates/views-view-rss.html.twig
++++ b/templates/views-view-rss.html.twig
+@@ -22,7 +22,7 @@
+   <channel>
+     <title>{{ title -}}</title>
+     <link>{{ link -}}</link>
+-    <description><![CDATA[{{ description -}}]]></description>
++    <description><![CDATA[{{ description|replace({ ']]>': ']]]]><![CDATA[>' })|raw -}}]]></description>
+     <language>{{ langcode -}}</language>
+     {##
+      # Output the channel elements as a raw tag so that the included HTML tags
+--
+GitLab
+
+
+From d6a539972437b6a48c061ef88042e1dd930e2c5c Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Wed, 30 Jul 2025 16:46:24 -0700
+Subject: [PATCH 2/2] Update test and render description before replacement
+
+---
+ templates/views-view-row-rss.html.twig | 2 +-
+ tests/src/Kernel/DisplayFeedTest.php   | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/templates/views-view-row-rss.html.twig b/templates/views-view-row-rss.html.twig
+index 1e99014..028a980 100644
+--- a/templates/views-view-row-rss.html.twig
++++ b/templates/views-view-row-rss.html.twig
+@@ -18,7 +18,7 @@
+ <item>
+   <title>{{ title -}}</title>
+   <link>{{ link -}}</link>
+-  <description><![CDATA[{{ description|replace({ ']]>': ']]]]><![CDATA[>' })|raw -}}]]></description>
++  <description><![CDATA[{{ description|render|replace({ ']]>': ']]]]><![CDATA[>' })|raw -}}]]></description>
+   {% for item in item_elements -%}
+     <{{ item.key -}}{{ item.attributes -}}
+     {% if item.value -%}
+diff --git a/tests/src/Kernel/DisplayFeedTest.php b/tests/src/Kernel/DisplayFeedTest.php
+index 854aefa..ac93ad7 100644
+--- a/tests/src/Kernel/DisplayFeedTest.php
++++ b/tests/src/Kernel/DisplayFeedTest.php
+@@ -129,7 +129,7 @@ class DisplayFeedTest extends EntityKernelTestBase {
+       'title' => $node_title,
+       'body' => [
+         0 => [
+-          'value' => 'A paragraph',
++          'value' => 'A paragraph > a sentence',
+           'format' => filter_default_format(),
+         ],
+       ],
+@@ -152,8 +152,8 @@ class DisplayFeedTest extends EntityKernelTestBase {
+     $this->assertEquals($node_link, $xml->channel->item[0]->link);
+     $this->assertEquals($node_link, $xml->channel->item[0]->comments);
+     $this->assertEquals('Weather', (string) $xml->channel->item[0]->category);
+-    // Verify HTML is properly escaped in the description field.
+-    $this->assertStringContainsString('&lt;p&gt;A paragraph&lt;/p&gt;', (string) $xml->channel->item[0]->description);
++    // Verify HTML isn't double-encoded in the description field.
++    $this->assertStringContainsString('<p>A paragraph &gt; a sentence</p>', (string) $xml->channel->item[0]->description);
+
+     $enclosure = $xml->channel->item[0]->enclosure;
+     $this->assertEquals(\Drupal::service('file_url_generator')->generateAbsoluteString('public://example.jpg'), $enclosure['url']);
+--
+GitLab

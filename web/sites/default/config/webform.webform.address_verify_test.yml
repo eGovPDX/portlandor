@@ -17,42 +17,88 @@ description: ''
 categories:
   - Test
 elements: |-
-  verified_address:
+  address_verifier_use_case_1:
     '#type': portland_address_verifier
-    '#title': 'Address Verifier (verification required)'
-    '#description': '<p>Full verified address is required.</p>'
+    '#title': 'Address Verifier - Use Case 1 - Require verified City of Portland address'
+    '#description': '<p>Requires a verified City of Portland address. This means that the jurisdiction must be PORTLAND, regardless of the value in the city property.<br><br>To enable this use case, require the location_verification_status sub-element, and set require_portland_city_limits: 0 in the advanced custom properties.</p>'
     '#title_display': before
     '#description_display': before
-    '#required': true
-    '#location_address__required': true
-    '#location_city__required': true
-    '#location_state__required': true
     '#location_verification_status__required': true
-    '#find_unincorporated': 1
-    '#not_verified_remedy': 'A verified address is required. Please try again.'
-  markup:
-    '#type': webform_markup
-    '#states':
-      visible:
-        ':input[name="verified_address[location_verification_status]"]':
-          value: Verified
-    '#markup': '<p><strong>Address is valid!</strong></p>'
-  ajax_indicator:
-    '#type': portland_ajax_indicator
-    '#title': 'Ajax Indicator'
-  verified_address_2:
+    '#require_portland_city_limits': 1
+  horizontal_rule:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_2:
     '#type': portland_address_verifier
-    '#title': 'Address Verifier 2'
-    '#description': '<p>A full address is required, but it does not have to be verified. A warning message should be displayed, but the widget will allow an invalid or fake address to be submitted.</p>'
+    '#title': 'Address Verifier - Use Case 2 (DEFAULT) - Allow any address anywhere, unverified'
+    '#description': '<p>The default behavior is to allow any address anywhere, but to also offer suggestions. Since neither Portland nor verification are required, any unincorporated property should return the postal city by default.&nbsp;</p><p>Address parts are required through element configuration.</p>'
     '#title_display': before
     '#description_display': before
-    '#required': true
     '#location_address__required': true
     '#location_city__required': true
     '#location_state__required': true
     '#location_zip__required': true
-    '#find_unincorporated': 1
-    '#address_suggest': 1
+  horizontal_rule_01:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_3:
+    '#type': portland_address_verifier
+    '#title': 'Address Verifier - Use Case 3 - Verification required, any jurisdiction'
+    '#description': "<p>This use case requires that the address be verified but doesn't check the city/jurisdiction. This means that it must be in the Portland Maps database, which covers municipalities with which Portland might have shared jurisdiction over certain functions. The Water Bureau is a good example of this. PWB serves some communities that aren't in the Portland jurisdiction.<br><br>To require verification, the location_verification_status sub-element must be set to required in the widget configuration.</p>"
+    '#title_display': before
+    '#description_display': before
+    '#location_verification_status__required': true
+  horizontal_rule_02:
+    '#type': webform_horizontal_rule
+  address_verifier_use_case_1_with_queries:
+    '#type': portland_address_verifier
+    '#title': 'Address Verifier - Use Case 1 with Supplemental Queries'
+    '#description': '<p>Full verified address is required. Also retrieves zoning and overlay data</p>'
+    '#title_display': before
+    '#description_display': before
+    '#required': true
+    '#location_verification_status__required': true
+    '#location_address__required': true
+    '#location_city__required': true
+    '#location_state__required': true
+    '#require_portland_city_limits': 1
+    '#not_verified_remedy': 'A verified address is required. Please try again.'
+    '#lookup_taxlot': 1
+    '#secondary_queries':
+      - api: 'https://www.portlandmaps.com/api/detail/'
+        api_args:
+          - detail_type: zoning
+          - sections: zoning
+          - geometry: '{"x":${x}, "y":${y}}'
+          - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+        capture:
+          - path: 'zoning.overlay[].code'
+            field: hidden_zoning_overlays
+            parse: stringify
+          - path: 'zoning.base[0].code'
+            field: hidden_base_zone
+            parse: stringify
+      - api: 'https://www.portlandmaps.com/api/detail/'
+        api_args:
+          - detail_type: environmental-percent-slope
+          - sections: general
+          - geometry: '{"x":${x}, "y":${y}}'
+          - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+        capture:
+          - path: general.percent_slope
+            field: hidden_site_slope
+  hidden_base_zone:
+    '#type': textfield
+    '#title': 'Base Zone'
+  hidden_zoning_overlays:
+    '#type': textfield
+    '#title': 'Zoning Overlays'
+  hidden_site_slope:
+    '#type': textfield
+    '#title': 'Site Slope (%)'
+  horizontal_rule_03:
+    '#type': webform_horizontal_rule
+  ajax_indicator:
+    '#type': portland_ajax_indicator
+    '#title': 'Ajax Indicator'
   required_checkbox:
     '#type': checkbox
     '#title': 'Required checkbox'
@@ -269,6 +315,7 @@ handlers:
       row_location: toTop
       sheet_id: '6181644901764996'
       upload_attachments: '1'
+      field_handlers: {  }
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request

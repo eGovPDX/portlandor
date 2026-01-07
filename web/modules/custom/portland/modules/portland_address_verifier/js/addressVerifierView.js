@@ -9,7 +9,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$notFoundModal = element.find("#not_found_modal");
     this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
-    this._verificationRequired = false;
+    this._serverError = false;
 
     // this.$checkmark;
     // this.$status;
@@ -22,9 +22,10 @@ function AddressVerifierView(jQuery, element, model, settings) {
 // var $suggestModal;
 // var $statusModal;
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
-const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
+const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed."
 const VERFICATION_REQUIRED_MESSAGE = "Address verification is required, but we're unable to verify this address. Please try again.";
-const VERIFIED_MESSAGE = "Address is verified!";
+const VERIFIED_MESSAGE = "Address found!";
+const SERVER_ERROR_MESSAGE = "There was an problem connecting to our location services. Please check the <a href=\"/\" target=\"_blank\">Portland.gov homepage</a> for maintenance or outage alerts, or try again later.";
 const INPUT_FIELDS = [
     '#location_address',
     '#location_city',
@@ -51,11 +52,6 @@ const IGNORE_FIELDS = [
 ]; // these fields can be ignored for the purposes of address verification
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
-
-    var self = this; // preserve refernece to "this" for use inside functions.
-
-    this._checkIfVerificationRequired();
-
     if (this.settings && this.settings.address_suggest) {
         this._setUpVerifyButton();
         this._setUpInputFieldAndAutocomplete();
@@ -64,43 +60,104 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     // this._handlePostback();
 };
 
-AddressVerifierView.prototype._checkIfVerificationRequired = function () {
-    // check if the verification is required
-    if (this.$verificationStatus.attr('required') == "required") {
-        this._verificationRequired = true;
-    }
-}
-
 AddressVerifierView.prototype._handlePostback = function () {
-  var self = this;
+    var self = this;
 
-  requestAnimationFrame(function () {
-    const verificationStatus = self.$verificationStatus.val();
+    // if address fields are populated on postback, automatically activate verification action
+    const $locationAddress = this.$element.find('#location_address');
+    const $locationState = this.$element.find('#location_city');
+    const $locationCity = this.$element.find('#location_state');
+    const $locationZip = this.$element.find('#location_zip');
 
-    if (verificationStatus === "Verified") {
-      self.isVerified = true;
+    if ($locationAddress.val() && $locationCity.val() && $locationState.val() && $locationZip.val()) {
+        this.model.fetchAutocompleteItems($locationAddress.val())
+            .done(function (locationItems) {
+                if (locationItems.length == 1) {
+                    // if single item, auto verify
+                    const item = locationItems[0];
+                    self._selectAddress(item);
+                } else if (locationItems.length > 1) {
+                    self.showSuggestionListInModal(locationItems);
+                } else {
+                    // no results, show not found modal
+                    self._showNotFoundModal();
+                }
 
-      self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
-      self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
-      self.$button.prop("disabled", "disabled");
-      self.$button.removeClass("button--primary");
-      self.$button.addClass("disabled button--info");
-
-      // Bind handlers now that DOM and values are stable
-      for (let i = 0; i < INPUT_FIELDS.length; i++) {
-        const field = INPUT_FIELDS[i];
-        self.$element.find(field).off('input change').on('input change', function () {
-          if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-          }
-        });
-      }
-    } else if (verificationStatus === "Unverified") {
-      self.isVerified = false;
-      self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-      self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+            });
     }
-  });
+
+    AddressVerifierView.prototype.showSuggestionListInModal = function (locationItems) {
+        var self = this;
+
+        var list = self.$("<ul></ul>");
+        locationItems.map(function (item) {
+            var strData = JSON.stringify(item);
+            var listItem = self.$(`<li><a href=\"#\" class="pick btn btn-primary"
+                        data-item='${strData}'>${item.fullAddress}</a></li>`);
+            listItem.find('a.pick').on('click', function (e) {
+                e.preventDefault();
+                var item = self.$(this).data('item');
+
+                // user has clicked a suggestion in the modal dialog.......
+                self._selectAddress(item);
+
+                self.$suggestModal.dialog('close');
+            });
+            list.append(listItem);
+        });
+        var listInfo = self.$('<p><em>Select one of the addresses below.</em></p>');
+        self.$suggestModal.append(listInfo);
+        var notFound = self.$(`<li><a href=\"#\" class="pick-not-found btn btn-secondary not-found"
+                    data-item=''>My address is not listed</a></li>`);
+        notFound.find('a.pick-not-found').on('click', function (e) {
+            e.preventDefault();
+            self.$suggestModal.dialog('close');
+            self._showNotFoundModal();
+        });
+        list.append(notFound);
+        self.$suggestModal.append(list);
+        Drupal.dialog(self.$suggestModal, {
+            title: 'Possible matches found',
+            width: '600px',
+            buttons: [{
+                text: 'Close',
+                class: 'btn-primary',
+                click: function () {
+                    self.$(this).dialog('close');
+                }
+            }]
+        }).showModal();
+        self.$suggestModal.removeClass('visually-hidden');
+
+    }
+
+    requestAnimationFrame(function () {
+        const verificationStatus = self.$verificationStatus.val();
+
+        if (verificationStatus === "Verified") {
+            self.isVerified = true;
+
+            self.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+            self.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+            self.$button.prop("disabled", "disabled");
+            self.$button.removeClass("button--primary");
+            self.$button.addClass("disabled button--info");
+
+            // Bind handlers now that DOM and values are stable
+            for (let i = 0; i < INPUT_FIELDS.length; i++) {
+                const field = INPUT_FIELDS[i];
+                self.$element.find(field).off('input change').on('input change', function () {
+                    if (self.isVerified) {
+                        self._resetVerified(self.$checkmark, self.$button);
+                    }
+                });
+            }
+        } else if (verificationStatus === "Unverified") {
+            self.isVerified = false;
+            self.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+            self.$status.text(UNVERIFIED_WARNING_MESSAGE).removeClass("invisible").addClass("unverified");
+        }
+    });
 };
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
@@ -207,19 +264,52 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 AddressVerifierView.prototype._selectAddress = function (item) {
     var self = this;
 
-    // if the city is unincorporated or the widget is configured to need taxlot ID,
-    // we need to perform a call to the intersects API do so some reverse geocoding.
-    if ((self.settings.find_unincorporated && (!item.city || item.city.toUpperCase() == "UNINCORPORATED")) || self.settings.lookup_taxlot) {
+    // DEFAULT ADDRESS VERIFIER SETTINGS:
+    //      address_suggest = 1                 Suggest addresses in autocomplete and Verify button results.
+    //      lookup_taxlot = 0                   Do not lookup taxlot ID.
+    //      find_unincorporated = 1             Use the postal city.
+    //      require_portland_city_limits = 0    Allow addresses in any jurisdiction.
+    //      verification_required = false       Verification not required by default. This is set in the element configuration.
 
-        if (!item.city || item.city.toUpperCase() == "UNINCORPORATED") {
-            self.$element.find('#location_is_unincorporated').val(1);
-        }
+    // The City value returned by the Suggest API is the postal city associated with the zipcode.
+    // The Jurisdiction value returned by the Suggest API is the governance entity (e.g., Portland, Gresham, Unincorporated).
 
+    // This needs to cover 3 main use cases:
+    // 1. Require verified City of Portland address.
+    // 2. Allow any address anywhere, including unincorporated areas. (DEFAULT)
+    // 3. Verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
+
+    // Use case 1 is the only one that sets the item.city with the value from item.jurisdiction.
+    // Additional logic can be built into the form using conditional fields or computed twig, 
+    // and individual city/state/zip fields can be required in the element configuration.
+
+    if ((self.settings.require_portland_city_limits && self.settings.verification_required) || !self.settings.find_unincorporated) {
+        // USE CASE 1: only allow verified addresses within Portland city limits.
+        // use jurisdiction value as city, then verify jurisdiction/city is PORTLAND in _setVerified.
+        item.city = item.jurisdiction.toUpperCase();
+    }
+    
+    // USE CASE 2: allow any address anywhere, including unincorporated areas. 
+    // if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required)
+    // do nothing here--item.city is already set to postal city by Suggest API.
+    // city/state/zip can be required in the element configuration.
+
+    // USE CASE 3: verification is required, but address can be anywhere that's 
+    // if (self.settings.verification_required)
+    // in the PortlandMaps database, including unincorporated areas.
+    // do nothing here--item.city is already set to postal city by Suggest API.
+    
+    // need to get taxlot? requires call to intersects API.
+    if (self.settings.lookup_taxlot) {
         // _setVerified is the callback; need to pass self/view reference with it
         this.model.updateLocationFromIntersects(item.lat, item.lon, item, self._setVerified, self);
-
     } else {
         self._setVerified(item);
+    }
+
+    // regardless of what we're using in the city field, set unincorporated flag if applicable
+    if (item.jurisdiction.toUpperCase() == "UNINCORPORATED") {
+        self.$element.find('#location_is_unincorporated').val(1);
     }
 
     // if configured, run secondary query // url, x, y, callback, view
@@ -237,6 +327,22 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
     view.$element.find('#' + captureField).val(propertyValue).trigger('change');
 }
 
+AddressVerifierView.prototype._processSecondaryResultsNew = function (results, view, query) {
+    if (query.capture && query.capture.length > 0) {
+        for (var i = 0; i < query.capture.length; i++) {
+            let field = query.capture[i].field;
+            let path = query.capture[i].path;
+            let parse = query.capture[i].parse;
+            let omit_nulls = query.capture[i].omit_null_properties;
+
+            // this returns non-stringified JSON object or empty string
+            let propertyValue = AddressVerifierModel.getPropertyByPathNew(results, path, parse, omit_nulls);
+
+            view.$('input[name="' + field + '"]').val(propertyValue).trigger('change');
+        }
+    }
+}
+
 // this method is called when an address is selected in the autocomplete list or in the
 // list of options displayed by the Verify button. it does the following:
 // * clears all fields, both visible and hidden
@@ -245,12 +351,12 @@ AddressVerifierView.prototype._processSecondaryResults = function (results, view
 // * adds change handlers to the visible user input fields (calls _resetVerified)
 // * makes the "verified" visual indicators visible
 // * sets the internal isVerified flag to true
+// * if secondary_queries are configured, run them at the end of this method
 AddressVerifierView.prototype._setVerified = function (item, view = this) {
-    var self = this;
     view.isVerified = false; // reset to false until we know it's verified
 
     // show error modal if invalid location /////////////////////////
-    if (view.settings.require_portland_city_limits && item.city.toUpperCase() != "PORTLAND") {
+    if (view.settings.require_portland_city_limits && item.jurisdiction.toUpperCase() != "PORTLAND") {
         view._showOutOfBoundsErrorModal(item.fullAddress);
         view.$element.find('#location_address').val('');
         return false;
@@ -259,21 +365,16 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // parse location data and set field values, add change handlers to visible input fields /////////////////////////
     // visible input fields
     view.$element.find('#location_address').off('input change').val(item.street.toUpperCase()).trigger('change').blur().on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
     view.$element.find('#location_city').off('input change').val(item.city.toUpperCase()).trigger('change').on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
     view._setStateByLabel(view, item.state);
     view.$element.find('#location_zip').off('input change').val(item.zipCode).trigger('change').on('input change', function () {
-        if (self.isVerified) {
-            self._resetVerified(self.$checkmark, self.$button);
-        }
+        view._resetVerified(view.$checkmark, view.$button);
     });
+
     // hidden data fields
     view.$element.find('#location_full_address').val(item.fullAddress.toUpperCase());
     view.$element.find('#location_address_street_number').val(item.streetNumber);
@@ -303,7 +404,103 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // hide validation message
     view.$element.find('#location_address_label_markup').removeClass('d-none');
     view.$element.find('.error').removeClass('error');
+
+    if (view.settings.secondary_queries) {
+        view._runSecondaryQueries(item);
+    }
 }
+
+AddressVerifierView.prototype._runSecondaryQueries = function (item) {
+    var self = this;
+
+    for (let i = 0; i < this.settings.secondary_queries.length; i++) {
+        let query = this.settings.secondary_queries[i];
+
+        if (query.api) {
+            // new method using array of secondary queries
+            // there may not be args or captures, just a URL we need to hit, such as for testing error codes or health checks
+            let queryUrl = query.api + "?format=json";
+            if (query.api_args && query.api_args.length > 0) {
+                for (const arg of query.api_args) {
+                    const [key, value] = Object.entries(arg)[0];
+
+                    switch (key) {
+                        case 'geometry':
+                            queryUrl += "&geometry=" + value.replace('${x}', item.x).replace('${y}', item.y);
+                            break;
+                        case 'detail_id':
+                            queryUrl += "&detail_id=" + item.taxlotId;
+                            break;
+                        default:
+                            queryUrl += "&" + key + "=" + encodeURIComponent(value);
+                    }
+                }
+            }
+
+            // TODO: This call belongs in the model, not the view
+            this.$.ajax({
+                url: queryUrl,
+                success: function (results, textStatus, jqXHR) {
+                    if (textStatus == "success" && (!results.status || results.status && results.status == "success" && !self.settings.error_test)) {
+                        self._processSecondaryResultsNew(results, self, query);
+                    } else {
+                        const message = "API call failed";
+                        const error = new Error();
+                        self._logError(jqXHR, SERVER_ERROR_MESSAGE, results?.status || message, error);
+                        self._displayError(self, jqXHR, SERVER_ERROR_MESSAGE, results?.status || message);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    const message = "API call failed";
+                    const error = new Error(); // captures accurate stack location
+                    self._logError(jqXHR, textStatus, jqXHR?.responseText, error);
+                    self._displayError(self, jqXHR, textStatus, jqXHR?.responseText);
+                }
+            });
+
+        } else {
+            // old method using single secondary query settings
+            if (query.url && query.capture_property && query.capture_field) {
+                this.model.callSecondaryQuery(query.url, self.$element.find('#location_x').val(), self.$element.find('#location_y').val(), self._processSecondaryResults, self, query.capture_property, query.capture_field, this.$);
+            }
+        }
+    }
+}
+
+AddressVerifierView.prototype._displayError = function (view, jqXHR, textStatus, errorThrown) {
+    var statusCode = jqXHR ? jqXHR.status : '';
+    textStatus = textStatus == "error" ? "Unknown error" : textStatus;
+    var message = (statusCode ? statusCode + " " : "") + (errorThrown ? errorThrown : textStatus ? textStatus : "Unknown error");
+    view._showStatusModal(`<p>${SERVER_ERROR_MESSAGE}<br><br>Status: ${message}</p>`, "Close");
+    view._resetVerified(view.$checkmark, view.$button);
+    view._serverError = 1;
+}
+
+AddressVerifierView.prototype._logError = function (jqXHR, textStatus, message, errorObj) {
+    let file = 'unknown';
+    let line = 0;
+    const stack = errorObj?.stack || '';
+
+    // Try to extract file and line number from second stack frame
+    const match = stack.split('\n')[1]?.match(/(https?:\/\/[^\s:]+):(\d+):(\d+)/);
+    if (match) {
+        file = match[1];
+        line = parseInt(match[2]);
+    }
+
+    const status = jqXHR?.status || 'Unknown';
+    const statusText = jqXHR?.statusText || 'No status text';
+    const responseText = jqXHR?.responseText || '';
+
+    const fullMessage = `${message} (${status} ${statusText}): ${textStatus}`;
+
+    AddressVerifierModel.logClientErrorToDrupal(
+        fullMessage,
+        file,
+        line,
+        "Response:\n" + responseText
+    );
+};
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     var self = view;
@@ -317,7 +514,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { self._resetVerified(self.$checkmark, self.$button); });
+    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { view._resetVerified(view.$checkmark, view.$button); });
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -328,7 +525,6 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
         .done(function (locationItems) {
 
             if (locationItems.length > 0) {
-                // Pass the locationItems to the response callback
                 var list = self.$("<ul></ul>");
                 locationItems.map(function (item) {
                     var strData = JSON.stringify(item);
@@ -340,9 +536,7 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
 
                         // user has clicked a suggestion in the modal dialog.......
                         self._selectAddress(item);
-                        // now that the user has made a selection, pass back the single candidate
-                        // self.$input.val(item.fullAddress);
-                        // self._setVerified(self.$checkmark, self.$button, self.$element, item);
+
                         self.$suggestModal.dialog('close');
                     });
                     list.append(listItem);
@@ -389,7 +583,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
-    var remedyMessage = this._verificationRequired ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
+    var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
@@ -399,7 +593,7 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
             click: function () {
                 self.$notFoundModal.dialog('close');
                 // if verification is not required, set the status to "Forced"
-                if (!self._verificationRequired) {
+                if (!self.settings.verification_required) {
                     self._useUnverified();
                 }
             }
@@ -460,6 +654,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     }
 
     // verification status field is handled separately
+    // if a status is passed to this method, use it in the status field
     this.$element.find("#location_verification_status").val("").trigger('change');
 
     // remove change handlers from visible input fields /////////////////////////
@@ -484,7 +679,7 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$checkmark.addClass("invisible");
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
-    var unverifiedMessage = this._verificationRequired ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
+    var unverifiedMessage = this.settings.verification_required ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
     this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
     // var input = this.$notFoundModal.find("#enteredAddress").val();
     // this.$input.val(input);
@@ -496,4 +691,3 @@ AddressVerifierView.prototype._useUnverified = function () {
     // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
 }
-

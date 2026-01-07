@@ -17,6 +17,7 @@ dependencies:
     - field.storage.node.field_full_document_title
     - field.storage.node.field_introduced_by
     - field.storage.node.field_is_emergency_ordinance
+    - field.storage.node.field_preferred_meeting_date
     - field.storage.node.field_president_committee
     - field.storage.node.field_requested_council_date
     - field.storage.node.field_requested_start_time
@@ -65,6 +66,7 @@ dependencies:
     - user
     - views_bulk_operations
     - views_data_export
+    - views_sort_null_field
 id: manage_council_documents
 label: 'Manage: Council Documents'
 module: views
@@ -126,6 +128,70 @@ display:
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
+          empty: '<h2>Unscheduled</h2>'
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_preferred_meeting_date:
+          id: field_preferred_meeting_date
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Preferred date'
+          exclude: false
+          alter:
+            alter_text: true
+            text: '{{ field_requested_council_date == "<h2>Unscheduled</h2>" ? field_preferred_meeting_date : ""  }}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
           empty: ''
           hide_empty: false
           empty_zero: false
@@ -153,7 +219,7 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: 'Agenda Type'
+          label: 'Agenda type'
           exclude: false
           alter:
             alter_text: false
@@ -406,7 +472,7 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
-          label: 'Council Document'
+          label: 'Council document'
           exclude: false
           alter:
             alter_text: true
@@ -1690,6 +1756,33 @@ display:
         options: {  }
       empty: {  }
       sorts:
+        field_requested_council_date_value_null_sort:
+          id: field_requested_council_date_value_null_sort
+          table: node__field_requested_council_date
+          field: field_requested_council_date_value_null_sort
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: null_sort
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_preferred_meeting_date_value:
+          id: field_preferred_meeting_date_value
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date_value
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: datetime
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+          granularity: second
         field_requested_council_date_value:
           id: field_requested_council_date_value
           table: node__field_requested_council_date
@@ -1815,20 +1908,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -1856,7 +1935,7 @@ display:
           exposed: true
           expose:
             operator_id: field_council_document_type_target_id_op
-            label: Type
+            label: 'Document type'
             description: ''
             use_operator: false
             operator: field_council_document_type_target_id_op
@@ -1868,20 +1947,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -1915,7 +1980,7 @@ display:
           exposed: true
           expose:
             operator_id: field_agenda_type_value_op
-            label: 'Agenda Type'
+            label: 'Agenda type'
             description: ''
             use_operator: false
             operator: field_agenda_type_value_op
@@ -1927,22 +1992,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -1967,13 +2016,25 @@ display:
           entity_type: node
           plugin_id: moderation_state_filter
           operator: in
-          value: {  }
+          value:
+            council_document_workflow-draft: council_document_workflow-draft
+            council_document_workflow-bureau_review: council_document_workflow-bureau_review
+            council_document_workflow-attorney_review: council_document_workflow-attorney_review
+            council_document_workflow-code_review: council_document_workflow-code_review
+            council_document_workflow-elected_review: council_document_workflow-elected_review
+            council_document_workflow-council_clerk_review: council_document_workflow-council_clerk_review
+            council_document_workflow-president_review: council_document_workflow-president_review
+            council_document_workflow-agenda_scheduling: council_document_workflow-agenda_scheduling
+            council_document_workflow-ready_for_agenda: council_document_workflow-ready_for_agenda
+            council_document_workflow-published: council_document_workflow-published
+            council_document_workflow-unpublished: council_document_workflow-unpublished
+            council_document_workflow-cancelled: council_document_workflow-cancelled
           group: 1
           exposed: true
           expose:
             operator_id: moderation_state_op
             label: 'Moderation state'
-            description: null
+            description: ''
             use_operator: false
             operator: moderation_state_op
             operator_limit_selection: false
@@ -1984,7 +2045,7 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-            reduce: false
+            reduce: true
           is_grouped: true
           group_info:
             label: 'Moderation state'
@@ -2003,7 +2064,7 @@ display:
                 value:
                   council_document_workflow-draft: council_document_workflow-draft
               2:
-                title: 'Bureau review'
+                title: 'In review'
                 operator: in
                 value:
                   council_document_workflow-bureau_review: council_document_workflow-bureau_review
@@ -2013,10 +2074,10 @@ display:
                 value:
                   council_document_workflow-attorney_review: council_document_workflow-attorney_review
               4:
-                title: 'Budget office review'
+                title: 'Code review'
                 operator: in
                 value:
-                  council_document_workflow-budget_office_review: council_document_workflow-budget_office_review
+                  council_document_workflow-code_review: council_document_workflow-code_review
               5:
                 title: 'Elected review'
                 operator: in
@@ -2028,10 +2089,35 @@ display:
                 value:
                   council_document_workflow-council_clerk_review: council_document_workflow-council_clerk_review
               7:
+                title: 'Council president review'
+                operator: in
+                value:
+                  council_document_workflow-president_review: council_document_workflow-president_review
+              8:
+                title: 'Agenda scheduling'
+                operator: in
+                value:
+                  council_document_workflow-agenda_scheduling: council_document_workflow-agenda_scheduling
+              9:
                 title: 'Ready for agenda'
                 operator: in
                 value:
                   council_document_workflow-ready_for_agenda: council_document_workflow-ready_for_agenda
+              10:
+                title: Published
+                operator: in
+                value:
+                  council_document_workflow-published: council_document_workflow-published
+              11:
+                title: Unpublished
+                operator: in
+                value:
+                  council_document_workflow-unpublished: council_document_workflow-unpublished
+              12:
+                title: Canceled
+                operator: in
+                value:
+                  council_document_workflow-cancelled: council_document_workflow-cancelled
         title_1:
           id: title_1
           table: node_field_data
@@ -2087,7 +2173,7 @@ display:
           exposed: true
           expose:
             operator_id: ''
-            label: 'Code Change'
+            label: 'Code change'
             description: ''
             use_operator: false
             operator: field_is_code_change_value_op
@@ -2099,20 +2185,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -2140,7 +2212,7 @@ display:
           exposed: true
           expose:
             operator_id: ''
-            label: 'Policy Change'
+            label: 'Policy change'
             description: ''
             use_operator: false
             operator: field_is_portland_policy_value_op
@@ -2152,20 +2224,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -2207,20 +2265,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -2338,7 +2382,7 @@ display:
           exposed: true
           expose:
             operator_id: field_committee_target_id_op
-            label: 'Assigned Committee'
+            label: 'Assigned committee'
             description: ''
             use_operator: false
             operator: field_committee_target_id_op
@@ -2350,24 +2394,51 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              council_author: '0'
-              council_clerk: '0'
-              council_president: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          vid: council_committee
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
+        field_staff_committee_preference_target_id:
+          id: field_staff_committee_preference_target_id
+          table: node__field_staff_committee_preference
+          field: field_staff_committee_preference_target_id
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_staff_committee_preference_target_id_op
+            label: 'Requested committee'
+            description: ''
+            use_operator: false
+            operator: field_staff_committee_preference_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_staff_committee_preference_target_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
             reduce: false
           is_grouped: false
           group_info:
@@ -2403,6 +2474,7 @@ display:
           row_class: ''
           default_row_class: true
           columns:
+            field_preferred_meeting_date: field_preferred_meeting_date
             field_requested_council_date: field_requested_council_date
             field_agenda_type: field_agenda_type
             field_council_document_status: field_council_document_status
@@ -2423,8 +2495,20 @@ display:
             revision_uid: revision_uid
             status: status
             changed: changed
+            edit_node: edit_node
+            nid: nid
+            field_contact: field_contact
+            nothing: nothing
+            dropbutton: dropbutton
           default: '-1'
           info:
+            field_preferred_meeting_date:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: true
+              responsive: ''
             field_requested_council_date:
               sortable: false
               default_sort_order: asc
@@ -2557,6 +2641,37 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
+            edit_node:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_contact:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nothing:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            dropbutton:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
           override: true
           sticky: true
           summary: ''
@@ -2617,6 +2732,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
@@ -2627,7 +2743,7 @@ display:
         - 'config:workflow_list'
   council_document_data_export:
     id: council_document_data_export
-    display_title: 'Upcoming export'
+    display_title: 'Data export: Upcoming Documents'
     display_plugin: data_export
     position: 1
     display_options:
@@ -2675,6 +2791,70 @@ display:
           element_label_type: ''
           element_label_class: ''
           element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_preferred_meeting_date:
+          id: field_preferred_meeting_date
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Preferred meeting date'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -3269,69 +3449,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_service_area:
-          id: field_service_area
-          table: node__field_service_area
-          field: field_service_area
-          relationship: nid
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: 'Service area'
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
         field_staff_committee_preference:
           id: field_staff_committee_preference
           table: node__field_staff_committee_preference
@@ -3852,9 +3969,9 @@ display:
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
         - 'config:field.storage.node.field_is_emergency_ordinance'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_service_area'
         - 'config:field.storage.node.field_staff_committee_preference'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
@@ -4709,20 +4826,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -4813,24 +4916,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: true
           is_grouped: false
           group_info:
@@ -4877,24 +4962,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: 0
           is_grouped: false
           group_info:
@@ -5634,20 +5701,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -5687,25 +5740,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_editor: '0'
-              policy_author: '0'
-              council_clerk: '0'
-              council_author: '0'
-              council_president: '0'
-              council_agenda_scheduler: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              code_author: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              support_agent: '0'
-              group_creator: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -7426,20 +7460,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -7479,20 +7499,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -7654,20 +7660,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -7707,20 +7699,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -7762,20 +7740,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -7960,6 +7924,70 @@ display:
     display_options:
       title: 'Submitted Items'
       fields:
+        field_preferred_meeting_date:
+          id: field_preferred_meeting_date
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Preferred date'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         field_requested_council_date:
           id: field_requested_council_date
           table: node__field_requested_council_date
@@ -9075,20 +9103,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -9128,20 +9142,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -9187,22 +9187,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -9364,24 +9348,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              council_author: '0'
-              council_clerk: '0'
-              council_president: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -9527,6 +9493,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_reviewer'
@@ -9598,6 +9565,8 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
             1:
               action_id: 'moderation_state_change:node'
@@ -11112,20 +11081,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -11165,20 +11120,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -11224,20 +11165,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -11399,20 +11326,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -11452,20 +11365,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -11507,20 +11406,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -12990,20 +12875,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -13043,20 +12914,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -13218,20 +13075,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -13271,20 +13114,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -13326,20 +13155,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -13630,20 +13445,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -13683,20 +13484,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -13742,22 +13529,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -13914,20 +13685,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -13967,20 +13724,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -14022,20 +13765,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -14156,6 +13885,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
@@ -14994,20 +14724,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -15239,20 +14955,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -15292,20 +14994,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -15433,20 +15121,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -15567,6 +15241,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
@@ -15639,6 +15314,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
@@ -15742,20 +15418,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -15795,20 +15457,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -15970,20 +15618,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -16023,20 +15657,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -16078,20 +15698,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -16292,6 +15898,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
@@ -16308,70 +15915,6 @@ display:
     display_options:
       title: 'Agenda Scheduling'
       fields:
-        field_requested_council_date:
-          id: field_requested_council_date
-          table: node__field_requested_council_date
-          field: field_requested_council_date
-          relationship: nid
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: 'Meeting date'
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: month_day_year
-          group_column: entity_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
         field_council_document_status:
           id: field_council_document_status
           table: node__field_council_document_status
@@ -16552,6 +16095,70 @@ display:
           settings:
             link: false
           group_column: entity_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_preferred_meeting_date:
+          id: field_preferred_meeting_date
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Preferred Meeting Date'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -17147,31 +16754,28 @@ display:
             council_agenda_scheduler: council_agenda_scheduler
             administrator: administrator
       sorts:
-        moderation_state:
-          id: moderation_state
-          table: node_field_revision
-          field: moderation_state
-          relationship: none
+        field_preferred_meeting_date_value_null_sort:
+          id: field_preferred_meeting_date_value_null_sort
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date_value_null_sort
+          relationship: nid
           group_type: group
           admin_label: ''
-          entity_type: node
-          plugin_id: moderation_state_sort
+          plugin_id: null_sort
           order: ASC
           expose:
             label: ''
             field_identifier: ''
           exposed: false
-        changed:
-          id: changed
-          table: node_field_revision
-          field: changed
-          relationship: none
+        field_preferred_meeting_date_value:
+          id: field_preferred_meeting_date_value
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date_value
+          relationship: nid
           group_type: group
           admin_label: ''
-          entity_type: node
-          entity_field: changed
-          plugin_id: date
-          order: DESC
+          plugin_id: datetime
+          order: ASC
           expose:
             label: ''
             field_identifier: ''
@@ -17343,20 +16947,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -17396,25 +16986,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_editor: '0'
-              policy_author: '0'
-              council_clerk: '0'
-              council_author: '0'
-              council_president: '0'
-              council_agenda_scheduler: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              code_author: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              support_agent: '0'
-              group_creator: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -17535,27 +17106,21 @@ display:
           row_class: ''
           default_row_class: true
           columns:
-            field_requested_council_date: field_requested_council_date
             field_council_document_status: field_council_document_status
             field_council_document_type: field_council_document_type
             field_reviewer: field_reviewer
+            field_preferred_meeting_date: field_preferred_meeting_date
             title: title
             moderation_state: moderation_state
             revision_uid: revision_uid
             status: status
+            field_service_area: field_service_area
             field_bureau: field_bureau
             field_committee: field_committee
             changed: changed
             edit_node: edit_node
           default: '-1'
           info:
-            field_requested_council_date:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
             field_council_document_status:
               sortable: false
               default_sort_order: asc
@@ -17571,6 +17136,13 @@ display:
               empty_column: false
               responsive: ''
             field_reviewer:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_preferred_meeting_date:
+              sortable: true
+              default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
@@ -17597,6 +17169,13 @@ display:
               empty_column: false
               responsive: ''
             status:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_service_area:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -17674,7 +17253,7 @@ display:
           admin_label: ''
           plugin_id: result
           empty: true
-          content: "<p>Displaying @start - @end of @total council documents available to schedule for agenda.</p>\r\n\r\n<p>Items listed below are available for Council President or committee leadership to schedule for an upcoming agenda. To schedule a published item to an upcoming committee or Council agenda, email <a href=\"councilclerk@portlandoregon.gov\">councilclerk@portlandoregon.gov</a> with the meeting date and time requested.</p>"
+          content: "<p>Displaying @start - @end of @total council documents available to schedule for agenda.</p>\r\n\r\n<p>Items listed below are available for Council President or committee leadership to schedule for an upcoming agenda.</p>"
       display_extenders:
         metatag_display_extender:
           metatags: {  }
@@ -17704,7 +17283,7 @@ display:
         - 'config:field.storage.node.field_committee'
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
-        - 'config:field.storage.node.field_requested_council_date'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_service_area'
         - 'config:workflow_list'
@@ -18400,20 +17979,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -18456,24 +18021,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: true
           is_grouped: false
           group_info:
@@ -18520,24 +18067,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -19712,20 +19241,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -19816,24 +19331,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: true
           is_grouped: false
           group_info:
@@ -19880,24 +19377,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_editor: '0'
-              policy_author: '0'
-              council_clerk: '0'
-              council_author: '0'
-              council_president: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              code_author: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              support_agent: '0'
-              group_creator: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: 0
           is_grouped: false
           group_info:
@@ -21110,20 +20589,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -21218,6 +20683,70 @@ display:
     display_options:
       title: 'Submitted Items'
       fields:
+        field_preferred_meeting_date:
+          id: field_preferred_meeting_date
+          table: node__field_preferred_meeting_date
+          field: field_preferred_meeting_date
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Preferred date'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         field_requested_council_date:
           id: field_requested_council_date
           table: node__field_requested_council_date
@@ -21290,7 +20819,7 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: 'Agenda Type'
+          label: 'Agenda type'
           exclude: false
           alter:
             alter_text: false
@@ -21543,11 +21072,11 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
-          label: 'Council Document'
+          label: 'Council document'
           exclude: false
           alter:
             alter_text: true
-            text: "<strong>{{ title }}</strong>\r\n<br>{{ field_council_document_status }} {{ field_council_document_type }}\r\n{% if field_reviewer %}<br>Reviewers: {{ field_reviewer }}</div>{% endif %}"
+            text: "<strong>{{ title }}</strong>\r\n<br>{{ field_council_document_status }} {{ field_council_document_type }}\r\n{% if field_reviewer %}<br>Reviewers: {{ field_reviewer }}{% endif %}\r\n"
             make_link: false
             path: ''
             absolute: false
@@ -22448,20 +21977,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -22501,20 +22016,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -22548,7 +22049,7 @@ display:
           exposed: true
           expose:
             operator_id: field_agenda_type_value_op
-            label: 'Agenda Type'
+            label: 'Agenda type'
             description: ''
             use_operator: false
             operator: field_agenda_type_value_op
@@ -22560,22 +22061,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -22725,7 +22210,7 @@ display:
           exposed: true
           expose:
             operator_id: field_committee_target_id_op
-            label: 'Assigned Committee'
+            label: 'Assigned committee'
             description: ''
             use_operator: false
             operator: field_committee_target_id_op
@@ -22737,24 +22222,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              council_author: '0'
-              council_clerk: '0'
-              council_president: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -22824,9 +22291,177 @@ display:
         groups:
           1: AND
           2: OR
+      style:
+        type: table
+        options:
+          grouping:
+            -
+              field: field_requested_council_date
+              rendered: true
+              rendered_strip: false
+          row_class: ''
+          default_row_class: true
+          columns:
+            field_preferred_meeting_date: field_preferred_meeting_date
+            field_requested_council_date: field_requested_council_date
+            field_agenda_type: field_agenda_type
+            field_council_document_status: field_council_document_status
+            field_council_document_type: field_council_document_type
+            field_reviewer: field_reviewer
+            title: title
+            field_time_requested: field_time_requested
+            field_service_area: field_service_area
+            field_bureau: field_bureau
+            field_introduced_by: field_introduced_by
+            field_staff_committee_preference: field_staff_committee_preference
+            field_president_committee: field_president_committee
+            field_committee: field_committee
+            nothing_1: nothing_1
+            moderation_state: moderation_state
+            revision_uid: revision_uid
+            status: status
+            changed: changed
+          default: '-1'
+          info:
+            field_preferred_meeting_date:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_requested_council_date:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agenda_type:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_document_status:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_document_type:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_reviewer:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            title:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_time_requested:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_service_area:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_bureau:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_introduced_by:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_staff_committee_preference:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_president_committee:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_committee:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nothing_1:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            moderation_state:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            revision_uid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            status:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            changed:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+          override: true
+          sticky: true
+          summary: ''
+          empty_table: false
+          caption: ''
+          description: ''
+      row:
+        type: fields
+        options: {  }
       defaults:
         access: false
         title: false
+        style: false
+        row: false
         fields: false
         sorts: true
         filters: false
@@ -22875,6 +22510,7 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_preferred_meeting_date'
         - 'config:field.storage.node.field_president_committee'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_reviewer'
@@ -22946,6 +22582,8 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
             1:
               action_id: 'moderation_state_change:node'
@@ -24466,22 +24104,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -24530,20 +24152,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -24583,20 +24191,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -24642,20 +24236,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -24744,20 +24324,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:

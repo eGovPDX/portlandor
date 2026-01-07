@@ -5,6 +5,7 @@ dependencies:
   config:
     - field.field.node.council_document.field_100_renewable_goal
     - field.field.node.council_document.field_agenda_type
+    - field.field.node.council_document.field_allows_written_testimony
     - field.field.node.council_document.field_amended_by_council
     - field.field.node.council_document.field_auditor
     - field.field.node.council_document.field_body_content
@@ -20,6 +21,7 @@ dependencies:
     - field.field.node.council_document.field_council_document_type
     - field.field.node.council_document.field_date_of_final_disposition
     - field.field.node.council_document.field_date_prepared
+    - field.field.node.council_document.field_doc_published_date
     - field.field.node.council_document.field_document_number
     - field.field.node.council_document.field_documents_and_exhibits
     - field.field.node.council_document.field_economic_impacts
@@ -33,6 +35,7 @@ dependencies:
     - field.field.node.council_document.field_is_portland_policy
     - field.field.node.council_document.field_needs_attorney_review
     - field.field.node.council_document.field_neighborhood
+    - field.field.node.council_document.field_preferred_meeting_date
     - field.field.node.council_document.field_president_committee
     - field.field.node.council_document.field_purpose_and_background
     - field.field.node.council_document.field_requested_council_date
@@ -43,6 +46,7 @@ dependencies:
     - field.field.node.council_document.field_staff_committee_preference
     - field.field.node.council_document.field_substituted_by_council
     - field.field.node.council_document.field_time_requested
+    - field.field.node.council_document.field_written_testimony_link
     - node.type.council_document
     - workflows.workflow.council_document_workflow
   module:
@@ -51,6 +55,7 @@ dependencies:
     - datetime
     - field_group
     - file
+    - lightning_scheduler
     - link
     - path
     - select2
@@ -81,6 +86,9 @@ third_party_settings:
         - field_council_clerk
         - field_auditor
         - field_date_of_final_disposition
+        - field_allows_written_testimony
+        - field_written_testimony_link
+        - field_doc_published_date
       label: 'Council Clerk Only'
       region: content
       parent_name: ''
@@ -143,11 +151,16 @@ third_party_settings:
         open: false
         description: ''
         required_fields: true
-    group_staff_committee_preference:
+    group_scheduling_request:
       children:
+        - field_requested_council_date
+        - field_agenda_type
+        - field_time_requested
+        - field_requested_start_time
         - field_staff_committee_preference
+        - field_preferred_meeting_date
         - field_staff_commitee_pref_info
-      label: 'Committee Preference'
+      label: 'Scheduling request'
       region: content
       parent_name: ''
       weight: 29
@@ -185,6 +198,13 @@ content:
     weight: 13
     region: content
     settings: {  }
+    third_party_settings: {  }
+  field_allows_written_testimony:
+    type: boolean_checkbox
+    weight: 52
+    region: content
+    settings:
+      display_label: true
     third_party_settings: {  }
   field_amended_by_council:
     type: boolean_checkbox
@@ -368,6 +388,12 @@ content:
   field_date_of_final_disposition:
     type: datetime_default
     weight: 11
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_doc_published_date:
+    type: datetime_default
+    weight: 55
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -593,6 +619,12 @@ content:
       match_operator: CONTAINS
       match_limit: 10
     third_party_settings: {  }
+  field_preferred_meeting_date:
+    type: datetime_default
+    weight: 16
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_president_committee:
     type: options_select
     weight: 50
@@ -610,7 +642,7 @@ content:
       conditional_fields: {  }
   field_requested_council_date:
     type: datetime_default
-    weight: 12
+    weight: 0
     region: content
     settings: {  }
     third_party_settings:
@@ -708,7 +740,7 @@ content:
           dependee: field_agenda_type
           settings:
             state: visible
-            reset: false
+            reset: true
             condition: value
             grouping: OR
             values_set: 3
@@ -725,14 +757,41 @@ content:
           dependee: field_agenda_type
           settings:
             state: required
+            reset: false
             condition: value
-            grouping: AND
+            grouping: OR
             values_set: 1
             value: ''
             values: {  }
             value_form:
               -
                 value: time_certain
+            effect: show
+            effect_options: {  }
+            selector: ''
+  field_written_testimony_link:
+    type: link_default
+    weight: 53
+    region: content
+    settings:
+      placeholder_url: ''
+      placeholder_title: ''
+    third_party_settings:
+      conditional_fields:
+        a173ede2-1241-479b-89d7-820730da2fbb:
+          entity_type: node
+          bundle: council_document
+          dependee: field_allows_written_testimony
+          settings:
+            state: visible
+            reset: true
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
             effect: show
             effect_options: {  }
             selector: ''

@@ -22,173 +22,187 @@ description: ''
 categories:
   - Report
 elements: |-
-  report_complaint_concern:
+  report_provider_situation:
     '#type': radios
-    '#title': 'What is your complaint concerning?'
+    '#title': 'Which best describes your cable service provider situation?'
     '#options':
-      'An issue with only my cable': 'An issue with only my cable'
-      'An issue with only my internet': 'An issue with only my internet'
-      'An issue with both my cable and internet': 'An issue with both my cable and internet'
+      'I receive cable service only from Xfinity (Comcast)': 'I receive cable service only from Xfinity (Comcast)'
+      'I receive cable and internet service from Xfinity (Comcast)': 'I receive cable and internet service from Xfinity (Comcast)'
+      'I am not an Xfinity (Comcast) customer (I get television and/or internet from another service provider)': 'I am not an Xfinity (Comcast) customer (I get television and/or internet from another service provider)'
     '#required': true
+  markup_other_provider:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_provider_situation"]':
+          value: 'I am not an Xfinity (Comcast) customer (I get television and/or internet from another service provider)'
+    '#markup': '<div class="webform-alert alert alert--info next-steps"><h2>Next Steps</h2><p>Mount Hood Cable Regulatory Commission does NOT have jurisdiction over CenturyLink or other internet service providers.</p><p>If you have been unable to resolve directly with your service provider, complaints about internet service/providers should be directed to the Federal Communications Commission (FCC). Please <a href="https://consumercomplaints.fcc.gov">submit a report to the FCC online</a> or call them 8 am - 5 pm EST at <a href="tel:+18882255322">1-888-225-5322, Option 4</a>.</p><p>To determine the correct contact for a downed-wire or other utility infrastructure concern, please call <a href="tel:311">311</a> or <a href="tel:+15038234000">503-823-4000</a>.</p></div>'
   report_service_provider:
-    '#type': select
-    '#title': 'Select Your Service Provider'
-    '#options':
-      'Xfinity (Comcast)': 'Xfinity (Comcast)'
-      'Ziply (Frontier)': 'Ziply (Frontier)'
-    '#required': true
-  report_account_number:
-    '#type': textfield
-    '#title': 'Account Number'
-    '#description': 'The account number assigned to you by your provider. This can usually be found on a billing statement.'
-  report_issue_type:
-    '#type': select
-    '#title': 'Select the Type of Issue or Concern'
-    '#options':
-      'Billing/Cost (paper invoice isn’t being mailed)': 'Billing/Cost (paper invoice isn’t being mailed)'
-      'Billing/Cost (sports/broadcast fee)': 'Billing/Cost (sports/broadcast fee)'
-      'Billing/Cost (unexpected rate increase)': 'Billing/Cost (unexpected rate increase)'
-      'Billing/Cost (unexpected fee)': 'Billing/Cost (unexpected fee)'
-      'Billing/Cost (franchise fee)': 'Billing/Cost (franchise fee)'
-      'Billing/Cost (other)': 'Billing/Cost (other)'
-      'Installation/Repair (late or no show)': 'Installation/Repair (late or no show)'
-      'Installation/Repair (damaged property)': 'Installation/Repair (damaged property)'
-      'Installation/Repair (other)': 'Installation/Repair (other)'
-      'Phones (long wait time, busy signal, hang up)': 'Phones (long wait time, busy signal, hang up)'
-      'Phones (difficult to understand menu options)': 'Phones (difficult to understand menu options)'
-      'Phones (can’t speak to a human)': 'Phones (can’t speak to a human)'
-      'Phones (other)': 'Phones (other)'
-      'Service Quality (service outages/poor quality)': 'Service Quality (service outages/poor quality)'
-      'Service Quality (equipment isn’t working)': 'Service Quality (equipment isn’t working)'
-      'Service Quality (other)': 'Service Quality (other)'
-      Other: Other
-    '#required': true
-  report_issue_description:
-    '#type': textarea
-    '#title': 'Description of Issue or Concern'
-  section_contact:
-    '#type': webform_section
-    '#title': 'Your Contact Information'
-    contact_name:
-      '#type': textfield
-      '#title': Name
-    contact_email:
-      '#type': textfield
-      '#title': Email
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-      '#states':
-        required:
-          ':input[name="contact_phone"]':
-            empty: true
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#input_mask': '(999) 999-9999'
-      '#states':
-        required:
-          ':input[name="contact_email"]':
-            empty: true
-    contact_zip_code:
-      '#type': textfield
-      '#title': 'ZIP Code'
-      '#description': '<p>The MHCRC tracks issues and concerns by ZIP code for reporting purposes.</p>'
-      '#input_mask': '99999[-9999]'
-      '#required': true
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#escalate_issue__access': false
-    '#access_create_roles':
-      - authenticated
-    '#access_update_roles':
-      - support_agent
-      - administrator
-    '#access_view_roles':
-      - support_agent
-      - administrator
-  report_ticket_id:
     '#type': hidden
-    '#title': 'Report Ticket Id'
-  resolution_url:
-    '#type': webform_computed_twig
-    '#title': 'Resolution URL'
-    '#display_on': none
-    '#mode': text
-    '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider|url_encode }}&report_account_number={{ data.report_account_number|url_encode }}&report_issue_type={{ data.report_issue_type|url_encode }}&contact_zip_code={{ data.contact_zip_code|url_encode }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&report_issue_description={{ data.report_issue_description|replace({ '\\r': ' ', '\\n': ' ', '\\t': ' ' })|url_encode }}"
-    '#whitespace': trim
-    '#store': true
-    '#ajax': true
-  computed_recipient:
-    '#type': webform_computed_twig
-    '#title': 'Computed Recipient'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.report_service_provider == "Xfinity (Comcast)" %}
-      tim_goodman@comcast.com,executive_customerrelations@comcast.com
-      {% elseif data.report_service_provider == "Ziply (Frontier)" %}
-      jessica.epley@ziply.com,complaints.northwest@ziplyfiber.com
-      {% endif %}
-    '#whitespace': trim
-    '#store': true
-    '#ajax': true
-  computed_requester:
-    '#type': webform_computed_twig
-    '#title': 'Computed Requester'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.contact_email %}
-      {{ data.contact_email }}
-      {% else %}
-      anonymous@portlandoregon.gov
-      {% endif %}
-    '#whitespace': spaceless
-    '#ajax': true
-  computed_description:
-    '#type': webform_computed_twig
-    '#title': 'Computed Request Description'
-    '#display_on': none
-    '#mode': html
-    '#template': |
-      <h2>Cable Complaint</h2>
+    '#title': 'Service Provider'
+    '#default_value': 'Xfinity (Comcast)'
+  container_can_submit:
+    '#type': container
+    '#states':
+      visible:
+        - ':input[name="report_provider_situation"]':
+            value: 'I receive cable service only from Xfinity (Comcast)'
+        - or
+        - ':input[name="report_provider_situation"]':
+            value: 'I receive cable and internet service from Xfinity (Comcast)'
+    report_account_number:
+      '#type': textfield
+      '#title': 'Account Number'
+      '#description': 'The account number assigned to you by your provider. This can usually be found on a billing statement.'
+    report_issue_type:
+      '#type': select
+      '#title': 'Select the Type of Issue or Concern'
+      '#options':
+        'Billing/Cost (paper invoice isn’t being mailed)': 'Billing/Cost (paper invoice isn’t being mailed)'
+        'Billing/Cost (sports/broadcast fee)': 'Billing/Cost (sports/broadcast fee)'
+        'Billing/Cost (unexpected rate increase)': 'Billing/Cost (unexpected rate increase)'
+        'Billing/Cost (unexpected fee)': 'Billing/Cost (unexpected fee)'
+        'Billing/Cost (franchise fee)': 'Billing/Cost (franchise fee)'
+        'Billing/Cost (other)': 'Billing/Cost (other)'
+        'Installation/Repair (late or no show)': 'Installation/Repair (late or no show)'
+        'Installation/Repair (damaged property)': 'Installation/Repair (damaged property)'
+        'Installation/Repair (other)': 'Installation/Repair (other)'
+        'Phones (long wait time, busy signal, hang up)': 'Phones (long wait time, busy signal, hang up)'
+        'Phones (difficult to understand menu options)': 'Phones (difficult to understand menu options)'
+        'Phones (can’t speak to a human)': 'Phones (can’t speak to a human)'
+        'Phones (other)': 'Phones (other)'
+        'Service Quality (service outages/poor quality)': 'Service Quality (service outages/poor quality)'
+        'Service Quality (equipment isn’t working)': 'Service Quality (equipment isn’t working)'
+        'Service Quality (other)': 'Service Quality (other)'
+        Other: Other
+      '#required': true
+    report_issue_description:
+      '#type': textarea
+      '#title': 'Description of Issue or Concern'
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#states':
+          required:
+            ':input[name="contact_phone"]':
+              empty: true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+        '#states':
+          required:
+            ':input[name="contact_email"]':
+              empty: true
+      contact_zip_code:
+        '#type': textfield
+        '#title': 'ZIP Code'
+        '#description': '<p>The MHCRC tracks issues and concerns by ZIP code for reporting purposes.</p>'
+        '#input_mask': '99999[-9999]'
+        '#required': true
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#escalate_issue__access': false
+      '#access_create_roles':
+        - authenticated
+      '#access_update_roles':
+        - support_agent
+        - administrator
+      '#access_view_roles':
+        - support_agent
+        - administrator
+    report_ticket_id:
+      '#type': hidden
+      '#title': 'Report Ticket Id'
+    resolution_url:
+      '#type': webform_computed_twig
+      '#title': 'Resolution URL'
+      '#display_on': none
+      '#mode': text
+      '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider|url_encode }}&report_account_number={{ data.report_account_number|url_encode }}&report_issue_type={{ data.report_issue_type|url_encode }}&contact_zip_code={{ data.contact_zip_code|url_encode }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&report_issue_description={{ data.report_issue_description|replace({ '\\r': ' ', '\\n': ' ', '\\t': ' ' })|url_encode }}"
+      '#whitespace': trim
+      '#store': true
+      '#ajax': true
+    computed_recipient:
+      '#type': webform_computed_twig
+      '#title': 'Computed Recipient'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% if data.report_service_provider == "Xfinity (Comcast)" %}
+        emma_grayson@comcast.com,tim_goodman@comcast.com,executive_customerrelations@comcast.com
+        {% endif %}
+      '#whitespace': trim
+      '#store': true
+      '#ajax': true
+    computed_requester:
+      '#type': webform_computed_twig
+      '#title': 'Computed Requester'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% if data.contact_email %}
+        {{ data.contact_email }}
+        {% else %}
+        anonymous@portlandoregon.gov
+        {% endif %}
+      '#whitespace': spaceless
+      '#ajax': true
+    computed_description:
+      '#type': webform_computed_twig
+      '#title': 'Computed Request Description'
+      '#display_on': none
+      '#mode': html
+      '#template': |
+        <h2>Cable Complaint</h2>
 
-      <p><strong>Complaint is about:</strong> {{ data.report_complaint_concern is iterable ? '' : webform_token('[webform_submission:values:report_complaint_concern]', webform_submission) }}</p>
+        <p><strong>Complaint is about:</strong> {{ data.report_provider_situation is iterable ? '' : webform_token('[webform_submission:values:report_provider_situation]', webform_submission) }}</p>
 
-      <p><strong>Service Provider:</strong> {{ data.report_service_provider is iterable ? '' : webform_token('[webform_submission:values:report_service_provider]', webform_submission) }}<br>
-      <strong>Contact:</strong> {{ data.computed_recipient }}</p>
+        <p><strong>Service Provider:</strong> {{ data.report_service_provider is iterable ? '' : webform_token('[webform_submission:values:report_service_provider]', webform_submission) }}<br>
+        <strong>Contact:</strong> {{ data.computed_recipient }}</p>
 
-      {% if data.report_account_number %}
-      <p><strong>Account Number:</strong> {{ data.report_account_number }}</p>
-      {% endif %}
+        {% if data.report_account_number %}
+        <p><strong>Account Number:</strong> {{ data.report_account_number }}</p>
+        {% endif %}
 
-      <p><strong>Issue Type:</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}</p>
+        <p><strong>Issue Type:</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}</p>
 
-      {% if data.report_issue_description %}
-      <p><strong>Description:</strong> {{ data.report_issue_description }}</p>
-      {% endif %}
+        {% if data.report_issue_description %}
+        <p><strong>Description:</strong> {{ data.report_issue_description }}</p>
+        {% endif %}
 
-      {% if data.contact_name %}
-      <p><strong>Name:</strong> {{ data.contact_name }}</p>
-      {% endif %}
+        {% if data.contact_name %}
+        <p><strong>Name:</strong> {{ data.contact_name }}</p>
+        {% endif %}
 
-      <p><strong>Email:</strong> {{ data.contact_email }}</p>
+        <p><strong>Email:</strong> {{ data.contact_email }}</p>
 
-      <p><strong>Phone:</strong> {{ data.contact_phone }}</p>
+        <p><strong>Phone:</strong> {{ data.contact_phone }}</p>
 
-      <p><strong>Zip Code:</strong> {{ data.contact_zip_code }}</p>
+        <p><strong>Zip Code:</strong> {{ data.contact_zip_code }}</p>
 
-      <p><i>Webform ID: report_cable_complaint</i></p>
-    '#ajax': true
-  computed_subject:
-    '#type': webform_computed_twig
-    '#title': 'Computed Subject'
-    '#display_on': none
-    '#mode': text
-    '#template': "Cable complaint: {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}"
-    '#whitespace': trim
-    '#ajax': true
+        <p><i>Webform ID: report_cable_complaint</i></p>
+      '#ajax': true
+    computed_subject:
+      '#type': webform_computed_twig
+      '#title': 'Computed Subject'
+      '#display_on': none
+      '#mode': text
+      '#template': "Cable complaint: {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}"
+      '#whitespace': trim
+      '#ajax': true
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
 css: ''
 javascript: ''
 settings:
@@ -230,6 +244,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -295,10 +310,10 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Thank you'
+  confirmation_message: '<p>Your complaint (#[webform_submission:values:report_ticket_id]) has been received.</p>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -396,11 +411,13 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'"
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '16814795517079'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
   zendesk_new_request_developer_test:
     id: zendesk
     handler_id: zendesk_new_request_developer_test
@@ -424,36 +441,13 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'"
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '16814795517079'
       recipient: ''
       ticket_fork_field: ''
-  zendesk_update_customer_support_interaction_request:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_customer_support_interaction_request
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -48
-    settings:
-      comment: "<h1>Cable Complaint Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: '16814795517079'
-      skip_attachments: false
+      is_child_incident: 0
+      parent_ticket_id_field: ''
   email_notification_to_cable_company_representative:
     id: email
     handler_id: email_notification_to_cable_company_representative
@@ -496,6 +490,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   update_zendesk_request_with_full_resolution_url_including_ticket:
