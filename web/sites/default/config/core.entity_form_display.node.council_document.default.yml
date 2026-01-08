@@ -21,6 +21,7 @@ dependencies:
     - field.field.node.council_document.field_council_document_type
     - field.field.node.council_document.field_date_of_final_disposition
     - field.field.node.council_document.field_date_prepared
+    - field.field.node.council_document.field_doc_published_date
     - field.field.node.council_document.field_document_number
     - field.field.node.council_document.field_documents_and_exhibits
     - field.field.node.council_document.field_economic_impacts
@@ -34,6 +35,7 @@ dependencies:
     - field.field.node.council_document.field_is_portland_policy
     - field.field.node.council_document.field_needs_attorney_review
     - field.field.node.council_document.field_neighborhood
+    - field.field.node.council_document.field_preferred_meeting_date
     - field.field.node.council_document.field_president_committee
     - field.field.node.council_document.field_purpose_and_background
     - field.field.node.council_document.field_requested_council_date
@@ -53,6 +55,7 @@ dependencies:
     - datetime
     - field_group
     - file
+    - lightning_scheduler
     - link
     - path
     - select2
@@ -85,6 +88,7 @@ third_party_settings:
         - field_date_of_final_disposition
         - field_allows_written_testimony
         - field_written_testimony_link
+        - field_doc_published_date
       label: 'Council Clerk Only'
       region: content
       parent_name: ''
@@ -147,11 +151,16 @@ third_party_settings:
         open: false
         description: ''
         required_fields: true
-    group_staff_committee_preference:
+    group_scheduling_request:
       children:
+        - field_requested_council_date
+        - field_agenda_type
+        - field_time_requested
+        - field_requested_start_time
         - field_staff_committee_preference
+        - field_preferred_meeting_date
         - field_staff_commitee_pref_info
-      label: 'Committee Preference'
+      label: 'Scheduling request'
       region: content
       parent_name: ''
       weight: 29
@@ -382,6 +391,12 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_doc_published_date:
+    type: datetime_default
+    weight: 55
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_document_number:
     type: string_textfield
     weight: 0
@@ -604,6 +619,12 @@ content:
       match_operator: CONTAINS
       match_limit: 10
     third_party_settings: {  }
+  field_preferred_meeting_date:
+    type: datetime_default
+    weight: 16
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_president_committee:
     type: options_select
     weight: 50
@@ -621,7 +642,7 @@ content:
       conditional_fields: {  }
   field_requested_council_date:
     type: datetime_default
-    weight: 12
+    weight: 0
     region: content
     settings: {  }
     third_party_settings:
@@ -719,7 +740,7 @@ content:
           dependee: field_agenda_type
           settings:
             state: visible
-            reset: false
+            reset: true
             condition: value
             grouping: OR
             values_set: 3
@@ -736,8 +757,9 @@ content:
           dependee: field_agenda_type
           settings:
             state: required
+            reset: false
             condition: value
-            grouping: AND
+            grouping: OR
             values_set: 1
             value: ''
             values: {  }

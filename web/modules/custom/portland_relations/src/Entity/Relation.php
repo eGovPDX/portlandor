@@ -116,4 +116,12 @@ class Relation extends RevisionableContentEntityBase implements RelationInterfac
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * Relations have no label, so we return ID.
+   */
+  public function label() {
+    return $this->id();
+  }
 }

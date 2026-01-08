@@ -4,6 +4,8 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\Component\Utility\Html;
 
 /**
  * Provides a 'portland_location_picker' element.
@@ -31,51 +33,67 @@ class PortlandLocationPicker extends WebformCompositeBase {
    */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
+    $e = static fn($s) => Html::escape($s);
 
-    // this text string is used as a display value for the field value, and is what is returned by the parent
-    // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
-    // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
-    // specified in the token, such as [webform_submission:values:location:place_name].
+    // This string is used for the composite's display value via tokens like
+    // [webform_submission:values:location]. Use sub-field tokens for granular values.
     $lines = [];
-    $lines[] = '<p>';
 
-    if (isset($value['place_name']) && $value['place_name']) {
-      $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
+    if (!empty($value['place_name'])) {
+      $lines[] = '<strong>Location name:</strong> ' . $e($value['place_name']);
     }
-    if (isset($value['location_address']) && $value['location_address']) {
-      $lines[] = '<strong>Address:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
+
+    if (!empty($value['location_address'])) {
+      $addr = $e($value['location_address']);
+      $lines[] = '<strong>Address:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $addr . '">' . $addr . '</a>';
     }
-    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
-      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
+
+    if (!empty($value['location_lat']) && isset($value['location_lon'])) {
+      $latlon = $e($value['location_lat'] . ',' . $value['location_lon']);
       $lines[] = '<strong>Lat/lng:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
     }
-    if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
-      $lines[] = '<strong>Municipality:</strong> ' . $value['location_municipality_name'];
+
+    if (!empty($value['location_municipality_name'])) {
+      $lines[] = '<strong>Municipality:</strong> ' . $e($value['location_municipality_name']);
     }
-    if (isset($value['location_zipcode']) && $value['location_zipcode']) {
-      $lines[] = '<strong>Zipcode:</strong> ' . $value['location_zipcode'];
+
+    if (!empty($value['location_zipcode'])) {
+      $lines[] = '<strong>Zipcode:</strong> ' . $e($value['location_zipcode']);
     }
-    if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = '<strong>Location details:</strong> ' . $value['location_details'];
+
+    if (!empty($value['location_details'])) {
+      $lines[] = '<strong>Location details:</strong> ' . $e($value['location_details']);
     }
-    if (isset($value['location_types']) && $value['location_types']) {
-      $lines[] = '<strong>Location type(s):</strong> ' . $value['location_types'];
+
+    if (!empty($value['location_types'])) {
+      $lines[] = '<strong>Location type(s):</strong> ' . $e($value['location_types']);
     }
-    if (isset($value['location_attributes']) && $value['location_attributes']) {
-      $lines[] = '<strong>Location attributes:</strong> ' . $value['location_attributes'];
+
+    if (!empty($value['location_attributes'])) {
+      $lines[] = '<strong>Location attributes:</strong> ' . $e($value['location_attributes']);
     }
-    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
-      $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
+
+    if (!empty($value['location_asset_id'])) {
+      $lines[] = '<strong>Asset ID:</strong> ' . $e($value['location_asset_id']);
     }
-    if (isset($value['location_region_id']) && $value['location_region_id']) {
-      $lines[] = '<strong>Region ID:</strong> ' . $value['location_region_id'];
+
+    if (!empty($value['location_region_id'])) {
+      $lines[] = '<strong>Region ID:</strong> ' . $e($value['location_region_id']);
     }
-    if (isset($value['location_search']) && $value['location_search']) {
-      $lines[] = '<strong>Search query:</strong> ' . $value['location_search'];
+
+    if (!empty($value['location_search'])) {
+      $lines[] = '<strong>Search query:</strong> ' . $e($value['location_search']);
     }
-    $lines[] = '</p>';
-    return $lines;
+
+    // IMPORTANT for composites: return a LIST of render arrays.
+    // Here we return a single item containing the full block.
+    return [
+      [
+        '#markup' => Markup::create('<p>' . implode('<br />', $lines) . '</p>'),
+      ],
+    ];
   }
+
 
   /**
    * {@inheritdoc}
@@ -112,7 +130,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     if (isset($value['location_types']) && $value['location_types']) {
       $lines[] = 'Location type(s): ' . $value['location_types'];
-    }    
+    }
     if (isset($value['location_attributes']) && $value['location_attributes']) {
       $lines[] = 'Location details: ' . $value['location_attributes'];
     }
@@ -135,7 +153,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     parent::prepare($element, $webform_submission);
 
     $element_id = "report_location";
-    
+
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
@@ -150,7 +168,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
     $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
     $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($addressVerify ? "Verify" : "Search");
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($addressVerify ? $this->t("Verify") : $this->t("Search"));
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
@@ -160,7 +178,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $disablePlaceNameAutofill = array_key_exists('#disable_place_name_autofill', $element) ? $element['#disable_place_name_autofill'] : FALSE;
     $regionIdPropertyName = array_key_exists('#region_id_property_name', $element) ? $element['#region_id_property_name'] : 'region_id';
     $maxZoom = array_key_exists('#max_zoom', $element) ? $element['#max_zoom'] : 18;
-    
+
     $boundaryUrl = array_key_exists('#boundary_url', $element) ? $element['#boundary_url'] : 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson';
     $displayBoundary = array_key_exists('#display_boundary', $element) ? $element['#display_boundary'] : TRUE;
     $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
