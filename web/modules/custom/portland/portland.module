@@ -29,6 +29,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
 use Drupal\node\Entity\Node;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -670,6 +671,12 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
       $entity_form['#element_validate'][] = '_validate_document';
     }
   }
+
+  // PGOV-488 Convert image alt text field to textarea
+  if(isset($entity_form['image'])) {
+    $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+    $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
+  }
 }
 
 /**
@@ -752,6 +759,45 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     }
   }
 
+  // PGOV-488 Convert image alt text field to textarea
+  if ($form_id === "media_image_add_form" || $form_id === "media_image_edit_form") {
+    if(isset($form['image'])) {
+      $form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+      $form['#validate'][] = '_remove_linebreak_from_image_alt';
+    }
+  }
+}
+
+/**
+ * Remove line breaks from image alt text
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
+  $form_state->getValue('image')[0]['alt'] = preg_replace('/\s+/', ' ', $form_state->getValue('image')[0]['alt']);
+}
+
+/**
+ * Change image alt text field to textarea
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _convert_image_alt_to_textarea($element, FormStateInterface $form_state, &$complete_form) {
+  // Do nothing if alt field doesn't exist
+  if(! isset($element['alt'])) return $element;
+
+  // Alt field exists → convert to textarea
+  if (!empty($element['alt']) && $element['alt']['#type'] === 'textfield') {
+    $element['alt']['#type'] = 'textarea';
+    $element['alt']['#rows'] = 6;
+    $element['alt']['#description'] = new TranslatableMarkup('@original_text @additional_text', [
+      '@original_text' => $element['alt']['#description'],
+      '@additional_text' => t(" If the alt text has multiple lines, it will be merged into one line with line breaks converted into blank spaces."),
+    ]);
+    $element['alt']['#attributes']['data-maxlength'] = 160;
+    $element['alt']['#attributes']['class'][] = 'maxlength';
+    $element['alt']['#attached']['library'][] = 'maxlength/maxlength';
+    $element['alt']['#attributes']['maxlength_js_label'] = 'The suggested max length of alternative text is @limit characters, remaining: <strong>@remaining</strong>';
+  }
+  return $element;
 }
 
 /**

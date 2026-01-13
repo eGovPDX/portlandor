@@ -70,6 +70,57 @@ elements: |-
           wallet_option_2: '<strong>Option 2:</strong> Individual - Transit, BIKETOWN for All, and prepaid Visa card'
           wallet_option_3: '<strong>Option 3:</strong> Household - Transit, BIKETOWN for All, and prepaid Visa card'
         '#required': true
+      markup_02:
+        '#type': webform_markup
+        '#markup': '<hr class="mb-0">'
+      contact_address_verifier:
+        '#type': portland_address_verifier
+        '#title': Address
+        '#wrapper_attributes':
+          id: null
+        '#location_address__description': 'Please provide your full address. Begin typing to see a list of possible address matches.'
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+        '#location_zip__attributes':
+          maxlength: 5
+        '#require_portland_city_limits': 1
+        '#out_of_bounds_message': 'The address you provided is outside of the Portland city limits. A Portland address is required to participate in the Transportation Wallet: Access for All program. Please reach out to community-based organization staff for assistance.'
+      markup_03:
+        '#type': webform_markup
+        '#states':
+          invisible:
+            ':input[name="contact_address_verifier[location_address]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_city]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_state]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_zip]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_verification_status]"]':
+              '!value': Verified
+        '#markup': '<p><strong>To continue, please provide a verified Portland street address.</strong></p>'
+      markup_invalid_address:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="contact_address_verifier[location_address]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_city]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_state]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_zip]"]':
+              filled: true
+            ':input[name="contact_address_verifier[location_verification_status]"]':
+              '!value': Verified
+        '#wrapper_attributes':
+          class:
+            - mt-0
+            - mb-10
+        '#markup': '<div class="alert alert--warning next-steps"><h2>Important</h2><p><strong>Your address has not been verified. </strong>Please double check that the information you provided is correct and click the <strong>Verify </strong>button before proceeding.</p></div>'
     markup_01:
       '#type': webform_markup
       '#states':
@@ -82,8 +133,11 @@ elements: |-
       '#title': 'Next Button'
       '#states':
         invisible:
-          ':input[name="organization_name"]':
-            empty: true
+          - ':input[name="organization_name"]':
+              empty: true
+          - or
+          - ':input[name="contact_address_verifier[location_verification_status]"]':
+              empty: true
       '#submit__label': Next
   page_wallet_info:
     '#type': webform_wizard_page
@@ -1535,37 +1589,6 @@ elements: |-
         '#title': Phone
         '#description': '<p>Please provide your phone number in case we need additional information.</p>'
         '#input_mask': '(999) 999-9999'
-      contact_address_verifier:
-        '#type': portland_address_verifier
-        '#title': Address
-        '#wrapper_attributes':
-          id: null
-        '#location_address__description': 'Please provide your full address. Begin typing to see a list of possible address matches.'
-        '#location_address__required': true
-        '#location_city__required': true
-        '#location_state__required': true
-        '#location_zip__required': true
-        '#location_zip__attributes':
-          maxlength: 5
-      markup_invalid_address:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="contact_address_verifier[location_address]"]':
-              filled: true
-            ':input[name="contact_address_verifier[location_city]"]':
-              filled: true
-            ':input[name="contact_address_verifier[location_state]"]':
-              filled: true
-            ':input[name="contact_address_verifier[location_zip]"]':
-              filled: true
-            ':input[name="contact_address_verifier[location_verification_status]"]':
-              '!value': Verified
-        '#wrapper_attributes':
-          class:
-            - mt-0
-            - mb-10
-        '#markup': '<div class="alert alert--warning next-steps"><h2>Important</h2><p>Your address has not been verified. Please double check that the information you provided is correct before proceeding.</p></div>'
       apply_final_questions_text:
         '#type': textarea
         '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
@@ -1803,50 +1826,62 @@ elements: |-
 
       <h3>Hop card details</h3>
 
-      <strong>Do you have a Hop card?</strong> {{ data.apply_has_hop_card }}<br>
+      {# if Option 1 + Yes + Adult/LIFT, they don't really have a Hop card in the context of processing #}
 
-      <p>
-      {% if data.apply_has_hop_card == "Yes" %}
-        <strong>What type of Hop card does this person have?</strong> 
-        
-        {% if data.apply_current_hop_card == "27985321767319_adult_hop_card" %}
-          Adult Hop card
-        {% elseif data.apply_current_hop_card == "27985321767319_honored_citizen_hop_card" %}
-          Honored Citizen Hop card
-        {% elseif data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
-          TriMet LIFT Hop card
-        {% else %}
-          ERROR: Unspecified
-        {% endif %}<br>
-        
-        {% if data.apply_hop_card_number or data.apply_hop_card_number_opt_2 or data.apply_hop_card_number_opt_3 %}<strong>Hop card number:</strong> {{ data.apply_hop_card_number ? data.apply_hop_card_number : data.apply_hop_card_number_opt_2 ? data.apply_hop_card_number_opt_2 : data.apply_hop_card_number_opt_3 }}<br>{% endif %}
-        
+      {% if data.apply_wallet_package == "wallet_option_1" and data.apply_has_hop_card == "Yes" and (data.apply_current_hop_card == "27985321767319_adult_hop_card" or data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card") %}
+
+        <strong>Do you have a Hop card?</strong> No<br>
+        <p><strong>What type of Hop card does this person need?</strong> Honored Citizen Hop card</p>
+
       {% else %}
-        <strong>What type of Hop card does this person need?</strong> 
-        
-        {% if data.apply_hop_card_needed %}
-          {% if data.apply_hop_card_needed == "27985321767319_honored_citizen_hop_card" %}
+
+        <strong>Do you have a Hop card?</strong> {{ data.apply_has_hop_card }}<br>
+
+        <p>
+        {% if data.apply_has_hop_card == "Yes" %}
+          <strong>What type of Hop card does this person have?</strong>
+
+          {% if data.apply_current_hop_card == "27985321767319_adult_hop_card" %}
+            Adult Hop card
+          {% elseif data.apply_current_hop_card == "27985321767319_honored_citizen_hop_card" %}
             Honored Citizen Hop card
-          {% elseif data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" %}
-            Personalized Honored Citizen Hop card (apply through TriMet)
+          {% elseif data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
+            TriMet LIFT Hop card
           {% else %}
             ERROR: Unspecified
           {% endif %}<br>
-          
-        {% elseif data.apply_hop_card_needed_opt_2_3 %}
-          {% if data.apply_hop_card_needed_opt_2_3 == "27985321767319_adult_hop_card" %}
-            I need an Adult Hop card (18+)
-          {% elseif data.apply_hop_card_needed_opt_2_3 == "27985321767319_honored_citizen_hop_card" %}
-            Honored Citizen Hop card
-          {% elseif data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
-            Personalized Honored Citizen Hop card (apply through TriMet)
-          {% else %}
-            ERROR: Unspecified
-          {% endif %}<br>
-        
+
+          {% if data.apply_hop_card_number or data.apply_hop_card_number_opt_2 or data.apply_hop_card_number_opt_3 %}<strong>Hop card number:</strong> {{ data.apply_hop_card_number ? data.apply_hop_card_number : data.apply_hop_card_number_opt_2 ? data.apply_hop_card_number_opt_2 : data.apply_hop_card_number_opt_3 }}<br>{% endif %}
+
+        {% else %}
+          <strong>What type of Hop card does this person need?</strong>
+
+          {% if data.apply_hop_card_needed %}
+            {% if data.apply_hop_card_needed == "27985321767319_honored_citizen_hop_card" %}
+              Honored Citizen Hop card
+            {% elseif data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" %}
+              Personalized Honored Citizen Hop card (apply through TriMet)
+            {% else %}
+              ERROR: Unspecified
+            {% endif %}<br>
+
+          {% elseif data.apply_hop_card_needed_opt_2_3 %}
+            {% if data.apply_hop_card_needed_opt_2_3 == "27985321767319_adult_hop_card" %}
+              I need an Adult Hop card (18+)
+            {% elseif data.apply_hop_card_needed_opt_2_3 == "27985321767319_honored_citizen_hop_card" %}
+              Honored Citizen Hop card
+            {% elseif data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
+              Personalized Honored Citizen Hop card (apply through TriMet)
+            {% else %}
+              ERROR: Unspecified
+            {% endif %}<br>
+
+          {% endif %}
+
         {% endif %}
-        
+
       {% endif %}
+
       {% if data.computed_card_amount_1 and data.apply_wallet_package == "wallet_option_3" %}
         <strong>Hop card amount: </strong> {{ data.computed_card_amount_1 }}<br>
       {% endif %}
@@ -1879,7 +1914,7 @@ elements: |-
       <strong>Does this person have a Hop card?</strong>
 
       {% if data.has_hop_card_2 == "Yes" %}
-        Yes, this person has 
+        Yes, this person has
         {% if data.apply_current_hop_card_member_2 == "27985321767319_adult_hop_card" %}
           an Adult Hop card
         {% elseif data.apply_current_hop_card_member_2 == "27985321767319_honored_citizen_hop_card" %}
@@ -1930,7 +1965,7 @@ elements: |-
       <strong>Does this person have a Hop card?</strong>
 
       {% if data.has_hop_card_3 == "Yes" %}
-        Yes, this person has 
+        Yes, this person has
         {% if data.apply_current_hop_card_member_3 == "27985321767319_adult_hop_card" %}
           an Adult Hop card
         {% elseif data.apply_current_hop_card_member_3 == "27985321767319_honored_citizen_hop_card" %}
@@ -1981,7 +2016,7 @@ elements: |-
       <strong>Does this person have a Hop card?</strong>
 
       {% if data.has_hop_card_4 == "Yes" %}
-        Yes, this person has 
+        Yes, this person has
         {% if data.apply_current_hop_card_member_4 == "27985321767319_adult_hop_card" %}
           an Adult Hop card
         {% elseif data.apply_current_hop_card_member_4 == "27985321767319_honored_citizen_hop_card" %}
@@ -2033,7 +2068,7 @@ elements: |-
       <strong>Does this person have a Hop card?</strong>
 
       {% if data.has_hop_card_5 == "Yes" %}
-        Yes, this person has 
+        Yes, this person has
         {% if data.apply_current_hop_card_member_5 == "27985321767319_adult_hop_card" %}
           an Adult Hop card
         {% elseif data.apply_current_hop_card_member_5 == "27985321767319_honored_citizen_hop_card" %}
@@ -2100,8 +2135,8 @@ elements: |-
     '#mode': text
     '#template': |
       {% if data.apply_wallet_package != "wallet_option_3" %}
-        29758569828631_full 
-        {{ data.apply_wallet_package }} 
+        29758569828631_full
+        {{ data.apply_wallet_package }}
         {% if data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" or data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
           personalized_honored_citizen_hop_card 29284635983383_honored_citizen 27985321767319_apply
         {% else %}
@@ -2128,13 +2163,13 @@ elements: |-
     '#template': |-
       {% if data.apply_wallet_package == "wallet_option_3" %}
         wallet_option_3 29758569828631_household
-        
+
         {% if data.has_hop_card_2 == "personalized_honored_citizen_hop_card" or data.has_hop_card_3 == "personalized_honored_citizen_hop_card" or data.has_hop_card_4 == "personalized_honored_citizen_hop_card" or data.has_hop_card_5 == "personalized_honored_citizen_hop_card" or data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" or data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-        
+
         {% elseif data.has_hop_card_2 == "27985321767319_trimet_lift_hop_card" or data.has_hop_card_3 == "27985321767319_trimet_lift_hop_card" or data.has_hop_card_4 == "27985321767319_trimet_lift_hop_card" or data.has_hop_card_5 == "27985321767319_trimet_lift_hop_card" or data.apply_hop_card_needed == "27985321767319_trimet_lift_hop_card" or data.apply_hop_card_needed_opt_2_3 == "27985321767319_trimet_lift_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_lift_hop_card
-        
+
         {% endif %}
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
@@ -2147,9 +2182,9 @@ elements: |-
     '#template': |-
       {% if data.apply_wallet_package == "wallet_option_1" %}
         wallet_option_1 29758569828631_full
-        
+
         {% if data.apply_has_hop_card == "Yes" %}{# has hop card #}
-        
+
           {% if data.apply_current_hop_card == "27985321767319_adult_hop_card" %}
             {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
           {% elseif data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
@@ -2159,20 +2194,20 @@ elements: |-
           {% endif %}
 
         {% else %}{# does not have hop card #}
-          
+
           {% if data.apply_hop_card_needed == "personalized_honored_citizen_hop_card" %}
             {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
           {% else %}
             {# type: #}{{ data.apply_current_hop_card }}
           {% endif %}
-        
+
         {% endif %}
-        
+
       {% elseif data.apply_wallet_package == "wallet_option_2" %}
         wallet_option_2 29758569828631_full
-        
+
         {% if data.apply_has_hop_card == "Yes" %}{# has hop card #}
-        
+
           {% if data.apply_current_hop_card == "27985321767319_trimet_lift_hop_card" %}
             {# type: #}27985321767319_apply {# delay: #}29284635983383_lift_hop_card
           {% else %}
@@ -2180,31 +2215,31 @@ elements: |-
           {% endif %}
 
         {% else %}{# does not have hop card, check apply_hop_card_needed_opt_2_3 #}
-          
+
           {% if data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
             {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
           {% else %}
             {# type: #}{{ data.apply_hop_card_needed_opt_2_3 }}
           {% endif %}
-        
+
         {% endif %}
-        
+
       {% elseif data.apply_wallet_package == "wallet_option_3" %}
         wallet_option_3 29758569828631_individual household_member household_member_primary
-        
+
         {% if data.apply_has_hop_card == "Yes" %}{# has hop card #}
           {# type: #}{{ data.apply_current_hop_card }}
 
         {% else %}{# does not have hop card, check apply_hop_card_needed_opt_2_3 #}
-          
+
           {% if data.apply_hop_card_needed_opt_2_3 == "personalized_honored_citizen_hop_card" %}
             {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
           {% else %}
             {# type: #}{{ data.apply_hop_card_needed_opt_2_3 }}
           {% endif %}
-        
+
         {% endif %}
-        
+
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
@@ -2214,20 +2249,20 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 2 %} 
-        wallet_option_3 household_member 29758569828631_individual 
+      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 2 %}
+        wallet_option_3 household_member 29758569828631_individual
 
         {% if data.has_hop_card_2 == "Yes" %}
           {{ data.apply_current_hop_card_member_2 }}
-          
+
         {% elseif data.has_hop_card_2 == "personalized_honored_citizen_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-          
+
         {% else %}
           {# type: #}{{ data.has_hop_card_2 }}
-          
+
         {% endif %}
-        
+
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
@@ -2237,20 +2272,20 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 3 %} 
-        wallet_option_3 household_member 29758569828631_individual 
+      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 3 %}
+        wallet_option_3 household_member 29758569828631_individual
 
         {% if data.has_hop_card_3 == "Yes" %}
           {{ data.apply_current_hop_card_member_3 }}
-          
+
         {% elseif data.has_hop_card_3 == "personalized_honored_citizen_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-          
+
         {% else %}
           {# type: #}{{ data.has_hop_card_3 }}
-          
+
         {% endif %}
-        
+
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
@@ -2260,20 +2295,20 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 4 %} 
-        wallet_option_3 household_member 29758569828631_individual 
+      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 4 %}
+        wallet_option_3 household_member 29758569828631_individual
 
         {% if data.has_hop_card_4 == "Yes" %}
           {{ data.apply_current_hop_card_member_4 }}
-          
+
         {% elseif data.has_hop_card_4 == "personalized_honored_citizen_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-          
+
         {% else %}
           {# type: #}{{ data.has_hop_card_4 }}
-          
+
         {% endif %}
-        
+
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
@@ -2283,20 +2318,20 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 5 %} 
-        wallet_option_3 household_member 29758569828631_individual 
+      {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 5 %}
+        wallet_option_3 household_member 29758569828631_individual
 
         {% if data.has_hop_card_5 == "Yes" %}
           {{ data.apply_current_hop_card_member_5 }}
-          
+
         {% elseif data.has_hop_card_5 == "personalized_honored_citizen_hop_card" %}
           {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-          
+
         {% else %}
           {# type: #}{{ data.has_hop_card_5 }}
-          
+
         {% endif %}
-        
+
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
@@ -2348,6 +2383,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
