@@ -21,7 +21,7 @@ class MigrationSubscriber implements EventSubscriberInterface {
    *
    * @inheritdoc
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[MigrateEvents::POST_IMPORT][] = ['onMigratePostImport'];
     $events[MigrateEvents::PRE_IMPORT][] = ['onMigratePreImport'];
     return $events;
