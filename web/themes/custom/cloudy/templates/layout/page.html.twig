@@ -127,13 +127,28 @@
 
 {% set content_attribute = create_attribute() %}
 {% set content_classes = [
-    page.tools or page.menu ? 'col-lg order-1',
+    page.tools or page.menu ? 'col-lg',
 ] %}
 
 <main id="main-content" class="d-print-block" role="main" data-swiftype-index="true">
   {% block main_content %}
     <div class="main-content {{ not is_front ? 'container' }}">
       <div {{ content_wrapper_attribute.addClass(content_wrapper_classes) }}>
+        {% if page.tools or page.menu %}
+          {# Change the title based on the usage of the regioin #}
+          {# TODO: Better way to do this dynamically? #}
+          {% if path('<current>') starts with '/search' %}
+            {% set offcanvasLabel = 'Filters'|t %}
+          {% else %}
+            {% set offcanvasLabel = 'Page menu'|t %}
+          {% endif %}
+          <button class="cloudy-offcanvas-button btn btn-lg btn-light d-lg-none ms-4 mb-4 w-auto" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasTools" aria-controls="offcanvasTools">
+            {% include "@components/icon/icon.twig" with {
+              name: 'filter',
+            } only %}
+            {{ offcanvasLabel }}
+          </button>
+        {% endif %}
         <div {{ content_attribute.addClass(content_classes)}}>
           {% block page_content %}
             {{ page.content }}
