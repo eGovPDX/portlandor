@@ -16,6 +16,8 @@ elements: |-
   report_billable_area:
     '#type': number
     '#title': 'Total Amount of Stormwater Billable Area'
+    '#description': '<p>Please enter the square feet of total stormwater billable area from your utility bill. Find this information in the service details on your bill.</p>'
+    '#description_display': before
   report_roofs:
     '#type': radios
     '#title': Roof(s)
@@ -32,6 +34,8 @@ elements: |-
   report_tree_coverage:
     '#type': radios
     '#title': Trees
+    '#help': '<p>Enter either the number of trees taller than 15 feet or enter the total tree canopy cover in square feet.</p>'
+    '#description_display': before
     '#options':
       'Number of trees taller than 15 feet': 'Number of trees taller than 15 feet'
       'Total tree canopy cover in square feet': 'Total tree canopy cover in square feet'
@@ -55,35 +59,50 @@ elements: |-
     '#display_on': form
     '#mode': html
     '#template': |-
-      {% set roof_discount = 0.0 %}
-      {% set paved_area_discount = 0.0 %}
-      {% set tree_discount = 0.0 %}
+      {% set roof_discount = 0 %}
+      {% set paved_area_discount = 0 %}
+      {% set tree_discount = 0 %}
 
       {# Roof discount #}
       {% if data.report_roofs == 'All of the rain from my roof soaks into the ground or flows into a stormwater facility on my property.' %}
-          {% set roof_discount = 0.26 %}
+        {% set roof_discount = 0.26 %}
       {% elseif data.report_roofs == 'Some of the rain from my roof soaks into the ground or flows into a stormwater facility on my property and some flows to the sewer or into a street, sidewalk, or waterbody.' %}
-          {% set roof_discount = 0.13 %}
+        {% set roof_discount = 0.13 %}
       {% endif %}
 
       {# Paved area discount #}
       {% if data.report_paved_area == 'Some or all of the rain that flows off paved areas on my property soaks into the ground or flows into a stormwater management facility on my property.' %}
-          {% set paved_area_discount = 0.09 %}
+        {% set paved_area_discount = 0.09 %}
       {% endif %}
 
-      {# Tree discount with 9% cap #}
-      {% if data.report_tree_coverage == 'Number of trees taller than 15 feet' %}
-          {% set tree_discount = (data.report_tall_trees * 150) / (data.report_billable_area * 0.35) %}
-      {% elseif data.report_tree_coverage == 'Total tree canopy cover in square feet' %}
-          {% set tree_discount = (data.report_billable_area * 0.35) / data.report_canopy_in_sqft %}
+      {# Tree discount #}
+      {% if data.report_tree_coverage == 'Number of trees taller than 15 feet'
+        and data.report_tall_trees is not empty
+        and data.report_billable_area is not empty
+        and data.report_billable_area != 0
+      %}
+        {% set tree_discount = (data.report_tall_trees * 150) / (data.report_billable_area * 0.35) %}
+      {% elseif data.report_tree_coverage == 'Total tree canopy cover in square feet'
+        and data.report_canopy_in_sqft is not empty
+        and data.report_canopy_in_sqft != 0
+      %}
+        {% set tree_discount = (data.report_billable_area * 0.35) / data.report_canopy_in_sqft %}
       {% endif %}
-      {% set tree_discount = tree_discount > 0.09 ? 0.09 : tree_calc %}
+
+      {# Cap tree discount at 9% #}
+      {% if tree_discount > 0.09 %}
+        {% set tree_discount = 0.09 %}
+      {% endif %}
 
       {% set total_uncapped = roof_discount + paved_area_discount + tree_discount %}
       {% set total_discount = total_uncapped > 0.35 ? 0.35 : total_uncapped %}
 
-      Your discount is {{ total_discount * 100}}%
+      Your discount is {{ total_discount * 100 }}%
     '#ajax': true
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#submit_hide': true
 css: ''
 javascript: ''
 settings:
