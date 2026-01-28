@@ -75,7 +75,7 @@ elements: |-
         '#type': radios
         '#title': 'Which Transportation Wallet package would you like to sign up for?'
         '#options':
-          wallet_option_1: '<strong>Option 1:</strong> Individual - TriMet Honored Citizen 1-year Pass'
+          wallet_option_1: '<strong>Option 1:</strong> Individual - TriMet 1-year Pass'
           wallet_option_2: '<strong>Option 2:</strong> Individual - Transit, BIKETOWN for All, and prepaid Visa card'
           wallet_option_3: '<strong>Option 3:</strong> Household - Transit, BIKETOWN for All, and prepaid Visa card'
         '#required': true
@@ -151,7 +151,7 @@ elements: |-
       '#mode': html
       '#template': |-
         {% set radios_options = {
-          'wallet_option_1': 'Option 1: Individual - TriMet Honored Citizen 1-year Pass',
+          'wallet_option_1': 'Option 1: Individual - TriMet 1-year Pass',
           'wallet_option_2': 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card',
           'wallet_option_3': 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         } %}
@@ -481,6 +481,21 @@ elements: |-
         '#date_date_min': '120 years ago'
         '#date_date_max': '18 years ago'
         '#date_date_format': m/d/Y
+      computed_age_primary:
+        '#type': webform_computed_twig
+        '#title': 'Computed Age (primary)'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% set dob = data.apply_date_of_birth %}
+          {% if dob %}
+            {% set birth = dob|date('U') %}
+            {% set now = "now"|date('U') %}
+            {% set age = (now - birth) // 31557600 %}
+            {{ age }}
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
       apply_date_of_birth_hc:
         '#type': date
         '#title': 'REMOVE: What is your date of birth? (MM/DD/YYYY)'
@@ -518,12 +533,17 @@ elements: |-
       computed_hop_card_type:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Type (primary applicant)'
+        '#display_on': view
         '#mode': text
         '#template': |-
           {% if data.apply_wallet_package == "wallet_option_1" %}
             27985321767319_honored_citizen_hop_card
           {% else %}
-            27985321767319_adult_hop_card
+            {% if data.computed_age_primary < 65 %}
+              27985321767319_adult_hop_card
+            {% else %}
+              27985321767319_honored_citizen_hop_card
+            {% endif %}
           {% endif %}
         '#whitespace': trim
         '#ajax': true
@@ -1128,7 +1148,7 @@ elements: |-
       '#mode': html
       '#template': |-
         {% set radios_options = {
-          'wallet_option_1': 'Option 1: Individual - TriMet Honored Citizen 1-year Pass',
+          'wallet_option_1': 'Option 1: Individual - TriMet 1-year Pass',
           'wallet_option_2': 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card',
           'wallet_option_3': 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         } %}
@@ -1549,7 +1569,7 @@ elements: |-
       '#mode': html
       '#template': |-
         {% set radios_options = {
-          'wallet_option_1': 'Option 1: Individual - TriMet Honored Citizen 1-year Pass',
+          'wallet_option_1': 'Option 1: Individual - TriMet 1-year Pass',
           'wallet_option_2': 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card',
           'wallet_option_3': 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         } %}
@@ -1597,12 +1617,17 @@ elements: |-
         '#type': radios
         '#title': 'Can we text you at this number about program updates or a survey?'
         '#options': yes_no
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="contact_phone"]':
+              filled: true
       apply_final_questions_text:
         '#type': textarea
         '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
     section_optional_survey:
       '#type': webform_section
-      '#title': 'A Few More Questions (optional survey)'
+      '#title': 'A Few More Questions'
       apply_transit_frequency:
         '#type': webform_likert
         '#title': 'How often do you or members of your household use the following transportation modes?'
@@ -1844,7 +1869,7 @@ elements: |-
 
       <p><strong>Which Transportation Wallet package would you like to sign up for?</strong><br>
       {% if data.apply_wallet_package == "wallet_option_1" %}
-        Option 1: Individual - TriMet Honored Citizen 1-year Pass
+        Option 1: Individual - TriMet 1-year Pass
       {% elseif data.apply_wallet_package == "wallet_option_2" %}
         Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card
       {% else %}
@@ -1854,13 +1879,14 @@ elements: |-
 
       <h3>Hop card details</h3>
 
-      Has hop: {{ data.apply_has_hop_card_hc }} / {{ data.apply_has_hop_card }}
-
       <p><strong>Does this person have a Hop card?</strong>
       {% if data.apply_wallet_package == "wallet_option_1" %}
         {{ data.apply_has_hop_card_hc }} - Honored Citizen
       {% elseif data.apply_wallet_package == "wallet_option_2" or data.apply_wallet_package == "wallet_option_3" %}
-        {{ data.apply_has_hop_card }} - Adult
+        {% if data.apply_has_hop_card == "Yes" %}Yes
+        {% else %}
+          No - {% if data.computed_age_primary < 65 %}needs Adult{% else %}needs Honored Citizen{% endif %}
+        {% endif %}
       {% endif %}<br>
 
       {% if data.apply_hop_card_number %}
