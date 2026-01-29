@@ -916,7 +916,7 @@ describe('Full regression test suite for Admin', () => {
         await page.select('#edit-action', '7');
         // Apply to selected items
         await page.evaluate(() => {
-          document.querySelector('#edit-submit--2').click();
+          document.querySelector('#edit-submit').click();
         });
         await page.waitForNavigation();
         // Execute action button
