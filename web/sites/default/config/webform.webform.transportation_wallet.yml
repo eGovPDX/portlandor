@@ -197,7 +197,8 @@ elements: |-
         '#type': radios
         '#title': 'Does this person have a Hop card?'
         '#options':
-          'No': 'No'
+          N/A: "They don't need one"
+          'No': 'No, they need one'
           'Yes': 'Yes'
         '#required': true
         '#states':
@@ -209,7 +210,7 @@ elements: |-
                 value: wallet_option_3
       apply_has_hop_card_hc:
         '#type': radios
-        '#title': 'Does this person have an Honored Citizen Hop card?'
+        '#title': 'Does this person have an <b>Honored Citizen</b> Hop card?'
         '#options':
           'No': 'No'
           'Yes': 'Yes'
@@ -586,21 +587,9 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'Yes': 'Yes, this person has a Hop card'
-            27985321767319_youth_hop_card: 'No, this person is between the ages of 7-17 and needs a Youth Hop card'
-            27985321767319_adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
-            27985321767319_honored_citizen_hop_card: 'No, this person is over the age of 65 and needs an Honored Citizen Hop card'
-            27985321767319_hop_card_not_needed: 'This person does not need a Hop card'
-          '#other__option_label': ''
-          '#other__title': ''
-          '#other__placeholder': ''
-          '#other__maxlength': ''
-          '#required': true
-          '#other__input_mask': '9{0,16}'
-          '#other__pattern': '^[0-9]{16}$'
-          '#other__pattern_error': 'Hop card number must be 16 digits.'
-          '#other__attributes':
-            '#inputmode': numeric
+            27985321767319_hop_card_not_needed: "They don't need one"
+            'No': 'No, but they need one'
+            'Yes': 'Yes'
         apply_current_hop_card_member_2:
           '#type': radios
           '#title': 'What type of Hop card does this person have?'
@@ -641,44 +630,43 @@ elements: |-
         date_of_birth_member_2:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-          '#states':
-            invisible:
-              - ':input[name="has_hop_card_2"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_2"]':
-                  value: 27985321767319_honored_citizen_hop_card
-            optional:
-              - ':input[name="apply_wallet_package"]':
-                  '!value': wallet_option_3
-              - or
-              - ':input[name="apply_household_size"]':
-                  value:
-                    less: '2'
-              - or
-              - ':input[name="has_hop_card_2"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_2"]':
-                  value: 27985321767319_honored_citizen_hop_card
-          '#date_date_min': '120 years ago'
-          '#date_date_max': today
-          '#date_date_format': m/d/Y
-        date_of_birth_member_2_hc:
-          '#type': date
-          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-          '#description': '<p>Must be 65 years or older. Please make sure to set the correct birth date year.</p>'
-          '#description_display': before
+          '#required': true
           '#states':
             visible:
               ':input[name="has_hop_card_2"]':
-                value: 27985321767319_honored_citizen_hop_card
+                '!value': 27985321767319_hop_card_not_needed
           '#date_date_min': '120 years ago'
-          '#date_date_max': '65 years ago'
+          '#date_date_max': today
           '#date_date_format': m/d/Y
-          '#required': true
+        computed_age_2:
+          '#type': webform_computed_twig
+          '#title': 'Computed Age Member 2'
+          '#display_on': none
+          '#template': |-
+            {% set dob = data.date_of_birth_member_2 %}
+            {% if dob %}
+              {% set birth = dob|date('U') %}
+              {% set now = "now"|date('U') %}
+              {% set age = (now - birth) // 31557600 %}
+              {{ age }}
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
+        computed_need_hop_card_type_2:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card needed'
+          '#title_display': invisible
+          '#display_on': none
+          '#template': |-
+            {% if data.computed_age_2 < 7 %}27985321767319_hop_card_not_needed
+            {% elseif data.computed_age_2 < 18 %}27985321767319_youth_hop_card
+            {% elseif data.computed_age_2 < 65 %}27985321767319_adult_hop_card
+            {% else %}27985321767319_honored_citizen_hop_card
+            {% endif %}
+          '#ajax': true
         markup_next_steps_honored_citizen_member_2:
           '#type': webform_markup
+          '#access': false
           '#states':
             visible:
               ':input[name="has_hop_card_2"]':
@@ -710,21 +698,9 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'Yes': 'Yes, this person has a Hop card'
-            27985321767319_youth_hop_card: 'No, this person is between the ages of 7-17 and needs a Youth Hop card'
-            27985321767319_adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
-            27985321767319_honored_citizen_hop_card: 'No, this person is over the age of 65 and needs an Honored Citizen Hop card'
-            27985321767319_hop_card_not_needed: 'This person does not need a Hop card'
-          '#other__option_label': ''
-          '#other__title': ''
-          '#other__placeholder': ''
-          '#other__maxlength': ''
-          '#required': true
-          '#other__input_mask': '9{0,16}'
-          '#other__pattern': '^[0-9]{16}$'
-          '#other__pattern_error': 'Hop card number must be 16 digits.'
-          '#other__attributes':
-            '#inputmode': numeric
+            27985321767319_hop_card_not_needed: "They don't need one"
+            'No': 'No, but they need one'
+            'Yes': 'Yes'
         apply_current_hop_card_member_3:
           '#type': radios
           '#title': 'What type of Hop card does this person have?'
@@ -766,49 +742,38 @@ elements: |-
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
           '#states':
-            invisible:
-              - ':input[name="has_hop_card_3"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_3"]':
-                  value: 27985321767319_honored_citizen_hop_card
-            optional:
-              - ':input[name="apply_wallet_package"]':
-                  '!value': wallet_option_3
-              - or
-              - ':input[name="apply_household_size"]':
-                  value:
-                    less: '3'
-              - or
-              - ':input[name="has_hop_card_3"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_3"]':
-                  value: 27985321767319_honored_citizen_hop_card
+            visible:
+              ':input[name="has_hop_card_2"]':
+                '!value': 27985321767319_hop_card_not_needed
           '#date_date_min': '120 years ago'
           '#date_date_max': today
           '#date_date_format': m/d/Y
-        date_of_birth_member_3_hc:
-          '#type': date
-          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-          '#description': '<p>Must be 65 years or older. Please make sure to set the correct birth date year.</p>'
-          '#description_display': before
-          '#required': true
-          '#states':
-            visible:
-              ':input[name="has_hop_card_3"]':
-                value: 27985321767319_honored_citizen_hop_card
-          '#date_date_min': '120 years ago'
-          '#date_date_max': '65 years ago'
-          '#date_date_format': m/d/Y
-        markup_next_steps_honored_citizen_member_3:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="has_hop_card_3"]':
-                value: personalized_honored_citizen_hop_card
-          '#admin_title': 'Next Steps'
-          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        computed_age_3:
+          '#type': webform_computed_twig
+          '#title': 'Computed Age Member 3'
+          '#display_on': none
+          '#template': |-
+            {% set dob = data.date_of_birth_member_3 %}
+            {% if dob %}
+              {% set birth = dob|date('U') %}
+              {% set now = "now"|date('U') %}
+              {% set age = (now - birth) // 31557600 %}
+              {{ age }}
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
+        computed_need_hop_card_type_3:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card needed'
+          '#title_display': invisible
+          '#display_on': none
+          '#template': |-
+            {% if data.computed_age_3 < 7 %}27985321767319_hop_card_not_needed
+            {% elseif data.computed_age_3 < 18 %}27985321767319_youth_hop_card
+            {% elseif data.computed_age_3 < 65 %}27985321767319_adult_hop_card
+            {% else %}27985321767319_honored_citizen_hop_card
+            {% endif %}
+          '#ajax': true
       section_household_member_4:
         '#type': webform_section
         '#title': 'Household Member 4'
@@ -834,21 +799,9 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'Yes': 'Yes, this person has a Hop card'
-            27985321767319_youth_hop_card: 'No, this person is between the ages of 7-17 and needs a Youth Hop card'
-            27985321767319_adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
-            27985321767319_honored_citizen_hop_card: 'No, this person is over the age of 65 and needs an Honored Citizen Hop card'
-            27985321767319_hop_card_not_needed: 'This person does not need a Hop card'
-          '#other__option_label': ''
-          '#other__title': ''
-          '#other__placeholder': ''
-          '#other__maxlength': ''
-          '#required': true
-          '#other__input_mask': '9{0,16}'
-          '#other__pattern': '^[0-9]{16}$'
-          '#other__pattern_error': 'Hop card number must be 16 digits.'
-          '#other__attributes':
-            '#inputmode': numeric
+            27985321767319_hop_card_not_needed: "They don't need one"
+            'No': 'No, but they need one'
+            'Yes': 'Yes'
         apply_current_hop_card_member_4:
           '#type': radios
           '#title': 'What type of Hop card does this person have?'
@@ -890,49 +843,38 @@ elements: |-
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
           '#states':
-            invisible:
-              - ':input[name="has_hop_card_4"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_4"]':
-                  value: 27985321767319_honored_citizen_hop_card
-            optional:
-              - ':input[name="apply_wallet_package"]':
-                  '!value': wallet_option_3
-              - or
-              - ':input[name="apply_household_size"]':
-                  value:
-                    less: '4'
-              - or
-              - ':input[name="has_hop_card_4"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_4"]':
-                  value: 27985321767319_honored_citizen_hop_card
+            visible:
+              ':input[name="has_hop_card_2"]':
+                '!value': 27985321767319_hop_card_not_needed
           '#date_date_min': '120 years ago'
           '#date_date_max': today
           '#date_date_format': m/d/Y
-        date_of_birth_member_4_hc:
-          '#type': date
-          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-          '#description': '<p>Must be 65 years or older. Please make sure to set the correct birth date year.</p>'
-          '#description_display': before
-          '#states':
-            visible:
-              ':input[name="has_hop_card_4"]':
-                value: 27985321767319_honored_citizen_hop_card
-          '#date_date_min': '120 years ago'
-          '#date_date_max': '65 years ago'
-          '#date_date_format': m/d/Y
-          '#required': true
-        markup_next_steps_honored_citizen_member_4:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="has_hop_card_4"]':
-                value: personalized_honored_citizen_hop_card
-          '#admin_title': 'Next Steps'
-          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        computed_age_4:
+          '#type': webform_computed_twig
+          '#title': 'Computed Age Member 4'
+          '#display_on': none
+          '#template': |-
+            {% set dob = data.date_of_birth_member_4 %}
+            {% if dob %}
+              {% set birth = dob|date('U') %}
+              {% set now = "now"|date('U') %}
+              {% set age = (now - birth) // 31557600 %}
+              {{ age }}
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
+        computed_need_hop_card_type_4:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card needed'
+          '#title_display': invisible
+          '#display_on': none
+          '#template': |-
+            {% if data.computed_age_4 < 7 %}27985321767319_hop_card_not_needed
+            {% elseif data.computed_age_4 < 18 %}27985321767319_youth_hop_card
+            {% elseif data.computed_age_4 < 65 %}27985321767319_adult_hop_card
+            {% else %}27985321767319_honored_citizen_hop_card
+            {% endif %}
+          '#ajax': true
       section_household_member_5:
         '#type': webform_section
         '#title': 'Household Member 5'
@@ -958,21 +900,9 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'Yes': 'Yes, this person has a Hop card'
-            27985321767319_youth_hop_card: 'No, this person is between the ages of 7-17 and needs a Youth Hop card'
-            27985321767319_adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
-            27985321767319_honored_citizen_hop_card: 'No, this person is over the age of 65 and needs an Honored Citizen Hop card'
-            27985321767319_hop_card_not_needed: 'This person does not need a Hop card'
-          '#other__option_label': ''
-          '#other__title': ''
-          '#other__placeholder': ''
-          '#other__maxlength': ''
-          '#required': true
-          '#other__input_mask': '9{0,16}'
-          '#other__pattern': '^[0-9]{16}$'
-          '#other__pattern_error': 'Hop card number must be 16 digits.'
-          '#other__attributes':
-            '#inputmode': numeric
+            27985321767319_hop_card_not_needed: "They don't need one"
+            'No': 'No, but they need one'
+            'Yes': 'Yes'
         apply_current_hop_card_member_5:
           '#type': radios
           '#title': 'What type of Hop card does this person have?'
@@ -1014,49 +944,38 @@ elements: |-
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
           '#states':
-            invisible:
-              - ':input[name="has_hop_card_5"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_5"]':
-                  value: 27985321767319_honored_citizen_hop_card
-            optional:
-              - ':input[name="apply_wallet_package"]':
-                  '!value': wallet_option_3
-              - or
-              - ':input[name="apply_household_size"]':
-                  value:
-                    less: '5'
-              - or
-              - ':input[name="has_hop_card_5"]':
-                  value: 27985321767319_hop_card_not_needed
-              - or
-              - ':input[name="has_hop_card_5"]':
-                  value: 27985321767319_honored_citizen_hop_card
+            visible:
+              ':input[name="has_hop_card_2"]':
+                '!value': 27985321767319_hop_card_not_needed
           '#date_date_min': '120 years ago'
           '#date_date_max': today
           '#date_date_format': m/d/Y
-        date_of_birth_member_5_hc:
-          '#type': date
-          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-          '#description': '<p>Must be 65 years or older. Please make sure to set the correct birth date year.</p>'
-          '#description_display': before
-          '#required': true
-          '#states':
-            visible:
-              ':input[name="has_hop_card_5"]':
-                value: 27985321767319_honored_citizen_hop_card
-          '#date_date_min': '120 years ago'
-          '#date_date_max': '65 years ago'
-          '#date_date_format': m/d/Y
-        markup_next_steps_honored_citizen_member_5:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="has_hop_card_5"]':
-                value: personalized_honored_citizen_hop_card
-          '#admin_title': 'Next Steps'
-          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
+        computed_age_5:
+          '#type': webform_computed_twig
+          '#title': 'Computed Age Member 5'
+          '#display_on': none
+          '#template': |-
+            {% set dob = data.date_of_birth_member_5 %}
+            {% if dob %}
+              {% set birth = dob|date('U') %}
+              {% set now = "now"|date('U') %}
+              {% set age = (now - birth) // 31557600 %}
+              {{ age }}
+            {% endif %}
+          '#whitespace': trim
+          '#ajax': true
+        computed_need_hop_card_type_5:
+          '#type': webform_computed_twig
+          '#title': 'Hop Card needed'
+          '#title_display': invisible
+          '#display_on': none
+          '#template': |-
+            {% if data.computed_age_5 < 7 %}27985321767319_honored_citizen_hop_card
+            {% elseif data.computed_age_5 < 18 %}27985321767319_youth_hop_card
+            {% elseif data.computed_age_5 < 65 %}27985321767319_adult_hop_card
+            {% else %}27985321767319_honored_citizen_hop_card
+            {% endif %}
+          '#ajax': true
     computed_household_total_funds:
       '#type': webform_computed_twig
       '#title': 'Available Funds'
@@ -1079,7 +998,7 @@ elements: |-
     household_members_split:
       '#type': webform_computed_twig
       '#title': 'Household Members to Split'
-      '#display_on': none
+      '#display_on': form
       '#template': |
         {# NOTE: Need to account for household members who don't need a card or who are HC and get unlimited rides ($0) #}
         {% set split = 1 %}
@@ -1094,6 +1013,7 @@ elements: |-
 
         {{ split|number_format }}
       '#whitespace': trim
+      '#ajax': true
     computed_even_split_amount:
       '#type': webform_computed_twig
       '#title': 'Computed Even Split Amount'
@@ -1812,52 +1732,28 @@ elements: |-
     '#title': 'Computed DOB Member 2'
     '#display_on': view
     '#mode': text
-    '#template': |-
-      {% if data.has_hop_card_2 == "27985321767319_honored_citizen_hop_card" %}
-        {{ data.date_of_birth_member_2_hc|date('Y-m-d') }}
-      {% elseif data.has_hop_card_2 == "27985321767319_hop_card_not_needed" %}
-      {% else %}
-        {{ data.date_of_birth_member_2|date('Y-m-d') }}
-      {% endif %}
+    '#template': "{{ data.date_of_birth_member_2|date('Y-m-d') }}"
     '#whitespace': trim
   computed_dob_member_3:
     '#type': webform_computed_twig
     '#title': 'Computed DOB Member 3'
     '#display_on': view
     '#mode': text
-    '#template': |-
-      {% if data.has_hop_card_3 == "27985321767319_honored_citizen_hop_card" %}
-        {{ data.date_of_birth_member_3_hc|date('Y-m-d') }}
-      {% elseif data.has_hop_card_3 == "27985321767319_hop_card_not_needed" %}
-      {% else %}
-        {{ data.date_of_birth_member_3|date('Y-m-d') }}
-      {% endif %}
+    '#template': "{{ data.date_of_birth_member_3|date('Y-m-d') }}"
     '#whitespace': trim
   computed_dob_member_4:
     '#type': webform_computed_twig
     '#title': 'Computed DOB Member 4'
     '#display_on': view
     '#mode': text
-    '#template': |-
-      {% if data.has_hop_card_4 == "27985321767319_honored_citizen_hop_card" %}
-        {{ data.date_of_birth_member_4_hc|date('Y-m-d') }}
-      {% elseif data.has_hop_card_4 == "27985321767319_hop_card_not_needed" %}
-      {% else %}
-        {{ data.date_of_birth_member_4|date('Y-m-d') }}
-      {% endif %}
+    '#template': "{{ data.date_of_birth_member_4|date('Y-m-d') }}"
     '#whitespace': trim
   computed_dob_member_5:
     '#type': webform_computed_twig
     '#title': 'Computed DOB Member 5'
     '#display_on': view
     '#mode': text
-    '#template': |
-      {% if data.has_hop_card_5 == "27985321767319_honored_citizen_hop_card" %}
-        {{ data.date_of_birth_member_5_hc|date('Y-m-d') }}
-      {% elseif data.has_hop_card_5 == "27985321767319_hop_card_not_needed" %}
-      {% else %}
-        {{ data.date_of_birth_member_5|date('Y-m-d') }}
-      {% endif %}
+    '#template': "{{ data.date_of_birth_member_5|date('Y-m-d') }}"
     '#whitespace': trim
   primary_household_member_display:
     '#type': webform_computed_twig
@@ -2178,7 +2074,7 @@ elements: |-
   computed_tags_member_1:
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 1'
-    '#display_on': none
+    '#display_on': form
     '#ajax': true
     '#mode': text
     '#template': |-
@@ -2200,21 +2096,21 @@ elements: |-
   computed_tags_member_2:
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 2'
-    '#display_on': none
+    '#display_on': form
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 2 %}
         wallet_option_3 household_member 29758569828631_individual
+        
+        {% if data.has_hop_card_2 == "No" %}
+          {{ data.computed_need_hop_card_type_2 }}
 
-        {% if data.has_hop_card_2 == "Yes" %}
+        {% elseif data.has_hop_card_2 == "Yes" %}
           {{ data.apply_current_hop_card_member_2 }}
-
-        {% elseif data.has_hop_card_2 == "personalized_honored_citizen_hop_card" %}
-          {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-
+          
         {% else %}
-          {# type: #}{{ data.has_hop_card_2 }}
-
+          27985321767319_hop_card_not_needed
+          
         {% endif %}
 
       {% endif %}
@@ -2224,75 +2120,75 @@ elements: |-
   computed_tags_member_3:
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 3'
-    '#display_on': none
-    '#ajax': true
+    '#display_on': form
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 3 %}
         wallet_option_3 household_member 29758569828631_individual
 
-        {% if data.has_hop_card_3 == "Yes" %}
+        {% if data.has_hop_card_3 == "No" %}
+          {{ data.computed_need_hop_card_type_3 }}
+
+        {% elseif data.has_hop_card_3 == "Yes" %}
           {{ data.apply_current_hop_card_member_3 }}
-
-        {% elseif data.has_hop_card_3 == "personalized_honored_citizen_hop_card" %}
-          {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-
+          
         {% else %}
-          {# type: #}{{ data.has_hop_card_3 }}
-
+          27985321767319_hop_card_not_needed
+          
         {% endif %}
 
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_tags_member_4:
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 4'
-    '#display_on': none
-    '#ajax': true
+    '#display_on': form
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 4 %}
         wallet_option_3 household_member 29758569828631_individual
 
-        {% if data.has_hop_card_4 == "Yes" %}
+        {% if data.has_hop_card_4 == "No" %}
+          {{ data.computed_need_hop_card_type_4 }}
+
+        {% elseif data.has_hop_card_4 == "Yes" %}
           {{ data.apply_current_hop_card_member_4 }}
-
-        {% elseif data.has_hop_card_4 == "personalized_honored_citizen_hop_card" %}
-          {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-
+          
         {% else %}
-          {# type: #}{{ data.has_hop_card_4 }}
-
+          27985321767319_hop_card_not_needed
+          
         {% endif %}
 
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_tags_member_5:
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 5'
-    '#display_on': none
-    '#ajax': true
+    '#display_on': form
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.apply_wallet_package == "wallet_option_3" and data.apply_household_size >= 5 %}
         wallet_option_3 household_member 29758569828631_individual
 
-        {% if data.has_hop_card_5 == "Yes" %}
+        {% if data.has_hop_card_5 == "No" %}
+          {{ data.computed_need_hop_card_type_5 }}
+
+        {% elseif data.has_hop_card_5 == "Yes" %}
           {{ data.apply_current_hop_card_member_5 }}
-
-        {% elseif data.has_hop_card_5 == "personalized_honored_citizen_hop_card" %}
-          {# type: #}27985321767319_apply {# delay: #}29284635983383_honored_citizen
-
+          
         {% else %}
-          {# type: #}{{ data.has_hop_card_5 }}
-
+          27985321767319_hop_card_not_needed
+          
         {% endif %}
 
       {% endif %}
       {% if data.computed_organization_tag %}{{ data.computed_organization_tag }}{% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_form_full_url:
     '#type': webform_computed_twig
     '#title': 'Computed Form Full URL'
