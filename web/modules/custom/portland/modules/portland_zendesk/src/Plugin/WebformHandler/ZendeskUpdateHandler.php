@@ -502,7 +502,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
 
     $submission_fields = $webform_submission->toArray(TRUE);
-    $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
+    // email=true uses nicer template for webform_submission:values HTML
+    $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], ['email' => true]);
 
     // if the update handler is configured to use the ticket id field zendesk_request_number,
     // it's a sub-element of the support agent widget, so it needs to be retrieved differently...
