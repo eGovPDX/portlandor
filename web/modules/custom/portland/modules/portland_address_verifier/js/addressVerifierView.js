@@ -146,7 +146,7 @@ AddressVerifierView.prototype._handlePostback = function () {
             // Bind handlers now that DOM and values are stable
             for (let i = 0; i < INPUT_FIELDS.length; i++) {
                 const field = INPUT_FIELDS[i];
-                self.$element.find(field).off('input change').on('input change', function () {
+                self.$element.find(field).off('input.portland change.portland').on('input.portland change.portland', function () {
                     if (self.isVerified) {
                         self._resetVerified(self.$checkmark, self.$button);
                     }
@@ -364,14 +364,14 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
     // parse location data and set field values, add change handlers to visible input fields /////////////////////////
     // visible input fields
-    view.$element.find('#location_address').off('input change').val(item.street.toUpperCase()).trigger('change').blur().on('input change', function () {
+    view.$element.find('#location_address').off('input.portland change.portland').val(item.street.toUpperCase()).trigger('change').blur().on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
-    view.$element.find('#location_city').off('input change').val(item.city.toUpperCase()).trigger('change').on('input change', function () {
+    view.$element.find('#location_city').off('input.portland change.portland').val(item.city.toUpperCase()).trigger('change').on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
     view._setStateByLabel(view, item.state);
-    view.$element.find('#location_zip').off('input change').val(item.zipCode).trigger('change').on('input change', function () {
+    view.$element.find('#location_zip').off('input.portland change.portland').val(item.zipCode).trigger('change').on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
 
@@ -514,7 +514,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { view._resetVerified(view.$checkmark, view.$button); });
+    view.$element.find('#location_state').val(value).off('input.portland change.portland').trigger('change').on('input.portland change.portland', function () { view._resetVerified(view.$checkmark, view.$button); });
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -660,7 +660,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     // remove change handlers from visible input fields /////////////////////////
     for (var i = 0; i < INPUT_FIELDS.length; i++) {
         var field = INPUT_FIELDS[i];
-        this.$element.find(field).off('input change');
+        this.$element.find(field).off('input.portland change.portland');
     }
 
     // hide the "verified" visual indicators /////////////////////////
