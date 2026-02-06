@@ -31,13 +31,12 @@ elements: |-
     '#template': '{{ data.report_location.location_address }}'
   page_noise_source:
     '#type': webform_wizard_page
-    '#title': 'Noise Source'
+    '#title': 'Complaint Source'
     report_live_own_operate_in_pdx:
       '#type': radios
       '#title': 'Do you live, own property, or operate a business within the City of Portland?'
-      '#options':
-        'Yes': 'Yes'
-        'No': 'No'
+      '#required': true
+      '#options': yes_no
     markup_non_portland_code:
       '#type': webform_markup
       '#states':
@@ -47,18 +46,18 @@ elements: |-
       '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The Noise Program does not accept noise concerns if the reporter does not live, own property, or operate a business within the City of Portland.&nbsp;</p></div>'
     report_location:
       '#type': portland_location_picker
-      '#title': 'Where is the noise coming from?'
+      '#title': 'Complaint Location'
       '#states':
         invisible:
           ':input[name="report_live_own_operate_in_pdx"]':
             value: 'No'
-      '#location_search__title': 'Where is the noise coming from?'
+      '#location_search__title': 'What is the address or location of your complaint?'
       '#location_address__required': true
       '#location_details__access': false
       '#location_type__access': false
       '#location_park_container__access': false
       '#location_private_owner__access': false
-      '#out_of_bounds_message': 'This location is outside the City of Portland’s city limits. Please report the noise issue to the local jurisdiction. You can call 311 or email 311@portlandoregon.gov if you need help determining who to contact.'
+      '#out_of_bounds_message': "This location is outside the City of Portland's city limits. Please report the noise issue to the local jurisdiction. You can call 311 or email 311@portlandoregon.gov if you need help determining who to contact."
       '#require_boundary': true
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?f=json&geometry={{x}},{{y}}&geometryType=esriGeometryPoint&inSR=3857&outFields=DISTRICT&returnGeometry=false'
       '#click_query_property_path': features.0.attributes.DISTRICT
@@ -109,10 +108,10 @@ elements: |-
             value: 'No'
   page_noise_type:
     '#type': webform_wizard_page
-    '#title': 'Noise Type'
+    '#title': 'Complaint Type'
     report_noise_type:
       '#type': select
-      '#title': 'What type of noise do you want to report?'
+      '#title': 'What type of activity do you want to report?'
       '#options':
         'Aircraft, including planes, helicopters, and drones': 'Aircraft, including planes, helicopters, and drones'
         Alarms: Alarms
@@ -147,7 +146,7 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: Gas-powered
-      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Effective January 1, 2026, <span class="acronym-highlight" style="background:none;border-bottom-style:solid;border-image:linear-gradient(to right, rgb(0, 101, 255), rgb(191, 99, 243), rgb(245, 230, 168)) 0 0 100%;border-width:2px;cursor:pointer;">PP&amp;D</span>’s Noise program will begin supporting the implementation of Chapter 17.101, by responding to complaints around ‘gas-powered’ leaf blowers.</p></div>'
+      '#markup': "<div class=\"alert alert--info next-steps\"><h2>Information</h2><p>Effective January 1, 2026, PP&amp;D's Noise program will begin supporting the implementation of Chapter 17.101, by responding to complaints around 'gas-powered' leaf blowers.</p></div>"
     report_leaf_blower_concern:
       '#type': select
       '#title': 'What is your main concern?'
@@ -158,17 +157,6 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: Gas-powered
-      '#required': true
-    report_leaf_blower_location:
-      '#type': select
-      '#title': 'Where is the leaf blower operated?'
-      '#options':
-        'Private property, including residences and businesses': 'Private property, including residences and businesses'
-        'Public Park, road or right of way': 'Public Park, road or right of way'
-      '#states':
-        visible:
-          ':input[name="report_leaf_blower_type"]':
-            checked: true
       '#required': true
     report_alarm_type:
       '#type': select
@@ -314,11 +302,8 @@ elements: |-
       '#other__placeholder': 'Please describe:'
       '#states':
         visible:
-          - ':input[name="report_tools_equipment_location"]':
-              value: 'Road construction or utility work in the street or right-of-way'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
+          ':input[name="report_tools_equipment_location"]':
+            value: 'Road construction or utility work in the street or right-of-way'
       '#required': true
     markup_leaf_blower_electric:
       '#type': webform_markup
@@ -326,59 +311,37 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: 'Electric/battery powered'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Only complaints meeting both of the following conditions (time + noise level) will be considered:<br>1. Operates in commercial, mixed-use, industrial, or open space zones between 9:00 p.m. and 7:00 a.m., or in residential zones between 7:00 p.m. and 7:00 a.m., and<br>2. Exceeds the decibel limits below (measured at 50 feet):<br>• Winter Period (November 1 – February 28/29): 70 dBA (Lmax)<br>• Spring to Fall period (March 1 – October 31): 65 dBA (Lmax)</p></div>'
-    markup_number_leaf_blowers:
-      '#type': webform_markup
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Only complaints meeting both of the following conditions (time + noise level) will be considered:</p><ol class="mt-2"><li data-list-item-id="e67062f3522dc03629e31caaac78e2a64">Operates in commercial, mixed-use, industrial, or open space zones between 9:00 p.m. and 7:00 a.m., or in residential zones between 7:00 p.m. and 7:00 a.m., and;</li><li data-list-item-id="e2d2f406f864ab0b210e9041bfc10a26a">Exceeds the decibel limits below (measured at 50 feet):<br><strong>Winter Period (November 1 – February 28/29):</strong><br>70 dBA (Lmax)<br><strong>Spring to Fall period (March 1 – October 31):</strong><br>65 dBA (Lmax)</li></ol></div>'
+    container_number_leaf_blowers:
+      '#type': container
       '#states':
         visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-      '#markup': '<p>Please specify the number of each type of leaf blower used:</p>'
-    report_handheld:
-      '#type': number
-      '#title': Handheld
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-    report_walk_behind:
-      '#type': number
-      '#title': 'Walk behind'
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-    report_backpack:
-      '#type': number
-      '#title': Backpack
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
+          ':input[name="report_leaf_blower_type"]':
+            value: Gas-powered
+      markup_number_leaf_blowers:
+        '#type': webform_markup
+        '#markup': '<p>Please specify the number of each type of leaf blower used:</p>'
+      report_handheld:
+        '#type': number
+        '#title': Handheld
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
+      report_walk_behind:
+        '#type': number
+        '#title': Walk-behind
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
+      report_backpack:
+        '#type': number
+        '#title': Backpack
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
     report_tools_equipment_type:
       '#type': webform_select_other
       '#title': 'What type of equipment is making the noise?'
@@ -500,14 +463,15 @@ elements: |-
         visible:
           ':input[name="report_landscape_equipment_operator[select]"]':
             value: 'Landscaping company'
-    report_landscape_equipment_main_concern:
+    report_mechanical_main_concern:
       '#type': select
-      '#title': 'What is your main concern'
+      '#title': 'What is your main concern?'
       '#options':
         'Too loud': 'Too loud'
         'Too frequent': 'Too frequent'
         'Constant noise': 'Constant noise'
         'Excessive vibration': 'Excessive vibration'
+      '#required': true
       '#states':
         visible:
           ':input[name="report_noise_type"]':
@@ -716,7 +680,7 @@ elements: |-
             value: 'Delivery truck'
   page_noise_details:
     '#type': webform_wizard_page
-    '#title': 'Noise Details'
+    '#title': 'Complaint Details'
     '#states':
       invisible:
         - ':input[name="report_noise_type"]':
@@ -786,19 +750,19 @@ elements: |-
       '#date_date_format': ''
     report_time_start:
       '#type': webform_time
-      '#title': 'What time did the noise start?'
+      '#title': 'What time did the activity start?'
       '#required': true
       '#time_format': 'g:i A'
       '#step': ''
     report_time_end:
       '#type': webform_time
-      '#title': 'What time did the noise stop?'
+      '#title': 'What time did the activity stop?'
       '#required': true
       '#time_format': 'g:i A'
       '#step': ''
     report_other_dates_times:
       '#type': textarea
-      '#title': 'What other dates and times have you heard the noise?'
+      '#title': 'What other dates and times have you observed this issue?'
       '#maxlength': 80
     contact_address:
       '#type': portland_address_verifier
@@ -842,9 +806,18 @@ elements: |-
           {{ data.report_train_type }}
         {% elseif data.report_trucks_buses_type and data.report_trucks_buses_type is not iterable %}
           {{ data.report_trucks_buses_type }}
+        {% elseif data.report_leaf_blower_type and data.report_leaf_blower_type is not iterable %}
+          {{ data.report_leaf_blower_type }}
         {% else %}
           No Subtype
         {% endif %}
+    computed_main_concern:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Main Concern'
+      '#display_on': none
+      '#mode': text
+      '#template': |
+        {{ data.report_leaf_blower_concern ?: data.report_mechanical_main_concern }}
     hidden_same_address:
       '#type': hidden
       '#title': 'Hidden - Same Address'
@@ -1023,7 +996,7 @@ elements: |-
                 To submit a complaint, contact the Harbor Master at <a href="tel:+1-503-241-8283">503-241-8283</a>.
               </p>
           </div>
-          
+
         {% elseif data.report_vehicle_location == "On the street" %}
           <div class="cloudy-alert alert--info next-steps">
                 <h2>
@@ -1046,11 +1019,11 @@ elements: |-
         '#markup': '<p>The Noise Program will review your report to determine whether this specific noise is a violation of the City''s <a href="https://www.portland.gov/code/18">Noise Code</a>. If it does not, the case will be closed. If it does, the Noise Program can consider your report to be a formal Noise Complaint and will issue a warning letter to the source of the noise. If that does not resolve the issue, a Noise Control Officer will make direct contact with the source of the noise to try and resolve it and may possibly issue a citation.</p>'
       report_testify_code_hearings:
         '#type': radios
-        '#title': 'Would you like to submit a formal noise complaint if the noise you are reporting is found to be a violation of the City’s Noise Code?'
+        '#title': 'Would you like to submit a formal complaint?'
         '#options':
-          'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing.': 'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing. -- <i>You are choosing to move forward with a formal case. If the noise is ongoing, you may also be asked to complete and sign a Noise Incident Log to help track the problem. If the case leads to a hearing, you may be asked to testify</i>'
-          'Yes, I want to file a formal noise complaint but do NOT want to testify.': 'Yes, I want to file a formal noise complaint but do NOT want to testify. -- <i>You are filing a formal complaint and may be asked to complete a Noise Complaint Log. You will not be contacted to testify. Please note that without your testimony, enforcement options may be limited unless other evidence, or complaints, support the case.</i>'
-          'No, I simply want the City to be aware of this issue but do not want to submit a formal complaint.': "No, I simply want the City to be aware of this issue but do not want to submit a formal complaint. -- <i>You're submitting a general report to make the City aware of a potential issue. The City may still send a warning letter if similar reports are received from other neighbors, but no further action can be taken unless the problem continues. You will not be asked to provide additional information.</i>"
+          "Yes, I want to file a formal complaint and am willing to testify at a hearing with the City's Hearing Office.": "Yes, I want to file a formal complaint and am willing to testify at a hearing with the City's Hearing Office. -- <i>You are choosing to move forward with a formal case. If the issue is ongoing, you may also be asked to complete and sign a Complaint Log to help track the problem. If the case leads to a hearing, you may be asked to testify.</i>"
+          'Yes, I want to file a formal complaint but do NOT want to testify.': 'Yes, I want to file a formal complaint but do <strong>NOT</strong> want to testify. -- <i>You are filing a formal complaint and may be asked to complete a Complaint Log. You will not be contacted to testify. Please note that without your testimony, enforcement options may be limited unless other evidence, or complaints, support the case.</i>'
+          'No, I just want the City to be aware of the issue, but do not want to file a formal complaint.': "No, I just want the City to be aware of the issue, but do not want to file a formal complaint. -- <i>You're submitting a general report to make the City aware of a potential issue. The City may still send a warning letter if similar reports are received from other neighbors, but no further action can be taken unless the problem continues. You will not be asked to provide additional information.</i>"
         '#required': true
       section_contact:
         '#type': webform_section
@@ -1074,10 +1047,27 @@ elements: |-
           '#required': true
       section_public_records_statement:
         '#type': webform_section
-        '#title': 'Public Records Statement'
-        public_records_statement_standard:
+        '#title': 'Confidentiality Statement'
+        confidentiality_waiver:
+          '#type': radios
+          '#title': 'Confidentiality Waiver'
+          '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+          '#description_display': before
+          '#options':
+            'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+            'I waive confidentiality': 'I choose to waive confidentiality.'
+          '#required': true
+          '#default_value': 'I do not waive confidentiality'
+        markup_formal_complaint:
           '#type': webform_markup
-          '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+          '#states':
+            visible:
+              ':input[name="report_testify_code_hearings"]':
+                value:
+                  pattern: 'Yes'
+              ':input[name="confidentiality_waiver"]':
+                '!value': 'I waive confidentiality'
+          '#markup': '<div class="webform-alert alert alert--warning next-steps"><p>If you have chosen to file a formal complaint, you will need to <strong>choose to waive confidentiality</strong> in order for the City to investigate.</p></div>'
       actions_01:
         '#type': webform_actions
         '#title': 'Submit button(s)'
@@ -1298,14 +1288,14 @@ handlers:
       column_mappings:
         2797649869623172: report_noise_type
         8325170669244292: computed_noise_subtype
+        8428857727078276: report_noise_description
         6917092052782980: computed_address
-        7398410547318660: report_location__location_taxlot_id
         7528956078280580: computed_location_name
+        7398410547318660: report_location__location_taxlot_id
         8639408627732356: computed_location_coordinates
         5427273115324292: computed_location_district
         1208264298286980: hidden_base_zone
-        8428857727078276: report_noise_description
-        2723660768169860: report_landscape_equipment_main_concern
+        2723660768169860: computed_main_concern
         2966926341918596: report_issue_date
         2498940799766404: report_time_start
         4639963743211396: report_time_end
@@ -1324,13 +1314,16 @@ handlers:
         7671333215489924: report_human_voice_amplified_source
         6545433308647300: report_landscape_equipment_operator
         2041833681276804: report_landscape_equipment_company_name
-        4293633494962052: report_landscape_equipment_main_concern
         8797233122332548: report_music_amplified
         212246332657540: report_music_amplified_location
         4715845960028036: report_music_source
         2464046146342788: report_music_noise_distance
         6967645773713284: report_sports_location
         1338146239500164: report_truck_buses_loading
+        4438891032170372: report_handheld
+        8942490659540868: report_walk_behind
+        40844521066372: report_backpack
+        2861867230515076: confidentiality_waiver
         4327997693972356: computed_employee_email
       multiple_rows_enable: null
       multiple_rows_field: ''
