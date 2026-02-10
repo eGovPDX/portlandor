@@ -18,7 +18,7 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
     if (open) {
       panelEl.removeAttribute("hidden");
     } else {
-      panelEl.setAttribute("hidden", "");
+      panelEl.setAttribute("hidden", "until-found");
     }
   },
 
@@ -46,7 +46,7 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           accordion
             .querySelector(".aria-accordion__heading > button")
             .setAttribute("aria-expanded", "false");
-          accordion.querySelector(".aria-accordion__panel").setAttribute("hidden", "");
+          accordion.querySelector(".aria-accordion__panel").setAttribute("hidden", "until-found");
           return;
         }
 
@@ -82,6 +82,11 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
       if (e.target.tagName !== "A" || !e.target.hash) return;
 
       this.expandPanelContainingId(e.target.hash.slice(1));
+    });
+
+    // Expand the panel containing the matched text when using "search in page"
+    window.addEventListener("beforematch", (e) => {
+      this.expandPanelContainingId(e.target.id);
     });
   },
 };
