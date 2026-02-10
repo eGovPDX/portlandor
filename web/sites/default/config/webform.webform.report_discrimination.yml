@@ -38,11 +38,18 @@ elements: |-
           ':input[name="report_staff_reason"]':
             value: staff_existing_request
       '#required': true
+    report_staff_resolution_dismissed:
+      '#type': checkbox
+      '#title': 'This complaint has been dismissed'
+      '#states':
+        visible:
+          ':input[name="report_staff_reason"]':
+            value: staff_existing_request
     report_staff_resolution_status:
       '#type': select
       '#title': 'Resolution status'
       '#options':
-        dismissed: Dismissed
+        not_applicable: 'Not applicable'
         no_findings_no_action: 'No findings, No action'
         no_findings_action_taken: 'No findings, Action taken'
         findings_action_taken: 'Findings, Action taken'
@@ -62,9 +69,8 @@ elements: |-
         'Withdrawn by complainant': 'Withdrawn by complainant'
       '#states':
         visible:
-          ':input[name="report_staff_resolution_status"]':
-            value:
-              pattern: dismissed|no_findings_no_action
+          ':input[name="report_staff_resolution_dismissed"]':
+            checked: true
       '#required': true
     report_staff_nonresponsive_attempts:
       '#type': select
@@ -132,7 +138,7 @@ elements: |-
       '#required': true
     report_staff_resolution_details:
       '#type': textarea
-      '#title': 'Please describe in detail actions taken to resolve the issue.'
+      '#title': 'Please provide details about how this complaint was handled and any actions taken.'
       '#description': '<p>Please also add any additional relevant details about the issue itself that were not captured in the ticket.</p>'
       '#description_display': before
       '#states':
@@ -340,6 +346,7 @@ elements: |-
           report_discrimination_witness_1_phone:
             '#type': textfield
             '#title': 'First Witness Phone'
+            '#input_mask': '(999) 999-9999'
           report_discrimination_witness_1_email:
             '#type': textfield
             '#title': 'First Witness Email'
@@ -368,6 +375,7 @@ elements: |-
             report_discrimination_witness_2_phone:
               '#type': textfield
               '#title': 'Second Witness Phone'
+              '#input_mask': '(999) 999-9999'
             report_discrimination_witness_2_email:
               '#type': textfield
               '#title': 'Second Witness Email'
@@ -412,6 +420,7 @@ elements: |-
         report_discrimination_filed_complaint_other_agency_contact_phone:
           '#type': textfield
           '#title': 'Agency or court contact phone'
+          '#input_mask': '(999) 999-9999'
         report_discrimination_filed_complaint_other_court_case_number:
           '#type': textfield
           '#title': 'What is the court case number?'
@@ -445,6 +454,7 @@ elements: |-
       contact_phone:
         '#type': textfield
         '#title': Phone
+        '#input_mask': '(999) 999-9999'
       contact_preferred_method:
         '#type': radios
         '#title': 'If needed, would you prefer that we contact you by phone or email?'
@@ -515,6 +525,13 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Zendesk Ticket ID'
+  resolution_url:
+    '#type': webform_computed_token
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': "https://[site:url-brief]/form/report-discrimination-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]"
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -621,8 +638,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Thank you'
-  confirmation_message: 'Your report has been received and will be addressed as soon as possible.&nbsp;'
+  confirmation_title: 'Report received'
+  confirmation_message: '<p>If you gave us a valid email address, we will send you an update with information about your complaint within 7 to 15 business days. If not, a staff member will call you.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -729,11 +746,12 @@ handlers:
       ticket_form_id: '16843322940823'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -774,11 +792,12 @@ handlers:
       ticket_form_id: '16843322940823'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -819,11 +838,12 @@ handlers:
       ticket_form_id: ''
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -864,11 +884,12 @@ handlers:
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -888,7 +909,7 @@ handlers:
     conditions: {  }
     weight: 0
     settings:
-      comment: "<a href=\"https://[site:url-brief]/form/report-discrimination-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]\"><strong>Resolution form</strong></a>\r\n\r\n[webform_submission:values:section_staff_input:html]"
+      comment: "<h3><a href=\"[webform_submission:values:resolution_url]\">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>\r\n\r\n[webform_submission:values:section_staff_input:html]"
       comment_private: 1
       skip_attachments: 1
       tags: ''
@@ -898,7 +919,64 @@ handlers:
       assignee_id: ''
       type: ''
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: ''
+  email:
+    id: email
+    handler_id: email
+    label: Email
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="contact_email"]':
+          filled: true
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'City of Portland Discrimination Complaint Confirmation'
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>This email confirms that we received your complaint. If you gave us a valid email address, we will send you an update with information about your complaint within 7 to 15 business days. If not, a staff member will call you.</p><p>Learn more about the City’s <a href="https://www.portland.gov/officeofequity/equity-title-vi-division/civil-rights-title-vi-complaint-process">Civil Rights Title VI</a>&nbsp;and <a href="https://www.portland.gov/officeofequity/disability-division/ada-complaint-process">ADA Title II</a> complaint process on our website.</p><p>If you have additional questions, please call 503-823-4000 (<a href="https://www.portland.gov/311/about311">311</a>).</p><hr><h2>Complaint details</h2><p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+        support_agent_use_only: support_agent_use_only
+        report_ticket_id: report_ticket_id
+        resolution_url: resolution_url
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
 variants: {  }

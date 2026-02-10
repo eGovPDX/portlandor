@@ -50,11 +50,18 @@ elements: |-
           ':input[name="report_staff_reason"]':
             value: staff_existing_request
       '#required': true
+    report_staff_resolution_dismissed:
+      '#type': checkbox
+      '#title': 'This complaint has been dismissed'
+      '#states':
+        visible:
+          ':input[name="report_staff_reason"]':
+            value: staff_existing_request
     report_staff_resolution_status:
       '#type': select
       '#title': 'Resolution status'
       '#options':
-        dismissed: Dismissed
+        not_applicable: 'Not applicable'
         no_findings_no_action: 'No findings, No action'
         no_findings_action_taken: 'No findings, Action taken'
         findings_action_taken: 'Findings, Action taken'
@@ -74,9 +81,8 @@ elements: |-
         'Withdrawn by complainant': 'Withdrawn by complainant'
       '#states':
         visible:
-          ':input[name="report_staff_resolution_status"]':
-            value:
-              pattern: dismissed|no_findings_no_action
+          ':input[name="report_staff_resolution_dismissed"]':
+            checked: true
       '#required': true
     report_staff_nonresponsive_attempts:
       '#type': select
@@ -144,7 +150,7 @@ elements: |-
       '#required': true
     report_staff_resolution_details:
       '#type': textarea
-      '#title': 'Please describe in detail actions taken to resolve the issue.'
+      '#title': 'Please provide details about how this request was handled and any actions taken.'
       '#description': '<p>Please also add any additional relevant details about the issue itself that were not captured in the ticket.</p>'
       '#description_display': before
       '#states':
@@ -606,6 +612,13 @@ elements: |-
       '#type': webform_actions
       '#title': 'Submit button(s)'
       '#submit__label': Submit
+  resolution_url:
+    '#type': webform_computed_token
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': "https://[site:url-brief]/form/report-ada-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]"
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -713,7 +726,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Request received'
-  confirmation_message: '<p>If you entered a valid email address when prompted, you will receive a detailed email with information and instructions within the next 3-5 days. Otherwise, a staff person will reach out to you by telephone.</p><p>Thank you.</p>'
+  confirmation_message: '<p>If you gave us a valid email address, we will send you an update with information about your request within 1-2 business days. If your request is for an event happening within the next 72 hours, call 311 so we can quickly refer it to the correct bureau.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -836,11 +849,12 @@ handlers:
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -884,6 +898,7 @@ handlers:
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -924,11 +939,12 @@ handlers:
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements:
         report_staff_reason: report_staff_reason
         report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
         report_staff_resolution_status: report_staff_resolution_status
         report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
         report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
@@ -948,7 +964,7 @@ handlers:
     conditions: {  }
     weight: 0
     settings:
-      comment: "<a href=\"https://[site:url-brief]/form/report-ada-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]\"><strong>Resolution form</strong></a>\r\n\r\n[webform_submission:values:section_staff_input:html]"
+      comment: "<h3><a href=\"[webform_submission:values:resolution_url]\">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>\r\n\r\n[webform_submission:values:section_staff_input:html]"
       comment_private: 1
       skip_attachments: 1
       tags: ''
@@ -958,7 +974,66 @@ handlers:
       assignee_id: ''
       type: ''
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: ''
+  email:
+    id: email
+    handler_id: email
+    label: Email
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="contact_email"]':
+          filled: true
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'City of Portland A.D.A Accommodation Request Confirmation'
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>This email confirms that we received your request. If you gave us a valid email address, we will send you an update with information about your request within 1-2 business days. If your request is for an event happening within the next 72 hours, call 311 so we can quickly refer it to the correct bureau.</p><p>Learn more about the City’s ADA Title II Accommodation request process on our website: <a href="https://www.portland.gov/officeofequity/disability-division/ada-resources#toc-requests-for-accommodations">ADA Title II Resources</a></p><hr><h2>Request details</h2><p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+        support_agent_use_only: support_agent_use_only
+        report_ticket_id: report_ticket_id
+        computed_location_address: computed_location_address
+        computed_location_latlon: computed_location_latlon
+        resolution_url: resolution_url
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
 variants: {  }
