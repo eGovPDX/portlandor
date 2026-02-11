@@ -84,9 +84,11 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
       this.expandPanelContainingId(e.target.hash.slice(1));
     });
 
-    // Expand the panel containing the matched text when using "search in page"
-    window.addEventListener("beforematch", (e) => {
-      this.expandPanelContainingId(e.target.id);
-    });
+    // Maintain the heading's expansion/hidden state when matching text is found inside a hidden panel
+    if('onbeforematch' in document.body) {
+      window.addEventListener("beforematch", (e) => {
+        this.expandPanelContainingId(e.target.id);
+      });
+    }
   },
 };
