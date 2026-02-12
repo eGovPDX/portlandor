@@ -318,7 +318,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     if(!empty($ticket_forms) ){
       $form['ticket_form_id']['#type'] = 'select';
-      $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
+      $form['ticket_form_id']['#options'] = ['' => '- No Change -'] + array_column($ticket_forms, 'name', 'id');
       $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
     }
 
@@ -539,15 +539,28 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $custom_fields = Yaml::decode($request['custom_fields']);
     unset($request['custom_fields']);
     $request['custom_fields'] = [];
-    if($custom_fields) {
-      foreach ($custom_fields as $key => $value) {
+    if ($custom_fields) {
+      foreach ($custom_fields as $key => $raw_value) {
+        // if value is an array of [token, field_name], extract the token which is what we want.
+        // else use the value as the token
+        $value = is_array($raw_value) ? $raw_value[0] : $raw_value;
+
         // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url or location_address custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
         // Portland instance, the resolution_url field should always have this key, but other url custom fields may need
         // to be added in the future.
         if ($key == "6355783758871" || $key == "1500012743961") {
           $value = str_replace("&amp;", "&", $value);
+          $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE
+
+        // NEXT KLUGE: If the token is empty, it's not getting replaced, and the token code is appearing in custom fields
+        // in Zendesk. also, the default filter isn't working. so we'll just clear out any values that start with a token
+        // string. at present, custom values will only include the tokens, not additional string values, so this approach
+        // is fine for now but may need to be extended to remove the token code from within a longer string.
+        if (is_string($value) && substr($value, 0, 27) == "[webform_submission:values:") {
+          $value = "";
+        }
 
         $request['custom_fields'][] = [
           'id' => $key,
@@ -644,6 +657,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       if (!isset($request['assignee_id']) || $request['assignee_id'] == "") {
         $request['assignee_id'] = $ticket->assignee_id;
       }
+      // don't send empty ticket form; get it from previous ticket
+      if (!isset($request['ticket_form_id']) || $request['ticket_form_id'] == "") {
+        $request['ticket_form_id'] = $ticket->ticket_form_id;
+      }
       // if tags not set, use previous value
       if (!isset($request['tags']) || $request['tags'] == "") {
         $request['tags'] = $ticket->tags;
@@ -736,7 +753,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // loop through fields to display an at-a-glance summary of settings
     foreach($configNames as $configName){
       if(! in_array($configName, $excluded_fields) ) {
-        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . ($this->configuration[$configName]);
+        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . htmlentities($this->configuration[$configName]);
       }
     }
 
