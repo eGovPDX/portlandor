@@ -208,6 +208,19 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// toggle views - show detail and hide search
 		$scope.detailVisible = true;
 
+		// Move focus into the details panel for keyboard/screen reader users.
+		setTimeout(function () {
+			var closeButton = document.getElementById('ProjectDetailClose');
+			if (closeButton && typeof closeButton.focus === 'function') {
+				closeButton.focus();
+				return;
+			}
+			var detailPanel = document.getElementById('ProjectDetail');
+			if (detailPanel && typeof detailPanel.focus === 'function') {
+				detailPanel.focus();
+			}
+		}, 0);
+
 		// add carousel and slide classes to slider container. this must not be done until the content is loaded
 		// or the slider will throw an error.
 		$("#DetailCarousel").addClass("carousel").addClass("slide");
