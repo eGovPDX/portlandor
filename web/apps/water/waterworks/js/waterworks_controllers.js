@@ -6,6 +6,46 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// make this variable available in HTML; set in waterworks.js; returns true if width < 880
 	$scope.isMobileView = isMobileView;
 
+	// If the page loads wide and then rotates to mobile, Angular's $scope.isMobileView
+	// can become stale (the global is updated by jQuery, but Angular won't digest).
+	// Keep it synced so ng-class/ng-show react, and reset searchVisible when
+	// entering mobile so the search icon can open the panel.
+	var lastIsMobileView = $scope.isMobileView;
+	function syncMobileViewFromViewport() {
+		var nextIsMobileView = calculateIsMobileView();
+		// keep the shared global up-to-date (used throughout this file)
+		isMobileView = nextIsMobileView;
+		$scope.isMobileView = nextIsMobileView;
+
+		// When crossing breakpoints, normalize panel state.
+		// Desktop expects the search panel visible; mobile expects it hidden until opened.
+		if (lastIsMobileView !== nextIsMobileView) {
+			if (nextIsMobileView) {
+				$scope.searchVisible = false;
+				$scope.detailVisible = false;
+			} else {
+				$scope.searchVisible = true;
+			}
+			lastIsMobileView = nextIsMobileView;
+		}
+	}
+
+	var onViewportChange = function () {
+		// AngularJS 1.2.x: prefer $evalAsync to avoid "$digest already in progress".
+		if ($scope.$evalAsync) {
+			$scope.$evalAsync(syncMobileViewFromViewport);
+		} else if (!$scope.$root || !$scope.$root.$$phase) {
+			$scope.$apply(syncMobileViewFromViewport);
+		} else {
+			syncMobileViewFromViewport();
+		}
+	};
+
+	angular.element($window).on('resize orientationchange', onViewportChange);
+	$scope.$on('$destroy', function () {
+		angular.element($window).off('resize orientationchange', onViewportChange);
+	});
+
 	// allProjects is an array for all projects retrieved from ECM
 	$scope.allProjects = [];
 
