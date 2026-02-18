@@ -132,7 +132,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// if marker is disabled, do nothing
 		if (project.properties.disabled) return;
 
-		// REFACTOR: if same geometry is clicked again, reset all associated markers
+		// If the same geometry is clicked again, toggle it closed.
 		if (project.geometry == $scope.clickedGeometry) {
 			if (!isMobileView) {
 				// hide detail
@@ -150,7 +150,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			} else {
 				clearModal();
 			}
-			return;
+			// Continue to handle the newly clicked marker (avoid requiring a second click).
 		}
 
 		if (isMobileView) {
@@ -194,6 +194,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// in desktop view, detail panel overlays search panel, but search panel is always visible beneath it.
 	// in mobile view, search panel needs to be toggled too.
 	$scope.showDetail = function (project) {
+
+		// If a marker popup modal is open, close it before showing detail.
+		clearModal();
     	
 		// if project is passed in, use that as the selected one to populate detail. otherwise, look in selectedProject.
 		if (project) {
@@ -440,7 +443,18 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// if the modal isn't closed before the search or detail panel is opened,
 	// the page won't scroll if it's long. also, it's more tidy this way.
 	function clearModal() {
-		$('#MapPopup').modal("hide");
+		var $mapPopup = $('#MapPopup');
+		if (!$mapPopup || $mapPopup.length < 1) return;
+		try {
+			$mapPopup.modal('hide');
+		} catch (e) {
+			// Ignore if bootstrap modal isn't initialized.
+		}
+		// Ensure the teaser overlay can't linger above the detail pane.
+		$mapPopup.removeClass('in').hide().attr('aria-hidden', 'true');
+		$mapPopup.find('.modal-body').empty();
+		$('.modal-backdrop').remove();
+		$('body').removeClass('modal-open');
 	}
 
 
