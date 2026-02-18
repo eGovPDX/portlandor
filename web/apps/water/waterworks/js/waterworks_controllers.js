@@ -294,6 +294,27 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// helper functions ////////////////////////////////////////
 	// these might be moved into $scope functions.
 
+	function applyMarkerAccessibility(marker, project) {
+		if (!marker || !project || !project.properties) return;
+		var ariaLabel = project.properties.name;
+		if (ariaLabel == null) ariaLabel = '';
+		ariaLabel = ('' + ariaLabel).trim();
+
+		function setAttributes() {
+			var el = null;
+			if (typeof marker.getElement === 'function') {
+				el = marker.getElement();
+			}
+			el = el || marker._icon;
+			if (!el) return;
+			el.setAttribute('role', 'button');
+			el.setAttribute('aria-label', ariaLabel);
+		}
+
+		marker.on('add', setAttributes);
+		setAttributes();
+	}
+
 	// returns all markers associated with a project id
 	function findMarkersByProjectId(id) {
 		var keys = Object.keys($scope.markers);
@@ -484,6 +505,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 						title: project.properties.name
 					});
 					marker.feature = feature;
+					applyMarkerAccessibility(marker, project);
 					// there may be multiple markers for a project, so using the id as the array key won't be unique enough.
 					// would a timestamp work? if we want to use the geometry array index, we'd need to switch case on the
 					// type, since the arrays are a little different for some.
@@ -571,6 +593,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			title: project.properties.name
 		}).addTo($scope.map);
 		marker.feature = project;
+		applyMarkerAccessibility(marker, project);
 		var counterString = counter ? "-" + counter : "";
 		$scope.markers[project.properties.id + counterString] = marker;
 		marker.on('click', function (e) {
