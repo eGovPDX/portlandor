@@ -6,6 +6,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// make this variable available in HTML; set in waterworks.js; returns true if width < 880
 	$scope.isMobileView = isMobileView;
 
+	// Ensure header visibility is defined immediately (ng-show depends on it).
+	$scope.mainHeadVisible = true;
+	$scope.searchHeadVisible = false;
+
 	// If the page loads wide and then rotates to mobile, Angular's $scope.isMobileView
 	// can become stale (the global is updated by jQuery, but Angular won't digest).
 	// Keep it synced so ng-class/ng-show react, and reset searchVisible when
@@ -339,6 +343,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var ariaLabel = project.properties.name;
 		if (ariaLabel == null) ariaLabel = '';
 		ariaLabel = ('' + ariaLabel).trim();
+		var isDisabled = !!project.properties.disabled;
 
 		function setAttributes() {
 			var el = null;
@@ -348,7 +353,48 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			el = el || marker._icon;
 			if (!el) return;
 			el.setAttribute('role', 'button');
+			el.setAttribute('tabindex', '0');
 			el.setAttribute('aria-label', ariaLabel);
+			el.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+
+			// Add key activation (Enter/Space) once per element.
+			if (el.getAttribute('data-ww-keyboard') !== '1') {
+				el.setAttribute('data-ww-keyboard', '1');
+				el.addEventListener('keydown', function (event) {
+					var key = event && (event.key || event.keyCode || event.which);
+					var isEnter = key === 'Enter' || key === 13;
+					var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+					if (!isEnter && !isSpace) return;
+
+					// Prevent page scroll on Space.
+					if (typeof event.preventDefault === 'function') event.preventDefault();
+					if (typeof event.stopPropagation === 'function') event.stopPropagation();
+					if (isDisabled) return;
+
+					var activate = function () {
+						if (typeof $scope.showDetail === 'function') {
+							if (isMobileView) {
+								$scope.searchVisible = false;
+							}
+							$scope.showDetail(project);
+							panToMarker(project.properties.id, 14);
+						}
+					};
+
+					// AngularJS 1.2.x safe async digest entry.
+					if (typeof $scope.$evalAsync === 'function') {
+						$scope.$evalAsync(activate);
+					} else if (typeof $scope.$apply === 'function') {
+						try {
+							$scope.$apply(activate);
+						} catch (e) {
+							activate();
+						}
+					} else {
+						activate();
+					}
+				});
+			}
 		}
 
 		marker.on('add', setAttributes);
