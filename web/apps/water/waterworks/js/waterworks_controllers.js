@@ -99,6 +99,26 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// projects initially contains a copy of allProjects, but may be filtered based on user input.
 	// this is the array that's used to populate the map.
 	initProjects();
+
+	// If the search sidebar is visible on initial desktop load, start keyboard focus there
+	// so Tab doesn't jump into Leaflet marker icons first.
+	var didAutoFocusSidebar = false;
+	function maybeAutoFocusSearchSidebar() {
+		if (didAutoFocusSidebar) return;
+		if (isMobileView) return;
+		if (!$scope.searchVisible) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var active = doc.activeElement;
+		// Don't steal focus if the user already focused something.
+		if (active && active !== doc.body && active !== doc.documentElement) return;
+		var allFilterButton = doc.getElementById('Filter-All');
+		if (allFilterButton && typeof allFilterButton.focus === 'function') {
+			didAutoFocusSidebar = true;
+			allFilterButton.focus();
+		}
+	}
+	setTimeout(maybeAutoFocusSearchSidebar, 0);
 	
 	// functions ///////////////////////////////////////////////
 
@@ -172,6 +192,11 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// prevMapCenter = $scope.map.getCenter();
 		// prevMapZoom = $scope.map.getZoom();
 
+		// Remember which project teaser opened the detail panel so we can restore focus on close.
+		if (project && project.properties && project.properties.id != null) {
+			$scope.lastTeaserProjectId = project.properties.id;
+		}
+
 		if (!isMobileView) {
 				$scope.showDetail(project);
 		} else {
@@ -182,6 +207,35 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
     	
 		// pan to marker and set zoom to 14
 		panToMarker(project.properties.id, 14);
+	}
+
+	function restoreFocusToLastTeaser() {
+		var id = $scope.lastTeaserProjectId;
+		if (id == null) return;
+		setTimeout(function () {
+			var el = document.getElementById('Teaser' + id);
+			if (el && typeof el.focus === 'function') {
+				el.focus();
+			}
+		}, 0);
+	}
+
+	$scope.closeDetail = function () {
+		$scope.detailVisible = false;
+		if (typeof $scope.resetSelectedMarker === 'function') {
+			$scope.resetSelectedMarker();
+		}
+		restoreFocusToLastTeaser();
+	}
+
+	$scope.projectTeaserKeydown = function ($event, project) {
+		if (!$event) return;
+		var keyCode = $event.keyCode || $event.which;
+		// Enter (13) or Space (32)
+		if (keyCode !== 13 && keyCode !== 32) return;
+		if (typeof $event.preventDefault === 'function') $event.preventDefault();
+		if (typeof $event.stopPropagation === 'function') $event.stopPropagation();
+		$scope.listViewClick(project);
 	}
 
 	$scope.toggleSearch = function () {
@@ -210,6 +264,11 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		// Move focus into the details panel for keyboard/screen reader users.
 		setTimeout(function () {
+			var detailTitle = document.getElementById('ProjectDetailTitle');
+			if (detailTitle && typeof detailTitle.focus === 'function') {
+				detailTitle.focus();
+				return;
+			}
 			var closeButton = document.getElementById('ProjectDetailClose');
 			if (closeButton && typeof closeButton.focus === 'function') {
 				closeButton.focus();
