@@ -18,7 +18,7 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
     if (open) {
       panelEl.removeAttribute("hidden");
     } else {
-      panelEl.setAttribute("hidden", "");
+      panelEl.setAttribute("hidden", "until-found");
     }
   },
 
@@ -46,7 +46,7 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           accordion
             .querySelector(".aria-accordion__heading > button")
             .setAttribute("aria-expanded", "false");
-          accordion.querySelector(".aria-accordion__panel").setAttribute("hidden", "");
+          accordion.querySelector(".aria-accordion__panel").setAttribute("hidden", "until-found");
           return;
         }
 
@@ -83,5 +83,12 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
 
       this.expandPanelContainingId(e.target.hash.slice(1));
     });
+
+    // Maintain the heading's expansion/hidden state when matching text is found inside a hidden panel
+    if('onbeforematch' in document.body) {
+      window.addEventListener("beforematch", (e) => {
+        this.expandPanelContainingId(e.target.id);
+      });
+    }
   },
 };
