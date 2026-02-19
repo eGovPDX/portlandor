@@ -574,6 +574,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		});
 		map.addLayer(layer);
 		map.addControl(zoomcontrols);
+		map.getContainer().removeAttribute("tabindex");
 		return map;
 	}
 
@@ -674,34 +675,78 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		// if projects arg is undefined, use scope var as default.
 		// $scope.projects should always hold array of features we want added to map, even if filtered.
-		projects = typeof a !== 'undefined' ? projects : $scope.projects;
+		projects = typeof projects !== 'undefined' ? projects : $scope.projects;
+		
+		function getRepresentativeLngLat(project) {
+			if (!project || !project.geometry) return null;
+			var g = project.geometry;
+			// Some datasets store multiple geometries here even when type isn't GeometryCollection.
+			if (g.geometries && g.geometries.length) {
+				for (var gi = 0; gi < g.geometries.length; gi++) {
+					var nestedProject = { geometry: g.geometries[gi], properties: project.properties, type: project.type };
+					var nestedLngLat = getRepresentativeLngLat(nestedProject);
+					if (nestedLngLat) return nestedLngLat;
+				}
+				return null;
+			}
+			switch (g.type) {
+				case 'Point':
+					return g.coordinates;
+				case 'MultiPoint':
+					return (g.coordinates && g.coordinates.length) ? g.coordinates[0] : null;
+				case 'Polygon':
+					return (g.coordinates && g.coordinates.length) ? getCentroid(g.coordinates[0]) : null;
+				case 'MultiPolygon':
+					return (g.coordinates && g.coordinates.length && g.coordinates[0].length) ? getCentroid(g.coordinates[0][0]) : null;
+				case 'LineString':
+					return (g.coordinates && g.coordinates.length) ? getCentroid(g.coordinates) : null;
+				case 'MultiLineString':
+					return (g.coordinates && g.coordinates.length && g.coordinates[0].length) ? getCentroid(g.coordinates[0]) : null;
+				case 'GeometryCollection':
+					if (g.geometries && g.geometries.length) {
+						for (var i = 0; i < g.geometries.length; i++) {
+							var project2 = { geometry: g.geometries[i], properties: project.properties, type: project.type };
+							var ll = getRepresentativeLngLat(project2);
+							if (ll) return ll;
+						}
+					}
+					return null;
+				default:
+					// Best-effort fallback for unexpected geometry structures.
+					if (g.coordinates && g.coordinates.length && typeof g.coordinates[0][0] === 'number') return g.coordinates[0];
+					return null;
+			}
+		}
 
 		projects.forEach(function (project) {
-			var counter = 0;
-			L.geoJson(project, {
-			  onEachFeature: onEachFeature,
-				pointToLayer: function (feature, latlng) {
-					var marker = L.marker(latlng, {
-						icon: L.icon({
-								iconUrl: 'img/marker_water.png' + CACHEBUSTER,
-								iconSize: [40, 49], // size of the icon
-								iconAnchor: [15, 44], // point of the icon which will correspond to marker's location
-								popupAnchor: [5, -40] // point from which the popup should open relative to the iconAnchor
-						}),
-						title: project.properties.name
-					});
-					marker.feature = feature;
-					applyMarkerAccessibility(marker, project);
-					// there may be multiple markers for a project, so using the id as the array key won't be unique enough.
-					// would a timestamp work? if we want to use the geometry array index, we'd need to switch case on the
-					// type, since the arrays are a little different for some.
-					// we also may need to easily get the collection of all markers for a given project in the onEachFeature
-					// function or on click.
-					$scope.markers[project.properties.id.toString() + "-p" + counter.toString()] = marker;
-					counter += 1;
-					return marker;
-				}
+			if (!project || !project.properties || project.properties.id == null) return;
+
+			// Render non-point geometries (polygons/lines) without creating point markers.
+			try {
+				L.geoJson(project, {
+					filter: function (feature) {
+						var t = feature && feature.geometry && feature.geometry.type;
+						return t !== 'Point' && t !== 'MultiPoint';
+					}
+				}).addTo($scope.map);
+			} catch (e) {
+				// Ignore geometry render failures; marker creation below still proceeds.
+			}
+
+			// Create exactly one marker per project.
+			var rep = getRepresentativeLngLat(project);
+			if (!rep || rep.length < 2) return;
+			var marker = L.marker([rep[1], rep[0]], {
+				icon: new L.Icon(WATER_ICON),
+				title: project.properties.name
 			}).addTo($scope.map);
+			marker.feature = project;
+			applyMarkerAccessibility(marker, project);
+			$scope.markers[project.properties.id.toString()] = marker;
+			marker.on('click', function (e) {
+				$scope.markerClick(project, e.target);
+				$scope.selectedProject = project;
+			});
 		});
 
 		// $scope.projects = projects;
