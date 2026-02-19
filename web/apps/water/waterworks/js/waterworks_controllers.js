@@ -382,6 +382,20 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 		});
 	}
+
+	// Allows users to dismiss the address search results/no-results message.
+	// locationResults is null when no search is being shown.
+	$scope.clearLocationResults = function () {
+		$scope.locationResults = null;
+	}
+
+	// Auto-dismiss results/no-results as soon as the user edits the address field.
+	// Only clear if a search has already produced a visible state.
+	$scope.addressSearchChanged = function () {
+		if ($scope.locationResults != null) {
+			$scope.locationResults = null;
+		}
+	}
     
 	$scope.searchEnterSubmit = function (event) {
 		if (event.which == 13) {
