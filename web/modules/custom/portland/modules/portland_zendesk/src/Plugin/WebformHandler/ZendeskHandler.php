@@ -107,6 +107,7 @@ class ZendeskHandler extends WebformHandlerBase
       'parent_ticket_id_field' => '',
       'ticket_fork_field' => '',
       'ticket_form_id' => '',
+      'excluded_elements' => [],
     ];
   }
 
@@ -471,10 +472,25 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
+      $form['elements'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Included fields in webform_submission:values token'),
+        '#description' => $this->t('The selected elements will be included in the [webform_submission:values] token.'),
+        '#open' => false,
+      ];
+      $form['elements']['excluded_elements'] = [
+        '#type' => 'webform_excluded_elements',
+        '#webform_id' => $this->webform->id(),
+        '#default_value' => $this->configuration['excluded_elements'],
+        '#exclude_composite' => false,
+        '#name' => 'excluded_elements',
+      ];
+
       $form['subject']['#weight'] = -10; // Place first
       $form['comment']['#weight'] = -10;
-      $form['requester_name']['#weight'] = -10;
-      $form['requester_email']['#weight'] = -10;
+      $form['elements']['#weight'] = -10;
+      $form['requester_name']['#weight'] = -9;
+      $form['requester_email']['#weight'] = -8;
       $form['collaborators']['#weight'] = -7; // CCs
       $form['tags']['#weight'] = -5;
       $form['ticket_id_field']['#weight'] = -4;
@@ -529,6 +545,10 @@ class ZendeskHandler extends WebformHandlerBase
         $this->configuration[$key] = $submission_value[$key];
       }
     }
+
+    // move excluded_elements to top level
+    unset($this->configuration['elements']);
+    $this->configuration['excluded_elements'] = $submission_value['elements']['excluded_elements'];
   }
 
   /**
@@ -598,8 +618,12 @@ class ZendeskHandler extends WebformHandlerBase
       $webform_submission->setElementData($zendesk_parent_ticket_id_field_name, $parent_ticket_id);
     }
 
-    // the 2nd time through, $prev_ticket_id and $parent_ticket_id are both set
+    $token_options = [
+      'email' => TRUE,
+      'excluded_elements' => $this->configuration['excluded_elements'],
+    ];
 
+    // the 2nd time through, $prev_ticket_id and $parent_ticket_id are both set
     if ($fork_field_name) {
       // if the handler has a fork field configured, grab the values array from that field so we can
       // spin through it and stuff a single value into the webform_submission for each ticket being created.
@@ -612,7 +636,7 @@ class ZendeskHandler extends WebformHandlerBase
         $data[$fork_field_name] = $fork_field_array[$key];
         $webform_submission->setData($data);
         // email=true uses nicer template for webform_submission:values HTML
-        $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], ['email' => true]);
+        $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], $token_options);
 
         // call function to create ticket in Zendesk and store resulting ticket ID
         $ticket_id = $this->submitTicket($webform_submission, $configuration);
@@ -626,7 +650,7 @@ class ZendeskHandler extends WebformHandlerBase
 
     } else {
       // email=true uses nicer template for webform_submission:values HTML
-      $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], ['email' => true]);
+      $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], $token_options);
       $new_ticket_id = $this->submitTicket($webform_submission, $configuration);
       $data = $webform_submission->getData();
     }
@@ -664,6 +688,9 @@ class ZendeskHandler extends WebformHandlerBase
 
     // Allow for either values coming from other fields or static/tokens
     foreach ($this->defaultConfigurationNames() as $field) {
+      // Skip non-scalar configuration fields that aren't part of the ticket create payload
+      if (!is_scalar($configuration[$field])) continue;
+
       $request[$field] = $configuration[$field];
       if (!empty($submission_fields['data'][$configuration[$field]])) {
         $request[$field] = $submission_fields['data'][$configuration[$field]];
@@ -989,12 +1016,12 @@ class ZendeskHandler extends WebformHandlerBase
   {
     $markup = [];
     $configNames = array_keys($this->defaultConfiguration());
-    $excluded_fields = ['comment','custom_fields'];
+    $excluded_fields = ['comment', 'custom_fields', 'excluded_elements'];
 
     // loop through fields to display an at-a-glance summary of settings
     foreach($configNames as $configName){
       if(! in_array($configName, $excluded_fields) ) {
-        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . ($this->configuration[$configName]);
+        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . htmlentities($this->configuration[$configName]);
       }
     }
 

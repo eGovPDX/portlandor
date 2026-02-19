@@ -28,6 +28,144 @@ categories:
   - ADA
   - Request
 elements: |-
+  section_staff_input:
+    '#type': webform_section
+    '#title': 'Staff only'
+    '#attributes':
+      style: 'background-color: #ccc; padding: 1rem;'
+    report_staff_reason:
+      '#type': radios
+      '#title': 'Please select the option that best describes your reason for completing this form:'
+      '#default_value': staff_intake
+      '#options':
+        staff_intake: 'I am a 311 CSR or City staff member assisting a community member with intake.'
+        staff_existing_request: 'I am a City staff member creating a record of a request that is in progress or has already been fulfilled.'
+      '#required': true
+    report_staff_issue_resolved:
+      '#type': radios
+      '#title': 'Has the issue been resolved?'
+      '#options': yes_no
+      '#states':
+        visible:
+          ':input[name="report_staff_reason"]':
+            value: staff_existing_request
+      '#required': true
+    report_staff_resolution_dismissed:
+      '#type': checkbox
+      '#title': 'This request has been dismissed'
+      '#states':
+        visible:
+          ':input[name="report_staff_reason"]':
+            value: staff_existing_request
+    report_staff_resolution_status:
+      '#type': select
+      '#title': 'Resolution status'
+      '#options':
+        no_findings_no_action: 'No findings, No action'
+        no_findings_action_taken: 'No findings, Action taken'
+        findings_action_taken: 'Findings, Action taken'
+        not_applicable: 'Not applicable'
+      '#states':
+        visible:
+          ':input[name="report_staff_issue_resolved"]':
+            value: 'Yes'
+      '#required': true
+    report_staff_resolution_substatus_dismissed:
+      '#type': webform_select_other
+      '#title': 'Dismissal reason'
+      '#options':
+        'Does not meet criteria - not based on disability, race, color or national origin': 'Does not meet criteria - not based on disability, race, color or national origin'
+        "Does not meet criteria - outside of the City's jurisdiction": "Does not meet criteria - outside of the City's jurisdiction"
+        'Complainant nonresponsive to requests for additional information': 'Complainant nonresponsive to requests for additional information'
+        'Complainant did not provide any contact information, or all forms of contact information are non-functioning': 'Complainant did not provide any contact information, or all forms of contact information are non-functioning'
+        'Withdrawn by complainant': 'Withdrawn by complainant'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_dismissed"]':
+            checked: true
+      '#required': true
+    report_staff_nonresponsive_attempts:
+      '#type': select
+      '#title': 'How many attempts were made?'
+      '#options':
+        one_attempt: 'One attempt'
+        two_attempts: 'Two attempts'
+        three_or_more_attempts: 'Three or more attempts'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_dismissed[select]"]':
+            value: 'Complainant nonresponsive to requests for additional information'
+      '#required': true
+    report_staff_date_withdrawn:
+      '#type': date
+      '#title': 'Date withdrawn?'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_dismissed[select]"]':
+            value: 'Withdrawn by complainant'
+      '#required': true
+    report_staff_resolution_substatus_action_taken:
+      '#type': webform_select_other
+      '#title': 'Action taken'
+      '#options':
+        'Public Policy, program, service, activity, etc. change': 'Public Policy, program, service, activity, etc. change'
+        'Event accommodation': 'Event accommodation'
+        'Effective and meaningful communication (including City materials)': 'Effective and meaningful communication (including City materials)'
+        'Engagement / Community Involvement changes': 'Engagement / Community Involvement changes'
+        'Remove barrier': 'Remove barrier'
+        'Administrative, operational, decision-making, governance, performance management, etc. changes': 'Administrative, operational, decision-making, governance, performance management, etc. changes'
+        'Employee training and development': 'Employee training and development'
+        'Program performance monitoring and evaluation': 'Program performance monitoring and evaluation'
+        'Staff performance monitoring and evaluation': 'Staff performance monitoring and evaluation'
+        'Coordination with BHR for investigation and actions': 'Coordination with BHR for investigation and actions'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_status"]':
+            value:
+              pattern: action_taken
+      '#required': true
+    report_staff_admin_changes:
+      '#type': textarea
+      '#title': 'Please describe action(s) taken'
+      '#states':
+        visible:
+          ':input[name="report_staff_resolution_substatus_action_taken[select]"]':
+            value: 'Administrative, operational, decision-making, governance, performance management, etc. changes'
+      '#required': true
+    report_staff_resolution_date:
+      '#type': date
+      '#title': 'Resolution date'
+      '#states':
+        visible:
+          ':input[name="report_staff_issue_resolved"]':
+            value: 'Yes'
+      '#required': true
+    report_staff_resolving_party:
+      '#type': textfield
+      '#title': 'Primary bureau, office, event, or program associated with the resolution'
+      '#states':
+        visible:
+          ':input[name="report_staff_issue_resolved"]':
+            checked: true
+      '#required': true
+    report_staff_resolution_details:
+      '#type': textarea
+      '#title': 'Please provide details about how this request was handled and any actions taken.'
+      '#description': '<p>Please also add any additional relevant details about the issue itself that were not captured in the ticket.</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="report_staff_issue_resolved"]':
+            checked: true
+      '#required': true
+    report_staff_issue_date:
+      '#type': date
+      '#title': 'Date issue reported to the City'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="report_staff_reason"]':
+            value: staff_existing_request
   request_how:
     '#type': radios
     '#title': 'How would you like to make your request?'
@@ -256,7 +394,6 @@ elements: |-
                 value: event_accommodations
               ':input[name="autocomplete"]':
                 '!value': 'yes'
-          '#date_date_format': ''
         request_event_location:
           '#type': textfield
           '#title': 'Location of event'
@@ -447,6 +584,7 @@ elements: |-
         - support_agent
         - administrator
       '#zendesk_request_number__access': false
+      '#employee_notes_panel__access': false
       '#escalate_issue__access': false
     report_ticket_id:
       '#type': hidden
@@ -473,6 +611,13 @@ elements: |-
       '#type': webform_actions
       '#title': 'Submit button(s)'
       '#submit__label': Submit
+  resolution_url:
+    '#type': webform_computed_token
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': "https://[site:url-brief]/form/report-ada-resolution?report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]"
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -580,7 +725,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Request received'
-  confirmation_message: '<p>If you entered a valid email address when prompted, you will receive a detailed email with information and instructions within the next 3-5 days. Otherwise, a staff person will reach out to you by telephone.</p><p>Thank you.</p>'
+  confirmation_message: '<p>If you gave us a valid email address, we will send you an update with information about your request within 1-2 business days. If your request is for an event happening within the next 72 hours, call 503-823-4000 (<a href="https://www.portland.gov/311/about311">311</a>) so we can quickly refer it to the correct bureau.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -698,11 +843,27 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'"
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
   zendesk_new_ticket_developer_testing:
     id: zendesk
     handler_id: zendesk_new_ticket_developer_testing
@@ -726,14 +887,30 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'"
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
-  zendesk_new_request:
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+  zendesk_new_request_parks:
     id: zendesk
-    handler_id: zendesk_new_request
+    handler_id: zendesk_new_request_parks
     label: 'Zendesk new request - Parks accommodation'
     notes: 'Creates a new request in the PP&R: Inclusion Services group'
     status: true
@@ -756,9 +933,147 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'"
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+  zendesk_update_request_with_resolution_url:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request_with_resolution_url
+    label: 'Update Zendesk request with staff notes and resolution URL'
+    notes: 'Updates the new ticket with the resolution URL including ticket ID in a private note.'
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      comment: "<h3><a href=\"[webform_submission:values:resolution_url]\">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>\r\n\r\n[webform_submission:values:section_staff_input:html]"
+      comment_private: 1
+      skip_attachments: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: ''
+  email:
+    id: email
+    handler_id: email
+    label: Email
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="contact_email"]':
+          filled: true
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'City of Portland A.D.A. Accommodation Request Confirmation'
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>This email confirms that we received your request. If you gave us a valid email address, we will send you an update with information about your request within 1-2 business days. If your request is for an event happening within the next 72 hours, call 503-823-4000 (<a href="https://www.portland.gov/311/about311">311</a>) so we can quickly refer it to the correct bureau.</p><p>Learn more about the City’s ADA Title II Accommodation request process on our website: <a href="https://www.portland.gov/officeofequity/disability-division/ada-resources#toc-requests-for-accommodations">ADA Title II Resources</a></p><hr><h2>Request details</h2><p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+        support_agent_use_only: support_agent_use_only
+        report_ticket_id: report_ticket_id
+        computed_location_address: computed_location_address
+        computed_location_latlon: computed_location_latlon
+        resolution_url: resolution_url
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
+  email_staff_member:
+    id: email
+    handler_id: email_staff_member
+    label: 'Email staff member confirmation for existing requests'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_staff_reason"]':
+          value: staff_existing_request
+    weight: 1
+    settings:
+      states:
+        - completed
+      to_mail: '[current-user:mail]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'A.D.A. Accommodation Request Record Confirmation'
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>This email confirms the ADA request record you submitted.</p><hr><h2>Request details</h2><p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
 variants: {  }
