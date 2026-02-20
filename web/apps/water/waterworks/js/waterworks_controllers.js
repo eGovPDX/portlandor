@@ -66,6 +66,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	$scope.clickedGeometry;
 	$scope.clickedProjectId;
 
+	// Tracks where focus should return when closing the detail panel.
+	// type: 'teaser' | 'marker'
+	$scope.lastFocusReturn = null;
+
 	// flags to control visiblity of detail and search panels
 	if (isMobileView) {
 		$scope.detailVisible = false;
@@ -176,6 +180,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		if (isMobileView) {
 			populateModal(project, target);
 		} else {
+			// If the user clicked a map marker, return focus there on detail close.
+			if (project && project.properties && project.properties.id != null) {
+				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+			}
 			populateModal(project, target);
 		}
 	}
@@ -195,6 +203,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// Remember which project teaser opened the detail panel so we can restore focus on close.
 		if (project && project.properties && project.properties.id != null) {
 			$scope.lastTeaserProjectId = project.properties.id;
+			$scope.lastFocusReturn = { type: 'teaser', id: project.properties.id };
 		}
 
 		if (!isMobileView) {
@@ -209,13 +218,28 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		panToMarker(project.properties.id, 14);
 	}
 
-	function restoreFocusToLastTeaser() {
-		var id = $scope.lastTeaserProjectId;
-		if (id == null) return;
+	function restoreFocusToLastOrigin() {
+		var info = $scope.lastFocusReturn;
+		if (!info || info.id == null) return;
 		setTimeout(function () {
-			var el = document.getElementById('Teaser' + id);
-			if (el && typeof el.focus === 'function') {
-				el.focus();
+			if (info.type === 'marker') {
+				var marker = $scope.markers && $scope.markers[('' + info.id)];
+				var el = null;
+				if (marker) {
+					if (typeof marker.getElement === 'function') {
+						el = marker.getElement();
+					}
+					el = el || marker._icon;
+				}
+				if (el && typeof el.focus === 'function') {
+					el.focus();
+					return;
+				}
+			}
+			// Default/fallback: return focus to the teaser card.
+			var teaserEl = document.getElementById('Teaser' + info.id);
+			if (teaserEl && typeof teaserEl.focus === 'function') {
+				teaserEl.focus();
 			}
 		}, 0);
 	}
@@ -225,7 +249,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		if (typeof $scope.resetSelectedMarker === 'function') {
 			$scope.resetSelectedMarker();
 		}
-		restoreFocusToLastTeaser();
+		restoreFocusToLastOrigin();
 	}
 
 	$scope.projectTeaserKeydown = function ($event, project) {
@@ -434,6 +458,26 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		ariaLabel = ('' + ariaLabel).trim();
 		var isDisabled = !!project.properties.disabled;
 
+		function ensureMarkerInView() {
+			try {
+				if (!$scope.map || !marker) return;
+				if (typeof marker.getLatLng !== 'function') return;
+				var latlng = marker.getLatLng();
+				if (!latlng) return;
+				if (typeof $scope.map.getBounds !== 'function') return;
+				var bounds = $scope.map.getBounds();
+				if (!bounds) return;
+				// Use a slightly shrunken bounds so focused markers aren't right on the edge.
+				var innerBounds = (typeof bounds.pad === 'function') ? bounds.pad(-0.12) : bounds;
+				if (typeof innerBounds.contains === 'function' && innerBounds.contains(latlng)) return;
+				if (typeof $scope.map.panTo === 'function') {
+					$scope.map.panTo(latlng, { animate: true, duration: 0.5 });
+				}
+			} catch (e) {
+				// No-op: never block focus if panning fails.
+			}
+		}
+
 		function setAttributes() {
 			var el = null;
 			if (typeof marker.getElement === 'function') {
@@ -445,6 +489,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			el.setAttribute('tabindex', '0');
 			el.setAttribute('aria-label', ariaLabel);
 			el.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+
+			// When a marker receives keyboard focus, ensure it is visible in the map viewport.
+			if (el.getAttribute('data-ww-pan') !== '1') {
+				el.setAttribute('data-ww-pan', '1');
+				el.addEventListener('focus', function () {
+					if (isDisabled) return;
+					// Delay slightly so Leaflet has applied any transforms for the new focus target.
+					setTimeout(ensureMarkerInView, 0);
+				});
+			}
 
 			// Add key activation (Enter/Space) once per element.
 			if (el.getAttribute('data-ww-keyboard') !== '1') {
@@ -464,6 +518,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 						if (typeof $scope.showDetail === 'function') {
 							if (isMobileView) {
 								$scope.searchVisible = false;
+							}
+							if (project && project.properties && project.properties.id != null) {
+								$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
 							}
 							$scope.showDetail(project);
 							panToMarker(project.properties.id, 14);
@@ -718,10 +775,39 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 		}
 
-		projects.forEach(function (project) {
-			if (!project || !project.properties || project.properties.id == null) return;
+		function addNonPointGeometriesToMap(project) {
+			if (!project || !project.geometry) return;
+			var g = project.geometry;
 
-			// Render non-point geometries (polygons/lines) without creating point markers.
+			// Some datasets store multiple geometries here even when type isn't GeometryCollection.
+			if (g.geometries && g.geometries.length) {
+				for (var gi = 0; gi < g.geometries.length; gi++) {
+					addNonPointGeometriesToMap({
+						type: 'Feature',
+						geometry: g.geometries[gi],
+						properties: project.properties
+					});
+				}
+				return;
+			}
+
+			if (g.type === 'GeometryCollection') {
+				// GeometryCollection may include Point geometries. If we pass it directly to L.geoJson,
+				// Leaflet will auto-create default markers (marker-icon-2x.png) that won't have our a11y.
+				if (g.geometries && g.geometries.length) {
+					for (var i = 0; i < g.geometries.length; i++) {
+						addNonPointGeometriesToMap({
+							type: 'Feature',
+							geometry: g.geometries[i],
+							properties: project.properties
+						});
+					}
+				}
+				return;
+			}
+
+			if (g.type === 'Point' || g.type === 'MultiPoint') return;
+
 			try {
 				L.geoJson(project, {
 					filter: function (feature) {
@@ -732,6 +818,14 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			} catch (e) {
 				// Ignore geometry render failures; marker creation below still proceeds.
 			}
+		}
+
+		projects.forEach(function (project) {
+			if (!project || !project.properties || project.properties.id == null) return;
+
+			// Render non-point geometries (polygons/lines), but never allow Leaflet to auto-create
+			// default Point markers (marker-icon-2x.png).
+			addNonPointGeometriesToMap(project);
 
 			// Create exactly one marker per project.
 			var rep = getRepresentativeLngLat(project);
@@ -872,12 +966,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			var id = $scope.selectedProject.properties.id;
 			populateSelectedProject(id);
 			$scope.showDetail($scope.selectedProject);
-			
-			// kluge: these elements aren't really in ng scope, since they are dynamically generated by leaflet (seemingly).
-			// so we're kludging it with some jquery to activate a link that is within the scope (from the search panel list).
-			// is this feasible? what if the list is filtered and the item isn't present? no, not feasible for that reason.
-			// we need a hidden link that can be fake-clicked with jquery.
-			$('#clickHelper' + $scope.selectedProject.properties.id).click();
 		}
     	
 		// highlight marker
