@@ -135,6 +135,69 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		}
 	}
 	setTimeout(maybeAutoFocusSearchSidebar, 0);
+
+	// In mobile view, default focus to the WaterWorks logo on initial load.
+	var didAutoFocusBrand = false;
+	function maybeAutoFocusMobileBrand() {
+		if (didAutoFocusBrand) return;
+		if (!isMobileView) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var active = doc.activeElement;
+		// Don't steal focus if the user already focused something.
+		if (active && active !== doc.body && active !== doc.documentElement) return;
+		var brand = doc.getElementById('WaterWorksHome');
+		if (brand && typeof brand.focus === 'function') {
+			didAutoFocusBrand = true;
+			brand.focus();
+		}
+	}
+	setTimeout(maybeAutoFocusMobileBrand, 0);
+
+	// Mobile-only: keep the header tab flow as logo -> Open search -> map markers.
+	// When the search panel is closed, Tab from the Open search button should skip
+	// the offscreen SearchPanel content and go directly to the first map marker.
+	var didBindSearchTabToMarkers = false;
+	function bindSearchTabToMarkers() {
+		if (didBindSearchTabToMarkers) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var openSearchButton = doc.querySelector('button.search[aria-controls="SearchPanel"]');
+		if (!openSearchButton || typeof openSearchButton.addEventListener !== 'function') return;
+		didBindSearchTabToMarkers = true;
+
+		function findFirstMarkerEl() {
+			return doc.querySelector('#LeafletMap .leaflet-marker-icon[role="button"][tabindex="0"][aria-disabled="false"], #LeafletMap .leaflet-marker-icon[role="button"][tabindex="0"]');
+		}
+
+		openSearchButton.addEventListener('keydown', function (e) {
+			if (!isMobileView) return;
+			// Only override Tab flow when the panel is currently closed.
+			if ($scope.searchVisible) return;
+			if (!e) return;
+			var key = e.key || e.keyCode || e.which;
+			var isTab = (key === 'Tab' || key === 9);
+			if (!isTab) return;
+			if (e.shiftKey) return;
+
+			var attempts = 0;
+			var maxAttempts = 20;
+			var tryFocus = function () {
+				var el = findFirstMarkerEl();
+				if (el && typeof el.focus === 'function') {
+					el.focus();
+					return;
+				}
+				attempts++;
+				if (attempts >= maxAttempts) return;
+				setTimeout(tryFocus, 50);
+			};
+
+			if (typeof e.preventDefault === 'function') e.preventDefault();
+			tryFocus();
+		});
+	}
+	setTimeout(bindSearchTabToMarkers, 0);
 	
 	// functions ///////////////////////////////////////////////
 
@@ -260,13 +323,43 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		}, 0);
 	}
 
+	function focusOpenSearchButton() {
+		var doc = $window && $window.document;
+		if (!doc) return false;
+		var btn = doc.querySelector('button.search[aria-controls="SearchPanel"]');
+		if (btn && typeof btn.focus === 'function') {
+			btn.focus();
+			return true;
+		}
+		return false;
+	}
+
 	$scope.closeDetail = function () {
 		$scope.detailVisible = false;
 		if (typeof $scope.resetSelectedMarker === 'function') {
 			$scope.resetSelectedMarker();
 		}
+		// Mobile: if the search panel is closed, return focus to the Open search button.
+		if (isMobileView && !$scope.searchVisible) {
+			setTimeout(focusOpenSearchButton, 0);
+			return;
+		}
 		restoreFocusToLastOrigin();
 	}
+
+	// Mobile: when the search panel closes, return focus to the Open search button.
+	// Avoid stealing focus on initial load (searchVisible starts false on mobile).
+	var didInitSearchVisibleWatch = false;
+	$scope.$watch('searchVisible', function (newVal, oldVal) {
+		if (!didInitSearchVisibleWatch) {
+			didInitSearchVisibleWatch = true;
+			return;
+		}
+		if (!isMobileView) return;
+		if (oldVal === true && newVal === false) {
+			setTimeout(focusOpenSearchButton, 0);
+		}
+	});
 
 	$scope.projectTeaserKeydown = function ($event, project) {
 		if (!$event) return;
