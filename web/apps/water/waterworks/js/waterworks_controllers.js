@@ -50,6 +50,18 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		angular.element($window).off('resize orientationchange', onViewportChange);
 	});
 
+	function runInAngular(fn) {
+		if (typeof fn !== 'function') return;
+		// AngularJS 1.2.x safe async digest entry.
+		if (typeof $scope.$evalAsync === 'function') {
+			$scope.$evalAsync(fn);
+		} else if (!$scope.$root || !$scope.$root.$$phase) {
+			$scope.$apply(fn);
+		} else {
+			fn();
+		}
+	}
+
 	// allProjects is an array for all projects retrieved from ECM
 	$scope.allProjects = [];
 
@@ -185,6 +197,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
 			}
 			populateModal(project, target);
+			// Keep existing desktop behavior consistent with keyboard activation: zoom to marker.
+			if (project && project.properties && project.properties.id != null) {
+				panToMarker(project.properties.id, 14);
+			}
 		}
 	}
 
@@ -838,8 +854,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			applyMarkerAccessibility(marker, project);
 			$scope.markers[project.properties.id.toString()] = marker;
 			marker.on('click', function (e) {
-				$scope.markerClick(project, e.target);
-				$scope.selectedProject = project;
+				runInAngular(function () {
+					$scope.markerClick(project, e.target);
+					$scope.selectedProject = project;
+				});
 			});
 		});
 
@@ -922,15 +940,19 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var counterString = counter ? "-" + counter : "";
 		$scope.markers[project.properties.id + counterString] = marker;
 		marker.on('click', function (e) {
-			$scope.markerClick(project, e.target);
-			$scope.selectedProject = project;
+			runInAngular(function () {
+				$scope.markerClick(project, e.target);
+				$scope.selectedProject = project;
+			});
 		});
 	}
 
 	function addPointToMap(layer, project) {
 		layer.on('click', function (e) {
-			$scope.markerClick(project, e.target);
-			$scope.selectedProject = project;
+			runInAngular(function () {
+				$scope.markerClick(project, e.target);
+				$scope.selectedProject = project;
+			});
 		});
 
 	}
