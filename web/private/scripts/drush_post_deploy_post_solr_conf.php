@@ -8,5 +8,5 @@ if (preg_match('/^bot-\d+/', $_ENV['PANTHEON_ENVIRONMENT'])) {
 
 // Run the cron.
 echo "Starting to post Solr conf files...\n";
-passthru('drush search-api-pantheon:postSchema pantheon_search ../private/solr-conf 2>&1');
+passthru('drush search-api-pantheon:postSchema ../private/solr-conf 2>&1');
 echo "Done posting Solr conf files.\n";
