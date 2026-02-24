@@ -611,7 +611,8 @@ class ZendeskHandler extends WebformHandlerBase
       foreach ($fork_field_array as $key => $value) {
         $data[$fork_field_name] = $fork_field_array[$key];
         $webform_submission->setData($data);
-        $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
+        // email=true uses nicer template for webform_submission:values HTML
+        $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], ['email' => true]);
 
         // call function to create ticket in Zendesk and store resulting ticket ID
         $ticket_id = $this->submitTicket($webform_submission, $configuration);
@@ -624,7 +625,8 @@ class ZendeskHandler extends WebformHandlerBase
       $new_ticket_id = implode(",", $ticket_ids);
 
     } else {
-      $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
+      // email=true uses nicer template for webform_submission:values HTML
+      $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], ['email' => true]);
       $new_ticket_id = $this->submitTicket($webform_submission, $configuration);
       $data = $webform_submission->getData();
     }
