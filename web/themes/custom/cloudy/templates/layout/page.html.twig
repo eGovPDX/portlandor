@@ -127,20 +127,35 @@
 
 {% set content_attribute = create_attribute() %}
 {% set content_classes = [
-    page.tools or page.menu ? 'col-lg order-1',
+    page.tools or page.menu ? 'col-lg',
 ] %}
 
 <main id="main-content" class="d-print-block" role="main" data-swiftype-index="true">
   {% block main_content %}
     <div class="main-content {{ not is_front ? 'container' }}">
       <div {{ content_wrapper_attribute.addClass(content_wrapper_classes) }}>
+        {% if page.tools %}
+          <button class="cloudy-offcanvas-button btn btn-lg btn-light d-lg-none ms-4 mb-4 w-auto" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasTools" aria-controls="offcanvasTools">
+            {% include "@components/icon/icon.twig" with {
+              name: 'filter',
+            } only %}
+            {{ 'Filters'|t }}
+          </button>
+        {% endif %}
         <div {{ content_attribute.addClass(content_classes)}}>
           {% block page_content %}
             {{ page.content }}
           {% endblock %}
         </div>
-        {{ page.menu }}
-        {{ page.tools }}
+        {% if page.tools or page.menu %}
+          <div class="col-lg-4">
+            {{ page.tools }}
+            {{ page.menu }}
+          </div>
+        {% endif %}
+        {% block post_content %}
+          {{ page.post_content }}
+        {% endblock %}
       </div>
     </div>
   {% endblock %}
