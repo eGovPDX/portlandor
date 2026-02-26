@@ -3,12 +3,12 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.storage.group.field_name
     - field.storage.node.field_document_number
     - field.storage.node.field_full_document_title
     - field.storage.relation.field_agenda_item_number
     - field.storage.relation.field_council_agenda
     - field.storage.relation.field_council_document
-    - field.storage.relation.field_council_member
     - field.storage.relation.field_session_start_datetime
     - field.storage.relation.field_voted_as_follows
     - portland_relations.relation_type.council_vote
@@ -355,8 +355,8 @@ display:
         type: full
         options:
           offset: 0
-          pagination_heading_level: h4
-          items_per_page: 10
+          pagination_heading_level: h3
+          items_per_page: 24
           total_pages: null
           id: 0
           tags:
@@ -377,7 +377,7 @@ display:
         type: basic
         options:
           submit_button: Apply
-          reset_button: false
+          reset_button: true
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
           expose_sort_order: true
@@ -391,7 +391,47 @@ display:
         type: tag
         options: {  }
       empty: {  }
-      sorts: {  }
+      sorts:
+        field_session_start_datetime_value:
+          id: field_session_start_datetime_value
+          table: relation__field_session_start_datetime
+          field: field_session_start_datetime_value
+          relationship: field_council_session
+          group_type: group
+          admin_label: ''
+          plugin_id: datetime
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+          granularity: second
+        field_agenda_sub_item_number_value:
+          id: field_agenda_sub_item_number_value
+          table: relation__field_agenda_sub_item_number
+          field: field_agenda_sub_item_number_value
+          relationship: reverse__relation__field_votes
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_agenda_item_number_value:
+          id: field_agenda_item_number_value
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number_value
+          relationship: reverse__relation__field_votes
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
       arguments:
         field_council_member_target_id:
           id: field_council_member_target_id
@@ -613,17 +653,23 @@ display:
       style:
         type: table
         options:
-          grouping: {  }
+          grouping:
+            -
+              field: field_session_start_datetime
+              rendered: true
+              rendered_strip: false
           row_class: ''
           default_row_class: true
           columns:
             id: id
             field_council_agenda: field_council_agenda
             field_session_start_datetime: field_session_start_datetime
-            field_council_document: field_council_document
+            view_node: view_node
+            field_document_number: field_document_number
             field_full_document_title: field_full_document_title
             field_voted_as_follows: field_voted_as_follows
-          default: field_session_start_datetime
+            title: title
+          default: '-1'
           info:
             id:
               sortable: false
@@ -640,13 +686,20 @@ display:
               empty_column: false
               responsive: ''
             field_session_start_datetime:
-              sortable: true
+              sortable: false
               default_sort_order: desc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
-            field_council_document:
+            view_node:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_document_number:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -661,6 +714,13 @@ display:
               empty_column: false
               responsive: ''
             field_voted_as_follows:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            title:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -888,7 +948,7 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: Agenda
+          label: Date
           exclude: false
           alter:
             alter_text: true
@@ -1126,21 +1186,6 @@ display:
         options:
           offset: 0
           items_per_page: 4
-      sorts:
-        field_session_start_datetime_value:
-          id: field_session_start_datetime_value
-          table: relation__field_session_start_datetime
-          field: field_session_start_datetime_value
-          relationship: field_council_session
-          group_type: group
-          admin_label: ''
-          plugin_id: datetime
-          order: DESC
-          expose:
-            label: ''
-            field_identifier: ''
-          exposed: false
-          granularity: second
       arguments:
         field_council_member_target_id:
           id: field_council_member_target_id
@@ -1274,7 +1319,7 @@ display:
         row: false
         relationships: false
         fields: false
-        sorts: false
+        sorts: true
         arguments: false
         filters: false
         filter_groups: false
@@ -1308,15 +1353,6 @@ display:
           admin_label: 'field_council_document: Content'
           plugin_id: standard
           required: false
-        field_council_member:
-          id: field_council_member
-          table: relation__field_council_member
-          field: field_council_member
-          relationship: none
-          group_type: group
-          admin_label: 'field_council_member: Group'
-          plugin_id: standard
-          required: false
       display_description: ''
       use_more: true
       use_more_always: true
@@ -1342,8 +1378,8 @@ display:
         - 'config:field.storage.relation.field_council_agenda'
         - 'config:field.storage.relation.field_session_start_datetime'
         - 'config:field.storage.relation.field_voted_as_follows'
-  page_votes_per_council_member:
-    id: page_votes_per_council_member
+  page_votes:
+    id: page_votes
     display_title: 'Council Votes'
     display_plugin: page
     position: 1
@@ -1353,7 +1389,7 @@ display:
           id: id
           table: relation
           field: id
-          relationship: reverse__relation__field_votes
+          relationship: field_council_session
           group_type: group
           admin_label: ''
           entity_type: relation
@@ -1483,11 +1519,11 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: Agenda
-          exclude: false
+          label: ''
+          exclude: true
           alter:
             alter_text: true
-            text: "<a href=\"{{ field_council_agenda ? path('entity.node.canonical', { 'node': field_council_agenda }) : '' }}#relation-{{ id }}\">{{ field_session_start_datetime }}</a>"
+            text: "<h2><a href=\"{{ field_council_agenda ? path('entity.node.canonical', { 'node': field_council_agenda }) : '' }}#relation-{{ id }}\">{{ field_session_start_datetime }}</a></h2>"
             make_link: false
             path: ''
             absolute: false
@@ -1516,7 +1552,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -1592,6 +1628,69 @@ display:
           text: view
           output_url_as_text: true
           absolute: false
+        field_document_number:
+          id: field_document_number
+          table: node__field_document_number
+          field: field_document_number
+          relationship: field_council_document
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Doc number'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         field_full_document_title:
           id: field_full_document_title
           table: node__field_full_document_title
@@ -1654,15 +1753,15 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_council_member:
-          id: field_council_member
-          table: relation__field_council_member
-          field: field_council_member
-          relationship: none
+        field_name:
+          id: field_name
+          table: group__field_name
+          field: field_name
+          relationship: field_council_member
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: 'Council member'
+          label: 'Voting member'
           exclude: false
           alter:
             alter_text: false
@@ -1703,11 +1802,11 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
+          click_sort_column: value
+          type: string
           settings:
-            link: true
-          group_column: target_id
+            link_to_entity: true
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -1769,69 +1868,6 @@ display:
           click_sort_column: value
           type: list_default
           settings: {  }
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        field_document_number:
-          id: field_document_number
-          table: node__field_document_number
-          field: field_document_number
-          relationship: field_council_document
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: false
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -1907,6 +1943,73 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
+      sorts:
+        field_session_start_datetime_value_1:
+          id: field_session_start_datetime_value_1
+          table: relation__field_session_start_datetime
+          field: field_session_start_datetime_value
+          relationship: field_council_session
+          group_type: group
+          admin_label: ''
+          plugin_id: datetime
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+          granularity: second
+        field_agenda_sub_item_number_value:
+          id: field_agenda_sub_item_number_value
+          table: relation__field_agenda_sub_item_number
+          field: field_agenda_sub_item_number_value
+          relationship: reverse__relation__field_votes
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_agenda_item_number_value:
+          id: field_agenda_item_number_value
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number_value
+          relationship: reverse__relation__field_votes
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_voted_as_follows_value:
+          id: field_voted_as_follows_value
+          table: relation__field_voted_as_follows
+          field: field_voted_as_follows_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: DESC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_name_value:
+          id: field_name_value
+          table: group__field_name
+          field: field_name_value
+          relationship: field_council_member
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
       arguments: {  }
       filters:
         type:
@@ -2005,35 +2108,73 @@ display:
             field_full_document_title: field_full_document_title
             field_document_number: field_document_number
             title: title
-        label:
-          id: label
-          table: groups_field_data
-          field: label
+        field_name_value:
+          id: field_name_value
+          table: group__field_name
+          field: field_name_value
           relationship: field_council_member
           group_type: group
           admin_label: ''
-          entity_type: group
-          entity_field: label
           plugin_id: string
           operator: contains
           value: ''
           group: 1
           exposed: true
           expose:
-            operator_id: label_op
-            label: 'Council member'
+            operator_id: field_name_value_op
+            label: 'Voting member'
             description: ''
             use_operator: false
-            operator: label_op
+            operator: field_name_value_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: council_member
+            identifier: member
             required: false
             remember: false
             multiple: false
             remember_roles:
               authenticated: authenticated
             placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+        default_langcode:
+          id: default_langcode
+          table: groups_field_data
+          field: default_langcode
+          relationship: field_council_member
+          group_type: group
+          admin_label: ''
+          entity_type: group
+          entity_field: default_langcode
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
           is_grouped: false
           group_info:
             label: ''
@@ -2053,6 +2194,7 @@ display:
       defaults:
         relationships: false
         fields: false
+        sorts: false
         arguments: false
         filters: false
         filter_groups: false
@@ -2106,7 +2248,7 @@ display:
           admin_label: ''
           plugin_id: result
           empty: false
-          content: "<p>Displaying @start - @end of @total.</p>\r\n\r\n<p>View Council voting history for ordinances, resolutions, and reports from January 6, 2021 to present. Votes are listed by most recent Council meeting date and can be filtered to display votes based on vote type (yea, nay or absent). Search by document title, document number, ordinance number, or Council member.</p>"
+          content: "<p>Displaying @start - @end of @total.</p>\r\n\r\n<p>View Council voting history for ordinances, resolutions, and reports from January 6, 2021 to present. Votes are listed by most recent Council meeting date and can be filtered to display votes based on vote type (yea, nay or absent). Search by document title, document number, ordinance number, or voting member.</p>"
       display_extenders:
         metatag_display_extender:
           metatags: {  }
@@ -2130,10 +2272,10 @@ display:
         - url.query_args
         - user.permissions
       tags:
+        - 'config:field.storage.group.field_name'
         - 'config:field.storage.node.field_document_number'
         - 'config:field.storage.node.field_full_document_title'
         - 'config:field.storage.relation.field_council_agenda'
-        - 'config:field.storage.relation.field_council_member'
         - 'config:field.storage.relation.field_session_start_datetime'
         - 'config:field.storage.relation.field_voted_as_follows'
   page_votes_per_member:
@@ -2148,7 +2290,7 @@ display:
           id: id
           table: relation
           field: id
-          relationship: reverse__relation__field_votes
+          relationship: field_council_session
           group_type: group
           admin_label: ''
           entity_type: relation
@@ -2278,11 +2420,11 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: field
-          label: Agenda
-          exclude: false
+          label: ''
+          exclude: true
           alter:
             alter_text: true
-            text: "<a href=\"{{ field_council_agenda ? path('entity.node.canonical', { 'node': field_council_agenda }) : '' }}#relation-{{ id }}\">{{ field_session_start_datetime }}</a>"
+            text: "<h2><a href=\"{{ field_council_agenda ? path('entity.node.canonical', { 'node': field_council_agenda }) : '' }}#relation-{{ id }}\">{{ field_session_start_datetime }}</a></h2>"
             make_link: false
             path: ''
             absolute: false
@@ -2311,7 +2453,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -2387,6 +2529,69 @@ display:
           text: view
           output_url_as_text: true
           absolute: false
+        field_document_number:
+          id: field_document_number
+          table: node__field_document_number
+          field: field_document_number
+          relationship: field_council_document
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Doc number'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         field_full_document_title:
           id: field_full_document_title
           table: node__field_full_document_title
@@ -2501,69 +2706,6 @@ display:
           click_sort_column: value
           type: list_default
           settings: {  }
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        field_document_number:
-          id: field_document_number
-          table: node__field_document_number
-          field: field_document_number
-          relationship: field_council_document
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: false
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -2779,6 +2921,7 @@ display:
         title: false
         relationships: false
         fields: false
+        sorts: true
         arguments: false
         filters: false
         filter_groups: false
