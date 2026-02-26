@@ -75,7 +75,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       ],
     ];
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -122,7 +122,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $addressSuggest = array_key_exists('#address_suggest', $element) && strtolower($element['#address_suggest']) == "0" ? false : true;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_suggest'] = $addressSuggest;
 
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : $this->t("Verify");
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['verify_button_text'] = $verifyButtonText;
 
     $lookupTaxlot = array_key_exists('#lookup_taxlot', $element) && strtolower($element['#lookup_taxlot']) == 1;

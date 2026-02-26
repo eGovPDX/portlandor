@@ -283,11 +283,13 @@ build_and_deploy: &build_and_deploy
           else
             echo "There is no new translation config to be imported"
           fi
+
+          echo "Posting Solr schema..."
+          # Post our custom Solr schema to Pantheon's Solr server, retrying if it fails
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema ../private/solr-conf || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema ../private/solr-conf
+
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-
-          # Post our custom Solr schema to Pantheon's Solr server
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema pantheon_search ../private/solr-conf
 
           if [[ $CIRCLE_BRANCH != "master" ]]; then
             # Begin indexing the Solr server. For new multidevs, indexing will take some time
@@ -491,7 +493,7 @@ clone_live_database: &clone_live_database
     - run:
         name: Clone database from Live
         when: on_success
-        no_output_timeout: 45m # allow 45 minutes instead of 10 minute default for script to complete
+        no_output_timeout: 50m # allow 50 minutes instead of 10 minute default for script to complete
         command: |
           # On Master branch, clone to Dev
           if [[ $CIRCLE_BRANCH = "master" ]]; then
@@ -506,7 +508,8 @@ clone_live_database: &clone_live_database
 
           # Reindex the Solr server. Indexing will take some time
           # and will continue running after the CircleCI build finishes.
-          echo "Begin indexing the Solr server"
+          echo "Begin reindexing the Solr server"
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index &
           sleep 20
     - run:
@@ -567,7 +570,7 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1676
+                - pgov-1829
   # The update database workflow runs when the following scheduled pipelines run.
   # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
