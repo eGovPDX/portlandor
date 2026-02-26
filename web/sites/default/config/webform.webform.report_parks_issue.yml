@@ -29,685 +29,618 @@ title: 'Report a Park Safety Issue'
 description: ''
 categories: {  }
 elements: |-
-  user_role:
-    '#type': webform_computed_twig
-    '#title': 'User Role'
-    '#display_on': none
-    '#mode': text
-    '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
-    '#whitespace': spaceless
-  container_authenticated:
+  report_urgent:
+    '#type': radios
+    '#title': "Is this an urgent, life-threatening issue where someone is in danger or there is an active threat to someone's property?"
+    '#options': yes_no
+    '#options_display': side_by_side
+    '#required': true
+    '#default_value': 'No'
+  container_urgent:
     '#type': container
-    report_urgent:
+    '#states':
+      visible:
+        ':input[name="report_urgent"]':
+          value: 'Yes'
+    markup_urgent:
+      '#type': webform_markup
+      '#markup': '<div class="alert alert--warning next-steps"><p><strong>QUICKLY:</strong> Ask what''s happening &amp; which park location, instruct caller to hang up and call 911. Radio rangers with location. Complete this form with the information available.</p></div>'
+    report_911_notified:
       '#type': radios
-      '#title': "Is this an urgent, life-threatening issue where someone is in danger or there is an active threat to someone's property?"
-      '#options': yes_no
-      '#options_display': side_by_side
-      '#required': true
-      '#default_value': 'No'
-    container_urgent_agent:
-      '#type': container
+      '#title': 'Was 911 notified?'
       '#states':
         visible:
           ':input[name="report_urgent"]':
             value: 'Yes'
-      markup_urgent_staff:
-        '#type': webform_markup
-        '#access_create_roles':
-          - authenticated
-        '#markup': '<div class="alert alert--warning next-steps"><p><strong>QUICKLY:</strong> Ask what''s happening &amp; which park location, instruct caller to hang up and call 911. Radio rangers with location. Complete this form with the information available.</p></div>'
-      report_911_notified:
-        '#type': radios
-        '#title': 'Was 911 notified?'
-        '#states':
-          visible:
-            ':input[name="report_urgent"]':
-              value: 'Yes'
-        '#options':
-          'Yes, community member advised to contact 911': 'Yes, community member advised to contact 911'
-          'Yes, 311 staff contacted 911': 'Yes, 311 staff contacted 911'
-          'No': 'No'
-      report_staff_issue_type:
-        '#type': webform_radios_other
-        '#title': 'Type of fire or medical issue (if given)'
-        '#options':
-          'Medical assistance needed': 'Medical assistance needed'
-          Fires/Fireworks: 'Fires / Fireworks'
-          'Threatening behavior, weapon involved': 'Threatening behavior, weapon involved'
-          'Missing-separated person': 'Missing-separated person'
-          'Wellness check': 'Wellness check'
-          'Harassment or Bias': 'Harassment or Bias'
-          'Fire alarm going off': 'Fire alarm going off'
-        '#other__option_label': Other
-        '#access_create_roles':
-          - authenticated
-      urgent_location_details:
-        '#type': textarea
-        '#title': 'Location Details'
-        '#access_create_roles':
-          - authenticated
-      report_staff_incident_details:
-        '#type': textarea
-        '#title': 'Incident details'
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_name:
-        '#type': textfield
-        '#title': 'Contact Name'
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_telephone:
-        '#type': textfield
-        '#title': 'Contact Telephone'
-        '#description': 'Please provide the best telephone number to reach the requester. If the location is a community center, the best number may be an individual cell phone or direct line, not be the center&#39;s main contact phone number.'
-        '#description_display': before
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_telephone_instructions:
-        '#type': textfield
-        '#title': 'Telephone Instructions'
-        '#description': 'Please provide any additional instructions for reaching the requester, such as dialing an extension or navigating a phone tree.'
-        '#description_display': before
-        '#access_create_roles':
-          - authenticated
-      urgent_callback_requested:
-        '#type': checkbox
-        '#title': 'Callback requested'
-        '#access_create_roles':
-          - authenticated
-      urgent_submit:
-        '#type': webform_actions
-        '#title': Submit
-        '#access_create_roles':
-          - authenticated
-        '#submit__label': Submit
-        '#update_hide': true
-    container_not_urgent:
+      '#options':
+        'Yes, community member advised to contact 911': 'Yes, community member advised to contact 911'
+        'Yes, 311 staff contacted 911': 'Yes, 311 staff contacted 911'
+        'No': 'No'
+    report_staff_issue_type:
+      '#type': webform_radios_other
+      '#title': 'Type of fire or medical issue (if given)'
+      '#options':
+        'Medical assistance needed': 'Medical assistance needed'
+        Fires/Fireworks: 'Fires / Fireworks'
+        'Threatening behavior, weapon involved': 'Threatening behavior, weapon involved'
+        'Missing-separated person': 'Missing-separated person'
+        'Wellness check': 'Wellness check'
+        'Harassment or Bias': 'Harassment or Bias'
+        'Fire alarm going off': 'Fire alarm going off'
+      '#other__option_label': Other
+    urgent_location_details:
+      '#type': textarea
+      '#title': 'Location Details'
+    report_staff_incident_details:
+      '#type': textarea
+      '#title': 'Incident details'
+    urgent_contact_name:
+      '#type': textfield
+      '#title': 'Contact Name'
+    urgent_contact_telephone:
+      '#type': textfield
+      '#title': 'Contact Telephone'
+      '#description': 'Please provide the best telephone number to reach the requester. If the location is a community center, the best number may be an individual cell phone or direct line, not be the center&#39;s main contact phone number.'
+      '#description_display': before
+    urgent_contact_telephone_instructions:
+      '#type': textfield
+      '#title': 'Telephone Instructions'
+      '#description': 'Please provide any additional instructions for reaching the requester, such as dialing an extension or navigating a phone tree.'
+      '#description_display': before
+    urgent_callback_requested:
+      '#type': checkbox
+      '#title': 'Callback requested'
+    urgent_submit:
+      '#type': webform_actions
+      '#title': Submit
+      '#submit__label': Submit
+      '#update_hide': true
+  container_not_urgent:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_urgent"]':
+          value: 'No'
+    report_ada_issue:
+      '#type': radios
+      '#title': "Are you or someone you're representing experiencing a barrier to access or have an ADA concern?"
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+      '#default_value': 'No'
+    markup_ada:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_ada_issue"]':
+            value: 'Yes'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Next Steps</h2>
+
+        <p>Please fill out the City's <a href="/311/ada-request">ADA Accommodation Request form.</a></p>
+        </div>
+    container_not_ada:
       '#type': container
       '#states':
         visible:
-          ':input[name="report_urgent"]':
+          ':input[name="report_ada_issue"]':
             value: 'No'
-      report_ada_issue:
-        '#type': radios
-        '#title': "Are you or someone you're representing experiencing a barrier to access or have an ADA concern?"
-        '#options': yes_no
-        '#options_display': side_by_side
-        '#required': true
-        '#default_value': 'No'
-      markup_ada:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="report_ada_issue"]':
-              value: 'Yes'
-        '#markup': |-
-          <div class="alert alert--info next-steps">
-          <h2>Next Steps</h2>
-
-          <p>Please fill out the City's <a href="/311/ada-request">ADA Accommodation Request form.</a></p>
-          </div>
-      container_not_ada:
+      container_report:
         '#type': container
-        '#states':
-          visible:
-            ':input[name="report_ada_issue"]':
-              value: 'No'
-        container_report:
+        report_is_park:
+          '#type': radios
+          '#title': 'Is the issue at a park or natural area, or at a community center?'
+          '#options':
+            'Park or natural area': 'Park or natural area'
+            'Community center': 'Community center'
+          '#default_value': 'Park or natural area'
+        report_community_center:
+          '#type': select
+          '#title': 'Community Center'
+          '#options':
+            'Community Music Center': 'Community Music Center'
+            'Charles Jordan Community Center': 'Charles Jordan Community Center'
+            'East Portland Community Center': 'East Portland Community Center'
+            'Fulton Park Community Center': 'Fulton Park Community Center'
+            'Interstate Firehouse Cultural Center': 'Interstate Firehouse Cultural Center'
+            'Matt Dishman Community Center': 'Matt Dishman Community Center'
+            'Montavilla Community Center': 'Montavilla Community Center'
+            'Mt. Scott Community Center': 'Mt. Scott Community Center'
+            'Multnomah Arts Center': 'Multnomah Arts Center'
+            'Peninsula Park Community Center': 'Peninsula Park Community Center'
+            'Sellwood Community Center': 'Sellwood Community Center'
+            'Southwest Community Center': 'Southwest Community Center'
+            'St. Johns Community Center': 'St. Johns Community Center'
+            'Woodstock Community Center': 'Woodstock Community Center'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_is_park"]':
+                value: 'Community center'
+        report_location:
+          '#type': portland_location_picker
+          '#title': 'Location of Issue'
+          '#states':
+            visible:
+              ':input[name="report_is_park"]':
+                value: 'Park or natural area'
+          '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
+          '#place_name__title': 'Park Name'
+          '#location_details__type': textfield
+          '#place_name__description_display': invisible
+          '#require_boundary': false
+          '#display_boundary': false
+          '#location_details__maxlength': 500
+          '#primary_layer_behavior': informational
+          '#primary_layer_type': region-hidden
+          '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
+          '#region_id_property_name': Name
+        report_community_center_location_details:
+          '#type': textarea
+          '#title': 'Location Details'
+          '#description': '<p>Please describe where the problem is at the community center.</p>'
+          '#description_display': before
+          '#states':
+            visible:
+              ':input[name="report_is_park"]':
+                value: 'Community center'
+        report_comments:
+          '#type': textarea
+          '#title': 'Issue Description/Narrative'
+          '#maxlength': 400
+          '#counter_type': character
+          '#counter_maximum': 1000
+          '#states':
+            invisible:
+              ':input[name="report_urgent"]':
+                value: 'Yes'
+        report_issue_type:
+          '#type': webform_radios_other
+          '#title': 'What type of issue are you reporting?'
+          '#options':
+            'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
+            Camping: Camping
+            Graffiti: Graffiti
+            'Illegal activity': 'Illegal activity'
+            'Alarm going off (either audible or visual)': 'Alarm going off (either audible or visual)'
+            'Someone is locked in/out of a facility or needs an escort': 'Someone is locked in/out of a facility or needs an escort'
+            'Dog or animal related issue': 'Dog or animal related issue'
+            'Park rule violation': 'Park rule violation'
+            'Parking or traffic issue': 'Parking or traffic issue'
+            'Lost/Found property': 'Lost/Found property'
+            'Red Book Notification Procedure': 'Red Book Notification Procedure'
+            'Welfare Check': 'Welfare Check'
+            Electrical: Electrical
+          '#other__option_label': 'Something else...'
+          '#other__placeholder': 'Please describe'
+          '#required': true
+        maintenance_jump_button:
+          '#type': webform_computed_twig
+          '#title': 'Maintenance jump button'
+          '#title_display': none
+          '#states':
+            visible:
+              ':input[name="report_issue_type[radios]"]':
+                value: 'Maintenance or groundskeeping issue'
+          '#display_on': form
+          '#template': '<p><a href="/form/report-park-maintenance-issue?what_are_you_trying_to_report=Maintenance%20or%20groundskeeping%20issue&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&community_center_location_details={{ data.report_community_center_location_details }}&report_is_park={{ data.report_is_park }}&report_community_center={{ data.report_community_center }}&report_comments={{ data.report_comments }}" class="button button--primary">Continue</a></p>'
+          '#ajax': true
+        campsite_jump_button:
+          '#type': webform_computed_twig
+          '#title': 'Campsite jump button'
+          '#title_display': none
+          '#states':
+            visible:
+              ':input[name="report_issue_type[radios]"]':
+                value: Camping
+          '#display_on': form
+          '#template': |
+            {% set search = "" %}
+            {% set address = "" %}
+            {% set lat = "" %}
+            {% set lon = "" %}
+
+            {% if data.report_is_park == "Community center" %}
+              {% if data.report_community_center == "Community Music Center" %}
+                {% set address = "3350 SE Francis Street" %}
+                {% set lat = "45.494552" %}
+                {% set lon = "-122.630532" %}
+              {% elseif data.report_community_center == "Charles Jordan Community Center" %}
+                {% set address = "9009 N Foss Avenue" %}
+                {% set lat = "45.587687" %}
+                {% set lon = "-122.711366" %}
+              {% elseif data.report_community_center == "East Portland Community Center" %}
+                {% set address = "740 SE 106th Avenue" %}
+                {% set lat = "45.51579" %}
+                {% set lon = "-122.553191" %}
+              {% elseif data.report_community_center == "Matt Dishman Community Center" %}
+                {% set address = "77 NE Knott Street" %}
+                {% set lat = "45.542161" %}
+                {% set lon = "-122.665208" %}
+              {% elseif data.report_community_center == "Mt. Scott Community Center" %}
+                {% set address = "5530 SE 72nd Avenue" %}
+                {% set lat = "45.482342" %}
+                {% set lon = "-122.588616" %}
+              {% elseif data.report_community_center == "Multnomah Arts Center" %}
+                {% set address = "7688 SW Capitol Highway" %}
+                {% set lat = "45.467943" %}
+                {% set lon = "-122.710291" %}
+              {% elseif data.report_community_center == "Peninsula Park Community Center" %}
+                {% set address = "700 N Rosa Parks Way" %}
+                {% set lat = "45.569661" %}
+                {% set lon = "-122.673647" %}
+              {% elseif data.report_community_center == "Southwest Community Center" %}
+                {% set address = "6820 SW 45th Avenue" %}
+                {% set lat = "45.475818" %}
+                {% set lon = "-122.722099" %}
+              {% elseif data.report_community_center == "St. Johns Community Center" %}
+                {% set address = "8427 N Central Street" %}
+                {% set lat = "45.592196" %}
+                {% set lon = "-122.752177" %}
+              {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
+                {% set address = "5340 N Interstate Avenue" %}
+                {% set lat = "45.561755" %}
+                {% set lon = "-122.681942" %}
+              {% elseif data.report_community_center == "Montavilla Community Center" %}
+                {% set address = "8219 NE Glisan Street" %}
+                {% set lat = "45.526902" %}
+                {% set lon = "-122.578436" %}
+              {% elseif data.report_community_center == "Woodstock Community Center" %}
+                {% set address = "5905 SE 43rd Avenue" %}
+                {% set lat = "45.479767" %}
+                {% set lon = "-122.618853" %}
+              {% elseif data.report_community_center == "Fulton Park Community Center" %}
+                {% set address = "68 SW Miles Street" %}
+                {% set lat = "45.470962" %}
+                {% set lon = "-122.679004" %}
+              {% elseif data.report_community_center == "Sellwood Community Center" %}
+                {% set address = "1436 SE Spokane Street" %}
+                {% set lat = "45.464811" %}
+                {% set lon = "-122.65138" %}
+              {% endif %}
+              {% set search = data.report_community_center %}
+            {% else %}
+              {% set lat = data.report_location.location_lat %}
+              {% set lon = data.report_location.location_lon %}
+            {% endif %}
+
+            <p><a href="/form/report-campsite?report_location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_comments }}&report_location[place_name]={{ data.report_location.location_details }}{{ data.report_community_center_location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
+          '#ajax': true
+        graffiti_jump_button:
+          '#type': webform_computed_twig
+          '#title': 'Graffiti jump button'
+          '#title_display': none
+          '#states':
+            visible:
+              ':input[name="report_issue_type[radios]"]':
+                value: Graffiti
+          '#display_on': form
+          '#template': |
+            {% set search = "" %}
+            {% set address = "" %}
+            {% set lat = "" %}
+            {% set lon = "" %}
+
+            {% if data.report_is_park == "Community center" %}
+              {% if data.report_community_center == "Community Music Center" %}
+                {% set address = "3350 SE Francis Street" %}
+                {% set lat = "45.494552" %}
+                {% set lon = "-122.630532" %}
+              {% elseif data.report_community_center == "Charles Jordan Community Center" %}
+                {% set address = "9009 N Foss Avenue" %}
+                {% set lat = "45.587687" %}
+                {% set lon = "-122.711366" %}
+              {% elseif data.report_community_center == "East Portland Community Center" %}
+                {% set address = "740 SE 106th Avenue" %}
+                {% set lat = "45.51579" %}
+                {% set lon = "-122.553191" %}
+              {% elseif data.report_community_center == "Matt Dishman Community Center" %}
+                {% set address = "77 NE Knott Street" %}
+                {% set lat = "45.542161" %}
+                {% set lon = "-122.665208" %}
+              {% elseif data.report_community_center == "Mt. Scott Community Center" %}
+                {% set address = "5530 SE 72nd Avenue" %}
+                {% set lat = "45.482342" %}
+                {% set lon = "-122.588616" %}
+              {% elseif data.report_community_center == "Multnomah Arts Center" %}
+                {% set address = "7688 SW Capitol Highway" %}
+                {% set lat = "45.467943" %}
+                {% set lon = "-122.710291" %}
+              {% elseif data.report_community_center == "Peninsula Park Community Center" %}
+                {% set address = "700 N Rosa Parks Way" %}
+                {% set lat = "45.569661" %}
+                {% set lon = "-122.673647" %}
+              {% elseif data.report_community_center == "Southwest Community Center" %}
+                {% set address = "6820 SW 45th Avenue" %}
+                {% set lat = "45.475818" %}
+                {% set lon = "-122.722099" %}
+              {% elseif data.report_community_center == "St. Johns Community Center" %}
+                {% set address = "8427 N Central Street" %}
+                {% set lat = "45.592196" %}
+                {% set lon = "-122.752177" %}
+              {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
+                {% set address = "5340 N Interstate Avenue" %}
+                {% set lat = "45.561755" %}
+                {% set lon = "-122.681942" %}
+              {% elseif data.report_community_center == "Montavilla Community Center" %}
+                {% set address = "8219 NE Glisan Street" %}
+                {% set lat = "45.526902" %}
+                {% set lon = "-122.578436" %}
+              {% elseif data.report_community_center == "Woodstock Community Center" %}
+                {% set address = "5905 SE 43rd Avenue" %}
+                {% set lat = "45.479767" %}
+                {% set lon = "-122.618853" %}
+              {% elseif data.report_community_center == "Fulton Park Community Center" %}
+                {% set address = "68 SW Miles Street" %}
+                {% set lat = "45.470962" %}
+                {% set lon = "-122.679004" %}
+              {% elseif data.report_community_center == "Sellwood Community Center" %}
+                {% set address = "1436 SE Spokane Street" %}
+                {% set lat = "45.464811" %}
+                {% set lon = "-122.65138" %}
+              {% endif %}
+              {% set search = data.report_community_center %}
+            {% else %}
+              {% set lat = data.report_location.location_lat %}
+              {% set lon = data.report_location.location_lon %}
+            {% endif %}
+
+            <p><a href="/form/report-graffiti?location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_location.location_details }}{{ data.report_community_center_location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
+          '#ajax': true
+        markup_call_rangers:
+          '#type': webform_markup
+          '#states':
+            visible:
+              - ':input[name="report_issue_type[radios]"]':
+                  value: 'Alarm going off'
+              - or
+              - ':input[name="report_issue_type[radios]"]':
+                  value: 'Someone is locked in/out of a facility or needs an escort'
+          '#markup': |-
+            <div class="alert alert--warning next-steps">
+            <h2>Next Steps</h2>
+
+            <p>Please report this issue directly to Park Rangers via phone so we can respond to the issue as quickly as possible. Call <strong><a href="tel:503-823-1637">503-823-1637.</a></strong></p>
+
+            <p>After hours, contact Portland Police at <a href="tel:503-823-3333">503-823-3333.</a></p>
+            </div>
+        container_not_rec_center:
           '#type': container
-          report_is_park:
-            '#type': radios
-            '#title': 'Is the issue at a park or natural area, or at a community center?'
-            '#options':
-              'Park or natural area': 'Park or natural area'
-              'Community center': 'Community center'
-            '#default_value': 'Park or natural area'
-          report_community_center:
-            '#type': select
-            '#title': 'Community Center'
-            '#options':
-              'Community Music Center': 'Community Music Center'
-              'Charles Jordan Community Center': 'Charles Jordan Community Center'
-              'East Portland Community Center': 'East Portland Community Center'
-              'Fulton Park Community Center': 'Fulton Park Community Center'
-              'Interstate Firehouse Cultural Center': 'Interstate Firehouse Cultural Center'
-              'Matt Dishman Community Center': 'Matt Dishman Community Center'
-              'Montavilla Community Center': 'Montavilla Community Center'
-              'Mt. Scott Community Center': 'Mt. Scott Community Center'
-              'Multnomah Arts Center': 'Multnomah Arts Center'
-              'Peninsula Park Community Center': 'Peninsula Park Community Center'
-              'Sellwood Community Center': 'Sellwood Community Center'
-              'Southwest Community Center': 'Southwest Community Center'
-              'St. Johns Community Center': 'St. Johns Community Center'
-              'Woodstock Community Center': 'Woodstock Community Center'
+          '#states':
+            visible:
+              ':input[name="report_issue_type[radios]"]':
+                value:
+                  '!pattern': 'Camping|Maintenance or groundskeeping issue|Graffiti'
+          report_lost_found_property_description:
+            '#type': textfield
+            '#title': 'Please describe the lost/found property.'
             '#required': true
             '#states':
               visible:
-                ':input[name="report_is_park"]':
-                  value: 'Community center'
-          report_location:
-            '#type': portland_location_picker
-            '#title': 'Location of Issue'
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Lost/Found property'
+          report_staff_building_or_gate:
+            '#type': textfield
+            '#title': 'Which building or gate?'
+            '#required': true
             '#states':
               visible:
-                ':input[name="report_is_park"]':
-                  value: 'Park or natural area'
-            '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
-            '#place_name__title': 'Park Name'
-            '#location_details__type': textfield
-            '#place_name__description_display': invisible
-            '#require_boundary': false
-            '#display_boundary': false
-            '#location_details__maxlength': 500
-            '#primary_layer_behavior': informational
-            '#primary_layer_type': region-hidden
-            '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
-            '#region_id_property_name': Name
-          report_community_center_location_details:
-            '#type': textarea
-            '#title': 'Location Details'
-            '#description': '<p>Please describe where the problem is at the community center.</p>'
-            '#description_display': before
-            '#states':
-              visible:
-                ':input[name="report_is_park"]':
-                  value: 'Community center'
-          report_comments:
-            '#type': textarea
-            '#title': 'Issue Description/Narrative'
-            '#maxlength': 400
-            '#counter_type': character
-            '#counter_maximum': 1000
-            '#states':
-              invisible:
-                ':input[name="report_urgent"]':
-                  value: 'Yes'
-          report_issue_type:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Someone is locked in/out of a facility or needs an escort'
+          report_staff_issue_type_illegal:
             '#type': webform_radios_other
-            '#title': 'What type of issue are you reporting?'
+            '#title': 'Type of illegal activity'
             '#options':
-              'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
-              Camping: Camping
+              'Disorderly conduct or nuisance behavior (no threats/weapons)': 'Disorderly conduct or nuisance behavior (no threats/weapons)'
+              'Crimes / PPB issues': 'Crimes / PPB issues'
+              'Fires / Fireworks': 'Fires / Fireworks'
+              'Vehicle break-in or damage': 'Vehicle break-in or damage'
+              'Damage or Vandalism': 'Damage or Vandalism'
               Graffiti: Graffiti
-              'Illegal activity': 'Illegal activity'
-              'Alarm going off (either audible or visual)': 'Alarm going off (either audible or visual)'
-              'Someone is locked in/out of a facility or needs an escort': 'Someone is locked in/out of a facility or needs an escort'
-              'Dog or animal related issue': 'Dog or animal related issue'
-              'Park rule violation': 'Park rule violation'
-              'Parking or traffic issue': 'Parking or traffic issue'
-              'Lost/Found property': 'Lost/Found property'
-              'Red Book Notification Procedure': 'Red Book Notification Procedure'
-              'Welfare Check': 'Welfare Check'
-              Electrical: Electrical
-            '#other__option_label': 'Something else...'
-            '#other__placeholder': 'Please describe'
-            '#required': true
-          maintenance_jump_button:
-            '#type': webform_computed_twig
-            '#title': 'Maintenance jump button'
-            '#title_display': none
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value: 'Maintenance or groundskeeping issue'
-            '#display_on': form
-            '#template': '<p><a href="/form/report-park-maintenance-issue?what_are_you_trying_to_report=Maintenance%20or%20groundskeeping%20issue&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&community_center_location_details={{ data.report_community_center_location_details }}&report_is_park={{ data.report_is_park }}&report_community_center={{ data.report_community_center }}&report_comments={{ data.report_comments }}" class="button button--primary">Continue</a></p>'
-            '#ajax': true
-          campsite_jump_button:
-            '#type': webform_computed_twig
-            '#title': 'Campsite jump button'
-            '#title_display': none
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value: Camping
-            '#display_on': form
-            '#template': |
-              {% set search = "" %}
-              {% set address = "" %}
-              {% set lat = "" %}
-              {% set lon = "" %}
-
-              {% if data.report_is_park == "Community center" %}
-                {% if data.report_community_center == "Community Music Center" %}
-                  {% set address = "3350 SE Francis Street" %}
-                  {% set lat = "45.494552" %}
-                  {% set lon = "-122.630532" %}
-                {% elseif data.report_community_center == "Charles Jordan Community Center" %}
-                  {% set address = "9009 N Foss Avenue" %}
-                  {% set lat = "45.587687" %}
-                  {% set lon = "-122.711366" %}
-                {% elseif data.report_community_center == "East Portland Community Center" %}
-                  {% set address = "740 SE 106th Avenue" %}
-                  {% set lat = "45.51579" %}
-                  {% set lon = "-122.553191" %}
-                {% elseif data.report_community_center == "Matt Dishman Community Center" %}
-                  {% set address = "77 NE Knott Street" %}
-                  {% set lat = "45.542161" %}
-                  {% set lon = "-122.665208" %}
-                {% elseif data.report_community_center == "Mt. Scott Community Center" %}
-                  {% set address = "5530 SE 72nd Avenue" %}
-                  {% set lat = "45.482342" %}
-                  {% set lon = "-122.588616" %}
-                {% elseif data.report_community_center == "Multnomah Arts Center" %}
-                  {% set address = "7688 SW Capitol Highway" %}
-                  {% set lat = "45.467943" %}
-                  {% set lon = "-122.710291" %}
-                {% elseif data.report_community_center == "Peninsula Park Community Center" %}
-                  {% set address = "700 N Rosa Parks Way" %}
-                  {% set lat = "45.569661" %}
-                  {% set lon = "-122.673647" %}
-                {% elseif data.report_community_center == "Southwest Community Center" %}
-                  {% set address = "6820 SW 45th Avenue" %}
-                  {% set lat = "45.475818" %}
-                  {% set lon = "-122.722099" %}
-                {% elseif data.report_community_center == "St. Johns Community Center" %}
-                  {% set address = "8427 N Central Street" %}
-                  {% set lat = "45.592196" %}
-                  {% set lon = "-122.752177" %}
-                {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
-                  {% set address = "5340 N Interstate Avenue" %}
-                  {% set lat = "45.561755" %}
-                  {% set lon = "-122.681942" %}
-                {% elseif data.report_community_center == "Montavilla Community Center" %}
-                  {% set address = "8219 NE Glisan Street" %}
-                  {% set lat = "45.526902" %}
-                  {% set lon = "-122.578436" %}
-                {% elseif data.report_community_center == "Woodstock Community Center" %}
-                  {% set address = "5905 SE 43rd Avenue" %}
-                  {% set lat = "45.479767" %}
-                  {% set lon = "-122.618853" %}
-                {% elseif data.report_community_center == "Fulton Park Community Center" %}
-                  {% set address = "68 SW Miles Street" %}
-                  {% set lat = "45.470962" %}
-                  {% set lon = "-122.679004" %}
-                {% elseif data.report_community_center == "Sellwood Community Center" %}
-                  {% set address = "1436 SE Spokane Street" %}
-                  {% set lat = "45.464811" %}
-                  {% set lon = "-122.65138" %}
-                {% endif %}
-                {% set search = data.report_community_center %}
-              {% else %}
-                {% set lat = data.report_location.location_lat %}
-                {% set lon = data.report_location.location_lon %}
-              {% endif %}
-
-              <p><a href="/form/report-campsite?report_location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_comments }}&report_location[place_name]={{ data.report_location.location_details }}{{ data.report_community_center_location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
-            '#ajax': true
-          graffiti_jump_button:
-            '#type': webform_computed_twig
-            '#title': 'Graffiti jump button'
-            '#title_display': none
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value: Graffiti
-            '#display_on': form
-            '#template': |
-              {% set search = "" %}
-              {% set address = "" %}
-              {% set lat = "" %}
-              {% set lon = "" %}
-
-              {% if data.report_is_park == "Community center" %}
-                {% if data.report_community_center == "Community Music Center" %}
-                  {% set address = "3350 SE Francis Street" %}
-                  {% set lat = "45.494552" %}
-                  {% set lon = "-122.630532" %}
-                {% elseif data.report_community_center == "Charles Jordan Community Center" %}
-                  {% set address = "9009 N Foss Avenue" %}
-                  {% set lat = "45.587687" %}
-                  {% set lon = "-122.711366" %}
-                {% elseif data.report_community_center == "East Portland Community Center" %}
-                  {% set address = "740 SE 106th Avenue" %}
-                  {% set lat = "45.51579" %}
-                  {% set lon = "-122.553191" %}
-                {% elseif data.report_community_center == "Matt Dishman Community Center" %}
-                  {% set address = "77 NE Knott Street" %}
-                  {% set lat = "45.542161" %}
-                  {% set lon = "-122.665208" %}
-                {% elseif data.report_community_center == "Mt. Scott Community Center" %}
-                  {% set address = "5530 SE 72nd Avenue" %}
-                  {% set lat = "45.482342" %}
-                  {% set lon = "-122.588616" %}
-                {% elseif data.report_community_center == "Multnomah Arts Center" %}
-                  {% set address = "7688 SW Capitol Highway" %}
-                  {% set lat = "45.467943" %}
-                  {% set lon = "-122.710291" %}
-                {% elseif data.report_community_center == "Peninsula Park Community Center" %}
-                  {% set address = "700 N Rosa Parks Way" %}
-                  {% set lat = "45.569661" %}
-                  {% set lon = "-122.673647" %}
-                {% elseif data.report_community_center == "Southwest Community Center" %}
-                  {% set address = "6820 SW 45th Avenue" %}
-                  {% set lat = "45.475818" %}
-                  {% set lon = "-122.722099" %}
-                {% elseif data.report_community_center == "St. Johns Community Center" %}
-                  {% set address = "8427 N Central Street" %}
-                  {% set lat = "45.592196" %}
-                  {% set lon = "-122.752177" %}
-                {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
-                  {% set address = "5340 N Interstate Avenue" %}
-                  {% set lat = "45.561755" %}
-                  {% set lon = "-122.681942" %}
-                {% elseif data.report_community_center == "Montavilla Community Center" %}
-                  {% set address = "8219 NE Glisan Street" %}
-                  {% set lat = "45.526902" %}
-                  {% set lon = "-122.578436" %}
-                {% elseif data.report_community_center == "Woodstock Community Center" %}
-                  {% set address = "5905 SE 43rd Avenue" %}
-                  {% set lat = "45.479767" %}
-                  {% set lon = "-122.618853" %}
-                {% elseif data.report_community_center == "Fulton Park Community Center" %}
-                  {% set address = "68 SW Miles Street" %}
-                  {% set lat = "45.470962" %}
-                  {% set lon = "-122.679004" %}
-                {% elseif data.report_community_center == "Sellwood Community Center" %}
-                  {% set address = "1436 SE Spokane Street" %}
-                  {% set lat = "45.464811" %}
-                  {% set lon = "-122.65138" %}
-                {% endif %}
-                {% set search = data.report_community_center %}
-              {% else %}
-                {% set lat = data.report_location.location_lat %}
-                {% set lon = data.report_location.location_lon %}
-              {% endif %}
-
-              <p><a href="/form/report-graffiti?location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_location.location_details }}{{ data.report_community_center_location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
-            '#ajax': true
-          markup_call_ppb:
-            '#type': webform_markup
+              'Hate crime': 'Hate crime'
+            '#other__option_label': Other
             '#states':
               visible:
                 ':input[name="report_issue_type[radios]"]':
                   value: 'Illegal activity'
-                ':input[name="hidden_logged_in_user_email"]':
-                  value:
-                    pattern: '(.|\s)*\S(.|\s)*'
-            '#access_create_roles':
-              - anonymous
-            '#markup': |-
-              <div class="alert alert--warning next-steps">
-              <h2>Next Steps</h2>
-
-              <p>This issue may require police assistance. If your issue is about illegal activity involving drugs, weapons, or threats, please call Portland Police at <a href="tel:503-823-3333">503-823-3333.</a></p>
-
-              <p>Otherwise, please select 'Park rule violation' instead.</p>
-              </div>
-          markup_call_rangers:
+          report_hate_speech_or_gang:
+            '#type': radios
+            '#title': 'Is this graffiti hate speech or gang related?'
+            '#options':
+              'Yes': 'Yes'
+              'No': 'No'
+              'Not sure': 'Not sure'
+            '#options_display': side_by_side
+            '#required': true
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Illegal activity'
+                ':input[name="report_staff_issue_type_illegal[radios]"]':
+                  value: Graffiti
+          markup_illegal_staff:
             '#type': webform_markup
             '#states':
               visible:
-                - ':input[name="report_issue_type[radios]"]':
-                    value: 'Alarm going off'
-                  ':input[name="user_role"]':
-                    value: anonymous
+                - ':input[name="report_staff_issue_type_illegal[radios]"]':
+                    value: 'Crimes / PPB issues'
                 - or
-                - ':input[name="report_issue_type[radios]"]':
-                    value: 'Someone is locked in/out of a facility or needs an escort'
-                  ':input[name="user_role"]':
-                    value: anonymous
+                - ':input[name="report_staff_issue_type_illegal[radios]"]':
+                    value: 'Vehicle break-in or damage'
             '#markup': |-
               <div class="alert alert--warning next-steps">
-              <h2>Next Steps</h2>
-
-              <p>Please report this issue directly to Park Rangers via phone so we can respond to the issue as quickly as possible. Call <strong><a href="tel:503-823-1637">503-823-1637.</a></strong></p>
-
-              <p>After hours, contact Portland Police at <a href="tel:503-823-3333">503-823-3333.</a></p>
+              <p>Refer caller to Portland Police online reporting (www.portland.gov/police/cor) or non-emergency line (503-823-3333). Call can still be entered for Rangers.</p>
               </div>
-          container_not_rec_center:
+          report_staff_issue_type_alarm:
+            '#type': radios
+            '#title': 'Type of alarm'
+            '#options':
+              'Building - fire alarm': 'Building - fire alarm'
+              'Building - security alarm': 'Building - security alarm'
+              'Building - other type of alarm (e.g. door held open)': 'Building - other type of alarm (e.g. door held open)'
+              'Service box (pump box, electrical box)': 'Service box (pump box, electrical box)'
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Alarm going off'
+          report_issue_type_dog_animal:
+            '#type': webform_checkboxes_other
+            '#title': 'Type of dog or animal issue'
+            '#options':
+              'Dog off-leash': 'Dog off-leash'
+              'Aggressive dog/animal': 'Aggressive dog/animal'
+              'Aggressive dog owner': 'Aggressive dog owner'
+              'Scoop law': 'Scoop law'
+              'Animal in vehicle': 'Animal in vehicle'
+              'Lost dog': 'Lost dog'
+            '#other__option_label': 'Something else...'
+            '#other__placeholder': 'Please describe...'
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Dog or animal related issue'
+          computed_animal_issue:
+            '#type': webform_computed_twig
+            '#title': 'Computed animal issue'
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Dog or animal related issue'
+            '#display_on': none
+            '#template': "{{ webform_token('[webform_submission:values:report_issue_type_dog_animal]', webform_submission) }}"
+            '#whitespace': spaceless
+            '#ajax': true
+          markup_animal_staff:
+            '#type': webform_markup
+            '#states':
+              visible:
+                - ':input[name="report_issue_type_dog_animal[checkboxes][Aggressive dog/animal]"]':
+                    checked: true
+                - or
+                - ':input[name="report_issue_type_dog_animal[checkboxes][Animal in vehicle]"]':
+                    checked: true
+            '#markup': |-
+              <div class="alert alert--warning next-steps">
+              <p><strong>Ask:</strong> Have you notified Multnomah County Animal Services? If no, refer caller to MultCo Animal Services after entering call for Rangers.</p>
+
+              <p>"We will let Rangers know, but we also need to contact Animal Services so they can assist with this issue as well"</p>
+              </div>
+          report_issue_type_policy:
+            '#type': webform_checkboxes_other
+            '#title': 'Type of policy violation or issue'
+            '#options':
+              'Skateboards / Scooters': 'Skateboards / Scooters'
+              'Permit issues (picnic, events, field reservations)': 'Permit issues (picnic, events, field reservations)'
+              'Smoking / Vaping': 'Smoking / Vaping'
+              'Drugs or Alcohol use': 'Drugs or Alcohol use'
+              Noise: Noise
+              'Trash / Illegal dumping': 'Trash / Illegal dumping'
+              'Trespassing / Park closure': 'Trespassing / Park closure'
+              'Restroom issue': 'Restroom issue'
+              'Nuisance / Disorderly behavior': 'Nuisance / Disorderly behavior'
+              'Indecent exposure': 'Indecent exposure'
+              'Excluded individual in park': 'Excluded individual in park'
+              Structure: Structure
+            '#other__option_label': 'Something else...'
+            '#other__placeholder': 'Please describe...'
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Park rule violation'
+          computed_policy_violation:
+            '#type': webform_computed_twig
+            '#title': 'Computed policy violation'
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Park rule violation'
+            '#display_on': none
+            '#template': "{{ webform_token('[webform_submission:values:report_issue_type_policy]', webform_submission) }}"
+            '#whitespace': spaceless
+            '#ajax': true
+          report_issue_type_parking_traffic:
+            '#type': webform_radios_other
+            '#title': 'Type of parking or traffic issue'
+            '#options':
+              'Parking meters': 'Parking meters'
+              'Traffic issues': 'Traffic issues'
+              'Abandoned vehicle': 'Abandoned vehicle'
+              'Illegally parked vehicle': 'Illegally parked vehicle'
+            '#other__option_label': Other
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Parking or traffic issue'
+          container_submit:
             '#type': container
             '#states':
               visible:
                 ':input[name="report_issue_type[radios]"]':
                   value:
-                    '!pattern': 'Camping|Maintenance or groundskeeping issue|Graffiti'
-            report_lost_found_property_description:
-              '#type': textfield
-              '#title': 'Please describe the lost/found property.'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Lost/Found property'
-            report_staff_building_or_gate:
-              '#type': textfield
-              '#title': 'Which building or gate?'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Someone is locked in/out of a facility or needs an escort'
+                    '!pattern': camping
+            report_photo:
+              '#type': webform_image_file
+              '#title': Photo
+              '#description': 'If appropriate, please include a photo of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
+              '#description_display': before
+              '#file_preview': 'medium:image'
+              '#max_filesize': '30'
+              '#file_extensions': 'gif jpg png svg jpeg'
+              '#file_name': 'report_[webform_submission:uuid]'
+              '#sanitize': true
+              '#max_resolution': 1280x1280
+              '#attachment_image_style': webform_report_uploaded_image
+            section_contact:
+              '#type': webform_section
+              '#title': 'Contact Information'
+              container_contact:
+                '#type': container
+                contact_name:
+                  '#type': textfield
+                  '#title': Name
+                contact_email:
+                  '#type': textfield
+                  '#title': Email
+                  '#description': '<p>We will use your email to respond to your feedback or request.</p>'
+                  '#input_mask': "'alias': 'email'"
+                contact_telephone:
+                  '#type': textfield
+                  '#title': Telephone
+                  '#input_mask': '(999) 999-9999'
+                contact_telephone_instructions:
+                  '#type': textfield
+                  '#title': 'Telephone Instructions'
+                  '#description': 'Please provide any additional instructions for reaching you by phone, such as dialing an extension or navigating a phone tree.'
+                  '#description_display': before
+                contact_callback_requested:
+                  '#type': checkbox
+                  '#title': 'Callback requested'
+            section_public_records_statement:
+              '#type': webform_section
+              '#title': 'Public Records Statement'
+              public_records_statement_standard:
+                '#type': webform_markup
+                '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+            support_agent_use_only:
+              '#type': portland_support_agent_widget
+              '#title': 'Customer Service Use Only'
               '#access_create_roles':
                 - authenticated
-            report_staff_issue_type_illegal:
-              '#type': webform_radios_other
-              '#title': 'Type of illegal activity'
-              '#options':
-                'Disorderly conduct or nuisance behavior (no threats/weapons)': 'Disorderly conduct or nuisance behavior (no threats/weapons)'
-                'Crimes / PPB issues': 'Crimes / PPB issues'
-                'Fires / Fireworks': 'Fires / Fireworks'
-                'Vehicle break-in or damage': 'Vehicle break-in or damage'
-                'Damage or Vandalism': 'Damage or Vandalism'
-                Graffiti: Graffiti
-                'Hate crime': 'Hate crime'
-              '#other__option_label': Other
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Illegal activity'
-              '#access_create_roles':
-                - authenticated
-            report_hate_speech_or_gang:
-              '#type': radios
-              '#title': 'Is this graffiti hate speech or gang related?'
-              '#options':
-                'Yes': 'Yes'
-                'No': 'No'
-                'Not sure': 'Not sure'
-              '#options_display': side_by_side
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Illegal activity'
-                  ':input[name="report_staff_issue_type_illegal[radios]"]':
-                    value: Graffiti
-            markup_illegal_staff:
-              '#type': webform_markup
-              '#access_create_roles':
-                - authenticated
-              '#states':
-                visible:
-                  - ':input[name="report_staff_issue_type_illegal[radios]"]':
-                      value: 'Crimes / PPB issues'
-                  - or
-                  - ':input[name="report_staff_issue_type_illegal[radios]"]':
-                      value: 'Vehicle break-in or damage'
-              '#markup': |-
-                <div class="alert alert--warning next-steps">
-                <p>Refer caller to Portland Police online reporting (www.portland.gov/police/cor) or non-emergency line (503-823-3333). Call can still be entered for Rangers.</p>
-                </div>
-            report_staff_issue_type_alarm:
-              '#type': radios
-              '#title': 'Type of alarm'
-              '#options':
-                'Building - fire alarm': 'Building - fire alarm'
-                'Building - security alarm': 'Building - security alarm'
-                'Building - other type of alarm (e.g. door held open)': 'Building - other type of alarm (e.g. door held open)'
-                'Service box (pump box, electrical box)': 'Service box (pump box, electrical box)'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Alarm going off'
-              '#access_create_roles':
-                - authenticated
-            report_issue_type_dog_animal:
-              '#type': webform_checkboxes_other
-              '#title': 'Type of dog or animal issue'
-              '#options':
-                'Dog off-leash': 'Dog off-leash'
-                'Aggressive dog/animal': 'Aggressive dog/animal'
-                'Aggressive dog owner': 'Aggressive dog owner'
-                'Scoop law': 'Scoop law'
-                'Animal in vehicle': 'Animal in vehicle'
-                'Lost dog': 'Lost dog'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe...'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Dog or animal related issue'
-            computed_animal_issue:
-              '#type': webform_computed_twig
-              '#title': 'Computed animal issue'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Dog or animal related issue'
-              '#display_on': none
-              '#template': "{{ webform_token('[webform_submission:values:report_issue_type_dog_animal]', webform_submission) }}"
-              '#whitespace': spaceless
-              '#ajax': true
-            markup_animal_staff:
-              '#type': webform_markup
-              '#states':
-                visible:
-                  - ':input[name="report_issue_type_dog_animal[checkboxes][Aggressive dog/animal]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_issue_type_dog_animal[checkboxes][Animal in vehicle]"]':
-                      checked: true
-              '#access_create_roles':
-                - authenticated
-              '#markup': |-
-                <div class="alert alert--warning next-steps">
-                <p><strong>Ask:</strong> Have you notified Multnomah County Animal Services? If no, refer caller to MultCo Animal Services after entering call for Rangers.</p>
-
-                <p>"We will let Rangers know, but we also need to contact Animal Services so they can assist with this issue as well"</p>
-                </div>
-            report_issue_type_policy:
-              '#type': webform_checkboxes_other
-              '#title': 'Type of policy violation or issue'
-              '#options':
-                'Skateboards / Scooters': 'Skateboards / Scooters'
-                'Permit issues (picnic, events, field reservations)': 'Permit issues (picnic, events, field reservations)'
-                'Smoking / Vaping': 'Smoking / Vaping'
-                'Drugs or Alcohol use': 'Drugs or Alcohol use'
-                Noise: Noise
-                'Trash / Illegal dumping': 'Trash / Illegal dumping'
-                'Trespassing / Park closure': 'Trespassing / Park closure'
-                'Restroom issue': 'Restroom issue'
-                'Nuisance / Disorderly behavior': 'Nuisance / Disorderly behavior'
-                'Indecent exposure': 'Indecent exposure'
-                'Excluded individual in park': 'Excluded individual in park'
-                Structure: Structure
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe...'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Park rule violation'
-            computed_policy_violation:
-              '#type': webform_computed_twig
-              '#title': 'Computed policy violation'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Park rule violation'
-              '#display_on': none
-              '#template': "{{ webform_token('[webform_submission:values:report_issue_type_policy]', webform_submission) }}"
-              '#whitespace': spaceless
-              '#ajax': true
-            report_issue_type_parking_traffic:
-              '#type': webform_radios_other
-              '#title': 'Type of parking or traffic issue'
-              '#options':
-                'Parking meters': 'Parking meters'
-                'Traffic issues': 'Traffic issues'
-                'Abandoned vehicle': 'Abandoned vehicle'
-                'Illegally parked vehicle': 'Illegally parked vehicle'
-              '#other__option_label': Other
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Parking or traffic issue'
-            container_submit:
-              '#type': container
-              '#states':
-                visible:
-                  - ':input[name="user_role"]':
-                      value: authenticated
-                  - or
-                  - ':input[name="report_issue_type[radios]"]':
-                      value:
-                        '!pattern': camping
-              report_photo:
-                '#type': webform_image_file
-                '#title': Photo
-                '#description': 'If appropriate, please include a photo of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
-                '#description_display': before
-                '#file_preview': 'medium:image'
-                '#max_filesize': '30'
-                '#file_extensions': 'gif jpg png svg jpeg'
-                '#file_name': 'report_[webform_submission:uuid]'
-                '#sanitize': true
-                '#max_resolution': 1280x1280
-                '#attachment_image_style': webform_report_uploaded_image
-              section_contact:
-                '#type': webform_section
-                '#title': 'Contact Information'
-                container_contact:
-                  '#type': container
-                  contact_name:
-                    '#type': textfield
-                    '#title': Name
-                  contact_email:
-                    '#type': textfield
-                    '#title': Email
-                    '#description': '<p>We will use your email to respond to your feedback or request.</p>'
-                    '#input_mask': "'alias': 'email'"
-                    '#states':
-                      required:
-                        ':input[name="user_role"]':
-                          value: anonymous
-                  contact_telephone:
-                    '#type': textfield
-                    '#title': Telephone
-                    '#input_mask': '(999) 999-9999'
-                  contact_telephone_instructions:
-                    '#type': textfield
-                    '#title': 'Telephone Instructions'
-                    '#description': 'Please provide any additional instructions for reaching you by phone, such as dialing an extension or navigating a phone tree.'
-                    '#description_display': before
-                  contact_callback_requested:
-                    '#type': checkbox
-                    '#title': 'Callback requested'
-              section_public_records_statement:
-                '#type': webform_section
-                '#title': 'Public Records Statement'
-                public_records_statement_standard:
-                  '#type': webform_markup
-                  '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
-              support_agent_use_only:
-                '#type': portland_support_agent_widget
-                '#title': 'Customer Service Use Only'
-                '#access_create_roles':
-                  - authenticated
-                '#access_update_roles':
-                  - support_agent
-                  - administrator
-                '#access_view_roles':
-                  - support_agent
-                  - administrator
-                '#employee_notes_panel__access': false
-                '#escalate_issue__description': '<strong>311 CSRs: ALWAYS CHECK THIS BOX. The report will be sent to Rangers supervisors since Ranger Dispatch is unavailable.</strong>'
-                '#employee_email__wrapper_attributes':
-                  class:
-                    - d-none
-              actions:
-                '#type': webform_actions
-                '#title': 'Submit button(s)'
+              '#access_update_roles':
+                - support_agent
+                - administrator
+              '#access_view_roles':
+                - support_agent
+                - administrator
+              '#employee_notes_panel__access': false
+              '#escalate_issue__description': '<strong>311 CSRs: ALWAYS CHECK THIS BOX. The report will be sent to Rangers supervisors since Ranger Dispatch is unavailable.</strong>'
+              '#employee_email__wrapper_attributes':
+                class:
+                  - d-none
+            actions:
+              '#type': webform_actions
+              '#title': 'Submit button(s)'
   computed_priority:
     '#type': webform_computed_twig
     '#title': 'Computed Priority'
@@ -759,10 +692,6 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
-  hidden_logged_in_user_email:
-    '#type': hidden
-    '#title': 'Logged In User Email'
-    '#default_value': '[current-user:mail]'
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -775,13 +704,6 @@ elements: |-
       Ranger Request: {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}
       {% endif %}
     '#whitespace': trim
-    '#ajax': true
-  computed_tags:
-    '#type': webform_computed_token
-    '#title': 'Computed Tags'
-    '#display_on': none
-    '#mode': text
-    '#template': '{% if data.user_role != "anonymous" %}ranger_dispatch{% endif %}'
     '#ajax': true
   computed_issue_description:
     '#type': webform_computed_twig
@@ -1048,7 +970,6 @@ settings:
 access:
   create:
     roles:
-      - anonymous
       - authenticated
     users: {  }
     permissions: {  }
@@ -1127,7 +1048,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
+      tags: 'drupal webform parks ranger_dispatch'
       priority: low
       status: new
       group_id: '12927681093399'
@@ -1160,7 +1081,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
+      tags: 'drupal webform parks ranger_dispatch'
       priority: normal
       status: new
       group_id: '12927681093399'
@@ -1193,7 +1114,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
+      tags: 'drupal webform parks ranger_dispatch'
       priority: urgent
       status: new
       group_id: '12927681093399'
@@ -1249,7 +1170,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks test [webform_submission:values:computed_tags]'
+      tags: 'drupal webform parks test ranger_dispatch'
       priority: normal
       status: new
       recipient: ''
