@@ -41,7 +41,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['location_search'] = [
       '#type' => 'textfield',
-      '#title' => t('Location Search'),
+      '#title' => t('Location search'),
       '#id' => 'location_search',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
       '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
@@ -76,7 +76,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['location_address'] = [
       '#type' => 'hidden',
-      '#title' => t('Location Address'),
+      '#title' => t('Location address'),
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
     ];
     $element['location_types'] = [
@@ -164,7 +164,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
-      '#title' => t('Location Name'),
+      '#title' => t('Location name'),
       '#attributes' => ['class' => ['place-name'], 'autocomplete' => 'off'],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',
@@ -172,7 +172,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['location_details'] = [
       '#type' => 'textarea',
       '#id' => 'location_details',
-      '#title' => t('Location Details'),
+      '#title' => t('Location details'),
       '#maxlength' => 400,
       '#counter_type' => 'character',
       '#counter_maximum' => 400,
@@ -182,7 +182,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['location_attributes'] = [
       '#type' => 'hidden',
-      '#title' => t('Location Attributes'),
+      '#title' => t('Location attributes'),
       '#attributes' => ['class' => ['location-attributes'], 'id' => 'location_attributes'],
     ];
     $element['location_asset_id'] = [
@@ -197,7 +197,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['location_municipality_name'] = [
       '#type' => 'hidden',
-      '#title' => t('Municipality Name'),
+      '#title' => t('Municipality name'),
       '#attributes' => ['class' => ['location-municipality-name'], 'id' => 'location_municipality_name'],
     ];
     $element['location_zipcode'] = [
