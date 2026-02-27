@@ -77,6 +77,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	$scope.clickedMarker;
 	$scope.clickedGeometry;
 	$scope.clickedProjectId;
+	// Tracks which project currently has keyboard focus on a map marker.
+	// This is used to temporarily show the "selected" marker icon as a focus indicator.
+	$scope.focusedProjectId = null;
 
 	// Tracks where focus should return when closing the detail panel.
 	// type: 'teaser' | 'marker'
@@ -223,7 +226,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// called whenever a marker is clicked in the map. behavior is different depending on mobile or desktop view.
 	var lastClick = 0;
 	var delay = 200;
-	$scope.markerClick = function(project, target) {
+	$scope.markerClick = function(project, target, options) {
+		options = options || {};
+		var viaKeyboard = !!options.viaKeyboard;
 
 		if (lastClick >= (Date.now() - delay)) return;
 		lastClick = Date.now();
@@ -247,19 +252,21 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (!isMobileView) {
 				$scope.hideDetail();
 			} else {
-				clearModal();
+				// When switching markers, avoid a Bootstrap hide/show race that can
+				// briefly show the new teaser and then close the modal.
+				clearModal({ keepOpen: true });
 			}
 			// Continue to handle the newly clicked marker (avoid requiring a second click).
 		}
 
 		if (isMobileView) {
-			populateModal(project, target);
+			populateModal(project, target, { viaKeyboard: viaKeyboard });
 		} else {
 			// If the user clicked a map marker, return focus there on detail close.
 			if (project && project.properties && project.properties.id != null) {
 				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
 			}
-			populateModal(project, target);
+			populateModal(project, target, { viaKeyboard: viaKeyboard });
 			// Keep existing desktop behavior consistent with keyboard activation: zoom to marker.
 			if (project && project.properties && project.properties.id != null) {
 				panToMarker(project.properties.id, 14);
@@ -604,8 +611,38 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				el.setAttribute('data-ww-pan', '1');
 				el.addEventListener('focus', function () {
 					if (isDisabled) return;
+					// Use the selected icon as the focus indicator (do not change clicked state).
+					try {
+						var projectId = project && project.properties ? project.properties.id : null;
+						if (projectId != null) {
+							// Revert the previously focused project's markers unless it is also the clicked/selected project.
+							if ($scope.focusedProjectId != null && $scope.focusedProjectId !== projectId && $scope.clickedProjectId !== $scope.focusedProjectId) {
+								makeMarkerNormal($scope.focusedProjectId);
+							}
+							$scope.focusedProjectId = projectId;
+							setMarkerSelectedIcon(projectId);
+						}
+					} catch (e) {
+						// No-op
+					}
 					// Delay slightly so Leaflet has applied any transforms for the new focus target.
 					setTimeout(ensureMarkerInView, 0);
+				});
+				el.addEventListener('blur', function () {
+					if (isDisabled) return;
+					try {
+						var projectId = project && project.properties ? project.properties.id : null;
+						if (projectId == null) return;
+						// If this project isn't the clicked/selected one, revert its markers on blur.
+						if ($scope.clickedProjectId !== projectId) {
+							makeMarkerNormal(projectId);
+						}
+						if ($scope.focusedProjectId === projectId) {
+							$scope.focusedProjectId = null;
+						}
+					} catch (e) {
+						// No-op
+					}
 				});
 			}
 
@@ -624,13 +661,20 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					if (isDisabled) return;
 
 					var activate = function () {
-						if (typeof $scope.showDetail === 'function') {
-							if (isMobileView) {
-								$scope.searchVisible = false;
-							}
-							if (project && project.properties && project.properties.id != null) {
-								$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
-							}
+						// Match click behavior:
+						// - Mobile: open teaser modal and focus it.
+						// - Desktop: open detail panel.
+						if (isMobileView) {
+							$scope.searchVisible = false;
+						}
+						if (project && project.properties && project.properties.id != null) {
+							$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+						}
+						$scope.selectedProject = project;
+						if (typeof $scope.markerClick === 'function') {
+							$scope.markerClick(project, el, { viaKeyboard: true });
+						} else if (typeof $scope.showDetail === 'function') {
+							// Fallback: preserve previous behavior if markerClick is unavailable.
 							$scope.showDetail(project);
 							panToMarker(project.properties.id, 14);
 						}
@@ -695,8 +739,15 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// if the modal isn't closed before the search or detail panel is opened,
 	// the page won't scroll if it's long. also, it's more tidy this way.
 	function clearModal() {
+		var options = arguments && arguments.length ? arguments[0] : null;
+		var keepOpen = !!(options && options.keepOpen);
 		var $mapPopup = $('#MapPopup');
 		if (!$mapPopup || $mapPopup.length < 1) return;
+		// When switching between markers, keep the modal open and just clear the content.
+		if (keepOpen) {
+			$mapPopup.find('.modal-body').empty();
+			return;
+		}
 		try {
 			$mapPopup.modal('hide');
 		} catch (e) {
@@ -1052,7 +1103,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
     
 	// grabs the appropriate content for the project, HTML-formats it,
 	// stuffs it in the modal dialog, and shows the dialog.
-	function populateModal(project, target) {
+	function populateModal(project, target, options) {
+		options = options || {};
+		var viaKeyboard = !!options.viaKeyboard;
 		
 		if (isMobileView) {
 			// if mobile view, show modal popup
@@ -1069,8 +1122,54 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (project.properties.date) content += '<span class="dates">' + project.properties.date + '</span>';
 			content += '</div>';
 
-			$('#MapPopup .modal-body').html(content);
-			$('#MapPopup').modal('show').show();
+			var $mapPopup = $('#MapPopup');
+			var $modalBody = $mapPopup.find('.modal-body');
+			$modalBody.html(content);
+
+			// Make the teaser card keyboard-focusable.
+			var teaserLabel = 'View project details';
+			if (project && project.properties && project.properties.name) {
+				teaserLabel = 'View project details for ' + project.properties.name;
+			}
+			$modalBody
+				.attr('tabindex', '0')
+				.attr('role', 'button')
+				.attr('aria-label', teaserLabel);
+
+			// Add Enter/Space activation once.
+			if ($modalBody.attr('data-ww-teaser-keys') !== '1') {
+				$modalBody.attr('data-ww-teaser-keys', '1');
+				$modalBody.on('keydown', function (e) {
+					var key = e && (e.key || e.keyCode || e.which);
+					var isEnter = key === 'Enter' || key === 13;
+					var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+					if (!isEnter && !isSpace) return;
+					if (typeof e.preventDefault === 'function') e.preventDefault();
+					if (typeof e.stopPropagation === 'function') e.stopPropagation();
+					runInAngular(function () {
+						$scope.showDetail($scope.selectedProject);
+					});
+				});
+			}
+
+			// Avoid re-triggering Bootstrap show() when already open.
+			var isOpen = $mapPopup.hasClass('in') || $mapPopup.attr('aria-hidden') === 'false' || $mapPopup.is(':visible');
+			if (!isOpen) {
+				$mapPopup.modal('show');
+			}
+			$mapPopup.show();
+
+			// Keyboard activation: move focus into the teaser.
+			if (viaKeyboard) {
+				setTimeout(function () {
+					try {
+						var bodyEl = $modalBody && $modalBody.length ? $modalBody.get(0) : null;
+						if (bodyEl && typeof bodyEl.focus === 'function') bodyEl.focus();
+					} catch (e) {
+						// no-op
+					}
+				}, 0);
+			}
 			
 		} else {
 			// it's desktop view, show detail instead of modal popup
@@ -1108,6 +1207,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		var thisGeometry = findProjectById(id).geometry;
 		$scope.clickedGeometry = thisGeometry;
+	}
+
+	function setMarkerSelectedIcon(id) {
+		if (id == null) return;
+		var keys = Object.keys($scope.markers);
+		for (var i = 0; i < keys.length; i++) {
+			if (keys[i] == id.toString() || keys[i].indexOf(id + "-") === 0) {
+				$scope.markers[keys[i]].setIcon(new L.Icon(WATER_ICON_SELECTED));
+			}
+		}
 	}
 
 	function findProjectById(id) {
