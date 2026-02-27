@@ -260,6 +260,10 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		}
 
 		if (isMobileView) {
+			// If the user clicked/activated a map marker, return focus there on detail close.
+			if (project && project.properties && project.properties.id != null) {
+				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+			}
 			populateModal(project, target, { viaKeyboard: viaKeyboard });
 		} else {
 			// If the user clicked a map marker, return focus there on detail close.
@@ -348,6 +352,11 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		}
 		// Mobile: if the search panel is closed, return focus to the Open search button.
 		if (isMobileView && !$scope.searchVisible) {
+			// Exception: if detail was opened from a map marker, return to that marker.
+			if ($scope.lastFocusReturn && $scope.lastFocusReturn.type === 'marker') {
+				restoreFocusToLastOrigin();
+				return;
+			}
 			setTimeout(focusOpenSearchButton, 0);
 			return;
 		}
