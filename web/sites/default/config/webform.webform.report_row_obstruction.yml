@@ -145,6 +145,13 @@ elements: |-
         visible:
           ':input[name="report_issue_type"]':
             value: 'Debris or waste'
+    markup_sidewalk_owners:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_debris_where"]':
+            value: Sidewalk
+      '#markup': '<div class="alert alert--info next-steps"><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true" data-pm-slice="1 1 []">Property owners are usually responsible for keeping the sidewalk next to their property in good condition. We aren’t able to respond to minor issues like gravel, leaves, or small amounts of litter.</p><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true">If a sidewalk or other public walkway is blocked or hard to use, please attach photos to your report so we can address it.</p><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true">You can report large items like mattresses, furniture, large garbage bags, or illegal dumping<a href="https://ridpatrol.oregonmetro.gov/report/start" data-prosemirror-content-type="mark" data-prosemirror-mark-name="link"> directly to Metro Rid using their online form.</a></p></div>'
     report_debris_where:
       '#type': radios
       '#title': 'Which part of the right of way?'
@@ -272,7 +279,7 @@ elements: |-
         visible:
           ':input[name="report_debris"]':
             value: 'Hazardous waste'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please report hazardous waste using the <a href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Report a Campsite form</a>, and select "Trash or debris only."</p><p class="mb-0"><a class="button button--primary" href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Continue</a></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please report hazardous waste using the <a href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Report a Campsite form</a>, and select "Trash or debris only."</p></div>'
     markup_animal:
       '#type': webform_markup
       '#states':
@@ -305,14 +312,14 @@ elements: |-
         visible:
           ':input[name="report_issue_type"]':
             value: E-scooter
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>E-scooters in the right of way should be reported using our <a href="/transportation/regulatory/escooterpdx/report">Report an E-scooter form</a></p><p class="mb-0"><a class="button button--primary" href="/transportation/regulatory/escooterpdx/report" aria-label="Continue to Report an E-scooter form">Continue</a></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>E-scooters in the right of way should be reported using our <a href="/transportation/regulatory/escooterpdx/report">Report an E-scooter form</a>.</p></div>'
     markup_continue_biketown:
       '#type': webform_markup
       '#states':
         visible:
           ':input[name="report_issue_type"]':
             value: 'Biketown bike'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Biketown bikes in the right of way should be reported using the <a href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us">Lyft Bikes &amp; Scooters customer servcie form</a></p><p><a class="button button--primary" href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us" aria-label="Continue to Report a Biketown bike form">Continue</a></p><p class="mb-0"><em>Disclaimer: This link leads to an external website. We are not responsible for its content or privacy practices.</em></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Biketown bikes in the right of way should be reported using the <a href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us">Lyft Bikes &amp; Scooters customer service form</a>.</p><p class="mb-0"><em>Disclaimer: This link leads to an external website. We are not responsible for its content or privacy practices.</em></p></div>'
   container_submit:
     '#type': container
     '#states':
@@ -496,7 +503,6 @@ elements: |-
         '#title': Email
         '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
         '#description_display': before
-        '#required': true
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
     section_public_records_statement:
@@ -510,7 +516,6 @@ elements: |-
       '#title': 'Support Agent Use Only'
       '#access_create_roles':
         - authenticated
-      '#escalate_issue__access': false
       '#zendesk_request_number__access': false
     actions:
       '#type': webform_actions
@@ -805,6 +810,51 @@ elements: |-
   ajax_indicator:
     '#type': portland_ajax_indicator
     '#title': 'Ajax Indicator'
+  dispatch_use_only:
+    '#type': webform_section
+    '#title': 'Dispatch use only'
+    '#attributes':
+      style: 'background-color: #ccc; padding: 15px;'
+    '#access_create_roles':
+      - support_agent
+      - administrator
+    dispatch_employee_email:
+      '#type': textfield
+      '#title': 'Employee email'
+      '#readonly': true
+      '#input_mask': "'alias': 'email'"
+      '#default_value': '[current-user:mail]'
+    dispatch_contact_format:
+      '#type': select
+      '#title': 'Contact Format'
+      '#options':
+        walk_in: Walk_in
+        phone: Phone
+        radio: Radio
+        email: Email
+    dispatch_contact_type:
+      '#type': select
+      '#title': 'Contact type'
+      '#options':
+        community: community
+        city_employee: 'City employee'
+        pbot: PBOT
+        ppb: PPB
+        boec: BOEC
+        pfr: 'PF&R'
+        ppr: 'PP&R'
+        agency_partner: 'Agency partner'
+        odot: ODOT
+        multco: 'Mult Co'
+        metro: Metro
+        trimet: TriMet
+        other: Other
+    dispatch_already_reported:
+      '#type': checkbox
+      '#title': 'Already reported'
+    dispatch_related_emergency:
+      '#type': checkbox
+      '#title': 'Related to a declared emergency'
 css: ''
 javascript: ''
 settings:
@@ -1021,6 +1071,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   email:
     id: email
     handler_id: email
@@ -1054,7 +1105,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
-      body: '<p><em>This email was sent by Portland.gov. Do no reply.</em></p><p>[webform_submission:values:computed_description:html]</p>'
+      body: '<p><em>This email was sent by Portland.gov. Do not reply.</em></p><p>[webform_submission:values:computed_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -1097,6 +1148,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
@@ -1154,6 +1206,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_bike_lane_maintenance_group:
     id: zendesk
     handler_id: submit_to_zendesk_bike_lane_maintenance_group
@@ -1186,4 +1239,5 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
 variants: {  }
