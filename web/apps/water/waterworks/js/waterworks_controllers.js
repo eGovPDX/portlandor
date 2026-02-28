@@ -581,7 +581,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var ariaLabel = project.properties.name;
 		if (ariaLabel == null) ariaLabel = '';
 		ariaLabel = ('' + ariaLabel).trim();
-		var isDisabled = !!project.properties.disabled;
+		function isCurrentlyDisabled() {
+			return !!(project && project.properties && project.properties.disabled);
+		}
 
 		function ensureMarkerInView() {
 			try {
@@ -610,8 +612,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 			el = el || marker._icon;
 			if (!el) return;
+			var isDisabled = isCurrentlyDisabled();
 			el.setAttribute('role', 'button');
-			el.setAttribute('tabindex', '0');
+			el.setAttribute('tabindex', isDisabled ? '-1' : '0');
 			el.setAttribute('aria-label', ariaLabel);
 			el.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
 
@@ -619,7 +622,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (el.getAttribute('data-ww-pan') !== '1') {
 				el.setAttribute('data-ww-pan', '1');
 				el.addEventListener('focus', function () {
-					if (isDisabled) return;
+					if (isCurrentlyDisabled()) return;
 					// Use the selected icon as the focus indicator (do not change clicked state).
 					try {
 						var projectId = project && project.properties ? project.properties.id : null;
@@ -638,7 +641,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					setTimeout(ensureMarkerInView, 0);
 				});
 				el.addEventListener('blur', function () {
-					if (isDisabled) return;
+					if (isCurrentlyDisabled()) return;
 					try {
 						var projectId = project && project.properties ? project.properties.id : null;
 						if (projectId == null) return;
@@ -667,7 +670,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					// Prevent page scroll on Space.
 					if (typeof event.preventDefault === 'function') event.preventDefault();
 					if (typeof event.stopPropagation === 'function') event.stopPropagation();
-					if (isDisabled) return;
+					if (isCurrentlyDisabled()) return;
 
 					var activate = function () {
 						// Match click behavior:
@@ -1211,6 +1214,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (project && project.properties && project.properties.name) {
 				teaserLabel = 'View project details for ' + project.properties.name;
 			}
+			// Give the dialog itself an accessible name.
+			$mapPopup.attr('aria-label', teaserLabel);
 			$modalBody
 				.attr('tabindex', '0')
 				.attr('role', 'button')
@@ -1240,6 +1245,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				$mapPopup.modal('show');
 			}
 			$mapPopup.show();
+			$mapPopup.attr('aria-hidden', 'false');
 
 			// Keyboard activation: move focus into the teaser.
 			if (viaKeyboard) {
@@ -1335,6 +1341,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					return false;
 				}
 				marker.setIcon(new L.Icon(WATER_ICON));
+				// Keep a11y attributes in sync with disabled state changes.
+				var el = null;
+				if (typeof marker.getElement === 'function') {
+					el = marker.getElement();
+				}
+				el = el || marker._icon;
+				if (el) {
+					el.setAttribute('aria-disabled', 'false');
+					el.setAttribute('tabindex', '0');
+				}
 			}
 		}
 	}
@@ -1354,6 +1370,24 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					return false;
 				}
 				marker.setIcon(new L.Icon(WATER_ICON_GRAY));
+				// Keep a11y attributes in sync with disabled state changes.
+				var el = null;
+				if (typeof marker.getElement === 'function') {
+					el = marker.getElement();
+				}
+				el = el || marker._icon;
+				if (el) {
+					el.setAttribute('aria-disabled', 'true');
+					el.setAttribute('tabindex', '-1');
+					// If a marker becomes disabled while focused, move focus away.
+					try {
+						if (document && document.activeElement === el && typeof el.blur === 'function') {
+							el.blur();
+						}
+					} catch (e) {
+						// No-op
+					}
+				}
 			}
 		}
 	}
