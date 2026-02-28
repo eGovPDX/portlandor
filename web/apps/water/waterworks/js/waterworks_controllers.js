@@ -792,6 +792,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				attribution: "PortlandMaps ESRI"
 		});
 		var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
+		var pancontrols = createPanControls({ position: ZOOM_POSITION });
 		var map = new L.Map("LeafletMap", {
 				center: new L.LatLng(DEFAULT_LATITUDE, -122.65),
 				tap: false,
@@ -800,8 +801,78 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		});
 		map.addLayer(layer);
 		map.addControl(zoomcontrols);
+		if (pancontrols) {
+			map.addControl(pancontrols);
+		}
 		map.getContainer().removeAttribute("tabindex");
 		return map;
+	}
+
+	function createPanControls(options) {
+		if (typeof L === 'undefined' || !L || !L.Control || !L.DomUtil || !L.DomEvent) return null;
+		options = options || {};
+
+		// Define once.
+		if (!L.Control.WaterworksPan) {
+			L.Control.WaterworksPan = L.Control.extend({
+				options: {
+					position: 'topright',
+					panOffset: 100
+				},
+
+				onAdd: function (map) {
+					this._map = map;
+					var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-waterworks-pan');
+					container.setAttribute('role', 'group');
+					container.setAttribute('aria-label', 'Map pan controls');
+
+					var self = this;
+
+					function bindActivate(el, panFn) {
+						L.DomEvent.on(el, 'click', function (e) {
+							L.DomEvent.preventDefault(e);
+							L.DomEvent.stopPropagation(e);
+							panFn();
+						});
+						L.DomEvent.on(el, 'keydown', function (e) {
+							var key = e && (e.key || e.keyCode || e.which);
+							var isEnter = key === 'Enter' || key === 13;
+							var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+							if (!isEnter && !isSpace) return;
+							if (e && typeof e.preventDefault === 'function') e.preventDefault();
+							if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+							panFn();
+						});
+					}
+
+					function createButton(label, html, className, panBy) {
+						var link = L.DomUtil.create('a', className, container);
+						link.href = '#';
+						link.setAttribute('role', 'button');
+						link.setAttribute('aria-label', label);
+						link.setAttribute('title', label);
+						link.innerHTML = html;
+						bindActivate(link, function () {
+							if (!self._map || typeof self._map.panBy !== 'function') return;
+							self._map.panBy(panBy, { animate: true });
+						});
+						return link;
+					}
+
+					var off = this.options.panOffset;
+					createButton('Pan up', '&#9650;', 'leaflet-control-waterworks-pan-up', [0, -off]);
+					createButton('Pan left', '&#9664;', 'leaflet-control-waterworks-pan-left', [-off, 0]);
+					createButton('Pan right', '&#9654;', 'leaflet-control-waterworks-pan-right', [off, 0]);
+					createButton('Pan down', '&#9660;', 'leaflet-control-waterworks-pan-down', [0, off]);
+
+					L.DomEvent.disableClickPropagation(container);
+					L.DomEvent.disableScrollPropagation(container);
+					return container;
+				}
+			});
+		}
+
+		return new L.Control.WaterworksPan(options);
 	}
 
 	function initProjects() {
@@ -1144,6 +1215,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				.attr('tabindex', '0')
 				.attr('role', 'button')
 				.attr('aria-label', teaserLabel);
+			// Keep the explicit "View details" control in sync with the teaser label.
+			$mapPopup.find('a.link--more').attr('aria-label', teaserLabel);
 
 			// Add Enter/Space activation once.
 			if ($modalBody.attr('data-ww-teaser-keys') !== '1') {
