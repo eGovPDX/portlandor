@@ -6,6 +6,62 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// make this variable available in HTML; set in waterworks.js; returns true if width < 880
 	$scope.isMobileView = isMobileView;
 
+	// Ensure header visibility is defined immediately (ng-show depends on it).
+	$scope.mainHeadVisible = true;
+	$scope.searchHeadVisible = false;
+
+	// If the page loads wide and then rotates to mobile, Angular's $scope.isMobileView
+	// can become stale (the global is updated by jQuery, but Angular won't digest).
+	// Keep it synced so ng-class/ng-show react, and reset searchVisible when
+	// entering mobile so the search icon can open the panel.
+	var lastIsMobileView = $scope.isMobileView;
+	function syncMobileViewFromViewport() {
+		var nextIsMobileView = calculateIsMobileView();
+		// keep the shared global up-to-date (used throughout this file)
+		isMobileView = nextIsMobileView;
+		$scope.isMobileView = nextIsMobileView;
+
+		// When crossing breakpoints, normalize panel state.
+		// Desktop expects the search panel visible; mobile expects it hidden until opened.
+		if (lastIsMobileView !== nextIsMobileView) {
+			if (nextIsMobileView) {
+				$scope.searchVisible = false;
+				$scope.detailVisible = false;
+			} else {
+				$scope.searchVisible = true;
+			}
+			lastIsMobileView = nextIsMobileView;
+		}
+	}
+
+	var onViewportChange = function () {
+		// AngularJS 1.2.x: prefer $evalAsync to avoid "$digest already in progress".
+		if ($scope.$evalAsync) {
+			$scope.$evalAsync(syncMobileViewFromViewport);
+		} else if (!$scope.$root || !$scope.$root.$$phase) {
+			$scope.$apply(syncMobileViewFromViewport);
+		} else {
+			syncMobileViewFromViewport();
+		}
+	};
+
+	angular.element($window).on('resize orientationchange', onViewportChange);
+	$scope.$on('$destroy', function () {
+		angular.element($window).off('resize orientationchange', onViewportChange);
+	});
+
+	function runInAngular(fn) {
+		if (typeof fn !== 'function') return;
+		// AngularJS 1.2.x safe async digest entry.
+		if (typeof $scope.$evalAsync === 'function') {
+			$scope.$evalAsync(fn);
+		} else if (!$scope.$root || !$scope.$root.$$phase) {
+			$scope.$apply(fn);
+		} else {
+			fn();
+		}
+	}
+
 	// allProjects is an array for all projects retrieved from ECM
 	$scope.allProjects = [];
 
@@ -21,6 +77,13 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	$scope.clickedMarker;
 	$scope.clickedGeometry;
 	$scope.clickedProjectId;
+	// Tracks which project currently has keyboard focus on a map marker.
+	// This is used to temporarily show the "selected" marker icon as a focus indicator.
+	$scope.focusedProjectId = null;
+
+	// Tracks where focus should return when closing the detail panel.
+	// type: 'teaser' | 'marker'
+	$scope.lastFocusReturn = null;
 
 	// flags to control visiblity of detail and search panels
 	if (isMobileView) {
@@ -55,6 +118,89 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// projects initially contains a copy of allProjects, but may be filtered based on user input.
 	// this is the array that's used to populate the map.
 	initProjects();
+
+	// If the search sidebar is visible on initial desktop load, start keyboard focus there
+	// so Tab doesn't jump into Leaflet marker icons first.
+	var didAutoFocusSidebar = false;
+	function maybeAutoFocusSearchSidebar() {
+		if (didAutoFocusSidebar) return;
+		if (isMobileView) return;
+		if (!$scope.searchVisible) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var active = doc.activeElement;
+		// Don't steal focus if the user already focused something.
+		if (active && active !== doc.body && active !== doc.documentElement) return;
+		var allFilterButton = doc.getElementById('Filter-All');
+		if (allFilterButton && typeof allFilterButton.focus === 'function') {
+			didAutoFocusSidebar = true;
+			allFilterButton.focus();
+		}
+	}
+	setTimeout(maybeAutoFocusSearchSidebar, 0);
+
+	// In mobile view, default focus to the WaterWorks logo on initial load.
+	var didAutoFocusBrand = false;
+	function maybeAutoFocusMobileBrand() {
+		if (didAutoFocusBrand) return;
+		if (!isMobileView) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var active = doc.activeElement;
+		// Don't steal focus if the user already focused something.
+		if (active && active !== doc.body && active !== doc.documentElement) return;
+		var brand = doc.getElementById('WaterWorksHome');
+		if (brand && typeof brand.focus === 'function') {
+			didAutoFocusBrand = true;
+			brand.focus();
+		}
+	}
+	setTimeout(maybeAutoFocusMobileBrand, 0);
+
+	// Mobile-only: keep the header tab flow as logo -> Open search -> map markers.
+	// When the search panel is closed, Tab from the Open search button should skip
+	// the offscreen SearchPanel content and go directly to the first map marker.
+	var didBindSearchTabToMarkers = false;
+	function bindSearchTabToMarkers() {
+		if (didBindSearchTabToMarkers) return;
+		var doc = $window && $window.document;
+		if (!doc) return;
+		var openSearchButton = doc.querySelector('button.search[aria-controls="SearchPanel"]');
+		if (!openSearchButton || typeof openSearchButton.addEventListener !== 'function') return;
+		didBindSearchTabToMarkers = true;
+
+		function findFirstMarkerEl() {
+			return doc.querySelector('#LeafletMap .leaflet-marker-icon[role="button"][tabindex="0"][aria-disabled="false"], #LeafletMap .leaflet-marker-icon[role="button"][tabindex="0"]');
+		}
+
+		openSearchButton.addEventListener('keydown', function (e) {
+			if (!isMobileView) return;
+			// Only override Tab flow when the panel is currently closed.
+			if ($scope.searchVisible) return;
+			if (!e) return;
+			var key = e.key || e.keyCode || e.which;
+			var isTab = (key === 'Tab' || key === 9);
+			if (!isTab) return;
+			if (e.shiftKey) return;
+
+			var attempts = 0;
+			var maxAttempts = 20;
+			var tryFocus = function () {
+				var el = findFirstMarkerEl();
+				if (el && typeof el.focus === 'function') {
+					el.focus();
+					return;
+				}
+				attempts++;
+				if (attempts >= maxAttempts) return;
+				setTimeout(tryFocus, 50);
+			};
+
+			if (typeof e.preventDefault === 'function') e.preventDefault();
+			tryFocus();
+		});
+	}
+	setTimeout(bindSearchTabToMarkers, 0);
 	
 	// functions ///////////////////////////////////////////////
 
@@ -80,7 +226,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// called whenever a marker is clicked in the map. behavior is different depending on mobile or desktop view.
 	var lastClick = 0;
 	var delay = 200;
-	$scope.markerClick = function(project, target) {
+	$scope.markerClick = function(project, target, options) {
+		options = options || {};
+		var viaKeyboard = !!options.viaKeyboard;
 
 		if (lastClick >= (Date.now() - delay)) return;
 		lastClick = Date.now();
@@ -88,7 +236,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// if marker is disabled, do nothing
 		if (project.properties.disabled) return;
 
-		// REFACTOR: if same geometry is clicked again, reset all associated markers
+		// If the same geometry is clicked again, toggle it closed.
 		if (project.geometry == $scope.clickedGeometry) {
 			if (!isMobileView) {
 				// hide detail
@@ -104,15 +252,29 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (!isMobileView) {
 				$scope.hideDetail();
 			} else {
-				clearModal();
+				// When switching markers, avoid a Bootstrap hide/show race that can
+				// briefly show the new teaser and then close the modal.
+				clearModal({ keepOpen: true });
 			}
-			return;
+			// Continue to handle the newly clicked marker (avoid requiring a second click).
 		}
 
 		if (isMobileView) {
-			populateModal(project, target);
+			// If the user clicked/activated a map marker, return focus there on detail close.
+			if (project && project.properties && project.properties.id != null) {
+				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+			}
+			populateModal(project, target, { viaKeyboard: viaKeyboard });
 		} else {
-			populateModal(project, target);
+			// If the user clicked a map marker, return focus there on detail close.
+			if (project && project.properties && project.properties.id != null) {
+				$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+			}
+			populateModal(project, target, { viaKeyboard: viaKeyboard });
+			// Keep existing desktop behavior consistent with keyboard activation: zoom to marker.
+			if (project && project.properties && project.properties.id != null) {
+				panToMarker(project.properties.id, 14);
+			}
 		}
 	}
 
@@ -128,6 +290,12 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// prevMapCenter = $scope.map.getCenter();
 		// prevMapZoom = $scope.map.getZoom();
 
+		// Remember which project teaser opened the detail panel so we can restore focus on close.
+		if (project && project.properties && project.properties.id != null) {
+			$scope.lastTeaserProjectId = project.properties.id;
+			$scope.lastFocusReturn = { type: 'teaser', id: project.properties.id };
+		}
+
 		if (!isMobileView) {
 				$scope.showDetail(project);
 		} else {
@@ -140,6 +308,85 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		panToMarker(project.properties.id, 14);
 	}
 
+	function restoreFocusToLastOrigin() {
+		var info = $scope.lastFocusReturn;
+		if (!info || info.id == null) return;
+		setTimeout(function () {
+			if (info.type === 'marker') {
+				var marker = $scope.markers && $scope.markers[('' + info.id)];
+				var el = null;
+				if (marker) {
+					if (typeof marker.getElement === 'function') {
+						el = marker.getElement();
+					}
+					el = el || marker._icon;
+				}
+				if (el && typeof el.focus === 'function') {
+					el.focus();
+					return;
+				}
+			}
+			// Default/fallback: return focus to the teaser card.
+			var teaserEl = document.getElementById('Teaser' + info.id);
+			if (teaserEl && typeof teaserEl.focus === 'function') {
+				teaserEl.focus();
+			}
+		}, 0);
+	}
+
+	function focusOpenSearchButton() {
+		var doc = $window && $window.document;
+		if (!doc) return false;
+		var btn = doc.querySelector('button.search[aria-controls="SearchPanel"]');
+		if (btn && typeof btn.focus === 'function') {
+			btn.focus();
+			return true;
+		}
+		return false;
+	}
+
+	$scope.closeDetail = function () {
+		$scope.detailVisible = false;
+		if (typeof $scope.resetSelectedMarker === 'function') {
+			$scope.resetSelectedMarker();
+		}
+		// Mobile: if the search panel is closed, return focus to the Open search button.
+		if (isMobileView && !$scope.searchVisible) {
+			// Exception: if detail was opened from a map marker, return to that marker.
+			if ($scope.lastFocusReturn && $scope.lastFocusReturn.type === 'marker') {
+				restoreFocusToLastOrigin();
+				return;
+			}
+			setTimeout(focusOpenSearchButton, 0);
+			return;
+		}
+		restoreFocusToLastOrigin();
+	}
+
+	// Mobile: when the search panel closes, return focus to the Open search button.
+	// Avoid stealing focus on initial load (searchVisible starts false on mobile).
+	var didInitSearchVisibleWatch = false;
+	$scope.$watch('searchVisible', function (newVal, oldVal) {
+		if (!didInitSearchVisibleWatch) {
+			didInitSearchVisibleWatch = true;
+			return;
+		}
+		if (!isMobileView) return;
+		if (oldVal === true && newVal === false) {
+			setTimeout(focusOpenSearchButton, 0);
+		}
+	});
+
+	$scope.projectTeaserKeydown = function ($event, project) {
+		if (!$event) return;
+		var keyCode = $event.keyCode || $event.which;
+		// Enter (13) or Space (32)
+		if (keyCode !== 13 && keyCode !== 32) return;
+		if (typeof $event.preventDefault === 'function') $event.preventDefault();
+		if (typeof $event.stopPropagation === 'function') $event.stopPropagation();
+		$scope.listViewClick(project);
+	}
+
 	$scope.toggleSearch = function () {
 			$scope.searchVisible = $scope.searchVisible ? false : true;
 	}
@@ -150,6 +397,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// in desktop view, detail panel overlays search panel, but search panel is always visible beneath it.
 	// in mobile view, search panel needs to be toggled too.
 	$scope.showDetail = function (project) {
+
+		// If a marker popup modal is open, close it before showing detail.
+		clearModal();
     	
 		// if project is passed in, use that as the selected one to populate detail. otherwise, look in selectedProject.
 		if (project) {
@@ -160,6 +410,24 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		
 		// toggle views - show detail and hide search
 		$scope.detailVisible = true;
+
+		// Move focus into the details panel for keyboard/screen reader users.
+		setTimeout(function () {
+			var detailTitle = document.getElementById('ProjectDetailTitle');
+			if (detailTitle && typeof detailTitle.focus === 'function') {
+				detailTitle.focus();
+				return;
+			}
+			var closeButton = document.getElementById('ProjectDetailClose');
+			if (closeButton && typeof closeButton.focus === 'function') {
+				closeButton.focus();
+				return;
+			}
+			var detailPanel = document.getElementById('ProjectDetail');
+			if (detailPanel && typeof detailPanel.focus === 'function') {
+				detailPanel.focus();
+			}
+		}, 0);
 
 		// add carousel and slide classes to slider container. this must not be done until the content is loaded
 		// or the slider will throw an error.
@@ -263,6 +531,20 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 		});
 	}
+
+	// Allows users to dismiss the address search results/no-results message.
+	// locationResults is null when no search is being shown.
+	$scope.clearLocationResults = function () {
+		$scope.locationResults = null;
+	}
+
+	// Auto-dismiss results/no-results as soon as the user edits the address field.
+	// Only clear if a search has already produced a visible state.
+	$scope.addressSearchChanged = function () {
+		if ($scope.locationResults != null) {
+			$scope.locationResults = null;
+		}
+	}
     
 	$scope.searchEnterSubmit = function (event) {
 		if (event.which == 13) {
@@ -293,6 +575,142 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	// helper functions ////////////////////////////////////////
 	// these might be moved into $scope functions.
+
+	function applyMarkerAccessibility(marker, project) {
+		if (!marker || !project || !project.properties) return;
+		var ariaLabel = project.properties.name;
+		if (ariaLabel == null) ariaLabel = '';
+		ariaLabel = ('' + ariaLabel).trim();
+		function isCurrentlyDisabled() {
+			return !!(project && project.properties && project.properties.disabled);
+		}
+
+		function ensureMarkerInView() {
+			try {
+				if (!$scope.map || !marker) return;
+				if (typeof marker.getLatLng !== 'function') return;
+				var latlng = marker.getLatLng();
+				if (!latlng) return;
+				if (typeof $scope.map.getBounds !== 'function') return;
+				var bounds = $scope.map.getBounds();
+				if (!bounds) return;
+				// Use a slightly shrunken bounds so focused markers aren't right on the edge.
+				var innerBounds = (typeof bounds.pad === 'function') ? bounds.pad(-0.12) : bounds;
+				if (typeof innerBounds.contains === 'function' && innerBounds.contains(latlng)) return;
+				if (typeof $scope.map.panTo === 'function') {
+					$scope.map.panTo(latlng, { animate: true, duration: 0.5 });
+				}
+			} catch (e) {
+				// No-op: never block focus if panning fails.
+			}
+		}
+
+		function setAttributes() {
+			var el = null;
+			if (typeof marker.getElement === 'function') {
+				el = marker.getElement();
+			}
+			el = el || marker._icon;
+			if (!el) return;
+			var isDisabled = isCurrentlyDisabled();
+			el.setAttribute('role', 'button');
+			el.setAttribute('tabindex', isDisabled ? '-1' : '0');
+			el.setAttribute('aria-label', ariaLabel);
+			el.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+
+			// When a marker receives keyboard focus, ensure it is visible in the map viewport.
+			if (el.getAttribute('data-ww-pan') !== '1') {
+				el.setAttribute('data-ww-pan', '1');
+				el.addEventListener('focus', function () {
+					if (isCurrentlyDisabled()) return;
+					// Use the selected icon as the focus indicator (do not change clicked state).
+					try {
+						var projectId = project && project.properties ? project.properties.id : null;
+						if (projectId != null) {
+							// Revert the previously focused project's markers unless it is also the clicked/selected project.
+							if ($scope.focusedProjectId != null && $scope.focusedProjectId !== projectId && $scope.clickedProjectId !== $scope.focusedProjectId) {
+								makeMarkerNormal($scope.focusedProjectId);
+							}
+							$scope.focusedProjectId = projectId;
+							setMarkerSelectedIcon(projectId);
+						}
+					} catch (e) {
+						// No-op
+					}
+					// Delay slightly so Leaflet has applied any transforms for the new focus target.
+					setTimeout(ensureMarkerInView, 0);
+				});
+				el.addEventListener('blur', function () {
+					if (isCurrentlyDisabled()) return;
+					try {
+						var projectId = project && project.properties ? project.properties.id : null;
+						if (projectId == null) return;
+						// If this project isn't the clicked/selected one, revert its markers on blur.
+						if ($scope.clickedProjectId !== projectId) {
+							makeMarkerNormal(projectId);
+						}
+						if ($scope.focusedProjectId === projectId) {
+							$scope.focusedProjectId = null;
+						}
+					} catch (e) {
+						// No-op
+					}
+				});
+			}
+
+			// Add key activation (Enter/Space) once per element.
+			if (el.getAttribute('data-ww-keyboard') !== '1') {
+				el.setAttribute('data-ww-keyboard', '1');
+				el.addEventListener('keydown', function (event) {
+					var key = event && (event.key || event.keyCode || event.which);
+					var isEnter = key === 'Enter' || key === 13;
+					var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+					if (!isEnter && !isSpace) return;
+
+					// Prevent page scroll on Space.
+					if (typeof event.preventDefault === 'function') event.preventDefault();
+					if (typeof event.stopPropagation === 'function') event.stopPropagation();
+					if (isCurrentlyDisabled()) return;
+
+					var activate = function () {
+						// Match click behavior:
+						// - Mobile: open teaser modal and focus it.
+						// - Desktop: open detail panel.
+						if (isMobileView) {
+							$scope.searchVisible = false;
+						}
+						if (project && project.properties && project.properties.id != null) {
+							$scope.lastFocusReturn = { type: 'marker', id: project.properties.id };
+						}
+						$scope.selectedProject = project;
+						if (typeof $scope.markerClick === 'function') {
+							$scope.markerClick(project, el, { viaKeyboard: true });
+						} else if (typeof $scope.showDetail === 'function') {
+							// Fallback: preserve previous behavior if markerClick is unavailable.
+							$scope.showDetail(project);
+							panToMarker(project.properties.id, 14);
+						}
+					};
+
+					// AngularJS 1.2.x safe async digest entry.
+					if (typeof $scope.$evalAsync === 'function') {
+						$scope.$evalAsync(activate);
+					} else if (typeof $scope.$apply === 'function') {
+						try {
+							$scope.$apply(activate);
+						} catch (e) {
+							activate();
+						}
+					} else {
+						activate();
+					}
+				});
+			}
+		}
+
+		marker.on('add', setAttributes);
+		setAttributes();
+	}
 
 	// returns all markers associated with a project id
 	function findMarkersByProjectId(id) {
@@ -333,7 +751,25 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// if the modal isn't closed before the search or detail panel is opened,
 	// the page won't scroll if it's long. also, it's more tidy this way.
 	function clearModal() {
-		$('#MapPopup').modal("hide");
+		var options = arguments && arguments.length ? arguments[0] : null;
+		var keepOpen = !!(options && options.keepOpen);
+		var $mapPopup = $('#MapPopup');
+		if (!$mapPopup || $mapPopup.length < 1) return;
+		// When switching between markers, keep the modal open and just clear the content.
+		if (keepOpen) {
+			$mapPopup.find('.modal-body').empty();
+			return;
+		}
+		try {
+			$mapPopup.modal('hide');
+		} catch (e) {
+			// Ignore if bootstrap modal isn't initialized.
+		}
+		// Ensure the teaser overlay can't linger above the detail pane.
+		$mapPopup.removeClass('in').hide().attr('aria-hidden', 'true');
+		$mapPopup.find('.modal-body').empty();
+		$('.modal-backdrop').remove();
+		$('body').removeClass('modal-open');
 	}
 
 
@@ -359,6 +795,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				attribution: "PortlandMaps ESRI"
 		});
 		var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
+		var pancontrols = createPanControls({ position: ZOOM_POSITION });
 		var map = new L.Map("LeafletMap", {
 				center: new L.LatLng(DEFAULT_LATITUDE, -122.65),
 				tap: false,
@@ -367,7 +804,78 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		});
 		map.addLayer(layer);
 		map.addControl(zoomcontrols);
+		if (pancontrols) {
+			map.addControl(pancontrols);
+		}
+		map.getContainer().removeAttribute("tabindex");
 		return map;
+	}
+
+	function createPanControls(options) {
+		if (typeof L === 'undefined' || !L || !L.Control || !L.DomUtil || !L.DomEvent) return null;
+		options = options || {};
+
+		// Define once.
+		if (!L.Control.WaterworksPan) {
+			L.Control.WaterworksPan = L.Control.extend({
+				options: {
+					position: 'topright',
+					panOffset: 100
+				},
+
+				onAdd: function (map) {
+					this._map = map;
+					var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-waterworks-pan');
+					container.setAttribute('role', 'group');
+					container.setAttribute('aria-label', 'Map pan controls');
+
+					var self = this;
+
+					function bindActivate(el, panFn) {
+						L.DomEvent.on(el, 'click', function (e) {
+							L.DomEvent.preventDefault(e);
+							L.DomEvent.stopPropagation(e);
+							panFn();
+						});
+						L.DomEvent.on(el, 'keydown', function (e) {
+							var key = e && (e.key || e.keyCode || e.which);
+							var isEnter = key === 'Enter' || key === 13;
+							var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+							if (!isEnter && !isSpace) return;
+							if (e && typeof e.preventDefault === 'function') e.preventDefault();
+							if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+							panFn();
+						});
+					}
+
+					function createButton(label, html, className, panBy) {
+						var link = L.DomUtil.create('a', className, container);
+						link.href = '#';
+						link.setAttribute('role', 'button');
+						link.setAttribute('aria-label', label);
+						link.setAttribute('title', label);
+						link.innerHTML = html;
+						bindActivate(link, function () {
+							if (!self._map || typeof self._map.panBy !== 'function') return;
+							self._map.panBy(panBy, { animate: true });
+						});
+						return link;
+					}
+
+					var off = this.options.panOffset;
+					createButton('Pan up', '&#9650;', 'leaflet-control-waterworks-pan-up', [0, -off]);
+					createButton('Pan left', '&#9664;', 'leaflet-control-waterworks-pan-left', [-off, 0]);
+					createButton('Pan right', '&#9654;', 'leaflet-control-waterworks-pan-right', [off, 0]);
+					createButton('Pan down', '&#9660;', 'leaflet-control-waterworks-pan-down', [0, off]);
+
+					L.DomEvent.disableClickPropagation(container);
+					L.DomEvent.disableScrollPropagation(container);
+					return container;
+				}
+			});
+		}
+
+		return new L.Control.WaterworksPan(options);
 	}
 
 	function initProjects() {
@@ -467,33 +975,117 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		// if projects arg is undefined, use scope var as default.
 		// $scope.projects should always hold array of features we want added to map, even if filtered.
-		projects = typeof a !== 'undefined' ? projects : $scope.projects;
+		projects = typeof projects !== 'undefined' ? projects : $scope.projects;
+		
+		function getRepresentativeLngLat(project) {
+			if (!project || !project.geometry) return null;
+			var g = project.geometry;
+			// Some datasets store multiple geometries here even when type isn't GeometryCollection.
+			if (g.geometries && g.geometries.length) {
+				for (var gi = 0; gi < g.geometries.length; gi++) {
+					var nestedProject = { geometry: g.geometries[gi], properties: project.properties, type: project.type };
+					var nestedLngLat = getRepresentativeLngLat(nestedProject);
+					if (nestedLngLat) return nestedLngLat;
+				}
+				return null;
+			}
+			switch (g.type) {
+				case 'Point':
+					return g.coordinates;
+				case 'MultiPoint':
+					return (g.coordinates && g.coordinates.length) ? g.coordinates[0] : null;
+				case 'Polygon':
+					return (g.coordinates && g.coordinates.length) ? getCentroid(g.coordinates[0]) : null;
+				case 'MultiPolygon':
+					return (g.coordinates && g.coordinates.length && g.coordinates[0].length) ? getCentroid(g.coordinates[0][0]) : null;
+				case 'LineString':
+					return (g.coordinates && g.coordinates.length) ? getCentroid(g.coordinates) : null;
+				case 'MultiLineString':
+					return (g.coordinates && g.coordinates.length && g.coordinates[0].length) ? getCentroid(g.coordinates[0]) : null;
+				case 'GeometryCollection':
+					if (g.geometries && g.geometries.length) {
+						for (var i = 0; i < g.geometries.length; i++) {
+							var project2 = { geometry: g.geometries[i], properties: project.properties, type: project.type };
+							var ll = getRepresentativeLngLat(project2);
+							if (ll) return ll;
+						}
+					}
+					return null;
+				default:
+					// Best-effort fallback for unexpected geometry structures.
+					if (g.coordinates && g.coordinates.length && typeof g.coordinates[0][0] === 'number') return g.coordinates[0];
+					return null;
+			}
+		}
+
+		function addNonPointGeometriesToMap(project) {
+			if (!project || !project.geometry) return;
+			var g = project.geometry;
+
+			// Some datasets store multiple geometries here even when type isn't GeometryCollection.
+			if (g.geometries && g.geometries.length) {
+				for (var gi = 0; gi < g.geometries.length; gi++) {
+					addNonPointGeometriesToMap({
+						type: 'Feature',
+						geometry: g.geometries[gi],
+						properties: project.properties
+					});
+				}
+				return;
+			}
+
+			if (g.type === 'GeometryCollection') {
+				// GeometryCollection may include Point geometries. If we pass it directly to L.geoJson,
+				// Leaflet will auto-create default markers (marker-icon-2x.png) that won't have our a11y.
+				if (g.geometries && g.geometries.length) {
+					for (var i = 0; i < g.geometries.length; i++) {
+						addNonPointGeometriesToMap({
+							type: 'Feature',
+							geometry: g.geometries[i],
+							properties: project.properties
+						});
+					}
+				}
+				return;
+			}
+
+			if (g.type === 'Point' || g.type === 'MultiPoint') return;
+
+			try {
+				L.geoJson(project, {
+					filter: function (feature) {
+						var t = feature && feature.geometry && feature.geometry.type;
+						return t !== 'Point' && t !== 'MultiPoint';
+					}
+				}).addTo($scope.map);
+			} catch (e) {
+				// Ignore geometry render failures; marker creation below still proceeds.
+			}
+		}
 
 		projects.forEach(function (project) {
-			var counter = 0;
-			L.geoJson(project, {
-			  onEachFeature: onEachFeature,
-				pointToLayer: function (feature, latlng) {
-					var marker = L.marker(latlng, {
-						icon: L.icon({
-								iconUrl: 'img/marker_water.png' + CACHEBUSTER,
-								iconSize: [40, 49], // size of the icon
-								iconAnchor: [15, 44], // point of the icon which will correspond to marker's location
-								popupAnchor: [5, -40] // point from which the popup should open relative to the iconAnchor
-						}),
-						title: project.properties.name
-					});
-					marker.feature = feature;
-					// there may be multiple markers for a project, so using the id as the array key won't be unique enough.
-					// would a timestamp work? if we want to use the geometry array index, we'd need to switch case on the
-					// type, since the arrays are a little different for some.
-					// we also may need to easily get the collection of all markers for a given project in the onEachFeature
-					// function or on click.
-					$scope.markers[project.properties.id.toString() + "-p" + counter.toString()] = marker;
-					counter += 1;
-					return marker;
-				}
+			if (!project || !project.properties || project.properties.id == null) return;
+
+			// Render non-point geometries (polygons/lines), but never allow Leaflet to auto-create
+			// default Point markers (marker-icon-2x.png).
+			addNonPointGeometriesToMap(project);
+
+			// Create exactly one marker per project.
+			var rep = getRepresentativeLngLat(project);
+			if (!rep || rep.length < 2) return;
+			var marker = L.marker([rep[1], rep[0]], {
+				icon: new L.Icon(WATER_ICON),
+				title: project.properties.name
 			}).addTo($scope.map);
+			marker.feature = project;
+			applyMarkerAccessibility(marker, project);
+			$scope.markers[project.properties.id.toString()] = marker;
+			marker.on('click', function (e) {
+				runInAngular(function () {
+					$scope.markerClick(project, e.target);
+					$scope.selectedProject = project;
+				});
+			});
 		});
 
 		// $scope.projects = projects;
@@ -571,25 +1163,32 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			title: project.properties.name
 		}).addTo($scope.map);
 		marker.feature = project;
+		applyMarkerAccessibility(marker, project);
 		var counterString = counter ? "-" + counter : "";
 		$scope.markers[project.properties.id + counterString] = marker;
 		marker.on('click', function (e) {
-			$scope.markerClick(project, e.target);
-			$scope.selectedProject = project;
+			runInAngular(function () {
+				$scope.markerClick(project, e.target);
+				$scope.selectedProject = project;
+			});
 		});
 	}
 
 	function addPointToMap(layer, project) {
 		layer.on('click', function (e) {
-			$scope.markerClick(project, e.target);
-			$scope.selectedProject = project;
+			runInAngular(function () {
+				$scope.markerClick(project, e.target);
+				$scope.selectedProject = project;
+			});
 		});
 
 	}
     
 	// grabs the appropriate content for the project, HTML-formats it,
 	// stuffs it in the modal dialog, and shows the dialog.
-	function populateModal(project, target) {
+	function populateModal(project, target, options) {
+		options = options || {};
+		var viaKeyboard = !!options.viaKeyboard;
 		
 		if (isMobileView) {
 			// if mobile view, show modal popup
@@ -606,8 +1205,59 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if (project.properties.date) content += '<span class="dates">' + project.properties.date + '</span>';
 			content += '</div>';
 
-			$('#MapPopup .modal-body').html(content);
-			$('#MapPopup').modal('show').show();
+			var $mapPopup = $('#MapPopup');
+			var $modalBody = $mapPopup.find('.modal-body');
+			$modalBody.html(content);
+
+			// Make the teaser card keyboard-focusable.
+			var teaserLabel = 'View project details';
+			if (project && project.properties && project.properties.name) {
+				teaserLabel = 'View project details for ' + project.properties.name;
+			}
+			// Give the dialog itself an accessible name.
+			$mapPopup.attr('aria-label', teaserLabel);
+			$modalBody
+				.attr('tabindex', '0')
+				.attr('role', 'button')
+				.attr('aria-label', teaserLabel);
+			// Keep the explicit "View details" control in sync with the teaser label.
+			$mapPopup.find('a.link--more').attr('aria-label', teaserLabel);
+
+			// Add Enter/Space activation once.
+			if ($modalBody.attr('data-ww-teaser-keys') !== '1') {
+				$modalBody.attr('data-ww-teaser-keys', '1');
+				$modalBody.on('keydown', function (e) {
+					var key = e && (e.key || e.keyCode || e.which);
+					var isEnter = key === 'Enter' || key === 13;
+					var isSpace = key === ' ' || key === 'Spacebar' || key === 32;
+					if (!isEnter && !isSpace) return;
+					if (typeof e.preventDefault === 'function') e.preventDefault();
+					if (typeof e.stopPropagation === 'function') e.stopPropagation();
+					runInAngular(function () {
+						$scope.showDetail($scope.selectedProject);
+					});
+				});
+			}
+
+			// Avoid re-triggering Bootstrap show() when already open.
+			var isOpen = $mapPopup.hasClass('in') || $mapPopup.attr('aria-hidden') === 'false' || $mapPopup.is(':visible');
+			if (!isOpen) {
+				$mapPopup.modal('show');
+			}
+			$mapPopup.show();
+			$mapPopup.attr('aria-hidden', 'false');
+
+			// Keyboard activation: move focus into the teaser.
+			if (viaKeyboard) {
+				setTimeout(function () {
+					try {
+						var bodyEl = $modalBody && $modalBody.length ? $modalBody.get(0) : null;
+						if (bodyEl && typeof bodyEl.focus === 'function') bodyEl.focus();
+					} catch (e) {
+						// no-op
+					}
+				}, 0);
+			}
 			
 		} else {
 			// it's desktop view, show detail instead of modal popup
@@ -618,12 +1268,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			var id = $scope.selectedProject.properties.id;
 			populateSelectedProject(id);
 			$scope.showDetail($scope.selectedProject);
-			
-			// kluge: these elements aren't really in ng scope, since they are dynamically generated by leaflet (seemingly).
-			// so we're kludging it with some jquery to activate a link that is within the scope (from the search panel list).
-			// is this feasible? what if the list is filtered and the item isn't present? no, not feasible for that reason.
-			// we need a hidden link that can be fake-clicked with jquery.
-			$('#clickHelper' + $scope.selectedProject.properties.id).click();
 		}
     	
 		// highlight marker
@@ -651,6 +1295,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		var thisGeometry = findProjectById(id).geometry;
 		$scope.clickedGeometry = thisGeometry;
+	}
+
+	function setMarkerSelectedIcon(id) {
+		if (id == null) return;
+		var keys = Object.keys($scope.markers);
+		for (var i = 0; i < keys.length; i++) {
+			if (keys[i] == id.toString() || keys[i].indexOf(id + "-") === 0) {
+				$scope.markers[keys[i]].setIcon(new L.Icon(WATER_ICON_SELECTED));
+			}
+		}
 	}
 
 	function findProjectById(id) {
@@ -687,6 +1341,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					return false;
 				}
 				marker.setIcon(new L.Icon(WATER_ICON));
+				// Keep a11y attributes in sync with disabled state changes.
+				var el = null;
+				if (typeof marker.getElement === 'function') {
+					el = marker.getElement();
+				}
+				el = el || marker._icon;
+				if (el) {
+					el.setAttribute('aria-disabled', 'false');
+					el.setAttribute('tabindex', '0');
+				}
 			}
 		}
 	}
@@ -706,6 +1370,24 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					return false;
 				}
 				marker.setIcon(new L.Icon(WATER_ICON_GRAY));
+				// Keep a11y attributes in sync with disabled state changes.
+				var el = null;
+				if (typeof marker.getElement === 'function') {
+					el = marker.getElement();
+				}
+				el = el || marker._icon;
+				if (el) {
+					el.setAttribute('aria-disabled', 'true');
+					el.setAttribute('tabindex', '-1');
+					// If a marker becomes disabled while focused, move focus away.
+					try {
+						if (document && document.activeElement === el && typeof el.blur === 'function') {
+							el.blur();
+						}
+					} catch (e) {
+						// No-op
+					}
+				}
 			}
 		}
 	}
