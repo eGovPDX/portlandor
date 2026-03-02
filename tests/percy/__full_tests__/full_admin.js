@@ -311,15 +311,12 @@ describe('Full regression test suite for Admin', () => {
           'Full regression test city Service'
         );
 
-        // Click on "Actions"
-        //TODO: Need a more robust way to work with Select2 options
-        selector = 'ul.select2-selection__rendered';
+        // Select "Apply or File" in "Service Type"
+        selector = '#edit-field-community-actions';
         await this.page.evaluate(
-          (selector) => document.querySelector(selector).click(),
+          (selector) => document.querySelector(selector).value = "11",
           selector
         );
-        // Select the first option "Apply"
-        await this.page.keyboard.press('Enter');
 
         await this.page.type(
           '#edit-field-summary-0-value',
@@ -749,10 +746,10 @@ describe('Full regression test suite for Admin', () => {
         await fileElement.uploadFile(filePath);
         // await this.page.waitForSelector('div.form-managed-file__main span.file');
         await this.page.waitForSelector(
-          'div.form-item--image-0-alt input[type="text"]'
+          'div.form-item--image-0-alt textarea'
         );
         await this.page.type(
-          'div.form-item--image-0-alt input[type="text"]',
+          'div.form-item--image-0-alt textarea',
           'Alternative text for the test image'
         );
 
@@ -919,7 +916,7 @@ describe('Full regression test suite for Admin', () => {
         await page.select('#edit-action', '7');
         // Apply to selected items
         await page.evaluate(() => {
-          document.querySelector('#edit-submit--2').click();
+          document.querySelector('#edit-submit').click();
         });
         await page.waitForNavigation();
         // Execute action button

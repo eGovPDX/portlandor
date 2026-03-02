@@ -86,6 +86,8 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
           'height' => '100%',
           'frameborder' => '0',
           'allowfullscreen' => 'true',
+          // local-network-access allows users on City network to access on-premise services such as PortlandMaps within the iframe
+          'allow' => 'fullscreen *; local-network-access *',
         ],
       ];
     }

@@ -130,7 +130,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     if (isset($value['location_types']) && $value['location_types']) {
       $lines[] = 'Location type(s): ' . $value['location_types'];
-    }    
+    }
     if (isset($value['location_attributes']) && $value['location_attributes']) {
       $lines[] = 'Location details: ' . $value['location_attributes'];
     }
@@ -153,7 +153,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     parent::prepare($element, $webform_submission);
 
     $element_id = "report_location";
-    
+
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
@@ -168,7 +168,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
     $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
     $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($addressVerify ? "Verify" : "Search");
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($addressVerify ? $this->t("Verify") : $this->t("Search"));
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
@@ -178,7 +178,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $disablePlaceNameAutofill = array_key_exists('#disable_place_name_autofill', $element) ? $element['#disable_place_name_autofill'] : FALSE;
     $regionIdPropertyName = array_key_exists('#region_id_property_name', $element) ? $element['#region_id_property_name'] : 'region_id';
     $maxZoom = array_key_exists('#max_zoom', $element) ? $element['#max_zoom'] : 18;
-    
+
     $boundaryUrl = array_key_exists('#boundary_url', $element) ? $element['#boundary_url'] : 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson';
     $displayBoundary = array_key_exists('#display_boundary', $element) ? $element['#display_boundary'] : TRUE;
     $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
