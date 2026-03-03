@@ -77,6 +77,10 @@
           featureLayer.setStyle(map.options.path);
           map.fitBounds(featureLayer.getBounds());
           map.featureAdded = true;
+          map.once('moveend', function () {
+            map.options.initCenter = map.getCenter();
+            map.options.initZoom = map.getZoom();
+          });
         })
       };
     }
@@ -100,6 +104,10 @@
           featureLayer.setStyle(map.options.path);
           map.fitBounds(featureLayer.getBounds());
           map.featureAdded = true;
+          map.once('moveend', function () {
+            map.options.initCenter = map.getCenter();
+            map.options.initZoom = map.getZoom();
+          });
       };
     }
     xhr.send();
@@ -240,6 +248,10 @@ jQuery(document)
       // once we've looped through all the features, zoom the map to the extent of the collection
       if(bounds.isValid())
         lMap.fitBounds(bounds);
+        lMap.once('moveend', function () {
+          lMap.options.initCenter = lMap.getCenter();
+          lMap.options.initZoom = lMap.getZoom();
+        });
     });
   }
 
@@ -278,6 +290,10 @@ jQuery(document)
       // once we've looped through all the features, zoom the map to the extent of the collection
       if(bounds.isValid())
         lMap.fitBounds(bounds);
+        lMap.once('moveend', function () {
+          lMap.options.initCenter = lMap.getCenter();
+          lMap.options.initZoom = lMap.getZoom();
+        });
     });
   }
 });
