@@ -1,0 +1,35 @@
+diff --git a/js/Leaflet.ResetView/dist/L.Control.ResetView.js b/js/Leaflet.ResetView/dist/L.Control.ResetView.js
+index f8f9fcc9..7f723225 100644
+--- a/js/Leaflet.ResetView/dist/L.Control.ResetView.js
++++ b/js/Leaflet.ResetView/dist/L.Control.ResetView.js
+@@ -56,7 +56,13 @@
+       // Added by itamair according to this drustack/Leaflet.ResetView issue:
+       // https://github.com/drustack/Leaflet.ResetView/issues/1
+       if (e) { L.DomEvent.preventDefault(e) }
+-      this._map.setView(this.options.latlng, this.options.zoom);
++      if (this._map.options.initCenter !== undefined && this._map.options.initZoom !== undefined) {
++        this._map.setView(this._map.options.initCenter, this._map.options.initZoom);
++      }
++      else {
++        // Fall back to the original implementation if the map options are not set.
++        this._map.setView(this.options.latlng, this.options.zoom);
++      }
+     },
+   });
+ 
+diff --git a/js/leaflet.drupal.js b/js/leaflet.drupal.js
+index 08192e48..8ee9e2de 100644
+--- a/js/leaflet.drupal.js
++++ b/js/leaflet.drupal.js
+@@ -930,6 +930,11 @@
+       // Set the map start zoom and center.
+       this.start_zoom = start_zoom;
+       this.start_center = start_center;
++
++      // Set options for start zoom and center, to be used by the Map Reset View Control.
++      this.lMap.setView(start_center, start_zoom);
++      this.lMap.options.initCenter = start_center;
++      this.lMap.options.initZoom = start_zoom;
+     }
+ 
+   };
