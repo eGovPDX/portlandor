@@ -673,7 +673,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     }
 
     // hide the "verified" visual indicators /////////////////////////
-    $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
+    if ($checkmark) $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
     this.$status.removeClass("verified unverified").addClass("invisible").text("");
     $button.prop('disabled', false);
     $button.removeClass("disabled button--info");
@@ -685,7 +685,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
 // use this function to force an override
 AddressVerifierView.prototype._useUnverified = function () {
-    this.$checkmark.addClass("invisible");
+    if (this.$checkmark)this.$checkmark.addClass("invisible");
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
     var unverifiedMessage = this.settings.verification_required ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;

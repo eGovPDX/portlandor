@@ -453,7 +453,7 @@ elements: |-
         {{ data.apply_event_start_date }}
         {% if data.apply_recurring and data.apply_recurrence is not iterable %}
           <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
-          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}
+          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join(', ') }}
         {% endif %}
         <br><strong>Start and end times: </strong>{{ data.apply_event_times }}
         {% if data.apply_event_open_to_public and data.apply_event_open_to_public is not iterable %}
@@ -510,13 +510,13 @@ elements: |-
           {% if data.apply_previous_event_date %}<strong>Date last used:</strong> {{ data.apply_previous_event_date }}<br>{% endif %}
         {% endif %}
 
-          <strong>Which part of the the right-of-way will be used?</strong> {{ data.apply_row_requested | join(', ') }}<br>
+          <strong>Which part of the the right-of-way will be used?</strong> {{ data.apply_row_requested|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join(', ') }}<br>
 
           <strong>Need reserved parking outside event for loading?</strong> {{ data.apply_reserved_parking }}<br>
           {% if data.apply_parking_spaces %}<strong>How many parking spaces?</strong> {{ data.apply_parking_spaces }}<br>
           <strong>Desired location:</strong> {{ data.apply_parking_location }}<br>{% endif %}
 
-          <strong>What equipment will be placed in the right-of-way?</strong> {{ data.apply_row_equipment | join(', ') }}
+          <strong>What equipment will be placed in the right-of-way?</strong> {{ data.apply_row_equipment|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join(', ') }}
       </p>
 
   report_ticket_id:
@@ -542,7 +542,7 @@ elements: |-
     '#title': 'Computed Event Schedule'
     '#display_on': none
     '#mode': text
-    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
+    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
     '#whitespace': trim
   actions:
     '#type': webform_actions
