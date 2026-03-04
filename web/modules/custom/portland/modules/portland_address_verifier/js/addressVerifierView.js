@@ -219,9 +219,11 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 
     this.$input.on('keydown', function (e) {
         if (e.keyCode == 13) {
+            // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
+            if (self.$input.autocomplete('widget') && self.$input.autocomplete('widget').has('.ui-state-active').length) return;
+            
             e.preventDefault();
             self.$button.click();
-            return false;
         }
     });
 
@@ -249,10 +251,17 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
             const items = ui.content;
             ui.content = items;
         },
+        focus: function (event, ui) {
+            // if triggered by keyboard navigation, populate the input with the focused item's address
+            if (event.originalEvent && event.originalEvent.originalEvent && /^key/.test(event.originalEvent.originalEvent.type)) {
+                self.$input.val(ui.item.displayAddress + ' ' + ui.item.zipCode);
+                return false;
+            }
+        },
         create: function () {
             self.$input.data('ui-autocomplete')._renderItem = function (ul, item) {
                 const li = self.$('<li>')
-                    .append(item.displayAddress + '  ' + item.zipCode)
+                    .append(`<div>${item.displayAddress} ${item.zipCode}</div>`)
                     .appendTo(ul);
                 return li;
             };
