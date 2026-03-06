@@ -40,17 +40,38 @@ elements: |-
       '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
     apply_street_painting:
       '#type': radios
-      '#title': 'Is this a Street Painting and/or repainting project?'
-      '#options': yes_no
-      '#options_display': side_by_side
+      '#title': 'Is this a street painting or repainting project?'
+      '#options':
+        'No': 'No'
+        'Street painting': 'Street painting'
+        'Street repainting': 'Street repainting'
       '#required': true
-    markup_street_painting:
-      '#type': webform_markup
+    apply_street_painting_where:
+      '#type': radios
+      '#title': 'Where on the street would you like your painting?'
+      '#options':
+        Intersection: Intersection
+        Midblock: Midblock
+        Both: Both
+      '#required': true
       '#states':
         visible:
-          ':input[name="apply_street_painting"]':
-            value: 'Yes'
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">If you are considering a new Street Painting, please consult the <a href="/node/18358" data-entity-type="node" data-entity-uuid="02f5c29e-3bdd-4d4c-b4e4-166c1fd4c782" data-entity-substitution="canonical">Street Painting program</a> to initiate the application process, if you have not already done so.</p></div>'
+          - ':input[name="apply_street_painting"]':
+              value: 'Street painting'
+          - or
+          - ':input[name="apply_street_painting"]':
+              value: 'Street repainting'
+    apply_design_upload:
+      '#type': managed_file
+      '#title': 'Upload your painting design'
+      '#states':
+        visible:
+          - ':input[name="apply_street_painting"]':
+              value: 'Street painting'
+          - or
+          - ':input[name="apply_street_painting"]':
+              value: 'Street repainting'
+      '#file_extensions': 'pdf png jpg jpeg ppt pptx'
     apply_blocks_requested:
       '#type': number
       '#title': 'Number of blocks requested'
@@ -353,6 +374,7 @@ elements: |-
       <p>
         {% if data.apply_street_painting and data.apply_street_painting is not iterable %}
           <strong>Street Painting/Repainting project?</strong> {{ data.apply_street_painting }}<br>
+          <strong>Where on the street would you like your painting? {{ data.apply_street_painting_where }}<br>
         {% endif %}
         {% if data.apply_is_church and data.apply_is_church is not iterable %}
           <strong>This is a church event?</strong> {{ data.apply_is_church }}<br>
@@ -400,7 +422,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -429,6 +451,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -460,7 +483,7 @@ settings:
   wizard_progress_bar: true
   wizard_progress_pages: false
   wizard_progress_percentage: false
-  wizard_progress_link: false
+  wizard_progress_link: true
   wizard_progress_states: false
   wizard_start_label: ''
   wizard_preview_link: false
@@ -599,4 +622,5 @@ handlers:
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '29039643933975'
+      excluded_elements: {  }
 variants: {  }
