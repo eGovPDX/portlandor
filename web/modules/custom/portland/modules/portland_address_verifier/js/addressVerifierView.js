@@ -674,10 +674,10 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
     // hide the "verified" visual indicators /////////////////////////
     if ($checkmark) $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
-    this.$status.removeClass("verified unverified").addClass("invisible").text("");
-    $button.prop('disabled', false);
-    $button.removeClass("disabled button--info");
-    $button.addClass("button--primary");
+    if (this.$status) this.$status.removeClass("verified unverified").addClass("invisible").text("");
+    if ($button) $button.prop('disabled', false);
+    if ($button) $button.removeClass("disabled button--info");
+    if ($button) $button.addClass("button--primary");
 
     // set internal isVerified flag to false /////////////////////////
     this.isVerified = false;
@@ -685,17 +685,17 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
 // use this function to force an override
 AddressVerifierView.prototype._useUnverified = function () {
-    if (this.$checkmark)this.$checkmark.addClass("invisible");
-    this.$status.addClass("invisible");
+    if (this.$checkmark) this.$checkmark.addClass("invisible");
+    if (this.$status) this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
     var unverifiedMessage = this.settings.verification_required ? VERFICATION_REQUIRED_MESSAGE : UNVERIFIED_WARNING_MESSAGE;
-    this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
+    if (this.$status) this.$status.removeClass("invisible").addClass("unverified").text(unverifiedMessage);
     // var input = this.$notFoundModal.find("#enteredAddress").val();
     // this.$input.val(input);
-    this.$button.prop("disabled", "disabled");
-    this.$button.removeClass("button--primary");
-    this.$button.addClass("disabled button--info");
-    this.$element.find('#location_verification_status').val("Forced").trigger('change');
+    if (this.$button) this.$button.prop("disabled", "disabled");
+    if (this.$button) this.$button.removeClass("button--primary");
+    if (this.$button) this.$button.addClass("disabled button--info");
+    if (this.$element) this.$element.find('#location_verification_status').val("Forced").trigger('change');
     // this.$element.find('#container_unit').addClass('d-none');
     // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
