@@ -1,9 +1,43 @@
 <?php
 
+use AzureOss\Storage\Blob\BlobServiceClient;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\webform\WebformInterface;
+use Drupal\webform\WebformSubmissionInterface;
+
+/**
+ * Upload all webform submissions in the Live environment to Azure Blob Storage as JSON files.
+ */
+function portland_webforms_webform_submission_presave(WebformSubmissionInterface $webform_submission) {
+  if (!isset($_ENV['PANTHEON_ENVIRONMENT']) || $_ENV['PANTHEON_ENVIRONMENT'] !== 'live') return;
+
+  $config = \Drupal::config('portland_webforms.settings');
+  $key_id = $config->get('azure_storage_key_id');
+  $key = \Drupal::service('key.repository')->getKey($key_id);
+  if (is_null($key)) return;
+
+  $connection_string = $key->getKeyValue();
+  try {
+    $webform_id = $webform_submission->getWebform()->id();
+    $submission_uuid = $webform_submission->uuid();
+    $submission_timestamp = $webform_submission->getCompletedTime();
+    $blobServiceClient = BlobServiceClient::fromConnectionString($connection_string);
+    $json_data = json_encode($webform_submission->toArray(TRUE), JSON_THROW_ON_ERROR);
+
+    $containerClient = $blobServiceClient->getContainerClient('webform-submissions');
+    $blobClient = $containerClient->getBlobClient("{$webform_id}/{$webform_id}_{$submission_timestamp}_{$submission_uuid}.json");
+    $blobClient->upload($json_data);
+  } catch (\Exception $e) {
+    \Drupal::logger('portland_webforms')->error('Uploading @form submission to Azure Blob Storage failed. @exception: @message.', [
+      '@exception' => get_class($e),
+      '@form' => $webform_submission->getWebform()->label(),
+      '@message' => $e->getMessage(),
+      'link' => $webform_submission->getWebform()->toLink()->toString(),
+    ]);
+  }
+}
 
 /**
  * Implements hook_webform_element_ELEMENT_TYPE_alter() for our custom element.
