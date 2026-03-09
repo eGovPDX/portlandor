@@ -536,7 +536,9 @@ elements: |-
       computed_hop_card_type:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Type (primary applicant)'
-        '#display_on': view
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#mode': text
         '#template': |-
           {# if option 1, will be adult or honored citizen
@@ -544,32 +546,27 @@ elements: |-
              if option 3, will be adult or honored citizen, or not needed #}
 
           {% if data.apply_wallet_package == "wallet_option_1" %}
-            {% if data.computed_age_primary < 65 %}
-              27985321767319_adult_hop_card
-            {% else %}
+            {% if data.apply_has_hop_card_hc == "Yes" %}
               27985321767319_honored_citizen_hop_card
+            {% else %}
+              27985321767319_adult_hop_card
             {% endif %}
 
           {% elseif data.apply_wallet_package == "wallet_option_2" %}
-            {% if data.computed_age_primary < 65 %}
               27985321767319_adult_hop_card
-            {% else %}
-              27985321767319_honored_citizen_hop_card
-            {% endif %}
 
           {% elseif data.apply_wallet_package == "wallet_option_3" %}
             {% if data.apply_has_hop_card == "27985321767319_hop_card_not_needed" %}
               27985321767319_hop_card_not_needed
             {% elseif data.apply_has_hop_card == "Yes" %}
               {# if they have a hop card, we have no way to know what type it is, so leave hop card type blank and pass along the number #}
-            {% elseif data.computed_age_primary < 65 %}
-              27985321767319_adult_hop_card
             {% else %}
-              27985321767319_honored_citizen_hop_card
+              27985321767319_adult_hop_card
             {% endif %}
             
           {% endif %}
         '#whitespace': trim
+        '#ajax': true
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -1869,7 +1866,7 @@ elements: |-
     '#title': 'Primary Household Member Display'
     '#display_on': none
     '#mode': html
-    '#template': |
+    '#template': |-
       <h3>Wallet option</h3>
 
       <p><strong>Which Transportation Wallet package would you like to sign up for?</strong><br>
@@ -1887,11 +1884,11 @@ elements: |-
       <p><strong>Does this person have a Hop card?</strong>
 
       {% if data.apply_wallet_package == "wallet_option_1" %}
-        {% if data.apply_has_hop_card_hc == "Yes" %}Yes
+        {% if data.apply_has_hop_card_hc == "Yes" %}
+          Yes - HC
         {% else %}
-          No - {% if data.computed_age_primary < 65 %}needs Adult{% else %}needs Honored Citizen{% endif %}
+          No - needs Adult
         {% endif %}
-        
         
       {% elseif data.apply_wallet_package == "wallet_option_2" %}
         {% if data.apply_has_hop_card_opt2 == "Yes" %}Yes
@@ -1931,7 +1928,6 @@ elements: |-
       <h3>Questions/Comments</h3>
       {{ data.apply_final_questions_text }}
       {% endif %}
-    '#ajax': true
   household_member_2_display:
     '#type': webform_computed_twig
     '#title': 'Household Member 2 Display'
@@ -2119,9 +2115,9 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Tags Options 1 & 2'
     '#display_on': none
-    '#ajax': true
     '#mode': text
     '#template': |
+      {# this is functionally the same as computed_tags_member_1 #}
       {% if data.apply_wallet_package != "wallet_option_3" %}
         29758569828631_full
         {{ data.apply_wallet_package }}
@@ -2156,12 +2152,15 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Tags Member 1'
     '#display_on': none
-    '#ajax': true
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.apply_wallet_package == "wallet_option_1" %}
         wallet_option_1 29758569828631_full
-        27985321767319_adult_hop_card
+        {% if data.apply_has_hop_card_hc == "Yes" %}
+          27985321767319_honored_citizen_hop_card
+        {% else %}
+          27985321767319_adult_hop_card
+        {% endif %}
 
       {% elseif data.apply_wallet_package == "wallet_option_2" %}
         wallet_option_2 29758569828631_full
@@ -2277,8 +2276,151 @@ elements: |-
     '#mode': text
     '#template': "{{ webform_token('[current-page:url:absolute]', webform_submission, [], options) }}{% if webform_token('[current-page:query:organization_name]', webform_submission, [], options) %}?organization_url={{ webform_token('[current-page:query:organization_name]', webform_submission, [], options)|default('')|render|url_encode }}{% endif %}"
     '#whitespace': trim
-css: ".webform-multiple-table table {\r\n    width: inherit !important;\r\n}\r\n\r\n.webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit !important;\r\n}\r\n\r\n.webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}\r\n\r\n.card-header.card-header-opt-1 {\r\n    background: rgba(240, 92, 73, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-2 {\r\n    background: rgba(124, 66, 118, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-3 {\r\n    background: rgba(0, 160, 174, 0.33);\r\n}\r\n\r\n#member_2_container, #member_3_container, #member_4_container, #member_5_container {\r\n  border: 1px solid black;\r\n  padding: 15px 15px 0 15px;\r\n  margin-bottom: 5px;\r\n}\r\n\r\ndiv.form-disabled input[type=submit] { \r\n  color: white; cursor: not-allowed; \r\n}\r\n\r\n.webform-submission-transportation-wallet-form .form-text {\r\n  display: inline-block;\r\n}\r\n\r\n#calculator-submit-button input:disabled {\r\n  cursor: not-allowed;   /* Indicate that the button is disabled */\r\n  opacity: 0.6;          /* Optional: Make it semi-transparent */\r\n}\r\n\r\n#remaining-amt, #allocated-amt, #allocated-over {\r\n  font-weight: bold !important;\r\n}"
-javascript: "(function ($, Drupal, once) {\r\nDrupal.behaviors.updateSubmitButtonState = {\r\n  attach: function (context) {\r\n\r\n    var $wizardPage = $(once('funds-distribution-handler', '[data-webform-key=\"page_funds_distribution\"]', context));\r\n    if (!$wizardPage.length) return;\r\n\r\n    // Cache selectors (within the wizard page context)\r\n    var $page = $wizardPage; // scope\r\n    var $fields = $page.find('[name=\"funds_member_1\"], [name=\"funds_member_2\"], [name=\"funds_member_3\"], [name=\"funds_member_4\"], [name=\"funds_member_5\"]');\r\n\r\n    // Get funds as a number (trim just in case)\r\n    var funds = parseInt(($page.find('#available-funds').text() || '').trim(), 10) || 0;\r\n\r\n    function updateState() {\r\n      // hide all messages\r\n      var $messageRemaining = $page.find('#message-remaining').addClass('d-none');\r\n      var $messageOk = $page.find('#message-ok').addClass('d-none');\r\n      var $messageOver = $page.find('#message-over').addClass('d-none');\r\n\r\n      // If even split selected, enable and exit\r\n      if ($page.find('[name=\"apply_funds_split\"][value=\"Evenly among all members\"]').is(':checked')) {\r\n        $page.find('#calculator-submit-button input').prop('disabled', false).removeClass('form-disabled');\r\n        return;\r\n      }\r\n\r\n      // Sum allocations (force numeric)\r\n      function val(name) {\r\n        var $f = $page.find('[name=\"' + name + '\"]');\r\n        var v = $f.length ? parseInt(($f.val() || '0'), 10) : 0;\r\n        return isNaN(v) || v < 0 ? 0 : v;\r\n      }\r\n\r\n      var allocated =\r\n        val('funds_member_1') +\r\n        val('funds_member_2') +\r\n        val('funds_member_3') +\r\n        val('funds_member_4') +\r\n        val('funds_member_5');\r\n\r\n      var $submit = $page.find('#calculator-submit-button input');\r\n\r\n      if (allocated === funds) {\r\n        $messageOk.removeClass('d-none');\r\n        $submit.prop('disabled', false).parent().removeClass('form-disabled');\r\n      } else if (allocated > funds) {\r\n        $messageOver.removeClass('d-none');\r\n        $page.find('#allocated-over').text(allocated - funds);\r\n        $submit.prop('disabled', true).parent().addClass('form-disabled');\r\n      } else {\r\n        $messageRemaining.removeClass('d-none');\r\n        $page.find('#remaining-amt').text(funds - allocated);\r\n        $submit.prop('disabled', true).parent().addClass('form-disabled');\r\n      }\r\n    }\r\n\r\n    // Bind events once per attach\r\n    $fields.on('input change', updateState);\r\n\r\n    // Also bind the radio that short-circuits the logic\r\n    $page.find('[name=\"apply_funds_split\"]').on('change', updateState);\r\n\r\n    // IMPORTANT: run once immediately on attach/page display\r\n    updateState();\r\n  }\r\n};\r\n  Drupal.behaviors.disableDatepicker = {\r\n    attach: function (context, settings) {\r\n      $('input[type=\"date\"]', context).removeAttr('max').removeAttr('data-max-year');\r\n    }\r\n  };\r\n})(jQuery, Drupal, once);\r\n"
+css: |-
+  .webform-multiple-table table {
+      width: inherit !important;
+  }
+
+  .webform-multiple-table tbody tr:hover,
+  .webform-multiple-table tbody tr:focus {
+      background: inherit !important;
+  }
+
+  .webform-scale {
+      margin-top: 0.5rem;
+      width: 100%;
+  }
+
+  .webform-scale .webform-scale-options {
+      display: flex;
+      justify-content: space-around;
+      margin: 0 2rem;
+  }
+
+  .webform-scale .webform-scale-option label {
+      line-height: inherit !important;
+  }
+
+  .webform-scale .webform-scale-text {
+      display: flex;
+      justify-content: space-between;
+      height: unset;
+      line-height: unset;
+  }
+
+  .webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {
+      position: unset;
+      width: 25%;
+      text-align: center !important;
+  }
+
+  .card-header.card-header-opt-1 {
+      background: rgba(240, 92, 73, 0.33);
+  }
+
+  .card-header.card-header-opt-2 {
+      background: rgba(124, 66, 118, 0.33);
+  }
+
+  .card-header.card-header-opt-3 {
+      background: rgba(0, 160, 174, 0.33);
+  }
+
+  #member_2_container, #member_3_container, #member_4_container, #member_5_container {
+    border: 1px solid black;
+    padding: 15px 15px 0 15px;
+    margin-bottom: 5px;
+  }
+
+  div.form-disabled input[type=submit] { 
+    color: white; cursor: not-allowed; 
+  }
+
+  .webform-submission-transportation-wallet-form .form-text {
+    display: inline-block;
+  }
+
+  #calculator-submit-button input:disabled {
+    cursor: not-allowed;   /* Indicate that the button is disabled */
+    opacity: 0.6;          /* Optional: Make it semi-transparent */
+  }
+
+  #remaining-amt, #allocated-amt, #allocated-over {
+    font-weight: bold !important;
+  }
+javascript: |
+  (function ($, Drupal, once) {
+  Drupal.behaviors.updateSubmitButtonState = {
+    attach: function (context) {
+
+      var $wizardPage = $(once('funds-distribution-handler', '[data-webform-key="page_funds_distribution"]', context));
+      if (!$wizardPage.length) return;
+
+      // Cache selectors (within the wizard page context)
+      var $page = $wizardPage; // scope
+      var $fields = $page.find('[name="funds_member_1"], [name="funds_member_2"], [name="funds_member_3"], [name="funds_member_4"], [name="funds_member_5"]');
+
+      // Get funds as a number (trim just in case)
+      var funds = parseInt(($page.find('#available-funds').text() || '').trim(), 10) || 0;
+
+      function updateState() {
+        // hide all messages
+        var $messageRemaining = $page.find('#message-remaining').addClass('d-none');
+        var $messageOk = $page.find('#message-ok').addClass('d-none');
+        var $messageOver = $page.find('#message-over').addClass('d-none');
+
+        // If even split selected, enable and exit
+        if ($page.find('[name="apply_funds_split"][value="Evenly among all members"]').is(':checked')) {
+          $page.find('#calculator-submit-button input').prop('disabled', false).removeClass('form-disabled');
+          return;
+        }
+
+        // Sum allocations (force numeric)
+        function val(name) {
+          var $f = $page.find('[name="' + name + '"]');
+          var v = $f.length ? parseInt(($f.val() || '0'), 10) : 0;
+          return isNaN(v) || v < 0 ? 0 : v;
+        }
+
+        var allocated =
+          val('funds_member_1') +
+          val('funds_member_2') +
+          val('funds_member_3') +
+          val('funds_member_4') +
+          val('funds_member_5');
+
+        var $submit = $page.find('#calculator-submit-button input');
+
+        if (allocated === funds) {
+          $messageOk.removeClass('d-none');
+          $submit.prop('disabled', false).parent().removeClass('form-disabled');
+        } else if (allocated > funds) {
+          $messageOver.removeClass('d-none');
+          $page.find('#allocated-over').text(allocated - funds);
+          $submit.prop('disabled', true).parent().addClass('form-disabled');
+        } else {
+          $messageRemaining.removeClass('d-none');
+          $page.find('#remaining-amt').text(funds - allocated);
+          $submit.prop('disabled', true).parent().addClass('form-disabled');
+        }
+      }
+
+      // Bind events once per attach
+      $fields.on('input change', updateState);
+
+      // Also bind the radio that short-circuits the logic
+      $page.find('[name="apply_funds_split"]').on('change', updateState);
+
+      // IMPORTANT: run once immediately on attach/page display
+      updateState();
+    }
+  };
+    Drupal.behaviors.disableDatepicker = {
+      attach: function (context, settings) {
+        $('input[type="date"]', context).removeAttr('max').removeAttr('data-max-year');
+      }
+    };
+  })(jQuery, Drupal, once);
 settings:
   ajax: true
   ajax_scroll_top: form
@@ -2484,7 +2626,10 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - [webform_submission:values:computed_primary_full_name:htmldecode]'
-      comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n"
+      comment: |
+        <h2>Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
       tags: 'drupal webform [webform_submission:values:computed_tags_options_1_2]'
       priority: normal
       status: new
@@ -2493,13 +2638,25 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']
+        29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']
+        27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']
+        25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']
+        29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 0
       parent_ticket_id_field: ''
       is_child_incident: 0
+      excluded_elements: {  }
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -2517,7 +2674,11 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - [webform_submission:values:computed_primary_full_name:htmldecode]'
-      comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n"
+      comment: |+
+        <h2>Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
+
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_options_1_2]'
       priority: normal
       status: new
@@ -2526,13 +2687,25 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']
+        29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']
+        27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']
+        25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']
+        29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 0
       parent_ticket_id_field: ''
       is_child_incident: 0
+      excluded_elements: {  }
   zendesk_new_request_household_container_ticket:
     id: zendesk
     handler_id: zendesk_new_request_household_container_ticket
@@ -2550,7 +2723,19 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_household_container_subject]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n"
+      comment: |+
+        <h2>Primary Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
+
+        [webform_submission:values:household_member_2_display]
+
+        [webform_submission:values:household_member_3_display]
+
+        [webform_submission:values:household_member_4_display]
+
+        [webform_submission:values:household_member_5_display]
+
       tags: 'drupal webform [webform_submission:values:computed_tags_household_container]'
       priority: normal
       status: new
@@ -2559,13 +2744,24 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']
+        29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']
+        27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']
+        25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 0
+      excluded_elements: {  }
   zendesk_new_request_household_member_1:
     id: zendesk
     handler_id: zendesk_new_request_household_member_1
@@ -2583,7 +2779,11 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 1 - [webform_submission:values:computed_primary_full_name:htmldecode]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n"
+      comment: |+
+        <h2>Primary Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
+
       tags: 'drupal webform [webform_submission:values:computed_tags_member_1]'
       priority: normal
       status: new
@@ -2592,13 +2792,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']
+        29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   zendesk_new_request_household_member_2:
     id: zendesk
     handler_id: zendesk_new_request_household_member_2
@@ -2616,7 +2825,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 2 - [webform_submission:values:computed_member_2_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_2_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_2_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform [webform_submission:values:computed_tags_member_2]'
       priority: normal
       status: new
@@ -2625,13 +2840,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_2]', 'date_of_birth_member_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_2]', 'date_of_birth_member_2']
+        27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']
+        29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   zendesk_new_request_household_member_3:
     id: zendesk
     handler_id: zendesk_new_request_household_member_3
@@ -2652,7 +2876,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 3 - [webform_submission:values:computed_member_3_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_3_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_3_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform [webform_submission:values:computed_tags_member_3]'
       priority: normal
       status: new
@@ -2661,13 +2891,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_3]', 'date_of_birth_member_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_3]', 'date_of_birth_member_3']
+        27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']
+        29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   zendesk_new_request_household_member_4:
     id: zendesk
     handler_id: zendesk_new_request_household_member_4
@@ -2688,7 +2927,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 4 - [webform_submission:values:computed_member_4_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_4_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_4_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform [webform_submission:values:computed_tags_member_4]'
       priority: normal
       status: new
@@ -2697,13 +2942,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_4]', 'date_of_birth_member_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_4]', 'date_of_birth_member_4']
+        27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']
+        29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_container_ticket:
     id: zendesk
     handler_id: test_zendesk_new_request_household_container_ticket
@@ -2721,7 +2975,19 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_household_container_subject]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n"
+      comment: |+
+        <h2>Primary Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
+
+        [webform_submission:values:household_member_2_display]
+
+        [webform_submission:values:household_member_3_display]
+
+        [webform_submission:values:household_member_4_display]
+
+        [webform_submission:values:household_member_5_display]
+
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_household_container]'
       priority: normal
       status: new
@@ -2730,13 +2996,24 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']
+        29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']
+        27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']
+        25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 0
+      excluded_elements: {  }
   zendesk_new_request_household_member_5:
     id: zendesk
     handler_id: zendesk_new_request_household_member_5
@@ -2757,7 +3034,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 5 - [webform_submission:values:computed_member_5_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_5_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_5_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform [webform_submission:values:computed_tags_member_5]'
       priority: normal
       status: new
@@ -2766,13 +3049,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_5]', 'date_of_birth_member_5']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_5]', 'date_of_birth_member_5']
+        27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']
+        29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_member_1:
     id: zendesk
     handler_id: test_zendesk_new_request_household_member_1
@@ -2790,7 +3082,11 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 1 - [webform_submission:values:computed_primary_full_name:htmldecode]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n"
+      comment: |+
+        <h2>Primary Applicant Information</h2>
+
+        [webform_submission:values:primary_household_member_display]
+
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_1]'
       priority: normal
       status: new
@@ -2799,13 +3095,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']
+        27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']
+        29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_member_4:
     id: zendesk
     handler_id: test_zendesk_new_request_household_member_4
@@ -2826,7 +3131,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 4 - [webform_submission:values:computed_member_4_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_4_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_4_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_4]'
       priority: normal
       status: new
@@ -2835,13 +3146,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_4]', 'date_of_birth_member_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_4]', 'date_of_birth_member_4']
+        27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']
+        29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_member_2:
     id: zendesk
     handler_id: test_zendesk_new_request_household_member_2
@@ -2859,7 +3179,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 2 - [webform_submission:values:computed_member_2_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_2_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_2_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_2]'
       priority: normal
       status: new
@@ -2868,13 +3194,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_2]', 'date_of_birth_member_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_2]', 'date_of_birth_member_2']
+        27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']
+        29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_member_3:
     id: zendesk
     handler_id: test_zendesk_new_request_household_member_3
@@ -2895,7 +3230,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 3 - [webform_submission:values:computed_member_3_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_3_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_3_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_3]'
       priority: normal
       status: new
@@ -2904,13 +3245,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_3]', 'date_of_birth_member_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_3]', 'date_of_birth_member_3']
+        27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']
+        29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
   test_zendesk_new_request_household_member_5:
     id: zendesk
     handler_id: test_zendesk_new_request_household_member_5
@@ -2931,7 +3281,13 @@ handlers:
       requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 5 - [webform_submission:values:computed_member_5_full_name:htmldecode]'
-      comment: "[webform_submission:values:household_member_5_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee; color: #666666\">\r\n<h2>Primary Applicant Information</h2>\r\n[webform_submission:values:primary_household_member_display]\r\n</div>"
+      comment: |-
+        [webform_submission:values:household_member_5_display]
+
+        <div style="padding: 10px; background-color: #eeeeee; color: #666666">
+        <h2>Primary Applicant Information</h2>
+        [webform_submission:values:primary_household_member_display]
+        </div>
       tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_5]'
       priority: normal
       status: new
@@ -2940,11 +3296,20 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27985303578775: ['[webform_submission:values:computed_dob_member_5]', 'date_of_birth_member_5']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'\r\n31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']"
+      custom_fields: |-
+        6353388345367: 'transportation_wallet'
+        27985303578775: ['[webform_submission:values:computed_dob_member_5]', 'date_of_birth_member_5']
+        27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']
+        29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']
+        26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']
+        29832196080919: ['[webform_submission:values:contact_org_representative_name]', 'contact_org_representative_name']
+        30430800267287: '[webform_submission:values:computed_primary_full_name_escaped:htmldecode]'
+        31303722460055: ['[webform_submission:values:apply_household_size]', 'apply_household_size']
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
+      excluded_elements: {  }
 variants: {  }
