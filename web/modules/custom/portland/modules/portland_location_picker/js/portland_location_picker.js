@@ -28,11 +28,11 @@
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
         const FEATURE_LAYER_VISIBLE_ZOOM = 16;
-        const DEFAULT_ICON_SIZE = [27, 41];
+        const DEFAULT_ICON_SIZE = [37, 51];
         const DEFAULT_ICON_SHADOW_SIZE = [0, 0];
-        const DEFAULT_ICON_ANCHOR = [13, 41];
+        const DEFAULT_ICON_ANCHOR = [18, 51];
         const DEFAULT_ICON_SHADOW_ANCHOR = [0, 0];
-        const DEFAULT_ICON_POPUP_ANCHOR = [0, -41];
+        const DEFAULT_ICON_POPUP_ANCHOR = [0, -51];
 
         const ZOOM_POSITION = 'topright';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
@@ -168,9 +168,9 @@
           iconUrl: selectedMarker,
           iconSize: DEFAULT_ICON_SIZE, // size of the icon
           shadowSize: [0, 0], // size of the shadow
-          iconAnchor: [13, 41], // point of the icon which will correspond to marker's location
+          iconAnchor: DEFAULT_ICON_ANCHOR, // point of the icon which will correspond to marker's location
           shadowAnchor: [0, 0],  // the same for the shadow
-          popupAnchor: [0, -41]
+          popupAnchor: DEFAULT_ICON_POPUP_ANCHOR
         });
 
         // geofencing backwards compatibility
@@ -941,7 +941,15 @@
           marker.originalIcon = marker.target.options.icon;
 
           // update asset marker to use use selected marker icon
-          newIcon = L.icon({ iconUrl: selectedMarker });
+          newIcon = L.icon({
+            iconUrl: selectedMarker,
+            iconSize: DEFAULT_ICON_SIZE,
+            shadowSize: DEFAULT_ICON_SHADOW_SIZE,
+            iconAnchor: DEFAULT_ICON_ANCHOR,
+            shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
+            popupAnchor: DEFAULT_ICON_POPUP_ANCHOR,
+            className: 'feature selected'
+          });
           marker.target.setIcon(newIcon);
           L.DomUtil.addClass(marker.target._icon, 'selected');
 
