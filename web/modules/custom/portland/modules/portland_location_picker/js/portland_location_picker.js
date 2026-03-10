@@ -36,6 +36,7 @@
 
         const ZOOM_POSITION = 'topleft';
         const PAN_PIXELS = 100;
+        const PAN_POSITION = 'topright';
         const RESET_POSITION = 'topleft';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
@@ -742,7 +743,7 @@
         function generatePanControl() {
           return L.Control.extend({
             options: {
-              position: 'bottomleft'
+              position: PAN_POSITION
             },
             onAdd: function (map) {
               var container = L.DomUtil.create('div', 'leaflet-control pan-control');
