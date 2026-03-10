@@ -36,6 +36,7 @@
 
         const ZOOM_POSITION = 'topleft';
         const PAN_PIXELS = 100;
+        const RESET_POSITION = 'topleft';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -104,6 +105,7 @@
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var PanControl = generatePanControl();
+        var ResetControl = generateResetControl();
         var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
@@ -227,6 +229,7 @@
           drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+          map.addControl(new ResetControl());
           map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
@@ -717,6 +720,25 @@
           });
         }
 
+        function generateResetControl() {
+          return L.Control.extend({
+            options: {
+              position: RESET_POSITION
+            },
+            onAdd: function (map) {
+              var container = L.DomUtil.create('div', 'leaflet-bar reset-control leaflet-control leaflet-control-custom');
+              container.innerHTML = '↻';
+              container.title = 'Reset map';
+              container.setAttribute('aria-label', 'Reset map');
+              L.DomEvent.on(container, 'click', function (e) {
+                cancelEventBubble(e);
+                handleResetButtonClick();
+              });
+              return container;
+            }
+          });
+        }
+
         function generatePanControl() {
           return L.Control.extend({
             options: {
@@ -810,6 +832,20 @@
           cancelEventBubble(e);
           locationErrorShown = false;
           toggleAerialView();
+        }
+
+        function handleResetButtonClick() {
+          resetLocationMarker();
+          resetClickedMarker();
+          clearLocationFields();
+          if (locationTextBlock && map.hasLayer(locationTextBlock)) {
+            map.removeControl(locationTextBlock);
+          }
+          if (currentView === 'aerial') {
+            toggleAerialView();
+          }
+          map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
+          currentView = 'base';
         }
 
         function handlePanButtonClick(direction) {
