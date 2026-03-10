@@ -14,7 +14,16 @@ class HostnameProcessor extends AbstractRequestProcessor {
    * @return array
    */
   public function __invoke($record) {
+    // Drop all messages from the "cron" channel.
+    if (($record['channel'] ?? '') === 'cron') {
+      return false; // Monolog will skip this log entry.
+    }
     if ($request = $this->getRequest()) {
+      $hostname = $request->getHost();
+      // Only log messages from Live sites
+      if( ! in_array($hostname, ['www.portland.gov', 'employees.portland.gov'])) {
+        return false;
+      }
       $record['extra']['hostname'] = $request->getHost();
     }
 
