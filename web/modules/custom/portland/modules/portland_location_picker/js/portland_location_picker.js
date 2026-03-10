@@ -34,7 +34,8 @@
         const DEFAULT_ICON_SHADOW_ANCHOR = [0, 0];
         const DEFAULT_ICON_POPUP_ANCHOR = [0, -51];
 
-        const ZOOM_POSITION = 'topright';
+        const ZOOM_POSITION = 'topleft';
+        const PAN_PIXELS = 100;
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -102,6 +103,7 @@
         var currentView = "base";
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
+        var PanControl = generatePanControl();
         var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
@@ -225,6 +227,7 @@
           drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+          map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           map.on('locationerror', handleLocationError);
@@ -714,6 +717,37 @@
           });
         }
 
+        function generatePanControl() {
+          return L.Control.extend({
+            options: {
+              position: 'bottomleft'
+            },
+            onAdd: function (map) {
+              var container = L.DomUtil.create('div', 'leaflet-control pan-control');
+
+              function buildButton(direction, label, title) {
+                var button = L.DomUtil.create('button', 'pan-control__button pan-control__button--' + direction, container);
+                button.type = 'button';
+                button.setAttribute('aria-label', title);
+                button.title = title;
+                button.textContent = label;
+                L.DomEvent.on(button, 'click', function (e) {
+                  cancelEventBubble(e);
+                  handlePanButtonClick(direction);
+                });
+              }
+
+              buildButton('up', '\u25b2', 'Pan up');
+              buildButton('left', '\u25c0', 'Pan left');
+              buildButton('right', '\u25b6', 'Pan right');
+              buildButton('down', '\u25bc', 'Pan down');
+
+              L.DomEvent.disableClickPropagation(container);
+              return container;
+            }
+          });
+        }
+
         function generateAerialControl() {
           return L.Control.extend({
             options: {
@@ -776,6 +810,21 @@
           cancelEventBubble(e);
           locationErrorShown = false;
           toggleAerialView();
+        }
+
+        function handlePanButtonClick(direction) {
+          if (direction === 'up') {
+            map.panBy([0, -PAN_PIXELS]);
+          }
+          if (direction === 'left') {
+            map.panBy([-PAN_PIXELS, 0]);
+          }
+          if (direction === 'right') {
+            map.panBy([PAN_PIXELS, 0]);
+          }
+          if (direction === 'down') {
+            map.panBy([0, PAN_PIXELS]);
+          }
         }
 
         function handleMapClick(e) {
