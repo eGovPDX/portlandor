@@ -63,7 +63,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
+      '#markup' => '<div id="location_map_container" class="location-map"></div><div id="location_map_help">For keyboard navigation, use the Tab key to focus the map then use arrow keys to move it. Press Enter to select the location at the center crosshair.</div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',

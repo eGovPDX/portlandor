@@ -38,6 +38,8 @@
         const PAN_PIXELS = 100;
         const PAN_POSITION = 'topright';
         const RESET_POSITION = 'topleft';
+        const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
+        const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter or Space to select the location at the center.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -234,6 +236,7 @@
           map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
+          initializeMapAccessibility();
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
 
@@ -616,7 +619,9 @@
                 icon: marker,
                 draggable: false,
                 riseOnHover: true,
-                iconSize: DEFAULT_ICON_SIZE
+                iconSize: DEFAULT_ICON_SIZE,
+                keyboard: false,
+                autoPanOnFocus: false
               });
             },
             onEachFeature: function (feature, layer) {
@@ -687,7 +692,9 @@
                 icon: marker,
                 draggable: false,
                 riseOnHover: true,
-                iconSize: DEFAULT_ICON_SIZE
+                iconSize: DEFAULT_ICON_SIZE,
+                keyboard: false,
+                autoPanOnFocus: false
               });
             },
             onEachFeature: function (feature, layer) {
@@ -714,8 +721,7 @@
             onAdd: function (map) {
               locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
               locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-              locateControlContaier.title = 'Locate Me';
-              locateControlContaier.onclick = handleLocateButtonClick;
+              initializeKeyboardControl(locateControlContaier, 'Locate Me', handleLocateButtonClick);
               return locateControlContaier;
             }
           });
@@ -729,12 +735,7 @@
             onAdd: function (map) {
               var container = L.DomUtil.create('div', 'leaflet-bar reset-control leaflet-control leaflet-control-custom');
               container.innerHTML = '↻';
-              container.title = 'Reset map';
-              container.setAttribute('aria-label', 'Reset map');
-              L.DomEvent.on(container, 'click', function (e) {
-                cancelEventBubble(e);
-                handleResetButtonClick();
-              });
+              initializeKeyboardControl(container, 'Reset map', handleResetButtonClick);
               return container;
             }
           });
@@ -779,11 +780,72 @@
             onAdd: function (map) {
               aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
               aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
-              aerialControlContainer.title = 'Aerial view';
-              aerialControlContainer.onclick = handleAerialButtonClick;
+              initializeKeyboardControl(aerialControlContainer, 'Aerial view', handleAerialButtonClick);
               return aerialControlContainer;
             }
           });
+        }
+
+        function initializeKeyboardControl(controlElement, label, clickHandler) {
+          controlElement.title = label;
+          controlElement.setAttribute('aria-label', label);
+          controlElement.setAttribute('role', 'button');
+          controlElement.setAttribute('tabindex', '0');
+          L.DomEvent.on(controlElement, 'click', function (e) {
+            cancelEventBubble(e);
+            clickHandler(e);
+          });
+          L.DomEvent.on(controlElement, 'keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              cancelEventBubble(e);
+              clickHandler(e);
+            }
+          });
+        }
+
+        function initializeMapAccessibility() {
+          var container = map.getContainer();
+          var helpId = getMapAccessibilityId('instructions');
+          var statusId = getMapAccessibilityId('status');
+          var containerParent = container.parentNode;
+
+          container.classList.add('keyboard-selection-enabled');
+          container.setAttribute('aria-label', 'Location picker map');
+          container.setAttribute('aria-describedby', helpId);
+
+          if (!document.getElementById(helpId)) {
+            var instructions = document.createElement('div');
+            instructions.id = helpId;
+            instructions.className = 'visually-hidden';
+            instructions.textContent = MAP_KEYBOARD_INSTRUCTIONS;
+            containerParent.insertBefore(instructions, container.nextSibling);
+          }
+
+          if (!document.getElementById(statusId)) {
+            var status = document.createElement('div');
+            status.id = statusId;
+            status.className = 'visually-hidden';
+            status.setAttribute('aria-live', 'polite');
+            status.setAttribute('aria-atomic', 'true');
+            containerParent.insertBefore(status, container.nextSibling);
+          }
+
+          L.DomEvent.on(container, 'keydown', handleMapKeyDown);
+        }
+
+        function getMapAccessibilityId(suffix) {
+          var prefix = elementId ? elementId.replace(/[^a-zA-Z0-9_-]/g, '-') : 'location-map';
+          return prefix + '-' + suffix;
+        }
+
+        function announceMapStatus(message) {
+          var statusElement = document.getElementById(getMapAccessibilityId('status'));
+          if (statusElement) {
+            statusElement.textContent = '';
+            window.setTimeout(function () {
+              statusElement.textContent = message;
+            }, 0);
+          }
         }
 
         function generatePopupContent(feature) {
@@ -810,17 +872,7 @@
         function handleMarkerClick(marker) {
 
           L.DomEvent.preventDefault(marker);
-          // if there was a previously set marker, reset it...
-          resetLocationMarker();
-          resetClickedMarker();
-          clearLocationFields();
-
-          if (isAssetSelectable(marker)) {
-            selectAsset(marker);
-          } else {
-            // user clicked something not selectable; reset data collection fields
-            clearLocationFields();
-          }
+          activateMarkerSelection(marker);
         }
 
         function handleLocateButtonClick(e) {
@@ -839,6 +891,7 @@
           resetLocationMarker();
           resetClickedMarker();
           clearLocationFields();
+          hideVerifiedLocation(false);
           if (locationTextBlock && map.hasLayer(locationTextBlock)) {
             map.removeControl(locationTextBlock);
           }
@@ -847,6 +900,7 @@
           }
           map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
           currentView = 'base';
+          announceMapStatus('Map reset to the default view.');
         }
 
         function handlePanButtonClick(direction) {
@@ -867,6 +921,25 @@
         function handleMapClick(e) {
           L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
+        }
+
+        function handleMapKeyDown(e) {
+          if (e.target !== map.getContainer()) {
+            return;
+          }
+
+          if (e.key !== 'Enter' && e.key !== ' ') {
+            return;
+          }
+
+          cancelEventBubble(e);
+
+          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+            selectMarkerAtMapCenter();
+            return;
+          }
+
+          doMapClick(map.getCenter());
         }
 
         function handleLocateMeFound(e) {
@@ -960,6 +1033,53 @@
           reverseGeolocate(latlng, true, verifiedAddress);
         }
 
+        function selectMarkerAtMapCenter() {
+          var markerLayer = findNearestSelectableMarker(map.getCenter());
+
+          if (!markerLayer) {
+            announceMapStatus('No selectable location is centered on the map. Move the map and press Enter again.');
+            return;
+          }
+
+          activateMarkerSelection({
+            target: markerLayer,
+            latlng: markerLayer.getLatLng()
+          });
+        }
+
+        function findNearestSelectableMarker(latlng) {
+          var centerPoint = map.latLngToContainerPoint(latlng);
+          var closestMarker = null;
+          var closestDistance = Infinity;
+
+          if (!primaryLayer || !map.hasLayer(primaryLayer)) {
+            return null;
+          }
+
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer.getLatLng || !layer.feature) {
+              return;
+            }
+
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+
+            if (!isAssetSelectable(marker)) {
+              return;
+            }
+
+            var distance = centerPoint.distanceTo(map.latLngToContainerPoint(layer.getLatLng()));
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestMarker = layer;
+            }
+          });
+
+          return closestDistance <= KEYBOARD_SELECTABLE_MARKER_DISTANCE ? closestMarker : null;
+        }
+
         function showLoader() {
           $('.loader-container').css("display", "flex");
         }
@@ -1015,6 +1135,18 @@
             return false;
           }
           return true;
+        }
+
+        function activateMarkerSelection(marker) {
+          resetLocationMarker();
+          resetClickedMarker();
+          clearLocationFields();
+
+          if (isAssetSelectable(marker)) {
+            selectAsset(marker);
+          } else {
+            clearLocationFields();
+          }
         }
 
         function selectAsset(marker) {
@@ -1561,6 +1693,7 @@
           $('#location-text-value').text(description);
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
+          announceMapStatus('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
 
           // if verify mode, also put location description in address field, but only the street
           if (addressVerify) {
@@ -1571,9 +1704,12 @@
           $('#location_address.location-picker-address').val(description).trigger('change');
         }
 
-        function hideVerifiedLocation() {
+        function hideVerifiedLocation(announce = true) {
           $('#verified_location_text').text("");
           $('#verified_location').addClass('visually-hidden');
+          if (announce) {
+            announceMapStatus('Selected location cleared.');
+          }
         }
 
         function selfLocateBrowser() {
