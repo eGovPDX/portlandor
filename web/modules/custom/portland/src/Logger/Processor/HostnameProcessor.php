@@ -18,7 +18,6 @@ class HostnameProcessor extends AbstractRequestProcessor {
   public function __invoke($record) {
     if ($request = $this->getRequest()) {
       $record['extra']['hostname'] = $request->getHost();
-      $record['extra']['dev'] = 'kevin';
     }
 
     return $record;
