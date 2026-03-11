@@ -782,6 +782,7 @@
           container.classList.add('keyboard-selection-enabled');
           container.setAttribute('aria-label', 'Location picker map');
           container.setAttribute('aria-describedby', helpId);
+          container.setAttribute('tabindex', '0');
 
           initializeMapHelpModal(containerParent, container, helpId);
 
