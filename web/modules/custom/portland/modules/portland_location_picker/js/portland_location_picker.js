@@ -39,7 +39,7 @@
         const PAN_POSITION = 'topright';
         const RESET_POSITION = 'topleft';
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
-        const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter or Space to select the location at the center.';
+        const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -813,13 +813,7 @@
           container.setAttribute('aria-label', 'Location picker map');
           container.setAttribute('aria-describedby', helpId);
 
-          if (!document.getElementById(helpId)) {
-            var instructions = document.createElement('div');
-            instructions.id = helpId;
-            instructions.className = 'visually-hidden';
-            instructions.textContent = MAP_KEYBOARD_INSTRUCTIONS;
-            containerParent.insertBefore(instructions, container.nextSibling);
-          }
+          initializeMapHelpModal(containerParent, container, helpId);
 
           if (!document.getElementById(statusId)) {
             var status = document.createElement('div');
@@ -831,6 +825,24 @@
           }
 
           L.DomEvent.on(container, 'keydown', handleMapKeyDown);
+        }
+
+        function initializeMapHelpModal(containerParent, container, helpId) {
+          var existingHelp = document.getElementById(helpId);
+          if (existingHelp) {
+            existingHelp.textContent = MAP_KEYBOARD_INSTRUCTIONS;
+            return;
+          }
+
+          var helpModal = document.createElement('div');
+          helpModal.id = helpId;
+          helpModal.className = 'map-keyboard-help';
+          helpModal.setAttribute('role', 'note');
+          helpModal.setAttribute('tabindex', '0');
+          helpModal.textContent = MAP_KEYBOARD_INSTRUCTIONS;
+
+          // Keep the instructions first in tab order for the map region.
+          containerParent.insertBefore(helpModal, container);
         }
 
         function getMapAccessibilityId(suffix) {
@@ -1727,11 +1739,13 @@
             currentView = "aerial";
             // show icon active
             aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_base.png")';
+            map.getContainer().classList.add('aerial-view');
           } else {
             map.removeLayer(aerialLayer);
             map.addLayer(baseLayer);
             currentView = "base";
             aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
+            map.getContainer().classList.remove('aerial-view');
           }
         }
 
