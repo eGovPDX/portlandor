@@ -147,6 +147,8 @@
 
         var locationType;
         var locationTextBlock;
+        var mapLoadingRequestCount = 0;
+        var lastAnnouncedPopupText = '';
 
         // flags for server error handling
         var serverErrorHard = false;
@@ -239,6 +241,10 @@
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
           map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
+          map.on('popupopen', handlePopupOpen);
+          map.on('popupclose', function () {
+            lastAnnouncedPopupText = '';
+          });
 
           // instantiate location text block but don't add it to the map until a location is selected.
           locationTextBlock = L.control({
@@ -780,6 +786,7 @@
           var containerParent = container.parentNode;
 
           container.classList.add('keyboard-selection-enabled');
+          container.setAttribute('role', 'application');
           container.setAttribute('aria-label', 'Location picker map');
           container.setAttribute('aria-describedby', helpId);
           container.setAttribute('tabindex', '0');
@@ -829,6 +836,32 @@
               statusElement.textContent = message;
             }, 0);
           }
+        }
+
+        function extractAnnouncementTextFromHtml(html) {
+          if (!html) {
+            return '';
+          }
+
+          var wrapper = document.createElement('div');
+          wrapper.innerHTML = html;
+          return (wrapper.textContent || wrapper.innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+
+        function handlePopupOpen(e) {
+          if (!e || !e.popup) {
+            return;
+          }
+
+          var popupText = extractAnnouncementTextFromHtml(e.popup.getContent());
+          if (!popupText || popupText === lastAnnouncedPopupText) {
+            return;
+          }
+
+          lastAnnouncedPopupText = popupText;
+          announceMapStatus(popupText);
         }
 
         function generatePopupContent(feature) {
@@ -1088,11 +1121,29 @@
         }
 
         function showLoader() {
+          mapLoadingRequestCount += 1;
+          if (mapLoadingRequestCount > 1) {
+            return;
+          }
+
           $('.loader-container').css("display", "flex");
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'true');
+          }
+          announceMapStatus('Loading map data.');
         }
 
         function hideLoader() {
+          mapLoadingRequestCount = Math.max(0, mapLoadingRequestCount - 1);
+          if (mapLoadingRequestCount > 0) {
+            return;
+          }
+
           $('.loader-container').css("display", "none");
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'false');
+          }
+          announceMapStatus('Map data loaded.');
         }
 
         function checkRegion(latlng) {
@@ -1219,10 +1270,23 @@
             }
 
             var markerName = (layer.feature.properties && layer.feature.properties.name) ? layer.feature.properties.name : 'Selectable map marker';
+            var popupAnnouncementText = extractAnnouncementTextFromHtml(generatePopupContent(layer.feature));
+            var markerAnnouncementText = popupAnnouncementText ? popupAnnouncementText : markerName;
             icon.classList.add(PRIMARY_MARKER_FOCUS_CLASS);
             icon.setAttribute('role', 'button');
-            icon.setAttribute('aria-label', 'Select location marker: ' + markerName);
+            icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to select this location.');
             icon.setAttribute('tabindex', '0');
+
+            if (!icon.dataset.primaryMarkerFocusBound) {
+              icon.addEventListener('focus', function () {
+                var currentAnnouncementText = extractAnnouncementTextFromHtml(generatePopupContent(layer.feature));
+                if (!currentAnnouncementText) {
+                  currentAnnouncementText = markerName;
+                }
+                announceMapStatus(currentAnnouncementText);
+              });
+              icon.dataset.primaryMarkerFocusBound = 'true';
+            }
 
             if (!icon.dataset.primaryMarkerKeydownBound) {
               icon.addEventListener('keydown', function (e) {
