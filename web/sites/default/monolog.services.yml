@@ -10,13 +10,15 @@ parameters:
           formatter: 'loggly'
     # Ignore log entries of "content" channel.
     #content: ['null']
+    cron:
+      handlers:
+        - name: 'drupal.dblog'
     feeds:
       handlers:
         - name: 'drupal.dblog'
     default:
       handlers:
-        - name: 'drupal.dblog'
-        - name: 'loggly'
+        - name: 'portland_conditional'
 
   monolog.processors: ['message_placeholder', 'current_user', 'request_uri', 'ip', 'referer', 'filter_backtrace', 'hostname']
 
@@ -31,3 +33,29 @@ services:
   monolog.processor.hostname:
     class: Drupal\portland\Logger\Processor\HostnameProcessor
     arguments: ['@request_stack']
+
+  # The resolver will only continue logging for the listed hostnames.
+  monolog.condition_resolver.hostname:
+    class: Drupal\portland\Logger\ConditionResolver\HostnameResolver
+    arguments: ['@request_stack', 
+      [
+        'www.portland.gov',
+        'employees.portland.gov',
+        'pgov-364-portlandor.pantheonsite.io',
+        'portlandor.lndo.site',
+      ]
+    ]
+    shared: false
+
+  # Group handler for both dblog and Loggly. Used by the conditional handler below.
+  monolog.handler.dblog_and_loggly:
+    class: Monolog\Handler\GroupHandler
+    arguments: [['@monolog.handler.drupal.dblog', '@monolog.handler.loggly']]
+    shared: false
+
+  # Call the hostname resolver to determine if the log should be sent to both dblog 
+  # and Loggly or just dblog.
+  monolog.handler.portland_conditional:
+    class: Drupal\portland\Logger\Handler\ConditionalHandler
+    arguments: ['@monolog.handler.dblog_and_loggly', '@monolog.handler.drupal.dblog', '@monolog.condition_resolver.hostname']
+    shared: false
