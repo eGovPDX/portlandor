@@ -38,6 +38,7 @@
         const RESET_POSITION = 'topleft';
         const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
+        const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
         const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
@@ -237,6 +238,7 @@
           initializeMapAccessibility();
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
+          map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
 
           // instantiate location text block but don't add it to the map until a location is selected.
           locationTextBlock = L.control({
@@ -650,6 +652,7 @@
           if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
           }
+          updatePrimaryMarkerKeyboardAccessibility();
         }
 
         function initIncidentsLayer(features, layer) {
@@ -888,6 +891,19 @@
         }
 
         function handleMapKeyDown(e) {
+          if (e.key === 'Tab' && !e.shiftKey) {
+            var primaryMarkers = getVisibleTabbablePrimaryMarkers();
+            if (primaryMarkers.length > 0) {
+              var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
+              if (mapElements.length > 0 && e.target === mapElements[mapElements.length - 1]) {
+                e.preventDefault();
+                announceMapStatus('Entering selectable map markers. ' + primaryMarkers.length + ' markers in view.');
+                primaryMarkers[0]._icon.focus();
+                return;
+              }
+            }
+          }
+
           // Allow arrow key panning from any focused element in the map region
           // (map container, controls, or help modal), but only handle Enter/Space
           // when focus is directly on the map container.
@@ -971,6 +987,7 @@
               map.addLayer(incidentsLayer);
             }
           }
+          updatePrimaryMarkerKeyboardAccessibility();
           // var bounds = map.getBounds();
         }
 
@@ -1126,6 +1143,143 @@
           return true;
         }
 
+        function isPrimaryLayerKeyboardSelectable() {
+          return primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection || primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly;
+        }
+
+        function getVisibleTabbablePrimaryMarkers() {
+          var markers = [];
+          if (!primaryLayer || !map || !map.hasLayer(primaryLayer) || !isPrimaryLayerKeyboardSelectable()) {
+            return markers;
+          }
+
+          var bounds = map.getBounds();
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer.getLatLng || !layer._icon || !layer.feature) {
+              return;
+            }
+
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+
+            if (!isAssetSelectable(marker)) {
+              return;
+            }
+
+            if (bounds.contains(layer.getLatLng())) {
+              markers.push(layer);
+            }
+          });
+
+          return markers;
+        }
+
+        function getMapRegionFocusableElementsExcludingPrimaryMarkers() {
+          var mapRegion = map.getContainer().parentNode;
+          var focusableSelector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+          ].join(',');
+
+          return Array.from(mapRegion.querySelectorAll(focusableSelector)).filter(function (el) {
+            return !el.classList.contains(PRIMARY_MARKER_FOCUS_CLASS) && el.offsetParent !== null;
+          });
+        }
+
+        function updatePrimaryMarkerKeyboardAccessibility() {
+          if (!primaryLayer) {
+            return;
+          }
+
+          var visibleMarkers = getVisibleTabbablePrimaryMarkers();
+          var visibleMarkerSet = new Set(visibleMarkers);
+
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer._icon) {
+              return;
+            }
+
+            var isVisibleAndTabbable = visibleMarkerSet.has(layer);
+            var icon = layer._icon;
+
+            icon.classList.remove(PRIMARY_MARKER_FOCUS_CLASS);
+            icon.removeAttribute('role');
+            icon.removeAttribute('aria-label');
+            icon.setAttribute('tabindex', '-1');
+
+            if (!isVisibleAndTabbable) {
+              return;
+            }
+
+            var markerName = (layer.feature.properties && layer.feature.properties.name) ? layer.feature.properties.name : 'Selectable map marker';
+            icon.classList.add(PRIMARY_MARKER_FOCUS_CLASS);
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', 'Select location marker: ' + markerName);
+            icon.setAttribute('tabindex', '0');
+
+            if (!icon.dataset.primaryMarkerKeydownBound) {
+              icon.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  layer.fire('click', {
+                    latlng: layer.getLatLng(),
+                    target: layer
+                  });
+                  return;
+                }
+
+                if (e.key !== 'Tab') {
+                  return;
+                }
+
+                var currentMarkers = getVisibleTabbablePrimaryMarkers();
+                var markerIndex = currentMarkers.indexOf(layer);
+                if (markerIndex < 0) {
+                  return;
+                }
+
+                e.preventDefault();
+
+                if (e.shiftKey) {
+                  if (markerIndex > 0) {
+                    currentMarkers[markerIndex - 1]._icon.focus();
+                    return;
+                  }
+
+                  var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
+                  if (mapElements.length > 0) {
+                    announceMapStatus('Leaving selectable map markers. Returning to map controls.');
+                    mapElements[mapElements.length - 1].focus();
+                  }
+                  return;
+                }
+
+                if (markerIndex < currentMarkers.length - 1) {
+                  currentMarkers[markerIndex + 1]._icon.focus();
+                  return;
+                }
+
+                // Move focus to next global focusable element after the map region.
+                var allFocusable = Array.from(document.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function (el) {
+                  return el.offsetParent !== null;
+                });
+                var activeIndex = allFocusable.indexOf(document.activeElement);
+                if (activeIndex >= 0 && allFocusable[activeIndex + 1]) {
+                  announceMapStatus('Leaving selectable map markers.');
+                  allFocusable[activeIndex + 1].focus();
+                }
+              });
+              icon.dataset.primaryMarkerKeydownBound = 'true';
+            }
+          });
+        }
+
         function activateMarkerSelection(marker) {
           resetLocationMarker();
           resetClickedMarker();
@@ -1176,6 +1330,7 @@
           if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
+            updatePrimaryMarkerKeyboardAccessibility();
           }
         }
 
@@ -1488,6 +1643,7 @@
           }
 
           locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE, zIndexOffset: 5000 }).addTo(map);
+          updatePrimaryMarkerKeyboardAccessibility();
 
           // if address marker is moved, we want to capture the new coordinates
           locationMarker.off();
