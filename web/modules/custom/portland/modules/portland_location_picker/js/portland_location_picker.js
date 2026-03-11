@@ -36,6 +36,7 @@
 
         const ZOOM_POSITION = 'topleft';
         const RESET_POSITION = 'topleft';
+        const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
@@ -224,7 +225,8 @@
             zoomControl: false,
             zoom: DEFAULT_ZOOM,
             maxZoom: maxZoom,
-            gestureHandling: true
+            gestureHandling: true,
+            keyboard: false
           });
           drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
@@ -789,7 +791,7 @@
             containerParent.insertBefore(status, container.nextSibling);
           }
 
-          L.DomEvent.on(container, 'keydown', handleMapKeyDown);
+          L.DomEvent.on(containerParent, 'keydown', handleMapKeyDown);
         }
 
         function initializeMapHelpModal(containerParent, container, helpId) {
@@ -886,6 +888,31 @@
         }
 
         function handleMapKeyDown(e) {
+          // Allow arrow key panning from any focused element in the map region
+          // (map container, controls, or help modal), but only handle Enter/Space
+          // when focus is directly on the map container.
+
+          var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+          var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
+
+          // Arrow keys work from anywhere in the map region for panning
+          if (isArrowKey && isMapRegionFocused) {
+            e.preventDefault();
+            cancelEventBubble(e);
+            
+            if (e.key === 'ArrowUp') {
+              map.panBy([0, -KEYBOARD_PAN_PIXELS]);
+            } else if (e.key === 'ArrowDown') {
+              map.panBy([0, KEYBOARD_PAN_PIXELS]);
+            } else if (e.key === 'ArrowLeft') {
+              map.panBy([-KEYBOARD_PAN_PIXELS, 0]);
+            } else if (e.key === 'ArrowRight') {
+              map.panBy([KEYBOARD_PAN_PIXELS, 0]);
+            }
+            return;
+          }
+
+          // Enter/Space only work when focus is directly on the map container
           if (e.target !== map.getContainer()) {
             return;
           }
@@ -1460,7 +1487,7 @@
             return false;
           }
 
-          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE }).addTo(map);
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE, zIndexOffset: 5000 }).addTo(map);
 
           // if address marker is moved, we want to capture the new coordinates
           locationMarker.off();
