@@ -35,8 +35,6 @@
         const DEFAULT_ICON_POPUP_ANCHOR = [0, -51];
 
         const ZOOM_POSITION = 'topleft';
-        const PAN_PIXELS = 100;
-        const PAN_POSITION = 'topright';
         const RESET_POSITION = 'topleft';
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
@@ -107,7 +105,6 @@
         var currentView = "base";
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
-        var PanControl = generatePanControl();
         var ResetControl = generateResetControl();
         var verifyHidden = false;
 
@@ -233,7 +230,6 @@
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
           map.addControl(new ResetControl());
-          map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           initializeMapAccessibility();
@@ -741,37 +737,6 @@
           });
         }
 
-        function generatePanControl() {
-          return L.Control.extend({
-            options: {
-              position: PAN_POSITION
-            },
-            onAdd: function (map) {
-              var container = L.DomUtil.create('div', 'leaflet-control pan-control');
-
-              function buildButton(direction, label, title) {
-                var button = L.DomUtil.create('button', 'pan-control__button pan-control__button--' + direction, container);
-                button.type = 'button';
-                button.setAttribute('aria-label', title);
-                button.title = title;
-                button.textContent = label;
-                L.DomEvent.on(button, 'click', function (e) {
-                  cancelEventBubble(e);
-                  handlePanButtonClick(direction);
-                });
-              }
-
-              buildButton('up', '\u25b2', 'Pan up');
-              buildButton('left', '\u25c0', 'Pan left');
-              buildButton('right', '\u25b6', 'Pan right');
-              buildButton('down', '\u25bc', 'Pan down');
-
-              L.DomEvent.disableClickPropagation(container);
-              return container;
-            }
-          });
-        }
-
         function generateAerialControl() {
           return L.Control.extend({
             options: {
@@ -913,21 +878,6 @@
           map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
           currentView = 'base';
           announceMapStatus('Map reset to the default view.');
-        }
-
-        function handlePanButtonClick(direction) {
-          if (direction === 'up') {
-            map.panBy([0, -PAN_PIXELS]);
-          }
-          if (direction === 'left') {
-            map.panBy([-PAN_PIXELS, 0]);
-          }
-          if (direction === 'right') {
-            map.panBy([PAN_PIXELS, 0]);
-          }
-          if (direction === 'down') {
-            map.panBy([0, PAN_PIXELS]);
-          }
         }
 
         function handleMapClick(e) {
