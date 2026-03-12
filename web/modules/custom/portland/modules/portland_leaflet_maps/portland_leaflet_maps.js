@@ -75,7 +75,9 @@
         shp(byteArray).then(function (geojson) {
           featureLayer.addData(geojson);
           featureLayer.setStyle(map.options.path);
-          map.fitBounds(featureLayer.getBounds());
+          map.fitBounds(featureLayer.getBounds(), {animate: false});
+          map.reset_view_control.options.latlng = map.getCenter();
+          map.reset_view_control.options.zoom = map.getZoom();
           map.featureAdded = true;
         })
       };
@@ -98,7 +100,9 @@
             featureLayer.addData(xhr.response);
           }
           featureLayer.setStyle(map.options.path);
-          map.fitBounds(featureLayer.getBounds());
+          map.fitBounds(featureLayer.getBounds(), {animate: false});
+          map.reset_view_control.options.latlng = map.getCenter();
+          map.reset_view_control.options.zoom = map.getZoom();
           map.featureAdded = true;
       };
     }
@@ -239,7 +243,9 @@ jQuery(document)
 
       // once we've looped through all the features, zoom the map to the extent of the collection
       if(bounds.isValid())
-        lMap.fitBounds(bounds);
+        lMap.fitBounds(bounds, {animate: false});
+        lMap.reset_view_control.options.latlng = lMap.getCenter();
+        lMap.reset_view_control.options.zoom = lMap.getZoom();
     });
   }
 
@@ -276,8 +282,11 @@ jQuery(document)
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      if(bounds.isValid())
-        lMap.fitBounds(bounds);
+      if(bounds.isValid()) {
+        lMap.fitBounds(bounds, {animate: false});
+        lMap.reset_view_control.options.latlng = lMap.getCenter();
+        lMap.reset_view_control.options.zoom = lMap.getZoom();
+      }
     });
   }
 });
