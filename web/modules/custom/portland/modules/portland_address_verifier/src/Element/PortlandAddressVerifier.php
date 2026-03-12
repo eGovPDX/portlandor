@@ -53,6 +53,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Street Address'),
       '#id' => 'location_address',
+      '#autocomplete' => 'address-line1',
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
       ],
@@ -99,6 +100,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('City'),
       '#id' => 'location_city',
+      '#autocomplete' => 'address-level2',
       '#wrapper_attributes' => [
         'class' => ['webform-city', 'mb-0'],
       ],
@@ -109,12 +111,14 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#options' => $state_codes,
       '#default_value' => 'OR',
       '#id' => 'location_state',
+      '#autocomplete' => 'address-level1',
       '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
     ];
     $element['location_zip'] = [
       '#type' => 'textfield',
       '#title' => t('ZIP Code'),
       '#id' => 'location_zip',
+      '#autocomplete' => 'postal-code',
       '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
     ];
