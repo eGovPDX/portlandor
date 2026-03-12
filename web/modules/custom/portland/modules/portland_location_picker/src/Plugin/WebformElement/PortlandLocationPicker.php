@@ -223,11 +223,20 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    // If location_lat was marked required (via YAML shorthand or direct #required),
-    // clear the built-in required flag so Drupal doesn't try to scroll to a hidden
-    // input on error. Instead, register a validator on the composite so the error
-    // anchor points to the visible fieldset.
     $latRequired = !empty($element['#location_lat__required']) || !empty($element['location_lat']['#required']);
+    if (!empty($element['#required']) || $latRequired) {
+      // A required location should be indicated on the composite title/legend,
+      // since the validated value is hidden and the visible interaction is the
+      // overall search-and-map widget.
+      $element['#required'] = TRUE;
+      $element['#attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['aria-required'] = 'true';
+    }
+
+    // If location_lat was marked required (via YAML shorthand or direct
+    // #required), clear the built-in required flag so Drupal doesn't try to
+    // validate or scroll to a hidden input. Instead, register a validator on
+    // the composite that can attach the error to a visible part of the widget.
     if ($latRequired) {
       $element['#location_lat__required'] = FALSE;
       $element['location_lat']['#required'] = FALSE;
