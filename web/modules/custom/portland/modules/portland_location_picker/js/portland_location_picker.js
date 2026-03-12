@@ -785,6 +785,7 @@
           var container = map.getContainer();
           var helpId = getMapAccessibilityId('instructions');
           var descriptionId = getMapAccessibilityId('description');
+          var requiredId = getMapAccessibilityId('required');
           var errorId = getMapAccessibilityId('error');
           var statusId = getMapAccessibilityId('status');
           var containerParent = container.parentNode;
@@ -796,6 +797,7 @@
 
           initializeMapHelpModal(containerParent, container, helpId);
           initializeMapScreenReaderDescription(containerParent, container, descriptionId);
+          initializeMapRequiredMessage(containerParent, container, requiredId);
           initializeMapErrorMessage(containerParent, container, errorId);
           updateMapAccessibilityDescription();
 
@@ -857,17 +859,27 @@
           containerParent.insertBefore(errorMessage, container.nextSibling);
         }
 
+        function initializeMapRequiredMessage(containerParent, container, requiredId) {
+          var existingRequiredMessage = document.getElementById(requiredId);
+          if (existingRequiredMessage) {
+            existingRequiredMessage.textContent = MAP_REQUIRED_INSTRUCTIONS;
+            return;
+          }
+
+          var requiredMessage = document.createElement('div');
+          requiredMessage.id = requiredId;
+          requiredMessage.className = 'visually-hidden';
+          requiredMessage.textContent = MAP_REQUIRED_INSTRUCTIONS;
+          containerParent.insertBefore(requiredMessage, container.nextSibling);
+        }
+
         function getMapAccessibilityId(suffix) {
           var prefix = elementId ? elementId.replace(/[^a-zA-Z0-9_-]/g, '-') : 'location-map';
           return prefix + '-' + suffix;
         }
 
         function getMapScreenReaderDescription() {
-          var description = MAP_KEYBOARD_INSTRUCTIONS;
-          if (isLocationPickerRequired()) {
-            description += ' ' + MAP_REQUIRED_INSTRUCTIONS;
-          }
-          return description;
+          return MAP_KEYBOARD_INSTRUCTIONS;
         }
 
         function isLocationPickerRequired() {
@@ -898,6 +910,9 @@
           }
 
           var descriptionIds = [getMapAccessibilityId('description')];
+          if (isLocationPickerRequired()) {
+            descriptionIds.push(getMapAccessibilityId('required'));
+          }
           var errorElement = document.getElementById(getMapAccessibilityId('error'));
 
           if (errorElement && errorElement.textContent.trim()) {
