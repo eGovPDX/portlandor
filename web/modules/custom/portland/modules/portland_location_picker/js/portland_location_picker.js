@@ -1776,6 +1776,9 @@
             Drupal.dialog(suggestionsModal, {
               title: 'Multiple possible matches found',
               width: '600px',
+              classes: {
+                'ui-dialog': 'portland-webform-dialog'
+              },
               buttons: [{
                 text: 'Close',
                 click: function () {
@@ -2177,6 +2180,9 @@
           statusModal.html('<p class="status-message mb-0">' + message + '</p>');
           Drupal.dialog(statusModal, {
             width: '600px',
+            classes: {
+              'ui-dialog': 'portland-webform-dialog'
+            },
             buttons: [{
               text: 'Close',
               click: function () {
