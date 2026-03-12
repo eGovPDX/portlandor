@@ -18,7 +18,6 @@
   Drupal.behaviors.portland_location_picker = {
     attach: function (context) {
       once('location_picker', 'fieldset.portland-location-picker--wrapper', context).forEach(function (locationPickerEl) {
-
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
         const DEFAULT_LONGITUDE = -122.65;
@@ -40,6 +39,8 @@
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
         const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
+        const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location by searching or clicking the map.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -238,6 +239,7 @@
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           initializeMapAccessibility();
+          bindLocationPickerValidation();
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
           map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
@@ -782,16 +784,20 @@
         function initializeMapAccessibility() {
           var container = map.getContainer();
           var helpId = getMapAccessibilityId('instructions');
+          var descriptionId = getMapAccessibilityId('description');
+          var errorId = getMapAccessibilityId('error');
           var statusId = getMapAccessibilityId('status');
           var containerParent = container.parentNode;
 
           container.classList.add('keyboard-selection-enabled');
           container.setAttribute('role', 'application');
           container.setAttribute('aria-label', 'Location picker map');
-          container.setAttribute('aria-describedby', helpId);
           container.setAttribute('tabindex', '0');
 
           initializeMapHelpModal(containerParent, container, helpId);
+          initializeMapScreenReaderDescription(containerParent, container, descriptionId);
+          initializeMapErrorMessage(containerParent, container, errorId);
+          updateMapAccessibilityDescription();
 
           if (!document.getElementById(statusId)) {
             var status = document.createElement('div');
@@ -803,6 +809,7 @@
           }
 
           L.DomEvent.on(containerParent, 'keydown', handleMapKeyDown);
+          syncMapValidationState();
         }
 
         function initializeMapHelpModal(containerParent, container, helpId) {
@@ -823,9 +830,180 @@
           containerParent.insertBefore(helpModal, container);
         }
 
+        function initializeMapScreenReaderDescription(containerParent, container, descriptionId) {
+          var existingDescription = document.getElementById(descriptionId);
+          if (existingDescription) {
+            existingDescription.textContent = getMapScreenReaderDescription();
+            return;
+          }
+
+          var description = document.createElement('div');
+          description.id = descriptionId;
+          description.className = 'visually-hidden';
+          description.textContent = getMapScreenReaderDescription();
+          containerParent.insertBefore(description, container.nextSibling);
+        }
+
+        function initializeMapErrorMessage(containerParent, container, errorId) {
+          if (document.getElementById(errorId)) {
+            return;
+          }
+
+          var errorMessage = document.createElement('div');
+          errorMessage.id = errorId;
+          errorMessage.className = 'visually-hidden';
+          errorMessage.setAttribute('aria-live', 'assertive');
+          errorMessage.setAttribute('aria-atomic', 'true');
+          containerParent.insertBefore(errorMessage, container.nextSibling);
+        }
+
         function getMapAccessibilityId(suffix) {
           var prefix = elementId ? elementId.replace(/[^a-zA-Z0-9_-]/g, '-') : 'location-map';
           return prefix + '-' + suffix;
+        }
+
+        function getMapScreenReaderDescription() {
+          var description = MAP_KEYBOARD_INSTRUCTIONS;
+          if (isLocationPickerRequired()) {
+            description += ' ' + MAP_REQUIRED_INSTRUCTIONS;
+          }
+          return description;
+        }
+
+        function isLocationPickerRequired() {
+          return locationPickerEl.classList.contains('required');
+        }
+
+        function getLocationLatField() {
+          return locationPickerEl.querySelector('input[name="' + elementId + '[location_lat]"]');
+        }
+
+        function hasLocationSelection() {
+          var locationLatField = getLocationLatField();
+          return !!(locationLatField && locationLatField.value !== '');
+        }
+
+        function getLocationRequiredErrorMessage() {
+          var locationLatField = getLocationLatField();
+          if (locationLatField) {
+            return locationLatField.getAttribute('data-webform-required-error') || DEFAULT_LOCATION_REQUIRED_ERROR;
+          }
+
+          return DEFAULT_LOCATION_REQUIRED_ERROR;
+        }
+
+        function updateMapAccessibilityDescription() {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var descriptionIds = [getMapAccessibilityId('description')];
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+
+          if (errorElement && errorElement.textContent.trim()) {
+            descriptionIds.push(errorElement.id);
+          }
+
+          map.getContainer().setAttribute('aria-describedby', descriptionIds.join(' '));
+        }
+
+        function setMapInvalid(message) {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+          var errorMessage = message || getLocationRequiredErrorMessage();
+
+          if (errorElement) {
+            errorElement.textContent = errorMessage;
+          }
+
+          map.getContainer().setAttribute('aria-invalid', 'true');
+          updateMapAccessibilityDescription();
+        }
+
+        function clearMapInvalid() {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+          if (errorElement) {
+            errorElement.textContent = '';
+          }
+
+          map.getContainer().removeAttribute('aria-invalid');
+          updateMapAccessibilityDescription();
+        }
+
+        function hasExistingLocationPickerError() {
+          var form = locationPickerEl.closest('form');
+          var locationLatField = getLocationLatField();
+
+          if (locationLatField && (locationLatField.classList.contains('error') || locationLatField.getAttribute('aria-invalid') === 'true')) {
+            return true;
+          }
+
+          if (!form || !locationPickerEl.id) {
+            return false;
+          }
+
+          var hasErrorLink = Array.from(form.querySelectorAll('a[href]')).some(function (link) {
+            var href = link.getAttribute('href');
+            if (href === '#' + locationPickerEl.id) {
+              return true;
+            }
+
+            if (locationLatField && locationLatField.id && href === '#' + locationLatField.id) {
+              return true;
+            }
+
+            return false;
+          });
+
+          if (hasErrorLink) {
+            return true;
+          }
+
+          return Array.from(form.querySelectorAll('.messages--error, [role="alert"]')).some(function (element) {
+            return element.textContent.indexOf(getLocationRequiredErrorMessage()) !== -1;
+          });
+        }
+
+        function syncMapValidationState() {
+          if (!isLocationPickerRequired()) {
+            clearMapInvalid();
+            return;
+          }
+
+          if (!hasLocationSelection() && hasExistingLocationPickerError()) {
+            setMapInvalid(getLocationRequiredErrorMessage());
+            return;
+          }
+
+          clearMapInvalid();
+        }
+
+        function bindLocationPickerValidation() {
+          var form = locationPickerEl.closest('form');
+
+          if (form) {
+            once('location_picker_validation', form).forEach(function (formEl) {
+              formEl.addEventListener('submit', function () {
+                if (isLocationPickerRequired() && !hasLocationSelection()) {
+                  setMapInvalid(getLocationRequiredErrorMessage());
+                  return;
+                }
+
+                clearMapInvalid();
+              });
+            });
+          }
+
+          locationPickerEl.addEventListener('location-picked', function () {
+            clearMapInvalid();
+          });
         }
 
         function announceMapStatus(message) {
@@ -908,6 +1086,7 @@
           resetClickedMarker();
           clearLocationFields();
           hideVerifiedLocation(false);
+          clearMapInvalid();
           if (locationTextBlock && map.hasLayer(locationTextBlock)) {
             map.removeControl(locationTextBlock);
           }
@@ -1431,6 +1610,8 @@
           if (!disablePlaceNameAutofill) {
             $('input[name=' + elementId + '\\[place_name\\]]').val('');
           }
+
+          clearMapInvalid();
         }
 
         function setLocationDetails(results) {
@@ -1676,6 +1857,7 @@
           if (!lng) lng = "0";
           $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
           $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
+          clearMapInvalid();
 
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
           $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
