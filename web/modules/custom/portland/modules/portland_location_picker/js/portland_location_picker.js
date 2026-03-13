@@ -38,7 +38,8 @@
         const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
-        const MAP_KEYBOARD_INSTRUCTIONS = 'Interactive map. Use Tab to reach the map controls. When the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map.Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move to map controls and then focus the map. Once the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center.';
         const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
         const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location by searching or clicking the map.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
@@ -109,6 +110,8 @@
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var ResetControl = generateResetControl();
+        var HelpControl = generateHelpControl();
+        var helpControlContainer;
         var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
@@ -150,6 +153,8 @@
         var locationTextBlock;
         var mapLoadingRequestCount = 0;
         var lastAnnouncedPopupText = '';
+        var keyboardOpenedPopupReturnFocusTarget = null;
+        var shouldFocusPopupCloseButton = false;
 
         // flags for server error handling
         var serverErrorHard = false;
@@ -236,6 +241,7 @@
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
           map.addControl(new ResetControl());
+          map.addControl(new HelpControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           initializeMapAccessibility();
@@ -244,9 +250,7 @@
           map.on('locationfound', handleLocateMeFound);
           map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
           map.on('popupopen', handlePopupOpen);
-          map.on('popupclose', function () {
-            lastAnnouncedPopupText = '';
-          });
+          map.on('popupclose', handlePopupClose);
 
           // instantiate location text block but don't add it to the map until a location is selected.
           locationTextBlock = L.control({
@@ -750,6 +754,21 @@
           });
         }
 
+        function generateHelpControl() {
+          return L.Control.extend({
+            options: {
+              position: RESET_POSITION
+            },
+            onAdd: function (map) {
+              helpControlContainer = L.DomUtil.create('div', 'leaflet-bar map-help-control leaflet-control leaflet-control-custom');
+              helpControlContainer.textContent = '?';
+              initializeKeyboardControl(helpControlContainer, 'Map help', handleHelpButtonClick);
+              helpControlContainer.setAttribute('aria-pressed', 'false');
+              return helpControlContainer;
+            }
+          });
+        }
+
         function generateAerialControl() {
           return L.Control.extend({
             options: {
@@ -811,25 +830,111 @@
           }
 
           L.DomEvent.on(containerParent, 'keydown', handleMapKeyDown);
+          L.DomEvent.on(container, 'focus', function () {
+            hideMapHelpModal();
+          });
           syncMapValidationState();
         }
 
         function initializeMapHelpModal(containerParent, container, helpId) {
           var existingHelp = document.getElementById(helpId);
           if (existingHelp) {
-            existingHelp.textContent = MAP_KEYBOARD_INSTRUCTIONS;
+            existingHelp.setAttribute('tabindex', '-1');
+            existingHelp.setAttribute('aria-hidden', 'true');
+            existingHelp.classList.remove('is-visible');
+            renderMapHelpModalContent(existingHelp);
+            setHelpModalInteractiveState(existingHelp, false);
             return;
           }
 
           var helpModal = document.createElement('div');
           helpModal.id = helpId;
           helpModal.className = 'map-keyboard-help';
-          helpModal.setAttribute('role', 'note');
-          helpModal.setAttribute('tabindex', '0');
-          helpModal.textContent = MAP_KEYBOARD_INSTRUCTIONS;
-
-          // Keep the instructions first in tab order for the map region.
+          helpModal.setAttribute('tabindex', '-1');
+          helpModal.setAttribute('aria-hidden', 'true');
+          renderMapHelpModalContent(helpModal);
+          setHelpModalInteractiveState(helpModal, false);
           containerParent.insertBefore(helpModal, container);
+
+          var returnFocusOnHelpBlur = false;
+
+          helpModal.addEventListener('focusout', function (event) {
+            if (helpModal.contains(event.relatedTarget)) {
+              return;
+            }
+            hideMapHelpModal(returnFocusOnHelpBlur);
+            returnFocusOnHelpBlur = false;
+          });
+
+          helpModal.addEventListener('keydown', function (event) {
+            returnFocusOnHelpBlur = event.key === 'Tab';
+
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              hideMapHelpModal(true);
+            }
+          });
+        }
+
+        function renderMapHelpModalContent(helpModal) {
+          helpModal.textContent = '';
+
+          var helpText = document.createElement('p');
+          helpText.className = 'map-keyboard-help__text';
+          helpText.textContent = MAP_HELP_POPUP_INSTRUCTIONS;
+
+          var closeButton = document.createElement('button');
+          closeButton.type = 'button';
+          closeButton.className = 'map-keyboard-help__close';
+          closeButton.setAttribute('aria-label', 'Close map help');
+          closeButton.textContent = 'Close';
+          closeButton.setAttribute('tabindex', '-1');
+          closeButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            hideMapHelpModal(true);
+          });
+
+          helpModal.appendChild(helpText);
+          helpModal.appendChild(closeButton);
+        }
+
+        function setHelpModalInteractiveState(helpElement, isVisible) {
+          var closeButton = helpElement.querySelector('.map-keyboard-help__close');
+          helpElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+          if (closeButton) {
+            closeButton.setAttribute('tabindex', isVisible ? '0' : '-1');
+          }
+        }
+
+        function toggleMapHelpModal(forceVisible) {
+          var helpElement = document.getElementById(getMapAccessibilityId('instructions'));
+          if (!helpElement) {
+            return;
+          }
+
+          var shouldShow = typeof forceVisible === 'boolean' ? forceVisible : !helpElement.classList.contains('is-visible');
+          helpElement.classList.toggle('is-visible', shouldShow);
+          setHelpModalInteractiveState(helpElement, shouldShow);
+
+          if (helpControlContainer) {
+            helpControlContainer.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+          }
+
+          if (shouldShow) {
+            window.setTimeout(function () {
+              helpElement.focus();
+            }, 0);
+          }
+        }
+
+        function hideMapHelpModal(restoreFocusToHelpControl = false) {
+          toggleMapHelpModal(false);
+
+          if (restoreFocusToHelpControl && helpControlContainer) {
+            window.setTimeout(function () {
+              helpControlContainer.focus();
+            }, 0);
+          }
         }
 
         function initializeMapScreenReaderDescription(containerParent, container, descriptionId) {
@@ -879,7 +984,7 @@
         }
 
         function getMapScreenReaderDescription() {
-          return MAP_KEYBOARD_INSTRUCTIONS;
+          return MAP_SCREEN_READER_INSTRUCTIONS;
         }
 
         function isLocationPickerRequired() {
@@ -1055,6 +1160,36 @@
 
           lastAnnouncedPopupText = popupText;
           announceMapStatus(popupText);
+
+          if (!shouldFocusPopupCloseButton) {
+            return;
+          }
+
+          shouldFocusPopupCloseButton = false;
+          var popupElement = e.popup.getElement ? e.popup.getElement() : null;
+          if (!popupElement) {
+            return;
+          }
+
+          var closeButton = popupElement.querySelector('.leaflet-popup-close-button');
+          if (closeButton) {
+            window.setTimeout(function () {
+              closeButton.focus();
+            }, 0);
+          }
+        }
+
+        function handlePopupClose() {
+          lastAnnouncedPopupText = '';
+
+          if (keyboardOpenedPopupReturnFocusTarget && document.contains(keyboardOpenedPopupReturnFocusTarget)) {
+            window.setTimeout(function () {
+              keyboardOpenedPopupReturnFocusTarget.focus();
+            }, 0);
+          }
+
+          keyboardOpenedPopupReturnFocusTarget = null;
+          shouldFocusPopupCloseButton = false;
         }
 
         function generatePopupContent(feature) {
@@ -1096,7 +1231,13 @@
           toggleAerialView();
         }
 
+        function handleHelpButtonClick(e) {
+          cancelEventBubble(e);
+          toggleMapHelpModal();
+        }
+
         function handleResetButtonClick() {
+          hideMapHelpModal();
           resetLocationMarker();
           resetClickedMarker();
           clearLocationFields();
@@ -1114,11 +1255,17 @@
         }
 
         function handleMapClick(e) {
+          hideMapHelpModal();
           L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
         }
 
         function handleMapKeyDown(e) {
+          if (e.key === 'Escape') {
+            hideMapHelpModal();
+            return;
+          }
+
           if (e.key === 'Tab' && !e.shiftKey) {
             var primaryMarkers = getVisibleTabbablePrimaryMarkers();
             if (primaryMarkers.length > 0) {
@@ -1469,7 +1616,8 @@
             icon.classList.add(PRIMARY_MARKER_FOCUS_CLASS);
             icon.setAttribute('role', 'button');
             icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to select this location.');
-            icon.setAttribute('tabindex', '0');
+            // Keep markers out of native tab order; we enter marker navigation explicitly.
+            icon.setAttribute('tabindex', '-1');
 
             if (!icon.dataset.primaryMarkerFocusBound) {
               icon.addEventListener('focus', function () {
@@ -1486,6 +1634,8 @@
               icon.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
+                  keyboardOpenedPopupReturnFocusTarget = icon;
+                  shouldFocusPopupCloseButton = true;
                   layer.fire('click', {
                     latlng: layer.getLatLng(),
                     target: layer
