@@ -4,6 +4,7 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
 
@@ -221,6 +222,57 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_destination_field'] = $clickQueryDestinationField;
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
+
+    $latRequired = !empty($element['#location_lat__required']) || (!empty($element['location_lat']) && !empty($element['location_lat']['#required']));
+    if (!empty($element['#required']) || $latRequired) {
+      // A required location should be indicated on the composite title/legend,
+      // since the validated value is hidden and the visible interaction is the
+      // overall search-and-map widget.
+      $element['#required'] = TRUE;
+      $element['#attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['aria-required'] = 'true';
+    }
+
+    // If location_lat was marked required (via YAML shorthand or direct
+    // #required), clear the built-in required flag so Drupal doesn't try to
+    // validate or scroll to a hidden input. Instead, register a validator on
+    // the composite that can attach the error to a visible part of the widget.
+    if ($latRequired) {
+      $element['#location_lat__required'] = FALSE;
+      // Avoid creating a sparse location_lat child override before Webform has
+      // initialized the composite sub-elements, otherwise the real hidden
+      // element definition can be replaced and disappear from rendered markup.
+      if (!empty($element['location_lat']) && isset($element['location_lat']['#type'])) {
+        $element['location_lat']['#required'] = FALSE;
+      }
+      $element['#element_validate'][] = [static::class, 'validateLocationRequired'];
+    }
+  }
+
+  /**
+   * Validates that a location has been selected when location_lat is required.
+   *
+   * Registers the error on the composite element rather than the hidden
+   * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
+   */
+  public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
+    $key = $element['#webform_key'] ?? 'report_location';
+    $values = $form_state->getValue($key);
+    $lat = is_array($values) ? ($values['location_lat'] ?? '') : '';
+
+    if (!empty($lat) && $lat !== '0') {
+      return;
+    }
+
+    $message = !empty($element['location_lat']['#required_error'])
+      ? $element['location_lat']['#required_error']
+      : t('Location is required. Please select a location by searching or clicking the map.');
+
+    // Register this error against the visible map child instead of the
+    // composite wrapper to avoid the same message being repeated for each
+    // sub-element by composite error rendering.
+    $error_element = $element['location_map'] ?? $element;
+    $form_state->setError($error_element, $message);
   }
 
 }
