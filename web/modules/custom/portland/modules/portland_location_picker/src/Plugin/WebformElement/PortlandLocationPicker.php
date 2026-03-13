@@ -223,7 +223,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $latRequired = !empty($element['#location_lat__required']) || !empty($element['location_lat']['#required']);
+    $latRequired = !empty($element['#location_lat__required']) || (!empty($element['location_lat']) && !empty($element['location_lat']['#required']));
     if (!empty($element['#required']) || $latRequired) {
       // A required location should be indicated on the composite title/legend,
       // since the validated value is hidden and the visible interaction is the
@@ -239,7 +239,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // the composite that can attach the error to a visible part of the widget.
     if ($latRequired) {
       $element['#location_lat__required'] = FALSE;
-      $element['location_lat']['#required'] = FALSE;
+      // Avoid creating a sparse location_lat child override before Webform has
+      // initialized the composite sub-elements, otherwise the real hidden
+      // element definition can be replaced and disappear from rendered markup.
+      if (!empty($element['location_lat']) && isset($element['location_lat']['#type'])) {
+        $element['location_lat']['#required'] = FALSE;
+      }
       $element['#element_validate'][] = [static::class, 'validateLocationRequired'];
     }
   }
