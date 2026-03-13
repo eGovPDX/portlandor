@@ -992,7 +992,30 @@
         }
 
         function getLocationLatField() {
-          return locationPickerEl.querySelector('input[name="' + elementId + '[location_lat]"]');
+          return getLocationField('location_lat', 'location-lat');
+        }
+
+        function getLocationField(fieldName, fallbackClass) {
+          var byScopedName = locationPickerEl.querySelector('input[name="' + elementId + '[' + fieldName + ']"]');
+          if (byScopedName) {
+            return byScopedName;
+          }
+
+          var bySuffixName = locationPickerEl.querySelector('input[name$="[' + fieldName + ']"]');
+          if (bySuffixName) {
+            return bySuffixName;
+          }
+
+          var byId = locationPickerEl.querySelector('#' + fieldName);
+          if (byId) {
+            return byId;
+          }
+
+          if (fallbackClass) {
+            return locationPickerEl.querySelector('.' + fallbackClass);
+          }
+
+          return null;
         }
 
         function hasLocationSelection() {
@@ -1053,8 +1076,22 @@
             errorElement.textContent = '';
           }
 
-          map.getContainer().removeAttribute('aria-invalid');
+          map.getContainer().setAttribute('aria-invalid', 'false');
           updateMapAccessibilityDescription();
+        }
+
+        function hasLocationPickerVisualError() {
+          if (!map || !map.getContainer()) {
+            return false;
+          }
+
+          var mapContainer = map.getContainer();
+          var mapFormItem = mapContainer.closest('.form-item--error, .webform-has-error, .has-error');
+          if (mapFormItem) {
+            return true;
+          }
+
+          return !!locationPickerEl.querySelector('#location_map.form-item--error');
         }
 
         function hasExistingLocationPickerError() {
@@ -1097,7 +1134,7 @@
             return;
           }
 
-          if (!hasLocationSelection() && hasExistingLocationPickerError()) {
+          if (!hasLocationSelection() && (hasExistingLocationPickerError() || hasLocationPickerVisualError())) {
             setMapInvalid(getLocationRequiredErrorMessage());
             return;
           }
@@ -2023,13 +2060,27 @@
         function setLatLngHiddenFields(lat, lng) {
           if (!lat) lat = "0";
           if (!lng) lng = "0";
-          $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
-          $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
+
+          var latField = getLocationField('location_lat', 'location-lat');
+          var lonField = getLocationField('location_lon', 'location-lng');
+          if (latField) {
+            latField.value = lat;
+          }
+          if (lonField) {
+            lonField.value = lng;
+          }
+
           clearMapInvalid();
 
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
-          $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
-          $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
+          var xField = getLocationField('location_x', 'location-x');
+          var yField = getLocationField('location_y', 'location-y');
+          if (xField) {
+            xField.value = sphericalMerc.x;
+          }
+          if (yField) {
+            yField.value = sphericalMerc.y;
+          }
         }
 
         function setLocationMarker(lat, lng) {
