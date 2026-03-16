@@ -252,24 +252,7 @@
           map.on('popupopen', handlePopupOpen);
           map.on('popupclose', handlePopupClose);
 
-          // instantiate location text block but don't add it to the map until a location is selected.
-          locationTextBlock = L.control({
-            position: 'bottomleft'
-          });
-
-          locationTextBlock.onAdd = function (map) {
-            var customElement = L.DomUtil.create('div', 'custom-control');
-            // Prevent map interaction when clicking inside the control
-            L.DomEvent.disableClickPropagation(customElement);
-            customElement.innerHTML = `
-              <div id="location-text-container">
-                <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png"></div>
-                <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
-                  lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
-              </div>`;
-            customElement
-            return customElement;
-          };
+          initializeLocationTextBlock();
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -1280,15 +1263,36 @@
           clearLocationFields();
           hideVerifiedLocation(false);
           clearMapInvalid();
-          if (locationTextBlock && map.hasLayer(locationTextBlock)) {
-            map.removeControl(locationTextBlock);
-          }
           if (currentView === 'aerial') {
             toggleAerialView();
           }
           map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
           currentView = 'base';
           announceMapStatus('Map reset to the default view.');
+        }
+
+        function initializeLocationTextBlock() {
+          var mapContainer = document.getElementById('location_map_container');
+          if (!mapContainer || !mapContainer.parentNode) {
+            return;
+          }
+
+          var existingBlock = document.getElementById('location-text-container-wrapper');
+          if (existingBlock) {
+            existingBlock.remove();
+          }
+
+          var wrapper = document.createElement('div');
+          wrapper.id = 'location-text-container-wrapper';
+          wrapper.innerHTML = `
+            <div id="location-text-container" aria-live="polite">
+              <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png"></div>
+              <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
+                lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
+            </div>`;
+
+          mapContainer.parentNode.insertBefore(wrapper, mapContainer.nextSibling);
+          locationTextBlock = wrapper;
         }
 
         function handleMapClick(e) {
@@ -2319,8 +2323,7 @@
 
         function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data) {
           $('#verified_location_text').text(description);
-
-          if (!locationTextBlock.map) locationTextBlock.addTo(map);
+          $('#location-text-container').addClass('is-visible');
 
           if (!lat || !lng) {
             return false;
@@ -2344,6 +2347,7 @@
         }
 
         function hideVerifiedLocation(announce = true) {
+          $('#location-text-container').removeClass('is-visible');
           $('#verified_location_text').text("");
           $('#verified_location').addClass('visually-hidden');
           if (announce) {
