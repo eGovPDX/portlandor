@@ -38,7 +38,7 @@
         const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
-        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map.Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move to map controls and then focus the map. Once the map is focused, use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move focus to to map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center.';
         const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
         const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location by searching or clicking the map.';
@@ -1622,6 +1622,34 @@
           });
         }
 
+        function getNextFocusableElementAfterMapRegion() {
+          if (!map || !map.getContainer()) {
+            return null;
+          }
+
+          var mapRegion = map.getContainer().parentNode;
+          var focusableSelector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+          ].join(',');
+
+          var focusableOutsideMap = Array.from(document.querySelectorAll(focusableSelector)).filter(function (el) {
+            return el.offsetParent !== null && !mapRegion.contains(el);
+          });
+
+          for (var i = 0; i < focusableOutsideMap.length; i++) {
+            if (mapRegion.compareDocumentPosition(focusableOutsideMap[i]) & Node.DOCUMENT_POSITION_FOLLOWING) {
+              return focusableOutsideMap[i];
+            }
+          }
+
+          return null;
+        }
+
         function updatePrimaryMarkerKeyboardAccessibility() {
           if (!primaryLayer) {
             return;
@@ -1711,15 +1739,15 @@
                   return;
                 }
 
-                // Move focus to next global focusable element after the map region.
-                var allFocusable = Array.from(document.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function (el) {
-                  return el.offsetParent !== null;
-                });
-                var activeIndex = allFocusable.indexOf(document.activeElement);
-                if (activeIndex >= 0 && allFocusable[activeIndex + 1]) {
+                var nextFocusable = getNextFocusableElementAfterMapRegion();
+                if (nextFocusable) {
                   announceMapStatus('Leaving selectable map markers.');
-                  allFocusable[activeIndex + 1].focus();
+                  nextFocusable.focus();
+                  return;
                 }
+
+                // Fallback when no subsequent focus target exists in the document.
+                map.getContainer().focus();
               });
               icon.dataset.primaryMarkerKeydownBound = 'true';
             }
