@@ -98,7 +98,7 @@ elements: |-
     '#title': 'What are you trying to report?'
     '#prepopulate': true
     '#options':
-      road: 'Damage to the Road surface (like potholes or pavement markings)'
+      road: 'Damage to the road surface (like potholes or pavement markings)'
       sign: 'Traffic or street sign'
       signal: 'Traffic signal, streetlight, or school beacon'
       sidewalk: 'Sidewalk, curb, or stairs'
@@ -124,7 +124,7 @@ elements: |-
         ':input[name="report_asset_type"]':
           value: road
     report_issue_type_road:
-      '#type': webform_radios_other
+      '#type': radios
       '#title': 'What type of damage are you reporting?'
       '#options':
         pothole: 'Pothole -- A rough hole in the road'
@@ -133,8 +133,7 @@ elements: |-
         utility_cut: 'Utility cut -- A square or rectangular cut in the road used to fix water or sewer lines'
         pavement_markings: 'Pavement markings are wearing or missing'
         gravel_street: 'Gravel street needs maintenance'
-      '#other__option_label': 'Something else...'
-      '#other__placeholder': 'Please describe'
+        other: 'Something else'
       '#required': true
     markup_sinkholes:
       '#type': webform_markup
@@ -217,10 +216,10 @@ elements: |-
     '#title': 'Choose from a list of less common report types:'
     '#required': true
     '#options':
-      diverters_attenuators: 'Diverters / Traffic Attenuator Maintenance'
+      diverters_attenuators: 'Diverters / Traffic Attenuator maintenance'
       elevators: Elevators
-      fence_maintenance: 'Fence Maintenance'
-      retaining_wall_maintenance: 'Retaining Wall Maintenance'
+      fence_maintenance: 'Fence maintenance'
+      retaining_wall_maintenance: 'Retaining wall maintenance'
     '#states':
       visible:
         ':input[name="report_asset_type"]':
@@ -457,8 +456,7 @@ elements: |-
     '#states':
       visible:
         ':input[name="report_asset_type_bridge"]':
-          value:
-            '!pattern': 'false|bridge_major_river'
+          value: bridge_other
         ':input[name="computed_is_dispatch"]':
           value: 'true'
     '#required': true
@@ -548,6 +546,7 @@ elements: |-
       </div>
   container_continue_report:
     '#type': container
+    '#states_clear': false
     '#states':
       invisible:
         - ':input[name="report_issue_type_general"]':
@@ -672,6 +671,38 @@ elements: |-
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
+    computed_zd_group_testing:
+      '#type': webform_computed_twig
+      '#title': 'Zendesk group'
+      '#display_on': form
+      '#ajax': true
+      '#mode': text
+      '#whitespace': trim
+      '#wrapper_attributes':
+        style: |-
+          background-color: #1d62c9;
+          color: #fff;
+          border-radius: 15px;
+          box-shadow: var(--bs-box-shadow-lg);
+          padding: 15px;
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9999;
+      '#template': |-
+        {# include dependencies in a dummy array so AJAX updates #}
+        {% set dependencies = [data.report_asset_type, data.report_asset_type_sidewalk, data.report_asset_type_calming, data.report_issue_bridge, data.report_issue_type_road, data.report_issue_type_sign, data.report_issue_type_sidewalk] %}
+        {% set group_311 = '360006087813' %}
+        {% set group_dispatch = '31623419540375' %}
+        {% set group_mo = '35280882128279' %}
+        {% if data.computed_zd_group_id == group_311 %}
+          311
+        {% elseif data.computed_zd_group_id == group_dispatch %}
+          311: Service Dispatch
+        {% elseif data.computed_zd_group_id == group_mo %}
+          PBOT: MO
+        {% endif %}
   section_dispatch_use_only:
     '#type': webform_section
     '#title': 'Dispatch Use Only'
@@ -716,6 +747,11 @@ elements: |-
     dispatch_related_emergency:
       '#type': checkbox
       '#title': 'Related to a declared emergency'
+    test_submission:
+      '#type': checkbox
+      '#title': 'Test submission'
+      '#access_create_roles':
+        - administrator
   computed_is_dispatch:
     '#type': webform_computed_twig
     '#title': 'Computed - is dispatch'
@@ -752,49 +788,60 @@ elements: |-
     '#mode': text
     '#whitespace': trim
     '#template': |-
-      {% set dispatch = '31623419540375' %}
-      {% set mo = '35280882128279' %}
-      {% if data.report_asset_type == 'sidewalk' %}
-        {% if data.report_asset_type_sidewalk == 'curb' %}
-          {# P3 #}
-          {{ mo }}
+      {% set is_dispatch = 'support_agent' in webform_token('[current-user:roles]', webform_submission) %}
+      {% set group_311 = '360006087813' %}
+      {% set group_dispatch = '31623419540375' %}
+      {% set group_mo = '35280882128279' %}
+      {% if data.report_asset_type == 'road' %}
+        {% if data.report_issue_type_road == 'pothole' or data.report_issue_type_road == 'utility_cut' %}
+          {{ group_mo }}
+        {% elseif data.report_issue_type_road == 'sinkhole' or data.report_issue_type_road == 'landslide' %}
+          {{ group_dispatch }}
+        {% else %}
+          {{ group_311 }}
+        {% endif %}
+      {% elseif data.report_asset_type == 'sign'%}
+        {% if data.report_issue_type_sign == 'vegetation' %}
+          {{ group_311 }}
+        {% elseif data.report_issue_type_sign == 'damaged' %}
+          {{ group_dispatch }}
+        {% endif %}
+      {% elseif data.report_asset_type == 'signal' %}
+        TODO
+      {% elseif data.report_asset_type == 'sidewalk' %}
+        {% if not is_dispatch and data.report_issue_bridge == 'Yes' %}
+          {{ group_dispatch }}
+        {% elseif data.report_asset_type_sidewalk == 'curb' %}
+          {{ group_mo }}
         {% elseif data.report_asset_type_sidewalk == 'stairs' and data.report_issue_bridge == 'Yes' %}
-          {# P2 #}
-          {{ dispatch }}
+          {{ group_dispatch }}
         {% elseif data.report_asset_type_sidewalk == 'stairs' and data.report_issue_bridge == 'No' %}
-          {# P3 #}
-          {{ mo }}
+          {{ group_mo }}
         {% elseif data.report_asset_type_sidewalk == 'sidewalk_wooden' %}
-          {# P2 #}
-          {{ dispatch }}
+          {{ group_dispatch }}
         {% elseif (data.report_asset_type_sidewalk == 'no_ramp' or data.report_asset_type_sidewalk == 'ramp') and data.report_issue_type_sidewalk != 'damaged' %}
-          {# P3 #}
-          {{ mo }}
+          {{ group_mo }}
         {% elseif (data.report_asset_type_sidewalk == 'no_ramp' or data.report_asset_type_sidewalk == 'ramp') and data.report_issue_type_sidewalk == 'damaged' %}
-          {# P2 #}
-          {{ dispatch }}
+          {{ group_dispatch }}
         {% endif %}
       {% elseif data.report_asset_type == 'calming' %}
         {% if data.report_asset_type_calming == 'camera' %}
-          {# TODO email fixedspeedsafetycamera@portlandoregon.gov #}
-        {% elseif data.report_asset_type_calming == 'hump' or data.report_asset_type_calming == 'planter' %}
-          {# P2 #}
-          {{ dispatch }}
-        {% elseif data.report_asset_type_calming == 'flex_bollard' %}
-          {# TODO this is supposed to be a "311 MO Dispatch" group? #}
-          {{ mo }}
+          TODO
+        {% elseif data.report_asset_type_calming == 'hump' %}
+          TODO
+        {% elseif data.report_asset_type_calming == 'planter' %}
+          {{ group_dispatch }}
         {% else %}
-          {# P3 #}
-          {{ mo }}
+          {{ group_mo }}
         {% endif %}
       {% elseif data.report_asset_type == 'bridge' %}
-        {# P2 #}
-        {{ dispatch }}
+        {{ group_dispatch }}
+      {% elseif data.report_asset_type == 'bike_rack' %}
+        {{ group_mo }}
       {% elseif data.report_asset_type == 'other' %}
-        {# P2 #}
-        {{ dispatch }}
+        {{ group_dispatch }}
       {% else %}
-        {{ mo }}
+        {{ group_311 }}
       {% endif %}
 css: ''
 javascript: ''
@@ -986,6 +1033,10 @@ handlers:
     label: 'Zendesk new request'
     notes: ''
     status: true
+    conditions:
+      disabled:
+        ':input[name="test_submission"]':
+          checked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -1006,4 +1057,37 @@ handlers:
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '35281905079319'
+      excluded_elements: {  }
+  developer_test_zendesk_new_request:
+    id: zendesk
+    handler_id: developer_test_zendesk_new_request
+    label: 'Developer test: Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'ROW Maintenance Issue - [webform_submission:values:report_asset_type]'
+      comment: "<strong>Computed group: </strong>[webform_submission:values:computed_zd_group_testing]<br>\r\n[webform_submission:values:html]"
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: problem
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_row_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '35281905079319'
+      excluded_elements:
+        computed_zd_group_testing: computed_zd_group_testing
 variants: {  }
