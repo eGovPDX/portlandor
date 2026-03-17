@@ -4,6 +4,7 @@ namespace Drupal\portland\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Url;
 
 /**
  * Creates a login link that redirects back to the current page after login,
@@ -38,14 +39,24 @@ class LoginBlock extends BlockBase {
         $request->query->set("destination", $request->getPathInfo());
       }
       $query_string = http_build_query($request->query->all());
-      $markup = "";
+      $login_link = "";
       if ($logged_in) {
-        $markup = '<a href="/user/logout?' . $query_string . '">Editor log out</a>';
+        $login_text = $this->t('Editor log out');
+        $login_link = "<a href=\"/user/logout?$query_string\">$login_text</a>";
       } else {
-        $markup = '<a href="/user/login?' . $query_string . '">Editor log in</a>';
+        $login_text = $this->t('Editor log in');
+        $login_link = "<a href=\"/user/login?$query_string\">$login_text</a>";
       }
+      
+      $about_website = $this->t('About this website')->__toString();
+      $employee_portal = $this->t('Employee portal')->__toString();
+      
       $render_array = [
-        '#markup' => $markup
+        '#markup' => '<ul class="menu">
+          <li class="menu-item"><a href="' . Url::fromRoute('entity.node.canonical', ['node' => 6008])->toString() . '">' . $about_website . '</a></li>
+          <li class="menu-item"><a href="https://employees.portland.gov/">' . $employee_portal . '</a></li>
+          <li class="menu-item">' . $login_link . '</li>
+        </ul>',
       ];
       return $render_array;
     }
