@@ -39,7 +39,7 @@
         const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
-        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move focus to to map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move focus to the map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center.';
         const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
         const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location.';
