@@ -32,7 +32,12 @@ elements: |-
     '#states_clear': false
   markup_urgent_call:
     '#type': webform_markup
-    '#markup': '<div class="alert alert--warning">Call Maintenance Dispatch</div>'
+    '#markup': |-
+      <div class="webform-alert alert alert--warning">
+        <h2>Next Steps</h2>
+        <p><strong>If this is a life-threatening emergency or poses an immediate danger to people or property, please call 9-1-1.</strong></p>
+        <p>Otherwise, please call PDX311 Dispatch's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative.</p>
+      </div>
     '#states':
       visible:
         ':input[name="report_issue_urgent"]':
@@ -69,21 +74,21 @@ elements: |-
     '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   markup_obstruction_jump:
     '#type': webform_markup
-    '#markup': '<p>[Jump to ROW Obstruction Form]</p>'
+    '#markup': '<p><a class="button button--primary" href="/311/report-obstruction">Continue</a></p>'
     '#states':
       visible:
         ':input[name="report_issue_type_general"]':
           value: obstruction
   markup_debris_jump:
     '#type': webform_markup
-    '#markup': '<p>[Jump to Trash or Debris Form]</p>'
+    '#markup': '<p><a class="button button--primary" href="/311/report-trash">Continue</a></p>'
     '#states':
       visible:
         ':input[name="report_issue_type_general"]':
           value: debris
   markup_graffiti_jump:
     '#type': webform_markup
-    '#markup': '<p>[Jump to Graffiti Form]</p>'
+    '#markup': '<p><a class="button button--primary" href="/bps/graffiti/report-graffiti">Continue</a></p>'
     '#states':
       visible:
         ':input[name="report_issue_type_general"]':
@@ -137,11 +142,13 @@ elements: |-
         visible:
           ':input[name="report_issue_type_road[radios]"]':
             value: sinkhole
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
       '#markup': |-
         <div class="webform-alert alert alert--info">
         <h2>Next Steps</h2>
 
-        <p>Sinkholes are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
+        <p>Sinkholes are considered urgent. To ensure a fast response, please call PDX311 Dispatch's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
         </div>
     markup_landslides:
       '#type': webform_markup
@@ -149,11 +156,19 @@ elements: |-
         visible:
           ':input[name="report_issue_type_road[radios]"]':
             value: landslide
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
       '#markup': |-
         <div class="webform-alert alert alert--info">
         <h2>Next Steps</h2>
 
-        <p>Landslides are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
+        <p><strong>If you see the signs of a landslide that threatens public safety</strong>, evacuate immediately, then call 9-1-1 when it is safe to do so.</p>
+
+        <p><strong>For landslides blocking streets or sidewalks that are not an immediate threat to public safety</strong>, call PDX311 Dispatch 24/7 at 503-823-1700. Interpretation available.</p>
+
+        <p><strong>For landslides on private property that don't threaten public safety or public right-of-way</strong>, call Portland Permitting & Development at 503-823-2633. Interpretation available.</p>
+
+        <p><a href="/transportation/weather/landslides-flooding-sandbags">Learn more about landslides in Portland</a>, including information on where you can find sand bags.</p>
         </div>
     report_road_surface_has_photo:
       '#type': radios
@@ -223,7 +238,7 @@ elements: |-
         - ':input[name="report_asset_type"]':
             value: sidewalk
   report_asset_type_sidewalk:
-    '#type': select
+    '#type': radios
     '#title': 'What specific thing are you trying to report?'
     '#options':
       sidewalk_concrete: 'Sidewalk (Concrete)'
@@ -238,7 +253,7 @@ elements: |-
           value: sidewalk
     '#required': true
   report_issue_type_sidewalk:
-    '#type': select
+    '#type': radios
     '#title': "What's wrong with it?"
     '#options':
       damaged: 'Broken, damaged, or needs repair'
@@ -246,11 +261,83 @@ elements: |-
       other: 'Something else'
     '#states':
       visible:
-        ':input[name="report_asset_type"]':
-          value: sidewalk
+        - ':input[name="report_asset_type"]':
+            value: sidewalk
+          ':input[name="report_asset_type_sidewalk"]':
+            value:
+              '!pattern': 'sidewalk_concrete|sidewalk_wooden'
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
+        - ':input[name="report_asset_type"]':
+            value: sidewalk
+          ':input[name="report_asset_type_sidewalk"]':
+            '!value': sidewalk_concrete
+          ':input[name="computed_is_dispatch"]':
+            value: 'true'
     '#required': true
+  markup_sidewalk_concrete:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_sidewalk"]':
+          value: sidewalk_concrete
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>To report a sidewalk in need of repair, use the Report an Obstruction on a Street, Sidewalk, or Other Right-of-Way form.</p>
+      <p>For mandatory or voluntary sidewalk repairs... Other sidewalk resources</p>
+      </div>
+  markup_sidewalk_wooden:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_sidewalk"]':
+          value: sidewalk_wooden
+        ':input[name="computed_is_dispatch"]':
+          '!value': 'true'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
+  markup_sidewalk_corner:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_sidewalk"]':
+          value:
+            pattern: '^ramp|no_ramp$'
+        ':input[name="report_issue_type_sidewalk"]':
+          value: damaged
+        ':input[name="computed_is_dispatch"]':
+          '!value': 'true'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
+  markup_sidewalk_stairs_bridge:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_sidewalk"]':
+          value: stairs
+        ':input[name="report_issue_bridge"]':
+          value: Yes
+        ':input[name="computed_is_dispatch"]':
+          '!value': 'true'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
   report_issue_type_bike_rack:
-    '#type': select
+    '#type': radios
     '#title': "What's wrong with it?"
     '#options':
       damaged: 'Broken, damaged, or needs repair'
@@ -263,7 +350,7 @@ elements: |-
           value: bike_rack
     '#required': true
   report_asset_type_calming:
-    '#type': select
+    '#type': radios
     '#title': 'What specific thing are you trying to report?'
     '#options':
       camera: 'Traffic or speed camera'
@@ -279,7 +366,7 @@ elements: |-
           value: calming
     '#required': true
   report_issue_type_calming:
-    '#type': select
+    '#type': radios
     '#title': "What's wrong with it?"
     '#options':
       damaged: 'Broken, damaged, or needs repair'
@@ -293,20 +380,30 @@ elements: |-
     '#required': true
   markup_meter_info:
     '#type': webform_markup
-    '#markup': '<p>[INFO MARKUP FOR PARKING METER]</p>'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please <a href="/transportation/parking/report-broken-parking-pay-station">report a broken parking pay station here</a>.</p>
+      </div>
     '#states':
       visible:
         ':input[name="report_asset_type"]':
           value: meter
   markup_transit_info:
     '#type': webform_markup
-    '#markup': '<p>[INFO MARKUP FOR TRANSIT]</p>'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>TODO: Info needed here</p>
+      </div>
     '#states':
       visible:
         ':input[name="report_asset_type"]':
           value: transit
   report_asset_type_bridge:
-    '#type': select
+    '#type': radios
     '#title': 'What specific thing are you trying to report?'
     '#options':
       bridge_major_river: 'Bridge over the Willamette or Columbia River'
@@ -318,8 +415,39 @@ elements: |-
         ':input[name="report_asset_type"]':
           value: bridge
     '#required': true
+  markup_bridge_major_river:
+    '#type': webform_markup
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Use the <a href="https://multco.us/info/road-and-bridge-service-request-app">SeeClickFix app</a> to report non-emergency road and bridge maintenance issues for areas maintained by Multnomah County.</p>
+
+      <p>When you submit a request, it goes directly to the County's Road and Bridge Maintenance team. They will review it, route it to the right staff, and you can follow their progress and updates in the SeeClickFix app.</p>
+
+      <p>If you don't have a smartphone or computer, you can report bridge maintenance issues by calling <a href="tel:+1-503-988-5050">503-988-5050</a>.</p>
+      </div>
+    '#states':
+      visible:
+        ':input[name="report_asset_type_bridge"]':
+          value: bridge_major_river
+  markup_bridge_all_other:
+    '#type': webform_markup
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
+    '#states':
+      visible:
+        ':input[name="report_asset_type_bridge"]':
+          value:
+            '!pattern': 'false|bridge_major_river'
+        ':input[name="computed_is_dispatch"]':
+          '!value': 'true'
   report_issue_type_bridge:
-    '#type': select
+    '#type': radios
     '#title': 'Which part of the bridge?'
     '#options':
       traffic_attenuator: 'Traffic attenuator'
@@ -329,23 +457,95 @@ elements: |-
     '#states':
       visible:
         ':input[name="report_asset_type_bridge"]':
-          value: bridge_other
+          value:
+            '!pattern': 'false|bridge_major_river'
+        ':input[name="computed_is_dispatch"]':
+          value: 'true'
     '#required': true
   report_issue_bridge_description:
     '#type': textarea
     '#title': 'Can you tell us more about what is wrong with it?'
     '#states':
       visible:
-        ':input[name="report_asset_type"]':
-          value: bridge
+        ':input[name="report_asset_type_bridge"]':
+          value:
+            '!pattern': 'false|bridge_major_river'
+        ':input[name="computed_is_dispatch"]':
+          value: 'true'
     '#required': true
   markup_sewer_jump:
     '#type': webform_markup
-    '#markup': '<p>[Jump to Sewer/Stormwater Form]</p>'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>TODO: Sewer/stormwater jump link</p>
+      </div>
     '#states':
       visible:
         ':input[name="report_asset_type"]':
           value: sewer
+  report_issue_type_sign:
+    '#type': radios
+    '#title': "What's wrong with it?"
+    '#options':
+      vegetation: 'Vegetation blocking a sign'
+      damaged: 'Damaged or down sign'
+    '#states':
+      visible:
+        ':input[name="report_asset_type"]':
+          value: sign
+    '#required': true
+  markup_sign_damaged:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_issue_type_sign"]':
+          value: damaged
+        ':input[name="computed_is_dispatch"]':
+          '!value': 'true'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
+  report_asset_type_signal:
+    '#type': radios
+    '#title': "What's having an issue?"
+    '#options':
+      traffic_signal: 'Traffic signal'
+      streetlight: 'Streetlight'
+      school_beacon: 'School beacon'
+    '#states':
+      visible:
+        ':input[name="report_asset_type"]':
+          value: signal
+    '#required': true
+  markup_signal_traffic:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_signal"]':
+          value: traffic_signal
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
+  markup_signal_school_beacon:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type_signal"]':
+          value: school_beacon
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please report this issue to PDX311 Dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a>.</p>
+      </div>
   container_continue_report:
     '#type': container
     '#states':
@@ -353,16 +553,66 @@ elements: |-
         - ':input[name="report_issue_type_general"]':
             unchecked: true
         - or
+        - ':input[name="report_asset_type"]':
+            value:
+              pattern: '^transit|meter$'
+        - or
+        - ':input[name="report_asset_type_sidewalk"]':
+            value: sidewalk_concrete
+        - or
+        - ':input[name="report_asset_type_sidewalk"]':
+            value: sidewalk_wooden
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
+        - ':input[name="report_asset_type_sidewalk"]':
+            value:
+              pattern: '^ramp|no_ramp$'
+          ':input[name="report_issue_type_sidewalk"]':
+            value: damaged
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
+        - ':input[name="report_issue_type_road[radios]"]':
+            value: gravel_street
+        - or
+        - ':input[name="report_issue_type_sign"]':
+            value: damaged
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
         - ':input[name="report_issue_type_road[radios]"]':
             value:
-              pattern: 'sinkhole|landslide|gravel_street'
+              pattern: 'sinkhole|landslide'
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
+        - ':input[name="report_asset_type_signal"]':
+            value:
+              pattern: 'traffic_signal|school_beacon'
+        - or
+        - ':input[name="report_asset_type_sidewalk"]':
+            value: stairs
+          ':input[name="report_issue_bridge"]':
+            value: Yes
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
+        - or
+        - ':input[name="report_asset_type_bridge"]':
+            value: bridge_major_river
+        - or
+        - ':input[name="report_asset_type_bridge"]':
+            value:
+              '!pattern': 'false|bridge_major_river'
+          ':input[name="computed_is_dispatch"]':
+            '!value': 'true'
         - or
         - ':input[name="report_issue_urgent"]':
             value: 'Yes'
         - or
         - ':input[name="report_issue_type_general"]':
             value:
-              pattern: ^$|obstruction|debris|graffiti
+              pattern: false|obstruction|debris|graffiti
     report_location:
       '#type': portland_location_picker
       '#title': Location
@@ -466,6 +716,19 @@ elements: |-
     dispatch_related_emergency:
       '#type': checkbox
       '#title': 'Related to a declared emergency'
+  computed_is_dispatch:
+    '#type': webform_computed_twig
+    '#title': 'Computed - is dispatch'
+    '#display_on': form
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#mode': text
+    '#whitespace': trim
+    '#template': |-
+      {% if 'support_agent' in webform_token('[current-user:roles]', webform_submission) %}
+      true
+      {% endif %}
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed tags'
@@ -477,6 +740,10 @@ elements: |-
 
       {% if 'support_agent' in webform_token('[current-user:roles]', webform_submission) %}
       submitted_by_dispatcher
+      {% endif %}
+
+      {% if data.report_issue_type_sign == 'vegetation' %}
+      311_row_triage
       {% endif %}
   computed_zd_group_id:
     '#type': webform_computed_twig
