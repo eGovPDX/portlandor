@@ -35,13 +35,14 @@
 
         const ZOOM_POSITION = 'topleft';
         const RESET_POSITION = 'topleft';
+        const PAN_POSITION = 'bottomleft';
         const KEYBOARD_PAN_PIXELS = 25;
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
         const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it. For keyboard navigation, use Tab to move focus to to map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
         const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center.';
         const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
-        const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location by searching or clicking the map.';
+        const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -110,8 +111,10 @@
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var ResetControl = generateResetControl();
+        var PanControl = generatePanControl();
         var HelpControl = generateHelpControl();
         var helpControlContainer;
+        var panControlContainer;
         var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
@@ -242,6 +245,7 @@
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
           map.addControl(new ResetControl());
           map.addControl(new HelpControl());
+          map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           initializeMapAccessibility();
@@ -752,6 +756,51 @@
           });
         }
 
+        function generatePanControl() {
+          return L.Control.extend({
+            options: {
+              position: PAN_POSITION
+            },
+            onAdd: function (map) {
+              panControlContainer = L.DomUtil.create('div', 'leaflet-control pan-control leaflet-control-custom');
+              L.DomEvent.disableClickPropagation(panControlContainer);
+              L.DomEvent.disableScrollPropagation(panControlContainer);
+
+              var toggleButton = L.DomUtil.create('div', 'leaflet-bar pan-control-toggle', panControlContainer);
+              toggleButton.innerHTML = '<i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i>';
+              initializeKeyboardControl(toggleButton, 'Show map pan controls', handlePanToggleClick);
+
+              var buttonsContainer = L.DomUtil.create('div', 'pan-control-buttons', panControlContainer);
+
+              var upButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-up', buttonsContainer);
+              upButton.innerHTML = '<i class="fa-solid fa-chevron-up" aria-hidden="true"></i>';
+              initializeKeyboardControl(upButton, 'Pan map up', function (e) {
+                handlePanButtonClick(e, 0, -KEYBOARD_PAN_PIXELS);
+              });
+
+              var rightButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-right', buttonsContainer);
+              rightButton.innerHTML = '<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>';
+              initializeKeyboardControl(rightButton, 'Pan map right', function (e) {
+                handlePanButtonClick(e, KEYBOARD_PAN_PIXELS, 0);
+              });
+
+              var leftButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-left', buttonsContainer);
+              leftButton.innerHTML = '<i class="fa-solid fa-chevron-left" aria-hidden="true"></i>';
+              initializeKeyboardControl(leftButton, 'Pan map left', function (e) {
+                handlePanButtonClick(e, -KEYBOARD_PAN_PIXELS, 0);
+              });
+
+              var downButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-down', buttonsContainer);
+              downButton.innerHTML = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
+              initializeKeyboardControl(downButton, 'Pan map down', function (e) {
+                handlePanButtonClick(e, 0, KEYBOARD_PAN_PIXELS);
+              });
+
+              return panControlContainer;
+            }
+          });
+        }
+
         function generateAerialControl() {
           return L.Control.extend({
             options: {
@@ -1251,6 +1300,39 @@
           toggleAerialView();
         }
 
+        function handlePanToggleClick(e) {
+          cancelEventBubble(e);
+          if (!panControlContainer) {
+            return;
+          }
+
+          panControlContainer.classList.add('is-expanded');
+          var firstButton = panControlContainer.querySelector('.pan-control-button-up');
+          if (firstButton) {
+            firstButton.focus();
+          }
+        }
+
+        function collapsePanControl(restoreFocusToToggle = false) {
+          if (!panControlContainer) {
+            return;
+          }
+
+          panControlContainer.classList.remove('is-expanded');
+
+          if (restoreFocusToToggle) {
+            var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
+            if (toggleButton) {
+              toggleButton.focus();
+            }
+          }
+        }
+
+        function handlePanButtonClick(e, x, y) {
+          cancelEventBubble(e);
+          map.panBy([x, y]);
+        }
+
         function handleHelpButtonClick(e) {
           cancelEventBubble(e);
           toggleMapHelpModal();
@@ -1258,6 +1340,7 @@
 
         function handleResetButtonClick() {
           hideMapHelpModal();
+          collapsePanControl();
           resetLocationMarker();
           resetClickedMarker();
           clearLocationFields();
@@ -1285,14 +1368,29 @@
           var wrapper = document.createElement('div');
           wrapper.id = 'location-text-container-wrapper';
           wrapper.innerHTML = `
-            <div id="location-text-container" aria-live="polite">
-              <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png"></div>
-              <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
-                lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
+            <div id="location-text-container" role="status" aria-live="polite" aria-atomic="true">
+              <div id="location-text-announcement" class="visually-hidden"></div>
+              <div id="location-text-visual" aria-hidden="true">
+                <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png" alt=""></div>
+                <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
+                  lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
+              </div>
             </div>`;
 
           mapContainer.parentNode.insertBefore(wrapper, mapContainer.nextSibling);
           locationTextBlock = wrapper;
+        }
+
+        function updateLocationTextAnnouncement(message) {
+          var announcementElement = document.getElementById('location-text-announcement');
+          if (!announcementElement) {
+            return;
+          }
+
+          announcementElement.textContent = '';
+          window.setTimeout(function () {
+            announcementElement.textContent = message;
+          }, 0);
         }
 
         function handleMapClick(e) {
@@ -2335,7 +2433,7 @@
           $('#location-text-value').text(description);
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
-          announceMapStatus('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
+          updateLocationTextAnnouncement('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
 
           // if verify mode, also put location description in address field, but only the street
           if (addressVerify) {
@@ -2348,10 +2446,13 @@
 
         function hideVerifiedLocation(announce = true) {
           $('#location-text-container').removeClass('is-visible');
+          $('#location-text-value').text('');
+          $('#location-text-lat').text('');
+          $('#location-text-lng').text('');
           $('#verified_location_text').text("");
           $('#verified_location').addClass('visually-hidden');
           if (announce) {
-            announceMapStatus('Selected location cleared.');
+            updateLocationTextAnnouncement('Selected location cleared.');
           }
         }
 
