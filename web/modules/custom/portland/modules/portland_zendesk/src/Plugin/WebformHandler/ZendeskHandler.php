@@ -372,7 +372,7 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
       if(!empty($groups) ){
-        $form['group_id']['#type'] = 'select';
+        $form['group_id']['#type'] = 'webform_select_other';
         $form['group_id']['#options'] = ['' => '- None -'] + $groups;
         $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
       }
