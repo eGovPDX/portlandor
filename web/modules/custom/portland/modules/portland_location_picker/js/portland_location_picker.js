@@ -193,14 +193,17 @@
 
         function initialize() {
 
+          const $locationSearch = $('#location_search');
           // disable form submit when pressing enter on address field and click Verify button instead
-          $('#location_search').on('keydown', function (e) {
+          $locationSearch.on('keydown', function (e) {
             if (e.keyCode == 13) {
-              e.preventDefault();
+              // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
+              if ($locationSearch.autocomplete('widget') && $locationSearch.autocomplete('widget').has('.ui-state-active').length) return;
+                
               if (!verifyHidden) {
+                e.preventDefault();
                 $('#location_verify').click();
               }
-              return false;
             }
           });
 
@@ -397,6 +400,13 @@
               const items = ui.content;
               ui.content = items;
             },
+            focus: function (event, ui) {
+              // if triggered by keyboard navigation, populate the input with the focused item's address
+              if (event.originalEvent && event.originalEvent.originalEvent && /^key/.test(event.originalEvent.originalEvent.type)) {
+                $(this).val(ui.item.address);
+                return false;
+              }
+            },
             create: function () {
               $(this).data('ui-autocomplete')._renderItem = function (ul, item) {
                 var address = item.address;
@@ -412,7 +422,7 @@
                   .attr('data-lng', lon)
                   .attr('data-address', fullAddress)
                   .attr('data-location-type', locationType)
-                  .append(address)
+                  .append(`<div>${address}</div>`)
                   .appendTo(ul);
 
                 return li;
