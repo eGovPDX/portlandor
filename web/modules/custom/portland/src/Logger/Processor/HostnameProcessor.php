@@ -9,6 +9,8 @@ use Drupal\monolog\Logger\Processor\AbstractRequestProcessor;
 class HostnameProcessor extends AbstractRequestProcessor {
 
   /**
+   * Adds the hostname to the "extra" field of the log record.
+   * 
    * @param array $record
    *
    * @return array
