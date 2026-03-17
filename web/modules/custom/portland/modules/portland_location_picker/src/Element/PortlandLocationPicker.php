@@ -52,29 +52,20 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     $element['precision_text'] = [
       '#type' => 'markup',
-      '#title' => 'Precision',
-      '#title_display' => 'invisible',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text">' . t('<strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.') . '</div>',
     ];
     $element['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
-      '#title' => 'Location map',
       '#description' => '',
-      '#description_display' => 'before',
-      '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
-      '#title' => 'Suggestions',
-      '#title_display' => 'invisible',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
     $element['status_modal'] = [
       '#type' => 'markup',
-      '#title' => 'Status indicator',
-      '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
     $element['location_address'] = [
