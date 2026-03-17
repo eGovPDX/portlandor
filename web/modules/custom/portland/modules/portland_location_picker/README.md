@@ -12,7 +12,7 @@ This widget currently supports only a single instance per page. The implementati
 
 The location_lat field should be marked required in the element configuration panel if location coordinates are required. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. If there is no location_lat value, the widget will report a validation error on the location map.
 
-When fields are marked as required in the UI, instead of the custom code for the widget, they'yre not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
+When fields are marked as required in the UI, instead of the custom code for the widget, they're not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
 
 ## Conditional logic
 
