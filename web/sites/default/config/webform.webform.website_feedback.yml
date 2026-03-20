@@ -4,7 +4,6 @@ status: open
 dependencies:
   module:
     - honeypot
-    - portland_zendesk
 third_party_settings:
   honeypot:
     honeypot: true
@@ -304,7 +303,7 @@ handlers:
     id: email
     handler_id: submit_report_to_311
     label: 'Submit report to 311'
-    notes: ''
+    notes: "Sends report to 311@portlandoregon.gov (Zendesk) for use cases: \r\n<ul><li>I cannot find what I'm looking for</li><li>I have a question</li><li>Information looks incorrect</li><li>Page last viewed does not contain www.portland.gov.</li></ul>"
     status: true
     conditions:
       enabled:
@@ -319,6 +318,11 @@ handlers:
         -
           ':input[name="subject"]':
             value: 'The information looks incorrect'
+        - or
+        -
+          ':input[name="page_you_last_viewed"]':
+            value:
+              '!pattern': www.portland.gov
     weight: 1
     settings:
       states:
@@ -337,23 +341,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: |-
-        <p>Subject: [webform_submission:values:subject]</p>
-
-        <p>Feedback: [webform_submission:values:feedback]</p>
-
-        <p>Name: [webform_submission:values:your_name]</p>
-
-        <p>Email: [webform_submission:values:email_address]</p>
-
-        <p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>
-
-        <p>Submitted on: [webform_submission:created]</p>
-
-        <p>User agent: [server:HTTP_USER_AGENT]</p>
-        [webform_submission:values:support_agent_use_only]<br />
-        <br />
-        Webform ID: website_feedback
+      body: '<p>Subject: [webform_submission:values:subject]</p><p>Feedback: [webform_submission:values:feedback]</p><p>Name: [webform_submission:values:your_name]</p><p>Email: [webform_submission:values:email_address]</p><p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p><p>Submitted on: [webform_submission:created]</p><p>User agent: [server:HTTP_USER_AGENT]</p><p>[webform_submission:values:support_agent_use_only]<br><br>Webform ID: website_feedback</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -370,12 +358,18 @@ handlers:
     id: email
     handler_id: submit_report_to_website_support
     label: 'Submit report to website support'
-    notes: ''
+    notes: "Sends report to website@portlandoregon.gov (Zendesk) for use cases: \r\n<ul><li>Page looks broken</li><li>Page last viewed contains www.portland.gov.</li></ul>"
     status: true
     conditions:
       enabled:
-        ':input[name="subject"]':
-          value: 'The page looks broken'
+        -
+          ':input[name="subject"]':
+            value: 'The page looks broken'
+        - or
+        -
+          ':input[name="page_you_last_viewed"]':
+            value:
+              pattern: www.portland.gov
     weight: 2
     settings:
       states:
@@ -394,24 +388,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: |-
-        <p>Subject: [webform_submission:values:subject]</p>
-
-        <p>Feedback: [webform_submission:values:feedback]</p>
-
-        <p>Name: [webform_submission:values:your_name]</p>
-
-        <p>Email: [webform_submission:values:email_address]</p>
-
-        <p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>
-
-        <p>Submitted on: [webform_submission:created]</p>
-
-        <p>User agent: [server:HTTP_USER_AGENT]<br />
-        <br />
-        [webform_submission:values:support_agent_use_only]<br />
-        <br />
-        ???????Webform ID: website_feedback</p>
+      body: '<p>Subject: [webform_submission:values:subject]</p><p>Feedback: [webform_submission:values:feedback]</p><p>Name: [webform_submission:values:your_name]</p><p>Email: [webform_submission:values:email_address]</p><p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p><p>Submitted on: [webform_submission:created]</p><p>User agent: [server:HTTP_USER_AGENT]<br><br>[webform_submission:values:support_agent_use_only]<br><br>???????Webform ID: website_feedback</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -424,33 +401,4 @@ handlers:
       langcode: ''
       parameters: {  }
       debug: false
-  zendesk_update_interaction_ticket:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_interaction_ticket
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: 2
-    settings:
-      comment: |-
-        <h1>Website Feedback</h1>
-        <p><strong>Website Feedback has been submitted on behalf of the community member.</strong> The requests cannot be automatically linked since the feedback form doesn't use an API handler.</p>
-
-        [webform_submission:values:html]
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: ''
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
-      skip_attachments: false
 variants: {  }
