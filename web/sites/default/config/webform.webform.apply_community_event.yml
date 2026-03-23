@@ -95,6 +95,20 @@ elements: |-
       '#description': '<p>Which street or right-of-way would you like to close for this event? Example: SW Main Street between SW 5th Avenue and SW 6th Avenue</p>'
       '#description_display': before
       '#required': true
+      '#states':
+        invisible:
+          ':input[name="apply_row_requested[checkboxes][Plaza]"]':
+            checked: true
+          ':input[name="apply_row_requested[checkboxes][Street]"]':
+            unchecked: true
+          ':input[name="apply_row_requested[checkboxes][Sidewalk]"]':
+            unchecked: true
+          ':input[name="apply_row_requested[checkboxes][Parking lot or space]"]':
+            unchecked: true
+          ':input[name="apply_row_requested[checkboxes][Parking or travel lane]"]':
+            unchecked: true
+          ':input[name="apply_row_requested[other]"]':
+            unchecked: true
     apply_location_association:
       '#type': textarea
       '#title': 'What is the reason you have selected this location?'
@@ -314,7 +328,7 @@ elements: |-
         '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Amplified sound at events must obtain a <a target="_blank" href="/ppd/noise/apply-noise-variance">Noise Variance</a> from the Bureau of Development Services. You will receive more information about this requirement in your confirmation email.</p></div>'
       apply_design_upload:
         '#type': managed_file
-        '#title': 'Upload your painting design'
+        '#title': 'Upload your street painting design'
         '#states':
           visible:
             - ':input[name="apply_street_painting"]':
@@ -488,12 +502,32 @@ elements: |-
             ':input[name="apply_row_requested[other]"]':
               empty: true
         '#location_address__title': 'Physical address of applicant organization'
+        '#location_address__description': 'Start typing to see a list of matching addresses in the Portland area.'
         '#location_address__required': true
         '#location_city__required': true
         '#location_state__required': true
         '#location_zip__required': true
         '#location_address__description_display': invisible
-        '#address_suggest': 0
+        '#address_suggest': 1
+    permit_holder_information:
+      '#type': webform_section
+      '#title': 'Permit holder information'
+      '#states':
+        visible:
+          - ':input[name="apply_street_painting"]':
+              value: 'Street painting'
+          - or
+          - ':input[name="apply_street_painting"]':
+              value: 'Street repainting'
+      apply_paining_permit_holder:
+        '#type': webform_radios_other
+        '#title': 'Who will be the permit holder?'
+        '#options':
+          'Use the organization information provided': 'Use the organization information provided'
+          'Use the contact information provided': 'Use the contact information provided'
+        '#other__option_label': 'Someone else...'
+        '#other__placeholder': 'Enter the permit holder name...'
+        '#required': true
   page_acknowledgements:
     '#type': webform_wizard_page
     '#title': Acknowledgments
@@ -554,7 +588,7 @@ elements: |-
     '#title': 'Computed description'
     '#display_on': none
     '#mode': html
-    '#template': |+
+    '#template': |-
       <h2>Community event permit application</h2>
 
       <h3>Organization information</h3>
@@ -669,8 +703,12 @@ elements: |-
           {% if data.apply_street_painting_where %}
           <strong>Where on the street would you like your painting?</strong> {{ data.apply_street_painting_where }}
           {% endif %}
+          
+          {% if data.apply_paining_permit_holder %}
+          <strong>Who will be the permit holder?</strong> {{ data.apply_paining_permit_holder }}
+          {% endif %}
+          
       </p>
-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report ticket id'
@@ -696,6 +734,13 @@ elements: |-
     '#mode': text
     '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
     '#whitespace': trim
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed tags'
+    '#template': |-
+      {% if data.apply_street_painting == "Street painting" %}street_painting
+      {% elseif data.apply_street_painting == "Street repainting" %}street_repainting
+      {% endif %}
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -810,7 +855,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Application received'
-  confirmation_message: '<p><strong>Thank you for submitting a Community Event permit application!</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. An upload link will be provided. If you have any questions, concerns, or wish to provide additional info, please reply to the email.</p><p>Due to a high volume of requests, we estimate 5-10 business days to review your application and respond. Approval time varies.</p><p>Permit Application #[webform_submission:values:report_ticket_id]</p>'
+  confirmation_message: '<p><strong>Thank you for submitting your event and street closure permit application!&nbsp;</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. If you have any questions, concerns, or wish to provide additional info, please reply to the email.&nbsp;</p><p>Permit Application #[webform_submission:values:report_ticket_id]</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -857,7 +902,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
       comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -865,22 +910,11 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: |
-        6353388345367: 'apply_community_event'
-        26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']
-        26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']
-        26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']
-        26252965203991: '[current-date:html_date]'
-        12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']
-        12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']
-        1500013095781: '[webform_submission:uuid]'
-        28402919852567: ['[webform_submission:values:computed_event_schedule]', 'computed_event_schedule']
-        28400198501015: ['[webform_submission:values:apply_location_details]', 'apply_location_details']
-        5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']
+      custom_fields: "6353388345367: 'apply_community_event'\r\n26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']\r\n26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']\r\n26252965203991: '[current-date:html_date]'\r\n12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']\r\n12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']\r\n1500013095781: '[webform_submission:uuid]'\r\n28402919852567: ['[webform_submission:values:computed_event_schedule]', 'computed_event_schedule']\r\n28400198501015: ['[webform_submission:values:apply_location_details]', 'apply_location_details']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26251939645591'
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
       excluded_elements: {  }
   zendesk_update_request:
@@ -890,7 +924,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: -48
+    weight: -46
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
       comment_private: 1
@@ -915,7 +949,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -49
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -947,4 +981,68 @@ handlers:
       is_child_incident: ''
       parent_ticket_id_field: ''
       excluded_elements: {  }
+  zendesk_new_request_1:
+    id: zendesk
+    handler_id: zendesk_new_request_1
+    label: 'Plaza Events application'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_row_requested[checkboxes][Plaza]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\nSubmitted via the Apply Community Event Permit form."
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '38945483651607'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_community_event'\r\n26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']\r\n26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']\r\n26252965203991: '[current-date:html_date]'\r\n26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']\r\n12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']\r\n28402919852567: ['[webform_submission:values:apply_event_times]', 'apply_event_times']\r\n1500013095781: '[webform_submission:uuid]'"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '38945497973783'
+      excluded_elements:
+        computed_tags: computed_tags
+  street_paining_application:
+    id: zendesk
+    handler_id: street_paining_application
+    label: 'Street Paining application'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_row_requested[checkboxes][Plaza]"]':
+          checked: true
+    weight: -47
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\n"
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '38813175526167'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_community_event'\r\n30430800267287: ['[webform_submission:values:contact_name]', 'contact_name']\r\n26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']\r\n39194802217879: ['[webform_submission:values:apply_paining_permit_holder]', 'apply_paining_permit_holder']\r\n26252965203991: '[current-date:html_date]'\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n28400198501015: ['[webform_submission:values:apply_location_details]', 'apply_location_details']\r\n26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n1500013095781: '[webform_submission:uuid]'"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '39192950092951'
+      excluded_elements:
+        computed_tags: computed_tags
 variants: {  }
