@@ -136,13 +136,42 @@ display:
           id: status
           table: taxonomy_term_field_data
           field: status
+          relationship: none
+          group_type: group
+          admin_label: ''
           entity_type: taxonomy_term
           entity_field: status
           plugin_id: boolean
+          operator: '='
           value: '1'
           group: 1
+          exposed: false
           expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
           accept_null: false
         vid:
           id: vid
@@ -196,6 +225,45 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+        field_is_active_committee_value:
+          id: field_is_active_committee_value
+          table: taxonomy_term__field_is_active_committee
+          field: field_is_active_committee_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          accept_null: false
       filter_groups:
         operator: AND
         groups:
@@ -242,6 +310,73 @@ display:
     position: 1
     display_options:
       title: Committees
+      fields:
+        name:
+          id: name
+          table: taxonomy_term_field_data
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: taxonomy_term
+          entity_field: name
+          plugin_id: term_name
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          convert_spaces: false
       arguments:
         tid:
           id: tid
@@ -341,9 +476,11 @@ display:
           hide_empty: false
       defaults:
         title: false
+        group_by: true
         style: false
         row: false
-        fields: true
+        relationships: true
+        fields: false
         arguments: false
         filters: true
         filter_groups: true
@@ -491,7 +628,7 @@ display:
           delta_reversed: false
           delta_first_last: false
           multi_type: separator
-          separator: ', '
+          separator: ','
           field_api_classes: false
         view_taxonomy_term:
           id: view_taxonomy_term
@@ -560,7 +697,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100\">\r\n  <div class=\"card-body\">\r\n    <h3 class=\"card-title h4 mb-0 text-primary\"><a href=\"{{ view_taxonomy_term }}\" class=\"stretched-link\">{{ name }}</a></h3>\r\n    <p class=\"card-text text-muted\">\r\n      {% set chairs = field_chair|split(',') %}\r\n      {% if raw_arguments.field_committee_members_target_id in chairs %}\r\n        {% if chairs|length > 1 %}\r\n          {{ 'Co-Chair'|t }}\r\n        {% else %}\r\n          {{ 'Chair'|t }}\r\n        {% endif %}\r\n      {% elseif field_vice_chair == raw_arguments.field_committee_members_target_id %}\r\n        {{ 'Vice Chair'|t }}\r\n      {% endif %}\r\n    </p>\r\n  </div>\r\n</div>"
+            text: "<div class=\"card h-100\">\r\n  <div class=\"card-body\">\r\n    <h3 class=\"card-title h4 mb-0 text-primary\"><a href=\"{{ view_taxonomy_term }}\" class=\"stretched-link\">{{ name }}</a></h3>\r\n    <p class=\"card-text text-muted\">\r\n      {% set chairs = field_chair|split(',') %}\r\n      {% set vice_chairs = field_vice_chair|split(',') %}\r\n      {% if raw_arguments.field_committee_members_target_id in chairs %}\r\n        {% if chairs|length > 1 %}\r\n          {{ 'Co-chair'|t }}\r\n        {% else %}\r\n          {{ 'Chair'|t }}\r\n        {% endif %}\r\n      {% elseif raw_arguments.field_committee_members_target_id in vice_chairs %}\r\n        {{ 'Vice chair'|t }}\r\n      {% endif %}\r\n    </p>\r\n  </div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -724,3 +861,129 @@ display:
       tags:
         - 'config:field.storage.taxonomy_term.field_chair'
         - 'config:field.storage.taxonomy_term.field_vice_chair'
+  entity_reference_council_author_committees:
+    id: entity_reference_council_author_committees
+    display_title: 'Entity Reference: Committees for Council Authors'
+    display_plugin: entity_reference
+    position: 3
+    display_options:
+      pager:
+        type: none
+        options:
+          offset: 0
+      filters:
+        vid:
+          id: vid
+          table: taxonomy_term_field_data
+          field: vid
+          entity_type: taxonomy_term
+          entity_field: vid
+          plugin_id: bundle
+          value:
+            council_committee: council_committee
+          group: 1
+        langcode:
+          id: langcode
+          table: taxonomy_term_field_data
+          field: langcode
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: taxonomy_term
+          entity_field: langcode
+          plugin_id: language
+          operator: in
+          value:
+            '***LANGUAGE_language_content***': '***LANGUAGE_language_content***'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+        field_is_active_committee_value:
+          id: field_is_active_committee_value
+          table: taxonomy_term__field_is_active_committee
+          field: field_is_active_committee_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          accept_null: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      style:
+        type: entity_reference
+        options:
+          search_fields:
+            name: name
+      defaults:
+        filters: false
+        filter_groups: false
+      display_description: 'Shows unpublished committees for Council authors to select when editing documents.'
+      display_extenders:
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - user.permissions
+      tags: {  }
