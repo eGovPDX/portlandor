@@ -628,9 +628,16 @@ elements: |-
           <br><strong>End date:</strong> {{ data.apply_event_end_date }}
         {% endif %}
         {{ data.apply_event_start_date }}
-        {% if data.apply_recurring and data.apply_recurrence is not iterable %}
-          <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
-          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join(', ') }}
+        {% if data.apply_recurring %}
+          {% set recurrence_value = data.apply_recurrence is iterable
+            ? (data.apply_recurrence.other is defined and data.apply_recurrence.other ? data.apply_recurrence.other : data.apply_recurrence.radios|default(''))
+            : data.apply_recurrence %}
+          {% if recurrence_value %}
+            <br><strong>How often does it occur?</strong> {{ recurrence_value }}
+          {% endif %}
+          {% if data.apply_occurences_days %}
+            <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join(', ') }}
+          {% endif %}
         {% endif %}
         <br><strong>Start and end times: </strong>{{ data.apply_event_times }}
         {% if data.apply_event_open_to_public and data.apply_event_open_to_public is not iterable %}
@@ -705,7 +712,12 @@ elements: |-
           {% endif %}
           
           {% if data.apply_paining_permit_holder %}
-          <strong>Who will be the permit holder?</strong> {{ data.apply_paining_permit_holder }}
+          {% set permit_holder = data.apply_paining_permit_holder is iterable
+            ? (data.apply_paining_permit_holder.other is defined and data.apply_paining_permit_holder.other ? data.apply_paining_permit_holder.other : data.apply_paining_permit_holder.radios|default(''))
+            : data.apply_paining_permit_holder %}
+          {% if permit_holder %}
+          <br><strong>Who will be the permit holder?</strong> {{ permit_holder }}
+          {% endif %}
           {% endif %}
           
       </p>
@@ -729,11 +741,12 @@ elements: |-
     '#title': 'Computed event schedule'
     '#display_on': none
     '#mode': text
-    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
+    '#template': "{% set recurrence_value = data.apply_recurrence is iterable ? (data.apply_recurrence.other is defined and data.apply_recurrence.other ? data.apply_recurrence.other : data.apply_recurrence.radios|default('')) : data.apply_recurrence %}{% if recurrence_value %}Occurs {{ recurrence_value }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|default([])|map(v => v is iterable ? (v.other is defined ? v.other : (v.value is defined ? v.value : v|first)) : v)|filter(v => v is not empty)|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}"
     '#whitespace': trim
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed tags'
+    '#display_on': none
     '#template': |-
       {% if data.apply_street_painting == "Street painting" %}street_painting
       {% elseif data.apply_street_painting == "Street repainting" %}street_repainting
@@ -1002,7 +1015,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Plaza event application - [webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
-      comment: "[webform_submission:values:computed_description:html]\r\n\r\nSubmitted via the Apply Community Event Permit form."
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\n<p><strong>Submitted via the Apply Community Event Permit form.</strong></p>"
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
@@ -1034,7 +1047,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Street painting - [webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
-      comment: "[webform_submission:values:computed_description:html]\r\n\r\n"
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\n<p><strong>Submitted via the Apply Community Event Permit form.</strong></p>"
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
