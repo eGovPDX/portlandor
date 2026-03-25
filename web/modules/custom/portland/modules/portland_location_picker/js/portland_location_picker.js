@@ -114,6 +114,7 @@
         var PanControl = generatePanControl();
         var HelpControl = generateHelpControl();
         var helpControlContainer;
+        var helpModalBackdrop;
         var panControlContainer;
         var verifyHidden = false;
 
@@ -868,19 +869,37 @@
           }
 
           L.DomEvent.on(containerParent, 'keydown', handleMapKeyDown);
-          L.DomEvent.on(container, 'focus', function () {
-            hideMapHelpModal();
-          });
           syncMapValidationState();
         }
 
         function initializeMapHelpModal(containerParent, container, helpId) {
+          var helpTitleId = getMapAccessibilityId('instructions-title');
+          var helpTextId = getMapAccessibilityId('instructions-text');
+          var helpBackdropId = getMapAccessibilityId('instructions-backdrop');
           var existingHelp = document.getElementById(helpId);
+          helpModalBackdrop = document.getElementById(helpBackdropId);
+
+          if (!helpModalBackdrop) {
+            helpModalBackdrop = document.createElement('div');
+            helpModalBackdrop.id = helpBackdropId;
+            helpModalBackdrop.className = 'map-keyboard-help-backdrop';
+            helpModalBackdrop.setAttribute('aria-hidden', 'true');
+            helpModalBackdrop.addEventListener('click', function (event) {
+              event.preventDefault();
+              event.stopPropagation();
+            });
+            containerParent.insertBefore(helpModalBackdrop, container);
+          }
+
           if (existingHelp) {
             existingHelp.setAttribute('tabindex', '-1');
             existingHelp.setAttribute('aria-hidden', 'true');
+            existingHelp.setAttribute('role', 'dialog');
+            existingHelp.setAttribute('aria-modal', 'true');
+            existingHelp.setAttribute('aria-labelledby', helpTitleId);
+            existingHelp.setAttribute('aria-describedby', helpTextId);
             existingHelp.classList.remove('is-visible');
-            renderMapHelpModalContent(existingHelp);
+            renderMapHelpModalContent(existingHelp, helpTitleId, helpTextId);
             setHelpModalInteractiveState(existingHelp, false);
             return;
           }
@@ -889,35 +908,39 @@
           helpModal.id = helpId;
           helpModal.className = 'map-keyboard-help';
           helpModal.setAttribute('tabindex', '-1');
+          helpModal.setAttribute('role', 'dialog');
+          helpModal.setAttribute('aria-modal', 'true');
+          helpModal.setAttribute('aria-labelledby', helpTitleId);
+          helpModal.setAttribute('aria-describedby', helpTextId);
           helpModal.setAttribute('aria-hidden', 'true');
-          renderMapHelpModalContent(helpModal);
+          renderMapHelpModalContent(helpModal, helpTitleId, helpTextId);
           setHelpModalInteractiveState(helpModal, false);
           containerParent.insertBefore(helpModal, container);
 
-          var returnFocusOnHelpBlur = false;
-
-          helpModal.addEventListener('focusout', function (event) {
-            if (helpModal.contains(event.relatedTarget)) {
+          helpModal.addEventListener('keydown', function (event) {
+            event.stopPropagation();
+            if (event.key !== 'Tab') {
               return;
             }
-            hideMapHelpModal(returnFocusOnHelpBlur);
-            returnFocusOnHelpBlur = false;
-          });
 
-          helpModal.addEventListener('keydown', function (event) {
-            returnFocusOnHelpBlur = event.key === 'Tab';
-
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              hideMapHelpModal(true);
+            event.preventDefault();
+            var closeButton = helpModal.querySelector('.map-keyboard-help__close');
+            if (closeButton) {
+              closeButton.focus();
             }
           });
         }
 
-        function renderMapHelpModalContent(helpModal) {
+        function renderMapHelpModalContent(helpModal, helpTitleId, helpTextId) {
           helpModal.textContent = '';
 
+          var helpTitle = document.createElement('h2');
+          helpTitle.id = helpTitleId;
+          helpTitle.className = 'visually-hidden';
+          helpTitle.textContent = 'Map help';
+
           var helpText = document.createElement('p');
+          helpText.id = helpTextId;
           helpText.className = 'map-keyboard-help__text';
           helpText.innerHTML = MAP_HELP_POPUP_INSTRUCTIONS;
 
@@ -932,6 +955,7 @@
             hideMapHelpModal(true);
           });
 
+          helpModal.appendChild(helpTitle);
           helpModal.appendChild(helpText);
           helpModal.appendChild(closeButton);
         }
@@ -939,6 +963,10 @@
         function setHelpModalInteractiveState(helpElement, isVisible) {
           var closeButton = helpElement.querySelector('.map-keyboard-help__close');
           helpElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+          if (helpModalBackdrop) {
+            helpModalBackdrop.classList.toggle('is-visible', isVisible);
+            helpModalBackdrop.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+          }
           if (closeButton) {
             closeButton.setAttribute('tabindex', isVisible ? '0' : '-1');
           }
@@ -1344,11 +1372,10 @@
 
         function handleHelpButtonClick(e) {
           cancelEventBubble(e);
-          toggleMapHelpModal();
+          toggleMapHelpModal(true);
         }
 
         function handleResetButtonClick() {
-          hideMapHelpModal();
           collapsePanControl();
           resetLocationMarker();
           resetClickedMarker();
@@ -1440,17 +1467,11 @@
         }
 
         function handleMapClick(e) {
-          hideMapHelpModal();
           L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
         }
 
         function handleMapKeyDown(e) {
-          if (e.key === 'Escape') {
-            hideMapHelpModal();
-            return;
-          }
-
           if (e.key === 'Tab' && !e.shiftKey) {
             var primaryMarkers = getVisibleTabbablePrimaryMarkers();
             if (primaryMarkers.length > 0) {
