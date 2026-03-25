@@ -1,7 +1,9 @@
 uuid: 4163997e-0f07-4442-a78d-13db041bbbaa
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -23,13 +25,21 @@ elements: |-
         optional:
           ':input[name="apply_verify_permit"]':
             filled: true
+    report_is_a_copy:
+      '#type': radios
+      '#title': 'Is this application an exact repeat of an earlier permit with no changes'
+      '#options': yes_no
     apply_verify_permit:
       '#type': textfield
       '#title': 'If this application is a repeat of an earlier permit with no changes, please reference the PBOT permit # here.'
+      '#states':
+        visible:
+          ':input[name="report_is_a_copy"]':
+            value: 'Yes'
   apply_type_of_equipment_or_material:
     '#type': webform_section
     '#title': 'Type of equipment or material'
-    '#description': '<p><span class="TextRun SCXW168827207 BCX2 NormalTextRun CommentStart CommentHighlightPipeClicked CommentHighlightClicked" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Overall dimensions of vehicle and load.</span></p><p><span class="TextRun SCXW168827207 BCX2 NormalTextRun CommentStart CommentHighlightPipeClicked CommentHighlightClicked" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Please use feet and inches.</span></p>'
+    '#description': '<p><span class="TextRun SCXW168827207 BCX2 NormalTextRun CommentStart CommentHighlightPipeClicked CommentHighlightClicked" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Overall dimensions of vehicle and load.</span></p><p><span class="TextRun SCXW168827207 BCX2 NormalTextRun CommentStart CommentHighlightPipeClicked CommentHighlightClicked" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Please use feet, inches and pounds.</span></p>'
     report_vehicle_and_load_height:
       '#type': textfield
       '#title': 'Vehicle and Load Height'
@@ -58,16 +68,20 @@ elements: |-
         optional:
           ':input[name="apply_verify_permit"]':
             filled: true
+    report_equipment_details:
+      '#type': textarea
+      '#title': 'Equipment details'
+      '#description': '<p>Please add details about the equipment and material you will be transporting.</p>'
+      '#title_display': none
+      '#description_display': before
   route_information:
     '#type': webform_section
     '#title': 'Route information'
-    apply_route_map:
-      '#type': webform_document_file
-      '#title': 'Upload route map'
     apply_scheduled_date_of_transport:
       '#type': date
       '#title': 'Scheduled date of transport'
-      '#description': '<p><span class="TextRun SCXW264769079 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Note: we require a minimum of 5 business days advance notice, in order to process your request.)</span></p>'
+      '#description': '<p><span class="TextRun SCXW264769079 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">We require a minimum of 5 business days advance notice, in order to process your request.</span></p>'
+      '#description_display': before
       '#required': true
     apply_start_address:
       '#type': webform_address
@@ -77,6 +91,9 @@ elements: |-
         optional:
           ':input[name="apply_verify_permit"]':
             filled: true
+      '#address_2__access': false
+      '#postal_code__access': false
+      '#country__access': false
     report_end_address:
       '#type': webform_address
       '#title': 'End address'
@@ -85,13 +102,26 @@ elements: |-
         optional:
           ':input[name="apply_verify_permit"]':
             filled: true
+      '#address_2__access': false
+      '#postal_code__access': false
+      '#country__access': false
+    report_route_details:
+      '#type': textarea
+      '#title': 'Route details'
+      '#description': '<p>Provide a written description of the route within the City of Portland, including each subsequent street name that will be traversed. &nbsp;</p>'
+      '#help': '<p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true" data-pm-slice="1 1 [&quot;orderedList&quot;,{&quot;order&quot;:3,&quot;localId&quot;:null},&quot;listItem&quot;,null]">For example: 15000 N River St &gt; N River St &gt; N Tillamook St &gt; N Interstate Ave.</p>'
+    apply_route_map:
+      '#type': webform_document_file
+      '#title': 'Upload route map'
   dimensions_between_axel:
     '#type': webform_section
-    '#title': 'Dimensions between axles (in feet and inches) and axle weights (in lbs)'
+    '#title': 'Dimensions between axle (in feet and inches) and axle weights (in lbs)'
     '#description': '<div class="WACEditing EditMode EditingSurfaceBody FireFox WACViewPanel_DisableLegacyKeyCodeAndCharCode usehover" style="direction:ltr;overflow:hidden;visibility:visible;" id="WACViewPanel_ClipboardElement" contenteditable="false" spellcheck="false" tabindex="0"><div class="OutlineElement Ltr SCXW235032061 BCX2" style="direction:ltr;"><p class="Paragraph SCXW235032061 BCX2" style="background-color:transparent;color:windowtext;font-style:normal;font-weight:normal;margin:0px 0px 10.6667px;padding-left:0px;padding-right:0px;text-align:left;text-indent:0px;vertical-align:baseline;" paraid="722524993" paraeid="{cca5185f-819c-4adc-a92a-80d41175cda7}{194}"><span class="TextRun SCXW235032061 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">This information is only required if weight exceeds 80,000 lbs.</span><span class="EOP SCXW235032061 BCX2" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-ccp-props="{}">&nbsp;</span></p></div></div>'
+    '#required': true
     apply_space_between_axels:
       '#type': webform_custom_composite
-      '#title': 'List the dimensions between axles in the space below (in feet and inches) and the axle weights (lbs).'
+      '#title': 'List the dimensions between axle in the space below (in feet and inches) and the axle weight (lbs).'
+      '#multiple__sorting': false
       '#element':
         load_weight:
           '#type': textfield
@@ -104,10 +134,16 @@ elements: |-
   additional_information:
     '#type': webform_section
     '#title': 'Additional information'
-    '#description': '<div class="WACEditing EditMode EditingSurfaceBody FireFox WACViewPanel_DisableLegacyKeyCodeAndCharCode usehover" style="direction:ltr;overflow:hidden;visibility:visible;" id="WACViewPanel_ClipboardElement" contenteditable="false" spellcheck="false" tabindex="0"><div class="OutlineElement Ltr SCXW122443484 BCX2" style="direction:ltr;"><p class="Paragraph SCXW122443484 BCX2" style="background-color:transparent;color:windowtext;font-style:normal;font-weight:normal;margin:0px 0px 10.6667px;padding-left:0px;padding-right:0px;text-align:left;text-indent:0px;vertical-align:baseline;" paraid="1953547317" paraeid="{e7ba65d2-5fc5-49d5-8b83-a0303f2e0a38}{98}"><span class="TextRun SCXW122443484 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Use this section to include any additional information.</span><span class="EOP SCXW122443484 BCX2" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-ccp-props="{}">&nbsp;</span></p></div></div>'
+    report_additional_details:
+      '#type': textarea
+      '#title': 'Additional details'
+      '#description': '<p>Please include any additional details about your trip.</p>'
+      '#title_display': none
+      '#description_display': before
     apply_attached_additional_info:
       '#type': webform_document_file
       '#title': 'Please attach a copy of your ODOT over dimension permit that covers this trip through the City of Portland. Please also attach any additional supporting documents. '
+      '#file_extensions': 'jpg png doc docx zip'
   conditions:
     '#type': webform_section
     '#title': Conditions
@@ -193,7 +229,7 @@ elements: |-
     apply_contact_email:
       '#type': textfield
       '#title': 'Contact Email'
-      '#description': '<div class="WACEditing EditMode EditingSurfaceBody FireFox WACViewPanel_DisableLegacyKeyCodeAndCharCode usehover" style="direction:ltr;overflow:hidden;visibility:visible;" id="WACViewPanel_ClipboardElement" contenteditable="false" spellcheck="false" tabindex="0"><div class="OutlineElement Ltr SCXW1391294 BCX2" style="direction:ltr;"><p class="Paragraph SCXW1391294 BCX2" style="background-color:transparent;color:windowtext;font-style:normal;font-weight:normal;margin:0px 0px 10.6667px;padding-left:0px;padding-right:0px;text-align:left;text-indent:0px;vertical-align:baseline;" paraid="1882062343" paraeid="{7d023c8c-4aed-45ee-afee-aab3bfe51e1f}{57}"><span class="TextRun SCXW1391294 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">Note: PBOT will use this email address for all correspondence pertaining to this permit request.</span><span class="EOP SCXW1391294 BCX2" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-ccp-props="{}">&nbsp;</span></p></div></div>'
+      '#description': '<div class="WACEditing EditMode EditingSurfaceBody FireFox WACViewPanel_DisableLegacyKeyCodeAndCharCode usehover" style="direction:ltr;overflow:hidden;visibility:visible;" id="WACViewPanel_ClipboardElement" contenteditable="false" spellcheck="false" tabindex="0"><div class="OutlineElement Ltr SCXW1391294 BCX2" style="direction:ltr;"><p class="Paragraph SCXW1391294 BCX2" style="background-color:transparent;color:windowtext;font-style:normal;font-weight:normal;margin:0px 0px 10.6667px;padding-left:0px;padding-right:0px;text-align:left;text-indent:0px;vertical-align:baseline;" paraid="1882062343" paraeid="{7d023c8c-4aed-45ee-afee-aab3bfe51e1f}{57}"><span class="TextRun SCXW1391294 BCX2 NormalTextRun" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-contrast="auto" xml:lang="EN-US" lang="EN-US">PBOT will use this email address for all correspondence pertaining to this permit request.</span><span class="EOP SCXW1391294 BCX2" style="font-family:Aptos, &quot;Aptos_EmbeddedFont&quot;, &quot;Aptos_MSFontService&quot;, sans-serif;font-size:12pt;line-height:22.0083px;" data-ccp-props="{}">&nbsp;</span></p></div></div>'
       '#description_display': before
       '#input_mask': "'alias': 'email'"
       '#required': true
@@ -381,5 +417,33 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: apply_contact_person
+      requester_email: apply_contact_email
+      subject: 'TSUP: Over-Dimensional Permit'
+      comment: '[webform_submission:values]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: tsup@portlandoregon.gov
+      group_id: ''
+      assignee_id: ''
+      type: question
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "39104322012951: ['[webform_submission:values:report_vehicle_and_load_height]', 'report_vehicle_and_load_height']\r\n39104347204759: ['[webform_submission:values:report_vehicle_and_load_length]', 'report_vehicle_and_load_length']\r\n39104370614935: ['[webform_submission:values:report_vehicle_and_load_width]', 'report_vehicle_and_load_width']\r\n39104372302615: ['[webform_submission:values:report_vehicle_and_load_weight]', 'report_vehicle_and_load_weight']\r\n39104431892247: ['[webform_submission:values:apply_scheduled_date_of_transport]', 'apply_scheduled_date_of_transport']\r\n1900004448785: ['[webform_submission:values:apply_company_name]', 'apply_company_name']\r\n25600783638295: ['[webform_submission:values:apply_contact_phone]', 'apply_contact_phone']\r\n39242477419287: ['[webform_submission:values:apply_space_between_axels:format:semicolon]', 'apply_space_between_axels']"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '39104740227607'
+      excluded_elements: {  }
 variants: {  }
