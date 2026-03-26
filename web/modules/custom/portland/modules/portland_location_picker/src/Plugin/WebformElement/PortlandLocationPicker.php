@@ -263,8 +263,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
   public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
-    $key = $element['#webform_key'] ?? 'report_location';
-    $values = $form_state->getValue($key);
+    // Use the element's parents path so nested elements validate correctly.
+    $parents = $element['#parents'] ?? NULL;
+    if ($parents === NULL) {
+      // Fallback for cases where #parents is not available.
+      $key = $element['#webform_key'] ?? 'report_location';
+      $parents = [$key];
+    }
+    $values = $form_state->getValue($parents);
     $lat = is_array($values) ? ($values['location_lat'] ?? '') : '';
 
     if (!empty($lat) && $lat !== '0') {
