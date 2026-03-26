@@ -1086,7 +1086,13 @@
 
         function hasLocationSelection() {
           var locationLatField = getLocationLatField();
-          return !!(locationLatField && locationLatField.value !== '');
+          if (!locationLatField) {
+            return false;
+          }
+
+          var value = (locationLatField.value || '').trim();
+          // Treat '' and '0' as "not selected" to match server-side validation.
+          return value !== '' && value !== '0';
         }
 
         function getLocationRequiredErrorMessage() {
