@@ -115,7 +115,7 @@ elements: |-
       '#description': 'Please let us know why you have chosen this location to host the proposed event. For example, is your business located here? Does it help you reach your intended audience?'
       '#description_display': before
     apply_previous_event:
-      '#type': select
+      '#type': radios
       '#title': 'Have you held an event at this location in the past?'
       '#options': yes_no
       '#required': true
@@ -175,9 +175,9 @@ elements: |-
       '#type': radios
       '#title': 'Where on the street would you like your painting?'
       '#options':
-        Intersection: Intersection
-        Midblock: Midblock
-        Both: Both
+        street_painting_intersection: Intersection
+        street_painting_midblock: Midblock
+        street_painting_both: Both
       '#required': true
       '#states':
         visible:
@@ -386,47 +386,26 @@ elements: |-
         '#title': 'Are you a non-profit?'
         '#options': yes_no
         '#required': true
-      apply_has_nonprofit_partner:
-        '#type': radios
-        '#title': 'For-profit organizations hosting a community event require a non-profit beneficiary. Do you have a non-profit partner/beneficiary?'
-        '#options': yes_no
-        '#required': true
-        '#states':
-          visible:
-            ':input[name="computed_plaza_only"]':
-              value: '0'
-            ':input[name="apply_nonprofit_status"]':
-              value: 'No'
       markup_has_nonprofit:
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="computed_plaza_only"]':
-              value: '0'
-            ':input[name="apply_has_nonprofit_partner"]':
+            ':input[name="apply_nonprofit_status"]':
               value: 'Yes'
+            ':input[name="computed_plaza_only"]':
+              '!value': '1'
         '#admin_title': 'Has nonprofit partner'
         '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Please enter the name and Tax ID of the non-profit partner below. The non-profit organization will also need to submit a letter confirming their association. You will receive more information about this step in your confirmation email.</p></div>'
-      markup_no_nonprofit:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="computed_plaza_only"]':
-              value: '0'
-            ':input[name="apply_has_nonprofit_partner"]':
-              value: 'No'
-        '#admin_title': "Doesn't have nonprofit partner"
-        '#markup': '<div class="alert alert--warning next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">You will need to identify a non-profit partner at least 30 days prior to the event. The non-profit organization will need to submit a letter confirming their association. You will receive more information about this step in your confirmation email.</p></div>'
       apply_nonprofit_partner_name:
         '#type': textfield
         '#title': 'Non-profit name'
         '#required': true
         '#states':
           visible:
-            ':input[name="computed_plaza_only"]':
-              value: '0'
-            ':input[name="apply_has_nonprofit_partner"]':
+            ':input[name="apply_nonprofit_status"]':
               value: 'Yes'
+            ':input[name="computed_plaza_only"]':
+              '!value': '1'
       apply_nonprofit_tax_id:
         '#type': textfield
         '#title': 'Non-profit tax ID (EIN)'
@@ -436,25 +415,10 @@ elements: |-
         '#pattern_error': 'Please enter a valid EIN.'
         '#states':
           visible:
-            - ':input[name="computed_plaza_only"]':
-                value: '0'
-              ':input[name="apply_nonprofit_status"]':
-                value: 'Yes'
-            - or
-            - ':input[name="computed_plaza_only"]':
-                value: '0'
-              ':input[name="apply_nonprofit_status"]':
-                value: 'No'
-              ':input[name="apply_has_nonprofit_partner"]':
-                value: 'Yes'
-          invisible:
-            - ':input[name="computed_plaza_only"]':
-                value: '1'
-            - or
-            - ':input[name="apply_nonprofit_status"]':
-                value: 'No'
-              ':input[name="apply_has_nonprofit_partner"]':
-                value: 'No'
+            ':input[name="apply_nonprofit_status"]':
+              value: 'Yes'
+            ':input[name="computed_plaza_only"]':
+              '!value': '1'
       organization_name_escaped:
         '#type': webform_computed_twig
         '#title': 'Organization Name Escaped'
@@ -751,6 +715,8 @@ elements: |-
       {% if data.apply_street_painting == "Street painting" %}street_painting
       {% elseif data.apply_street_painting == "Street repainting" %}street_repainting
       {% endif %}
+
+      {% if data.apply_street_painting_where %}data.apply_street_painting_where{% endif %}
   report_ticket_id:
     '#type': hidden
     '#title': 'Community event application ticket id'
@@ -874,7 +840,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Application received'
-  confirmation_message: '<p><strong>Thank you for submitting your event and street closure permit application!&nbsp;</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. If you have any questions, concerns, or wish to provide additional info, please reply to the email.&nbsp;</p><p>Permit Application #[webform_submission:values:report_ticket_id]</p>'
+  confirmation_message: '<p><strong>Thank you for submitting your event and street closure permit application!&nbsp;</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. If you have any questions, concerns, or wish to provide additional info, please reply to the email.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -915,6 +881,8 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
+        ':input[name="computed_plaza_only"]':
+          '!value': '1'
     weight: -50
     settings:
       requester_name: contact_name
