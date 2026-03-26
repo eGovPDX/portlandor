@@ -1344,6 +1344,10 @@
           }
 
           panControlContainer.classList.add('is-expanded');
+          var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
+          if (toggleButton) {
+            toggleButton.style.display = 'none';
+          }
           var firstButton = panControlContainer.querySelector('.pan-control-button-up');
           if (firstButton) {
             firstButton.focus();
@@ -1356,12 +1360,9 @@
           }
 
           panControlContainer.classList.remove('is-expanded');
-
-          if (restoreFocusToToggle) {
-            var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
-            if (toggleButton) {
-              toggleButton.focus();
-            }
+          var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
+          if (toggleButton) {
+            toggleButton.style.display = '';
           }
         }
 
