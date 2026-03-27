@@ -387,16 +387,6 @@ elements: |-
         '#title': 'Are you a non-profit?'
         '#options': yes_no
         '#required': true
-      markup_has_nonprofit:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="apply_nonprofit_status"]':
-              value: 'Yes'
-            ':input[name="computed_plaza_only"]':
-              '!value': '1'
-        '#admin_title': 'Has nonprofit partner'
-        '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Please enter the name and Tax ID of the non-profit partner below. The non-profit organization will also need to submit a letter confirming their association. You will receive more information about this step in your confirmation email.</p></div>'
       apply_nonprofit_partner_name:
         '#type': textfield
         '#title': 'Non-profit name'
@@ -584,6 +574,13 @@ elements: |-
     '#template': |
       https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/apply-community-event-uploads?original_submission_key={{ uuid }}&apply_event_name={{ data.apply_event_name|url_encode }}&apply_event_start_date={{ data.apply_event_start_date }}&apply_event_end_date={{ data.apply_event_end_date }}
     '#whitespace': trim
+  computed_dates:
+    '#type': webform_computed_twig
+    '#title': 'Computed dates'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.apply_event_start_date|date('m/d/Y') }}{% if data.apply_event_end_date %} to {{ data.apply_event_end_date|date('m/d/Y') }}{% endif %}"
+    '#whitespace': trim
   computed_description:
     '#type': webform_computed_twig
     '#title': 'Computed description'
@@ -626,7 +623,7 @@ elements: |-
         {% if data.apply_event_end_date %}
           <br><strong>End date:</strong> {{ data.apply_event_end_date }}
         {% endif %}
-        {{ data.apply_event_start_date }}
+
         {% if data.apply_recurring %}
           {% set recurrence_value = data.apply_recurrence is iterable
             ? (data.apply_recurrence.other is defined and data.apply_recurrence.other ? data.apply_recurrence.other : data.apply_recurrence.radios|default(''))
@@ -707,7 +704,11 @@ elements: |-
           <strong>Is this a street painting or repainting project?</strong> {% if data.apply_street_painting is not iterable %}{{ data.apply_street_painting }}{% endif %}<br>
 
           {% if data.apply_street_painting_where and data.apply_street_painting_where is not iterable %}
-          <strong>Where on the street would you like your painting?</strong> {{ data.apply_street_painting_where }}
+          <strong>Where on the street would you like your painting?</strong> 
+          {% if data.apply_street_painting_where == "street_painting_intersection" %}Intersection
+          {% elseif data.apply_street_painting_where == "street_painting_midblock" %}Midblock
+          {% elseif data.apply_street_painting_where == "street_painting_both" %}Both
+          {% endif %}
           {% endif %}
           
           {% if data.apply_paining_permit_holder %}
@@ -720,13 +721,6 @@ elements: |-
           {% endif %}
           
       </p>
-  computed_dates:
-    '#type': webform_computed_twig
-    '#title': 'Computed dates'
-    '#display_on': none
-    '#mode': text
-    '#template': "{{ data.apply_event_start_date|date('m/d/Y') }}{% if data.apply_event_end_date %}—{{ data.apply_event_end_date|date('m/d/Y') }}{% endif %}"
-    '#whitespace': trim
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support agent use only'
@@ -762,6 +756,13 @@ elements: |-
   street_painting_ticket_id:
     '#type': hidden
     '#title': 'Street painting application ticket id'
+  computed_community_event_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed community event subject'
+    '#display_on': form
+    '#template': 'Community event application - {{ data.apply_event_name }} - {{ data.computed_dates }}'
+    '#whitespace': trim
+    '#ajax': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -876,7 +877,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Application received'
-  confirmation_message: '<p><strong>Thank you for submitting your event and street closure permit application!&nbsp;</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. If you have any questions, concerns, or wish to provide additional info, please reply to the email.</p>'
+  confirmation_message: '<p><strong>Thank you for submitting your permit application!&nbsp;</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. If you have any questions, concerns, or wish to provide additional info, please reply to the email.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -931,7 +932,7 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
+      subject: '[webform_submission:values:computed_community_event_subject]'
       comment: "<h2>Community event permit application</h2>\r\n\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
@@ -947,7 +948,8 @@ handlers:
       ticket_form_id: '26251939645591'
       is_child_incident: 0
       parent_ticket_id_field: ''
-      excluded_elements: {  }
+      excluded_elements:
+        computed_community_event_subject: computed_community_event_subject
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
