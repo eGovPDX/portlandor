@@ -44,8 +44,9 @@ elements: |-
       '#display_on': form
       '#mode': text
       '#template': |-
-        {% set selections = data.apply_row_requested %}
-        {{ (('Plaza' in selections) and (selections | length == 1)) ? '1' : '0' }}
+        {% set selections = data.apply_row_requested|default([]) %}
+        {% set vals = selections|map(v => (v ~ '')|trim|lower)|filter(v => v is not empty) %}
+        {{ (vals|length == 1 and vals|first == 'plaza') ? '1' : '0' }}
       '#whitespace': trim
       '#ajax': true
     apply_plaza_name:
@@ -505,8 +506,20 @@ elements: |-
       '#required': true
       '#states':
         visible:
-          - ':input[name="computed_plaza_only"]':
-              value: '0'
+          - ':input[name="apply_row_requested[checkboxes][Street]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Sidewalk]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking lot or space]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking or travel lane]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[other]"]':
+              filled: true
           - or
           - ':input[name="apply_alcohol_served"]':
               value: 'Yes'
@@ -522,8 +535,20 @@ elements: |-
       '#required': true
       '#states':
         visible:
-          - ':input[name="computed_plaza_only"]':
-              value: '0'
+          - ':input[name="apply_row_requested[checkboxes][Street]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Sidewalk]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking lot or space]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking or travel lane]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[other]"]':
+              filled: true
           - or
           - ':input[name="apply_alcohol_served"]':
               value: 'Yes'
@@ -534,8 +559,20 @@ elements: |-
       '#required': true
       '#states':
         visible:
-          - ':input[name="computed_plaza_only"]':
-              value: '0'
+          - ':input[name="apply_row_requested[checkboxes][Street]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Sidewalk]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking lot or space]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[checkboxes][Parking or travel lane]"]':
+              checked: true
+          - or
+          - ':input[name="apply_row_requested[other]"]':
+              filled: true
           - or
           - ':input[name="apply_alcohol_served"]':
               value: 'Yes'
@@ -697,9 +734,10 @@ elements: |-
     '#title': 'Support agent use only'
     '#access_create_roles':
       - authenticated
-    '#zendesk_request_number__access': false
     '#employee_notes_panel__access': false
     '#escalate_issue__access': false
+    '#test_submission__access': false
+    '#zendesk_request_number__access': false
   computed_event_schedule:
     '#type': webform_computed_twig
     '#title': 'Computed event schedule'
@@ -878,11 +916,19 @@ handlers:
     notes: 'Creates a community event permit request as a Zendesk ticket.'
     status: true
     conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
+      disabled:
+        ':input[name="apply_row_requested[checkboxes][Plaza]"]':
+          checked: true
+        ':input[name="apply_row_requested[checkboxes][Street]"]':
           unchecked: true
-        ':input[name="computed_plaza_only"]':
-          '!value': '1'
+        ':input[name="apply_row_requested[checkboxes][Sidewalk]"]':
+          unchecked: true
+        ':input[name="apply_row_requested[checkboxes][Parking lot or space]"]':
+          unchecked: true
+        ':input[name="apply_row_requested[checkboxes][Parking or travel lane]"]':
+          unchecked: true
+        ':input[name="apply_row_requested[other]"]':
+          empty: true
     weight: -50
     settings:
       requester_name: contact_name
@@ -910,7 +956,10 @@ handlers:
     label: 'Update Zendesk request with full resolution URL including ticket ID'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          filled: true
     weight: -46
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
@@ -925,49 +974,7 @@ handlers:
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '26251939645591'
-      skip_attachments: false
-  test_zendesk_new_request:
-    id: zendesk
-    handler_id: test_zendesk_new_request
-    label: 'TEST: Zendesk new request'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -47
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
-      comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: problem
-      collaborators: ''
-      custom_fields: |
-        6353388345367: 'apply_community_event'
-        26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']
-        26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']
-        26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']
-        26252965203991: '[current-date:html_date]'
-        12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']
-        12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']
-        1500013095781: '[webform_submission:uuid]'
-        28402919852567: ['[webform_submission:values:computed_event_schedule]', 'computed_event_schedule']
-        28400198501015: ['[webform_submission:values:apply_location_details]', 'apply_location_details']
-        5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']
-      ticket_id_field: report_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '26251939645591'
-      is_child_incident: ''
-      parent_ticket_id_field: ''
-      excluded_elements: {  }
+      skip_attachments: 0
   zendesk_new_request_1:
     id: zendesk
     handler_id: zendesk_new_request_1
@@ -978,8 +985,6 @@ handlers:
       enabled:
         ':input[name="apply_row_requested[checkboxes][Plaza]"]':
           checked: true
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
     weight: -49
     settings:
       requester_name: contact_name
@@ -1010,13 +1015,8 @@ handlers:
     status: true
     conditions:
       disabled:
-        -
-          ':input[name="apply_street_painting"]':
-            value: 'No'
-        - or
-        -
-          ':input[name="support_agent_use_only[test_submission]"]':
-            checked: true
+        ':input[name="apply_street_painting"]':
+          value: 'No'
     weight: -48
     settings:
       requester_name: contact_name
