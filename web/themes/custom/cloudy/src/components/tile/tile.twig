@@ -1,30 +1,37 @@
-{% set item_classes =
-  item_classes
+{% set content_classes = content_classes|default([
+  'tile',
+  'd-flex',
+  'flex-column',
+  'flex-grow-1',
+  'position-relative',
+  'p-4'
+  ]) %}
+
+{% set link_classes =
+  link_classes
     |default([])
     |merge(
       [
-        'tile',
-        'd-flex',
-        item_alignment ? 'align-items-' ~ item_alignment,
-        'text-decoration-none',
-        'p-4',
-        'flex-grow-1'
+        'h5',
+        'mb-0',
+        'text-primary',
+        'stretched-link',
+        item_alignment ? 'align-items-' ~ item_alignment
       ]
     )
 %}
 
-{% set content_classes = content_classes|default(['d-flex', 'flex-column']) %}
-
-<a href="{{ url }}" class="{{ item_classes|join(' ')|trim }}">
-  {% if image %}
-    <div class="me-4">
-      {{ image }}
-    </div>
-  {% endif %}
-  {% block content %}
-    <div class="{{ content_classes|join(' ') }}">
-      <span class="h5 mb-0 text-primary">{{ title }}</span>
-      <span class="text-dark">{{ text }}</span>
-    </div>
-  {% endblock %}
-</a>
+{% block content %}
+  <div class="{{ content_classes|join(' ') }}">
+    {% set text_id = 'cloudy-tile-text'|clean_unique_id %}
+    <a href="{{ url }}" class="{{ link_classes|join(' ')|trim }}" aria-describedby="{{ text_id }}">
+      {% if image %}
+        <div class="me-4">
+          {{ image }}
+        </div>
+      {% endif %}
+      {{ title }}
+    </a>
+    <p id="{{ text_id }}" class="m-0 text-dark text-decoration-none">{{ text }}</p>
+  </div>
+{% endblock %}
