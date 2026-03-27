@@ -1,0 +1,713 @@
+uuid: 0338454f-e948-4c82-8df3-d0c2c84b9acb
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland_smartsheet
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: request_smarttrips_information
+title: 'Request SmartTrips Information'
+description: ''
+categories: {  }
+elements: |-
+  container_contact:
+    '#type': webform_section
+    '#title': 'Your Contact Information'
+    '#description': '<p>We will not sell or give out your information.</p>'
+    contact_first_name:
+      '#type': textfield
+      '#title': 'First Name'
+      '#required': true
+    contact_last_name:
+      '#type': textfield
+      '#title': 'Last Name'
+      '#required': true
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': '<p>An email address is required to use this signup form. If you don''t have one, call us at <a href="tel:311">311</a> or <a href="tel:+15038234000">503-823-4000</a> to place your order by phone.</p>'
+      '#description_display': before
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    home_address:
+      '#type': portland_address_verifier
+      '#title': 'Please enter your home address'
+      '#description_display': before
+      '#required': true
+      '#location_verification_status__title': 'Address verification'
+      '#location_address__title': 'Home/street address'
+      '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the <em>Unit or apartment number</em> field.'
+      '#location_address__required': true
+      '#location_full_address__title': 'Full address'
+      '#location_address_street_number__title': 'Street number'
+      '#location_address_street_quadrant__title': 'Street quadrant'
+      '#location_address_street_name__title': 'Street name'
+      '#location_address_street_type__title': 'Street type'
+      '#unit_number__title': 'Unit or apartment umber'
+      '#location_city__required': true
+      '#location_state__required': true
+      '#location_zip__title': 'ZIP code'
+      '#location_zip__required': true
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#description': '<p>In case we have questions about your order.</p>'
+      '#description_display': before
+      '#input_mask': '(999) 999-9999'
+    contact_phone_preference:
+      '#type': radios
+      '#title': 'Do you prefer a phone call or text message?'
+      '#options':
+        'Phone call': 'Phone call'
+        'Text message': 'Text message -- Standard text message rates apply'
+      '#states':
+        visible:
+          ':input[name="phone"]':
+            filled: true
+  tell_us_about_yourself:
+    '#type': webform_section
+    '#title': 'Tell us about yourself'
+    preferences_driving:
+      '#type': radios
+      '#title': 'Select the statement that best applies to you'
+      '#options':
+        " I drive for most of my trips and I'm not planning to make any changes.": " I drive for most of my trips and I'm not planning to make any changes."
+        " I drive for most of my trips. I'm considering driving less often but I’m not sure how to do it.": " I drive for most of my trips. I'm considering driving less often but I’m not sure how to do it."
+        'I drive for most of my trips but I’d like to drive less often. I know what I would like to do instead but I just haven’t done it yet.': 'I drive for most of my trips but I’d like to drive less often. I know what I would like to do instead but I just haven’t done it yet.'
+        'I use other ways to get around for most of my trips and have been doing it for a while now.': 'I use other ways to get around for most of my trips and have been doing it for a while now.'
+    preferences_transit_ranking:
+      '#type': webform_likert
+      '#title': 'Rank your interest in trying out these ways to get around. Please select an answer for each option.'
+      '#required': true
+      '#questions':
+        'Bus, MAX, or Streetcar': 'Bus, MAX, or Streetcar'
+        Bicycle: Bicycle
+        "BIKETOWN - Portland's bike share system": "BIKETOWN - Portland's bike share system"
+        'Electric scooter': 'Electric scooter'
+        Walking: Walking
+      '#answers':
+        'No interest in trying': 'No interest in trying'
+        "I'm interested in learning more": "I'm interested in learning more"
+        "I'm ready to try it": "I'm ready to try it"
+        'I already use this option': 'I already use this option'
+    preferences_safe_routes:
+      '#type': radios
+      '#title': 'Are you the parent or guardian of school-aged children?'
+      '#options': yes_no
+  resources:
+    '#type': webform_section
+    '#title': 'Which resources and rewards would you like to receive?'
+    portland_bike_maps:
+      '#type': portland_views_checkboxes
+      '#title': 'Portland Neighborhood Maps'
+      '#description': '<p>Select all that apply. <em>If you choose an out of stock map, you will be waitlisted for it.</em></p>'
+      '#description_display': before
+      '#view_id': webform_smartsheet_views
+      '#display_id': block_smarttrips_maps
+      '#label_field': nothing
+      '#value_field': cell
+    request_reward:
+      '#type': portland_views_radios
+      '#title': 'Reward options (select one)'
+      '#view_id': webform_smartsheet_views
+      '#display_id': block_smarttrips_rewards
+      '#label_field': nothing
+      '#value_field': cell
+    bonus_gift:
+      '#type': portland_views_radios
+      '#title': 'Bonus gift'
+      '#view_id': webform_smartsheet_views
+      '#display_id': block_1
+      '#label_field': cell
+      '#value_field': cell_2
+  section_comments:
+    '#type': webform_section
+    '#title': 'Questions, comments, concerns?'
+    request_comments:
+      '#type': textarea
+      '#title': "Do you have any additional comments, questions, or concerns about getting around that you'd like us to answer?"
+  container_comptued_values:
+    '#type': container
+    comptued_map_n:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map N'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'North Portland Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_map_ne:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map NE'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'Northeast Portland Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_map_nw:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map NW'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'NW/Downtown Portland Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_map_se:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map SE'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'Southeast Portland Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_map_sw:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map SW'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'Southwest Portland Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_map_citywide:
+      '#type': webform_computed_twig
+      '#title': 'Computed Map Citywide'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected = data.portland_bike_maps ?? [] %}
+        {{ 'Portland Citywide Bike Map' in selected ? 1 : 0 }}
+      '#whitespace': trim
+    computed_bike_guide:
+      '#type': webform_computed_twig
+      '#title': 'Computed Bike Guide'
+      '#display_on': none
+      '#mode': text
+      '#template': '1'
+      '#whitespace': trim
+    computed_walking_guide:
+      '#type': webform_computed_twig
+      '#title': 'Computed Walking Guide'
+      '#display_on': none
+      '#mode': text
+      '#template': '1'
+      '#whitespace': trim
+    computed_transit_guide:
+      '#type': webform_computed_twig
+      '#title': 'Computed Transit Guide'
+      '#display_on': none
+      '#mode': text
+      '#template': '1'
+      '#whitespace': trim
+    computed_hop:
+      '#type': webform_computed_twig
+      '#title': 'Computed Hop Card'
+      '#display_on': none
+      '#mode': text
+      '#template': '1'
+      '#whitespace': trim
+    computed_hc_hop:
+      '#type': webform_computed_twig
+      '#title': 'Computed HC Hop Card'
+      '#display_on': none
+      '#mode': text
+      '#template': '1'
+      '#whitespace': trim
+    e_scooter_code:
+      '#type': webform_computed_twig
+      '#title': 'E-scooter code'
+      '#mode': text
+      '#template': |
+        {# Render the view to a string #}
+        {% set out = drupal_view('webform_smartsheet_views', 'block_smarttrips_scooter_codes')|render %}
+
+        {# Drop everything that looks like an HTML comment block #}
+        {% set out = out|replace({'<!--': '<<<C>>>', '-->': '<<<ENDC>>>'}) %}
+
+        {# Remove comment “chunks” by splitting (repeat a few times if needed) #}
+        {% set parts = out|split('<<<C>>>') %}
+        {% set cleaned = '' %}
+        {% for p in parts %}
+          {# keep only text after the end marker, if it exists #}
+          {% set cleaned = cleaned ~ (p|split('<<<ENDC>>>')|last) %}
+        {% endfor %}
+
+        {{ cleaned|striptags|trim }}
+      '#whitespace': trim
+      '#display_on': none
+    e_bike_code:
+      '#type': webform_computed_twig
+      '#title': 'E-bike code'
+      '#mode': text
+      '#template': |
+        {# Render the view to a string #}
+        {% set out = drupal_view('webform_smartsheet_views', 'block_smarttrips_bike_codes')|render %}
+
+        {# Drop everything that looks like an HTML comment block #}
+        {% set out = out|replace({'<!--': '<<<C>>>', '-->': '<<<ENDC>>>'}) %}
+
+        {# Remove comment “chunks” by splitting (repeat a few times if needed) #}
+        {% set parts = out|split('<<<C>>>') %}
+        {% set cleaned = '' %}
+        {% for p in parts %}
+          {# keep only text after the end marker, if it exists #}
+          {% set cleaned = cleaned ~ (p|split('<<<ENDC>>>')|last) %}
+        {% endfor %}
+
+        {{ cleaned|striptags|trim }}
+      '#whitespace': trim
+      '#display_on': none
+    computed_interest_transit:
+      '#type': webform_computed_twig
+      '#title': 'Computed Interest Transit'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set likert = data.preferences_transit_ranking|default({}) %}
+        {% set bus_answer = likert['Bus, MAX, or Streetcar']|default('') %}
+
+        {% set bus_is_interested = bus_answer != '' and bus_answer != 'No interest in trying' %}
+
+        {# Example usage #}
+        {% if bus_is_interested %}
+          {# They selected a column other than "No interest in trying" #}
+          YES
+        {% else %}
+          NO
+        {% endif %}
+      '#whitespace': trim
+    computed_interest_bike:
+      '#type': webform_computed_twig
+      '#title': 'Computed Interest Bicycle'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set likert = data.preferences_transit_ranking|default({}) %}
+        {% set bike_answer = likert['Bicycle']|default('') %}
+
+        {% set bike_is_interested = bike_answer != '' and bike_answer != 'No interest in trying' %}
+
+        {% if bike_is_interested %}
+          {# They selected a column other than "No interest in trying" #}
+          YES
+        {% else %}
+          NO
+        {% endif %}
+      '#whitespace': trim
+    computed_interest_bikeshare:
+      '#type': webform_computed_twig
+      '#title': 'Computed Interest Bikeshare'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set likert = data.preferences_transit_ranking|default({}) %}
+        {% set bikeshare_answer = likert["BIKETOWN - Portland's bike share system"]|default('') %}
+
+        {% set bikeshare_is_interested = bikeshare_answer != '' and bikeshare_answer != 'No interest in trying' %}
+
+        {% if bikeshare_is_interested %}
+          {# They selected a column other than "No interest in trying" #}
+          YES
+        {% else %}
+          NO
+        {% endif %}
+      '#whitespace': trim
+    computed_interest_scooter:
+      '#type': webform_computed_twig
+      '#title': 'Computed Interest Scooter'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set likert = data.preferences_transit_ranking|default({}) %}
+        {% set scooter_answer = likert['Electric scooter']|default('') %}
+
+        {% set scooter_is_interested = scooter_answer != '' and scooter_answer != 'No interest in trying' %}
+
+        {% if scooter_is_interested %}
+          {# They selected a column other than "No interest in trying" #}
+          YES
+        {% else %}
+          NO
+        {% endif %}
+      '#whitespace': trim
+    computed_interest_walk:
+      '#type': webform_computed_twig
+      '#title': 'Computed Interest Walking'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set likert = data.preferences_transit_ranking|default({}) %}
+        {% set walk_answer = likert['Walking']|default('') %}
+
+        {% set walk_is_interested = walk_answer != '' and walk_answer != 'No interest in trying' %}
+
+        {% if walk_is_interested %}
+          {# They selected a column other than "No interest in trying" #}
+          YES
+        {% else %}
+          NO
+        {% endif %}
+      '#whitespace': trim
+    fragment_toolkit_intro:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-intro
+      '#render_inline': 0
+    fragment_toolkit_step_1:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-1
+      '#render_inline': 0
+    fragment_toolkit_step_2:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-2
+      '#render_inline': 0
+    fragment_toolkit_step_3:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-3
+      '#render_inline': 0
+    fragment_toolkit_step_4:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-4
+      '#render_inline': 0
+    fragment_toolkit_step_5:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-5
+      '#render_inline': 0
+    fragment_toolkit_step_6:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-step-6
+      '#render_inline': 0
+    fragment_toolkit_aboutus:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-about-us
+      '#render_inline': 0
+    fragment_toolkit_footer:
+      '#type': portland_node_fetcher
+      '#title': 'Fragment Toolkit Intro'
+      '#node_alias_path': /transportation/walking-biking-transit-safety/content-component/fragment-smarttrips-toolkit-footer
+      '#render_inline': 0
+    computed_toolkit_email_body:
+      '#type': webform_computed_twig
+      '#title': 'Computed Toolkit Email Body'
+      '#display_on': none
+      '#mode': html
+      '#template': |-
+        <p>Hi {{ data.contact_first_name }},</p>
+
+        {{ data.fragment_toolkit_intro|raw }}
+
+        <hr>
+
+        <p><strong>SMARTTRIPS SPECIAL DISCOUNT: REDEEM TODAY!</strong></p>
+
+        <div>
+          <p>Get $20 off your next two BIKETOWN e-bike rides: Enter <strong>{{ data.e_bike_code }}</strong> in the BIKETOWN or Lyft app under rewards.</p>
+        </div>
+
+        <div>
+          <p>Get 5 free e-scooter unlocks: Enter <strong>{{ data.e_scooter_code }}</strong> in the BIKETOWN or Lyft app under rewards.</p>
+        </div>
+
+        <div id="ProcessList">
+          <ol class="process-list">
+            <li>{{ data.fragment_toolkit_step_1|raw }}</li>
+            <li>{{ data.fragment_toolkit_step_2|raw }}</li>
+            <li>{{ data.fragment_toolkit_step_3|raw }}</li>
+            <li>{{ data.fragment_toolkit_step_4|raw }}</li>
+            <li>{{ data.fragment_toolkit_step_5|raw }}</li>
+            <li>{{ data.fragment_toolkit_step_6|raw }}</li>
+          </ol>
+        </div>
+
+        <div id="CityFooter">
+          {{ data.fragment_toolkit_aboutus|raw }}
+        </div>
+
+        <div id="CityFooter">
+          {{ data.fragment_toolkit_footer|raw }}
+        </div>
+      '#whitespace': spaceless
+      '#ajax': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_file_limit_message: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      column_mappings:
+        166475929964420: contact_first_name
+        4670075557334916: contact_last_name
+        8620574329491332: contact_email
+        2418275743649668: contact_phone
+        447950906675076: contact_phone_preference
+        6921875371020164: home_address__location_address
+        1292375836807044: home_address__location_city
+        5795975464177540: home_address__location_state
+        3544175650492292: home_address__location_zip
+        457800004882308: e_bike_code
+        729425883385732: e_scooter_code
+        4961399632252804: comptued_map_n
+        2709599818567556: computed_map_ne
+        7213199445938052: computed_map_nw
+        1583699911724932: computed_map_se
+        5233025510756228: computed_map_sw
+        2981225697070980: computed_map_citywide
+        7484825324441476: computed_bike_guide
+        8610725231284100: computed_walking_guide
+        1855325790228356: computed_transit_guide
+        6358925417598852: computed_hop
+        4107125603913604: computed_hc_hop
+        2181076175507332: request_reward
+        6684675802877828: bonus_gift
+        2365301617020804: request_comments
+      field_handlers: {  }
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '1761899180937092'
+      upload_attachments: '1'
+  email:
+    id: email
+    handler_id: email
+    label: 'Send Toolkit email'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: '<p>[webform_submission:values:computed_toolkit_email_body]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
+variants: {  }
