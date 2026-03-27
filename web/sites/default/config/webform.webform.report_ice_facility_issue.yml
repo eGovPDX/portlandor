@@ -40,14 +40,16 @@ elements: |-
     report_incident_time:
       '#type': webform_time
       '#title': 'Approximate time'
+      '#description': '<p>Example: 12:30 PM</p>'
+      '#description_display': before
       '#time_format': 'g:i A'
-      '#step': 300
     location_of_incident:
       '#type': portland_location_picker
       '#title': Location
       '#required': true
       '#location_search__title': 'Location of the incident'
       '#location_search__required': true
+      '#precision_text__access': false
       '#location_lat__required': true
       '#place_name__access': false
       '#location_details__access': false
@@ -107,6 +109,22 @@ elements: |-
     public_records_statement_standard:
       '#type': webform_markup
       '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support agent use only'
+    '#access_create_roles':
+      - authenticated
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report ticket ID'
 css: ''
 javascript: ''
 settings:
@@ -148,6 +166,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -214,7 +233,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Submission received'
-  confirmation_message: '<p>Thank you for submitting this report. While the City does not oversee federal operations, we are committed to ensuring that all people are heard and that everyone''s rights are respected and protected. Visit <a href="/federal">Portland.gov/federal</a> to learn more about how Portland is standing up for our community while we work with our federal partners.</p><p>Your report will be documented and shared with the City''s leaders. We will respond if we need additional information.</p><p>Your report does not initiate a formal investigation into federal officers. To do that, <a href="https://www.dhs.gov/file-a-civil-rights-complaint">file a complaint with the DHS Office of Civil Rights and Civil Liberties</a> or consult an attorney.&nbsp;</p>'
+  confirmation_message: '<p>Thank you for submitting this report. While the City does not oversee federal operations, we are committed to ensuring that all people are heard and that everyone''s rights are respected and protected. Visit <a href="/federal">Portland.gov/federal</a> to learn more about how Portland is standing up for our community while we work with our federal partners.</p><p>Your report will be documented and shared with the appropriate city staff. We will respond if we need additional information.</p><p>Your report does not initiate a formal investigation into federal officers. To do that, <a href="https://www.dhs.gov/file-a-civil-rights-complaint">file a complaint with the DHS Office of Civil Rights and Civil Liberties</a> or consult an attorney.&nbsp;</p>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -305,9 +324,12 @@ handlers:
     id: zendesk
     handler_id: zendesk_new_request
     label: 'Zendesk new request'
-    notes: ''
+    notes: 'Creates a Zendesk ticket that is routed to the appropriate group.'
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -320,13 +342,44 @@ handlers:
       recipient: mayor@portlandoregon.gov
       group_id: '28461402652823'
       assignee_id: ''
-      type: question
+      type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'report_ice_facility_issue'"
-      ticket_id_field: ''
+      custom_fields: "6353388345367: 'report_ice_facility_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']"
+      ticket_id_field: report_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: ''
+      excluded_elements: {  }
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: '[TEST] Zendesk new request'
+    notes: "Creates a Zendesk ticket that is routed to the developer test group. Remove tag ice_facility_issue to ensure test tickets don't get caught up in routing triggers in Zendesk."
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'ICE Facility Issue: [webform_submission:values:report_harm_type]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_ice_facility_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '4990038807319'
       excluded_elements: {  }
 variants: {  }
