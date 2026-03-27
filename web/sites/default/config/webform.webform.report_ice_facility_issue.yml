@@ -21,51 +21,86 @@ description: '<p>Use this form to report issues you witnessed or experienced at 
 categories:
   - Report
 elements: |-
-  report_harm_type:
-    '#type': webform_radios_other
-    '#title': 'What type of harm did you witness or experience?'
-    '#required': true
-    '#options':
-      'Excessive use of force': 'Excessive use of force'
-      'Use of tear gas, smoke, or chemical munitions': 'Use of tear gas, smoke, or chemical munitions'
-      'Helicopter noise': 'Helicopter noise'
-    '#other__option_label': 'Something else'
   section_incident_details:
     '#type': webform_section
     '#title': 'Incident details'
+    report_harm_type:
+      '#type': radios
+      '#title': 'What type of potential nuisance did you witness or experience?'
+      '#description_display': before
+      '#options':
+        'Use of tear gas, smoke, or chemical munitions': 'Use of tear gas, smoke, or chemical munitions'
+        'Something else': 'Something else'
+      '#other__option_label': 'Something else'
+      '#required': true
     report_incident_date:
       '#type': date
-      '#title': 'Date of the incident'
+      '#title': Date
       '#required': true
     report_incident_time:
-      '#type': time
-      '#title': 'Approximate time of the incident'
+      '#type': webform_time
+      '#title': 'Approximate time'
+      '#time_format': 'g:i A'
+      '#step': 300
+    location_of_incident:
+      '#type': portland_location_picker
+      '#title': Location
+      '#required': true
+      '#location_search__title': 'Location of the incident'
+      '#location_search__required': true
+      '#location_lat__required': true
+      '#place_name__access': false
+      '#location_details__access': false
     report_incident_description:
       '#type': textarea
-      '#title': 'Please describe what occurred:'
+      '#title': 'Please describe what occurred'
+      '#description': '<p>Such as how chemicals were released, amount of chemicals released, how far chemicals extended beyond the detention facility, number of people impacted, physical or health impacts, other property or rights-of-way impacted, etc.</p>'
+      '#description_display': before
+      '#maxlength': 1800
       '#rows': 5
-    report_photo:
-      '#type': webform_image_file
-      '#title': 'Upload photo(s)'
-      '#multiple': 3
-      '#file_preview': name
-      '#max_filesize': '30'
-      '#file_extensions': 'jpg png jpeg'
-      '#file_name': 'report_[webform_submission:uuid]'
-      '#sanitize': true
-      '#max_resolution': 1280x1280
-      '#attachment_image_style': webform_report_uploaded_image
+      '#counter_type': character
+      '#counter_minimum': 1
+      '#counter_maximum': 1800
   section_contact:
     '#type': webform_section
     '#title': 'Your contact information'
+    '#description': '<p>Please provide contact details in case we need additional information. Email or phone number is required.</p>'
+    '#description_display': before
+    '#required': true
     contact_name:
       '#type': textfield
       '#title': Name
+      '#required': true
     contact_email:
       '#type': textfield
       '#title': Email
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#states':
+        required:
+          ':input[name="contact_phone"]':
+            empty: true
+    contact_phone:
+      '#type': textfield
+      '#title': 'Phone number'
+      '#input_mask': '(999) 999-9999'
+      '#states':
+        required:
+          ':input[name="contact_email"]':
+            empty: true
+  section_confidentiality_waiver:
+    '#type': webform_section
+    '#title': 'Confidentiality waiver'
+    confidentiality_waiver:
+      '#type': radios
+      '#title': 'Confidentiality waiver'
+      '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a href="/attorney/oregon-public-records-law" data-renderer-mark="true">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+      '#title_display': invisible
+      '#description_display': before
+      '#options':
+        'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+        'I waive confidentiality': 'I waive confidentiality'
+      '#default_value': 'I do not waive confidentiality'
   section_public_records_statement:
     '#type': webform_section
     '#title': 'Public records statement'
@@ -293,4 +328,5 @@ handlers:
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: ''
+      excluded_elements: {  }
 variants: {  }
