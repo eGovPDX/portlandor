@@ -146,7 +146,7 @@ AddressVerifierView.prototype._handlePostback = function () {
             // Bind handlers now that DOM and values are stable
             for (let i = 0; i < INPUT_FIELDS.length; i++) {
                 const field = INPUT_FIELDS[i];
-                self.$element.find(field).off('input change').on('input change', function () {
+                self.$element.find(field).off('input.portland change.portland').on('input.portland change.portland', function () {
                     if (self.isVerified) {
                         self._resetVerified(self.$checkmark, self.$button);
                     }
@@ -219,9 +219,11 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 
     this.$input.on('keydown', function (e) {
         if (e.keyCode == 13) {
+            // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
+            if (self.$input.autocomplete('widget') && self.$input.autocomplete('widget').has('.ui-state-active').length) return;
+            
             e.preventDefault();
             self.$button.click();
-            return false;
         }
     });
 
@@ -249,10 +251,17 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
             const items = ui.content;
             ui.content = items;
         },
+        focus: function (event, ui) {
+            // if triggered by keyboard navigation, populate the input with the focused item's address
+            if (event.originalEvent && event.originalEvent.originalEvent && /^key/.test(event.originalEvent.originalEvent.type)) {
+                self.$input.val(ui.item.displayAddress + ' ' + ui.item.zipCode);
+                return false;
+            }
+        },
         create: function () {
             self.$input.data('ui-autocomplete')._renderItem = function (ul, item) {
                 const li = self.$('<li>')
-                    .append(item.displayAddress + '  ' + item.zipCode)
+                    .append(`<div>${item.displayAddress} ${item.zipCode}</div>`)
                     .appendTo(ul);
                 return li;
             };
@@ -364,14 +373,14 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
 
     // parse location data and set field values, add change handlers to visible input fields /////////////////////////
     // visible input fields
-    view.$element.find('#location_address').off('input change').val(item.street.toUpperCase()).trigger('change').blur().on('input change', function () {
+    view.$element.find('#location_address').off('input.portland change.portland').val(item.street.toUpperCase()).trigger('change').blur().on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
-    view.$element.find('#location_city').off('input change').val(item.city.toUpperCase()).trigger('change').on('input change', function () {
+    view.$element.find('#location_city').off('input.portland change.portland').val(item.city.toUpperCase()).trigger('change').on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
     view._setStateByLabel(view, item.state);
-    view.$element.find('#location_zip').off('input change').val(item.zipCode).trigger('change').on('input change', function () {
+    view.$element.find('#location_zip').off('input.portland change.portland').val(item.zipCode).trigger('change').on('input.portland change.portland', function () {
         view._resetVerified(view.$checkmark, view.$button);
     });
 
@@ -514,7 +523,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_state').val(value).off('input change').trigger('change').on('input change', function () { view._resetVerified(view.$checkmark, view.$button); });
+    view.$element.find('#location_state').val(value).off('input.portland change.portland').trigger('change').on('input.portland change.portland', function () { view._resetVerified(view.$checkmark, view.$button); });
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -660,7 +669,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     // remove change handlers from visible input fields /////////////////////////
     for (var i = 0; i < INPUT_FIELDS.length; i++) {
         var field = INPUT_FIELDS[i];
-        this.$element.find(field).off('input change');
+        this.$element.find(field).off('input.portland change.portland');
     }
 
     // hide the "verified" visual indicators /////////////////////////

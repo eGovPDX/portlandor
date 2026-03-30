@@ -1,0 +1,46 @@
+{% set classes = classes|default([]) %}
+{% set heading_level = heading_level|default(2) %}
+
+{# TODO: Remove mb/mr classes as patterns are implemented on each field template #}
+{%
+  set field_classes = [
+    'field',
+    'field--label-' ~ label_display,
+    'field--name-' ~ field_name|clean_class,
+    'field--type-' ~ field_type|clean_class,
+    label_display == 'inline' ? 'd-flex',
+    margin ? 'mb-' ~ margin,
+  ]|merge(field_classes|default([]))
+%}
+
+{%
+  set title_classes = title_classes|default([
+    'field__label',
+    label_display == 'visually_hidden' ? 'visually-hidden'
+  ])
+%}
+
+{% apply spaceless %}
+  {% block field %}
+  <div{{ attributes.addClass(field_classes).addClass(classes) }}>
+    {% block label %}
+      {% if label_display == "above" %}
+        <h{{heading_level}}{{ title_attributes.addClass(title_classes) }}>{{ label }}</h{{heading_level}}>
+      {% elseif label_display != "hidden" %}
+        <div{{ title_attributes.addClass(title_classes) }}>{{ label }}</div>
+      {% endif %}
+    {% endblock %}
+    {% block content %}
+      {% if multiple %}
+        <ul class="list-unstyled">
+      {% endif %}
+          {% for item in items %}
+            <li{{ item.attributes.addClass(item_classes) }}>{{ icon }}{{ item.content }}</li>
+          {% endfor %}
+      {% if multiple %}
+        </ul>
+      {% endif %}
+    {% endblock %}
+  </div>
+  {% endblock %}
+{% endapply %}
