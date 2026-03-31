@@ -1,0 +1,47 @@
+From 522c727392e43b454f4e2160b97a0014ce6d85b7 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Tue, 24 Mar 2026 16:13:16 -0700
+Subject: [PATCH] Add leaflet_map_id substitution to LeafletMap formatter
+
+---
+ .../src/Plugin/views/style/LeafletMap.php       | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/modules/leaflet_views/src/Plugin/views/style/LeafletMap.php b/modules/leaflet_views/src/Plugin/views/style/LeafletMap.php
+index 1dfdcdd..3442577 100644
+--- a/modules/leaflet_views/src/Plugin/views/style/LeafletMap.php
++++ b/modules/leaflet_views/src/Plugin/views/style/LeafletMap.php
+@@ -854,6 +854,18 @@ class LeafletMap extends StylePluginBase implements ContainerFactoryPluginInterf
+     return NestedArray::getValue($form, $array_parents);
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  public function preRender($result) {
++    parent::preRender($result);
++
++    // Generate a unique map ID and add a substitution token for it.
++    $map_id = Html::getUniqueId("leaflet_map_view_" . $this->view->id() . '_' . $this->view->current_display);
++    $this->view->build_info['leaflet_map_id'] = $map_id;
++    $this->view->build_info['substitutions']['{{ leaflet_map_id }}'] = $map_id;
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -872,9 +884,8 @@ class LeafletMap extends StylePluginBase implements ContainerFactoryPluginInterf
+     // Set Map additional map Settings.
+     $this->setAdditionalMapOptions($map, $this->options);
+ 
+-    // Add a specific map id.
+-    $map['id'] = Html::getUniqueId("leaflet_map_view_" . $this->view->id() . '_' . $this->view->current_display);
+-
++    // Add the map id (generated in preRender).
++    $map['id'] = $this->view->build_info['leaflet_map_id'];
+     // Define the list of geofields set as source of Leaflet View geodata,
+     // with backword compatibility with the previous version (8.1.22) when only
+     // one Geofield was possible as geodata source.
+-- 
+2.34.1
+
