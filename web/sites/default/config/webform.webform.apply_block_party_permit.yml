@@ -40,17 +40,27 @@ elements: |-
       '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
     apply_street_painting:
       '#type': radios
-      '#title': 'Is this a street painting and/or repainting project?'
-      '#options': yes_no
-      '#options_display': side_by_side
+      '#title': 'Is this a street painting or repainting project?'
+      '#options':
+        'No': 'No'
+        'Street painting': 'Street painting'
+        'Street repainting': 'Street repainting'
       '#required': true
-    markup_street_painting:
-      '#type': webform_markup
+    apply_street_painting_where:
+      '#type': radios
+      '#title': 'Where on the street would you like your painting?'
+      '#options':
+        Intersection: Intersection
+        Midblock: Midblock
+        Both: Both
+      '#required': true
       '#states':
         visible:
-          ':input[name="apply_street_painting"]':
-            value: 'Yes'
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">If you are considering a new Street Painting, please consult the <a href="/node/18358" data-entity-type="node" data-entity-uuid="02f5c29e-3bdd-4d4c-b4e4-166c1fd4c782" data-entity-substitution="canonical">Street Painting program</a> to initiate the application process, if you have not already done so.</p></div>'
+          - ':input[name="apply_street_painting"]':
+              value: 'Street painting'
+          - or
+          - ':input[name="apply_street_painting"]':
+              value: 'Street repainting'
     apply_blocks_requested:
       '#type': number
       '#title': 'Number of blocks requested'
@@ -250,11 +260,30 @@ elements: |-
       '#title': 'How did you learn about the block party program?'
     apply_event_flyer_upload:
       '#type': managed_file
-      '#title': 'Event flyer upload'
+      '#title': 'Upload your event flyer'
       '#description': '<p><a href="/transportation/permitting/documents/block-party-flier/download" target="_blank">Download PDF File Block Party notification flyer</a></p>'
       '#description_display': before
+      '#wrapper_attributes':
+        class:
+          - mb-10
       '#file_extensions': 'jpg png bmp pdf doc docx ppt pptx zip '
       '#file_name': 'Event_Flyer_[current-date:html_date]'
+    apply_design_upload:
+      '#type': managed_file
+      '#title': 'Upload your street painting design'
+      '#description_display': before
+      '#states':
+        visible:
+          - ':input[name="apply_street_painting"]':
+              value: 'Street painting'
+          - or
+          - ':input[name="apply_street_painting"]':
+              value: 'Street repainting'
+      '#wrapper_attributes':
+        class:
+          - mb-10
+      '#file_extensions': 'pdf png jpg jpeg ppt pptx'
+      '#file_name': 'Street_Painting_Design_[current-date:html_date]'
   page_contact_information:
     '#type': webform_wizard_page
     '#title': 'Contact information'
@@ -264,16 +293,19 @@ elements: |-
       contact_name:
         '#type': textfield
         '#title': Name
+        '#autocomplete': name
         '#required': true
       contact_email:
         '#type': webform_email_confirm
         '#title': Email
         '#description': '<p>We will use your email to confirm your submission and correspond.</p>'
+        '#autocomplete': email
         '#required': true
       contact_phone:
         '#type': textfield
         '#title': Phone
         '#description': 'Please provide your phone number in case we need additional information.'
+        '#autocomplete': tel-national
         '#input_mask': '(999) 999-9999'
         '#required': true
       apply_applicant_address:
@@ -313,8 +345,6 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <h2>Block Party Application</h2>
-
       <h3>Contact Information</h3>
 
       <p>
@@ -341,7 +371,7 @@ elements: |-
         {% endif %}
         {% if data.apply_recurring and data.apply_recurrence is not iterable %}
           <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
-          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}
+          {% if data.apply_occurences_days is iterable %}<br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}{% endif %}
         {% endif %}
         <br><strong>Start and end times: </strong>{{ data.apply_event_times }}<br>
         <strong>Block Party Description:</strong> {{ data.apply_block_party_description }}
@@ -353,6 +383,7 @@ elements: |-
       <p>
         {% if data.apply_street_painting and data.apply_street_painting is not iterable %}
           <strong>Street Painting/Repainting project?</strong> {{ data.apply_street_painting }}<br>
+          {% if data.apply_street_painting_where and data.apply_street_painting_where is not iterable %}<strong>Where on the street would you like your painting?</strong> {{ data.apply_street_painting_where }}<br>{% endif %}
         {% endif %}
         {% if data.apply_is_church and data.apply_is_church is not iterable %}
           <strong>This is a church event?</strong> {{ data.apply_is_church }}<br>
@@ -374,7 +405,7 @@ elements: |-
     '#title': 'Computed event schedule'
     '#display_on': none
     '#mode': text
-    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
+    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days is iterable %}{{ data.apply_occurences_days|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed tags'
@@ -384,10 +415,21 @@ elements: |-
       {% if data.apply_blocks_requested > 1 %}
         needs_tcp
       {% endif %}
+      {% if data.apply_street_painting and data.apply_street_painting is not iterable and data.apply_street_painting == "Street painting" %}street_painting
+      {% elseif data.apply_street_painting and data.apply_street_painting is not iterable and data.apply_street_painting == "Street repainting" %}street_repainting
+      {% endif %}
+      {% if data.apply_street_painting_where == "Intersection" %}street_painting_intersection
+      {% elseif data.apply_street_painting_where == "Midblock" %}street_painting_midblock
+      {% elseif data.apply_street_painting_where == "Both" %}
+      street_painting_both
+      {% endif %}
     '#whitespace': trim
   request_ticket_id:
     '#type': hidden
-    '#title': 'Request ticket ID'
+    '#title': 'Block party application ticket ID'
+  street_painting_ticket_id:
+    '#type': hidden
+    '#title': 'Street painting application ticket id'
 css: ''
 javascript: ''
 settings:
@@ -400,7 +442,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -429,6 +471,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -460,7 +503,7 @@ settings:
   wizard_progress_bar: true
   wizard_progress_pages: false
   wizard_progress_percentage: false
-  wizard_progress_link: false
+  wizard_progress_link: true
   wizard_progress_states: false
   wizard_start_label: ''
   wizard_preview_link: false
@@ -494,8 +537,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: "Thank you for submitting a Block Party permit application!\_"
-  confirmation_message: '<p>You may receive a follow-up email from us should we have any questions regarding your event. Once your application has been processed, your permit will be issued and sent to the email address provided on your application. Additionally, please do not hesitate to reach out to us with any questions or concerns you may have, and we will be happy to assist you.&nbsp;</p><p>Permit Application #[webform_submission:values:request_ticket_id]</p>'
+  confirmation_title: "Thank you for submitting your permit application!"
+  confirmation_message: '<p>You may receive a follow-up email from us should we have any questions regarding your event. Once your application has been processed, your permit will be issued and sent to the email address provided on your application. Additionally, please do not hesitate to reach out to us with any questions or concerns you may have, and we will be happy to assist you.&nbsp;</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -575,16 +618,16 @@ handlers:
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
-    label: 'Zendesk new request'
+    label: 'Block party application request'
     notes: ''
     status: true
     conditions: {  }
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Block Party - [webform_submission:values:computed_dates]'
-      comment: '[webform_submission:values:computed_description:html]'
+      subject: 'Block party - [webform_submission:values:computed_dates]'
+      comment: "<h2>Block party permit application</h2>\r\n\r\n[webform_submission:values:computed_description:html]"
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
@@ -599,4 +642,36 @@ handlers:
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '29039643933975'
+      excluded_elements: {  }
+  street_painting_application:
+    id: zendesk
+    handler_id: street_painting_application
+    label: 'Street painting application request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_street_painting"]':
+          '!value': 'No'
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Street painting - [webform_submission:values:computed_dates]'
+      comment: "<h2>Street painting permit application</h2>\r\n\r\n[webform_submission:values:computed_description:html]\r\n\r\n<p><strong>Submitted from the Apply Block Party Permit webform.</strong></p>"
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '38813175526167'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_block_party_permit'\r\n30430800267287: ['[webform_submission:values:contact_name]', 'contact_name']\r\n26252965203991: '[current-date:html_date]'\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n1500013095781: '[webform_submission:uuid]'"
+      ticket_id_field: street_painting_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '39192950092951'
+      excluded_elements: {  }
 variants: {  }
