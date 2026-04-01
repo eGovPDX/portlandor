@@ -41,8 +41,6 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserEmail = $currentUser->getEmail();
     $currentUserName = $currentUser->getDisplayName();
 
-    $element['#title'] = ['Support Agent Widget'];
-
     $element['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
