@@ -1,7 +1,7 @@
 {#
 /**
  * @file
- * Theme override to display a menu.
+ * Theme override to display a Drupal menu using the page menu styling.
  *
  * Available variables:
  * - menu_name: The machine name of the menu.
@@ -27,25 +27,38 @@
 {{ menus.menu_links(items, attributes, 0) }}
 
 {% macro menu_links(items, attributes, menu_level) %}
-  {% set primary_nav_level = 'menu--level-' ~ (menu_level + 1) %}
   {% import _self as menus %}
+
+  {% set list_classes = [
+    'nav',
+    'nav-page-menu',
+    'flex-column',
+  ] %}
+
   {% if items %}
-    {% if menu_level == 0 %}
-      <ul{{ attributes.addClass('menu', primary_nav_level) }}>
-    {% else %}
-      <ul class="menu">
-    {% endif %}
+    <ul{{ attributes.addClass(list_classes) }}>
     {% for item in items %}
-      {%
-        set classes = [
-          'menu-item',
-          item.is_expanded ? 'menu-item--expanded',
-          item.is_collapsed ? 'menu-item--collapsed',
-          item.in_active_trail ? 'menu-item--active-trail',
-        ]
-      %}
-      <li{{ item.attributes.addClass(classes) }}>
-        {{ link(item.title, item.url) }}
+      {% set list_item_classes = [
+        'nav-item',
+        item.in_active_trail ? 'active',
+      ] %}
+
+      {% set link_classes = [
+        'nav-link',
+        item.in_active_trail ? 'active',
+      ] %}
+
+      {% set link_attributes = create_attribute({
+        'class': link_classes,
+      }) %}
+
+      {# only add aria-current if the item is in active trail but has no active children (i.e. is the current page) #}
+      {% if (item.below|filter(i => i.in_active_trail)|length == 0) and item.in_active_trail %}
+        {% set link_attributes = link_attributes.setAttribute('aria-current', 'page') %}
+      {% endif %}
+
+      <li{{ item.attributes.addClass(list_item_classes) }}>
+        {{ link(item.title, item.url, link_attributes) }}
         {% if item.below %}
           {{ menus.menu_links(item.below, attributes, menu_level + 1) }}
         {% endif %}
