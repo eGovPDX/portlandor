@@ -58,11 +58,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#id' => 'location_map',
       '#description' => '',
-<<<<<<< HEAD
-      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status" aria-live="polite"><div class="loader"></div></div>',
-=======
       '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status" aria-live="polite"><div class="loader"></div><div id="loader_text" class="visually-hidden"></div></div>',
->>>>>>> e784a8c8f3279813f8c9d6c576f269968e7a5509
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
