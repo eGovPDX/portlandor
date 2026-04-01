@@ -833,6 +833,7 @@
           });
           L.DomEvent.on(controlElement, 'keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
               cancelEventBubble(e);
               clickHandler(e);
             }
