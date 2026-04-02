@@ -1239,18 +1239,35 @@
         }
 
         function bindLocationPickerValidation() {
+          if (locationPickerEl.dataset.locationPickerValidationBound === 'true') {
+            return;
+          }
+
+          locationPickerEl.dataset.locationPickerValidationBound = 'true';
+
           var form = locationPickerEl.closest('form');
 
           if (form) {
-            once('location_picker_validation', form).forEach(function (formEl) {
-              formEl.addEventListener('submit', function () {
-                if (isLocationPickerRequired() && !hasLocationSelection()) {
-                  setMapInvalid(getLocationRequiredErrorMessage());
-                  return;
-                }
+            form.addEventListener('submit', function () {
+              if (!locationPickerEl.isConnected) {
+                return;
+              }
 
-                clearMapInvalid();
-              });
+              var wizardPage = locationPickerEl.closest('[data-webform-page]');
+              if (wizardPage && wizardPage.offsetParent === null) {
+                return;
+              }
+
+              if (locationPickerEl.offsetParent === null && locationPickerEl.getClientRects().length === 0) {
+                return;
+              }
+
+              if (isLocationPickerRequired() && !hasLocationSelection()) {
+                setMapInvalid(getLocationRequiredErrorMessage());
+                return;
+              }
+
+              clearMapInvalid();
             });
           }
 
