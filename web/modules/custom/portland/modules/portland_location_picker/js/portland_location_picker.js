@@ -159,6 +159,7 @@
         var lastAnnouncedPopupText = '';
         var keyboardOpenedPopupReturnFocusTarget = null;
         var shouldFocusPopupCloseButton = false;
+        var selectedMarkerPopupToReopenAfterZoom = null;
 
         // flags for server error handling
         var serverErrorHard = false;
@@ -920,6 +921,12 @@
 
           helpModal.addEventListener('keydown', function (event) {
             event.stopPropagation();
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              hideMapHelpModal(true);
+              return;
+            }
+
             if (event.key !== 'Tab') {
               return;
             }
@@ -995,6 +1002,19 @@
         }
 
         function hideMapHelpModal(restoreFocusToHelpControl = false) {
+          var helpElement = document.getElementById(getMapAccessibilityId('instructions'));
+          var focusTarget = null;
+
+          if (restoreFocusToHelpControl && helpControlContainer) {
+            focusTarget = helpControlContainer;
+          } else if (map && map.getContainer) {
+            focusTarget = map.getContainer();
+          }
+
+          if (helpElement && focusTarget && helpElement.contains(document.activeElement)) {
+            focusTarget.focus();
+          }
+
           toggleMapHelpModal(false);
 
           if (restoreFocusToHelpControl && helpControlContainer) {
@@ -1261,9 +1281,27 @@
             .trim();
         }
 
+        function getPopupSourceFocusTarget(popup) {
+          if (!popup) {
+            return null;
+          }
+
+          var source = popup._source;
+          if (source && source._icon && document.contains(source._icon)) {
+            return source._icon;
+          }
+
+          return null;
+        }
+
         function handlePopupOpen(e) {
           if (!e || !e.popup) {
             return;
+          }
+
+          var popupSourceFocusTarget = getPopupSourceFocusTarget(e.popup);
+          if (popupSourceFocusTarget) {
+            keyboardOpenedPopupReturnFocusTarget = popupSourceFocusTarget;
           }
 
           var popupText = extractAnnouncementTextFromHtml(e.popup.getContent());
@@ -1295,9 +1333,10 @@
         function handlePopupClose() {
           lastAnnouncedPopupText = '';
 
-          if (keyboardOpenedPopupReturnFocusTarget && document.contains(keyboardOpenedPopupReturnFocusTarget)) {
+          var returnFocusTarget = keyboardOpenedPopupReturnFocusTarget;
+          if (returnFocusTarget && document.contains(returnFocusTarget)) {
             window.setTimeout(function () {
-              keyboardOpenedPopupReturnFocusTarget.focus();
+              returnFocusTarget.focus();
             }, 0);
           }
 
@@ -1480,13 +1519,28 @@
         }
 
         function handleMapKeyDown(e) {
+          if (e.key === 'Escape' || e.key === 'Esc') {
+            var openPopup = map && map._popup ? map._popup : null;
+            if (openPopup) {
+              var popupSourceFocusTarget = getPopupSourceFocusTarget(openPopup);
+              if (popupSourceFocusTarget) {
+                keyboardOpenedPopupReturnFocusTarget = popupSourceFocusTarget;
+              }
+
+              e.preventDefault();
+              cancelEventBubble(e);
+              map.closePopup(openPopup);
+              return;
+            }
+          }
+
           if (e.key === 'Tab' && !e.shiftKey) {
             var primaryMarkers = getVisibleTabbablePrimaryMarkers();
             if (primaryMarkers.length > 0) {
               var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
               if (mapElements.length > 0 && e.target === mapElements[mapElements.length - 1]) {
                 e.preventDefault();
-                announceMapStatus('Entering selectable map markers. ' + primaryMarkers.length + ' markers in view.');
+                announceMapStatus('Entering map markers. ' + primaryMarkers.length + ' markers in view.');
                 primaryMarkers[0]._icon.focus();
                 return;
               }
@@ -1556,8 +1610,11 @@
         }
 
         function handleZoomEndShowGeoJsonLayer() {
-          // close all popups when zooming
-          map.closePopup();
+          // close all popups when zooming, except when preserving a selected marker popup
+          var preserveSelectedPopup = !!selectedMarkerPopupToReopenAfterZoom;
+          if (!preserveSelectedPopup) {
+            map.closePopup();
+          }
 
           var zoomlevel = map.getZoom();
           if (zoomlevel < featureLayerVisibleZoom) {
@@ -1577,6 +1634,15 @@
             }
           }
           updatePrimaryMarkerKeyboardAccessibility();
+
+          if (selectedMarkerPopupToReopenAfterZoom) {
+            var popupMarker = selectedMarkerPopupToReopenAfterZoom;
+            selectedMarkerPopupToReopenAfterZoom = null;
+
+            if (map.hasLayer(popupMarker) && typeof popupMarker.openPopup === 'function' && typeof popupMarker.isPopupOpen === 'function' && !popupMarker.isPopupOpen()) {
+              popupMarker.openPopup();
+            }
+          }
           // var bounds = map.getBounds();
         }
 
@@ -1682,9 +1748,9 @@
           }
 
           $('.loader-container').css("display", "flex");
-          // if (map && map.getContainer()) {
-          //   map.getContainer().setAttribute('aria-busy', 'true');
-          // }
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'true');
+          }
           announceMapStatus('Loading map data.');
         }
 
@@ -1695,9 +1761,9 @@
           }
 
           $('.loader-container').css("display", "none");
-          // if (map && map.getContainer()) {
-          //   map.getContainer().setAttribute('aria-busy', 'false');
-          // }
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'false');
+          }
           announceMapStatus('Map data loaded.');
         }
 
@@ -1756,7 +1822,7 @@
 
         function getVisibleTabbablePrimaryMarkers() {
           var markers = [];
-          if (!primaryLayer || !map || !map.hasLayer(primaryLayer) || !isPrimaryLayerKeyboardSelectable()) {
+          if (!primaryLayer || !map || !map.hasLayer(primaryLayer)) {
             return markers;
           }
 
@@ -1771,7 +1837,9 @@
               latlng: layer.getLatLng()
             };
 
-            if (!isAssetSelectable(marker)) {
+            var isSelectableAsset = isAssetSelectable(marker);
+            var hasPopup = typeof layer.getPopup === 'function' && !!layer.getPopup();
+            if (!isSelectableAsset && !hasPopup) {
               return;
             }
 
@@ -1855,9 +1923,18 @@
             var markerName = (layer.feature.properties && layer.feature.properties.name) ? layer.feature.properties.name : 'Selectable map marker';
             var popupAnnouncementText = extractAnnouncementTextFromHtml(generatePopupContent(layer.feature));
             var markerAnnouncementText = popupAnnouncementText ? popupAnnouncementText : markerName;
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+            var isSelectableAsset = isAssetSelectable(marker);
             icon.classList.add(PRIMARY_MARKER_FOCUS_CLASS);
             icon.setAttribute('role', 'button');
-            icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to select this location.');
+            if (isSelectableAsset) {
+              icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to select this location.');
+            } else {
+              icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to open location details.');
+            }
             // Keep markers out of native tab order; we enter marker navigation explicitly.
             icon.setAttribute('tabindex', '-1');
 
@@ -1905,7 +1982,7 @@
 
                   var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
                   if (mapElements.length > 0) {
-                    announceMapStatus('Leaving selectable map markers. Returning to map controls.');
+                    announceMapStatus('Leaving map markers. Returning to map controls.');
                     mapElements[mapElements.length - 1].focus();
                   }
                   return;
@@ -1918,7 +1995,7 @@
 
                 var nextFocusable = getNextFocusableElementAfterMapRegion();
                 if (nextFocusable) {
-                  announceMapStatus('Leaving selectable map markers.');
+                  announceMapStatus('Leaving map markers.');
                   nextFocusable.focus();
                   return;
                 }
@@ -1929,6 +2006,43 @@
               icon.dataset.primaryMarkerKeydownBound = 'true';
             }
           });
+        }
+
+        function updateLocationMarkerKeyboardAccessibility() {
+          if (!locationMarker || !locationMarker._icon) {
+            return;
+          }
+
+          var icon = locationMarker._icon;
+          icon.setAttribute('tabindex', '0');
+
+          var hasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
+          if (hasPopup) {
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', 'Selected location marker. Press Enter to open location details popup.');
+          } else {
+            icon.removeAttribute('role');
+            icon.setAttribute('aria-label', 'Selected location marker. Drag to adjust location.');
+          }
+
+          if (!icon.dataset.locationMarkerKeydownBound) {
+            icon.addEventListener('keydown', function (e) {
+              if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+              }
+
+              var markerHasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
+              if (!markerHasPopup) {
+                return;
+              }
+
+              e.preventDefault();
+              keyboardOpenedPopupReturnFocusTarget = icon;
+              shouldFocusPopupCloseButton = true;
+              locationMarker.openPopup();
+            });
+            icon.dataset.locationMarkerKeydownBound = 'true';
+          }
         }
 
         function activateMarkerSelection(marker) {
@@ -2313,7 +2427,8 @@
             return false;
           }
 
-          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE, zIndexOffset: 5000 }).addTo(map);
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, keyboard: false, iconSize: DEFAULT_ICON_SIZE, zIndexOffset: 5000 }).addTo(map);
+          updateLocationMarkerKeyboardAccessibility();
           updatePrimaryMarkerKeyboardAccessibility();
 
           // if address marker is moved, we want to capture the new coordinates
@@ -2322,6 +2437,7 @@
             var latlng = locationMarker.getLatLng();
             setLatLngHiddenFields(latlng.lat, latlng.lng);
             reverseGeolocate(latlng);
+            updateLocationMarkerKeyboardAccessibility();
           });
 
           hideLoader();
@@ -2413,6 +2529,13 @@
             // if already zoomed in more, dont change zoom.
             var currentZoom = map.getZoom();
             var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : currentZoom < DEFAULT_ZOOM_CLICK - 2 ? DEFAULT_ZOOM_CLICK - 2 : currentZoom;
+
+            selectedMarkerPopupToReopenAfterZoom = null;
+            var willChangeZoom = zoomLevel !== currentZoom;
+            if (willChangeZoom && clickedMarker && clickedMarker.target && typeof clickedMarker.target.getPopup === 'function' && clickedMarker.target.getPopup() && typeof clickedMarker.target.isPopupOpen === 'function' && clickedMarker.target.isPopupOpen()) {
+              selectedMarkerPopupToReopenAfterZoom = clickedMarker.target;
+            }
+
             doZoomAndCenter(lat, lng, zoomLevel);
             var latlng = new L.LatLng(lat, lng);
             if (addressVerify && !data.taxlot) {
