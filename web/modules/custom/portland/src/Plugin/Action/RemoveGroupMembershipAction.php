@@ -57,7 +57,7 @@ class RemoveGroupMembershipAction extends ViewsBulkOperationsActionBase {
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
+  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE) {
     // If certain fields are updated, access should be checked against them as well.
     // @see Drupal\Core\Field\FieldUpdateActionBase::access().
     return $object->access('delete', $account, $return_as_object);

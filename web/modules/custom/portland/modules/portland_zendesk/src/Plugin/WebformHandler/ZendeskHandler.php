@@ -7,6 +7,7 @@
  */
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
+use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
@@ -16,6 +17,7 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Form submission to Zendesk handler.
@@ -105,6 +107,7 @@ class ZendeskHandler extends WebformHandlerBase
       'parent_ticket_id_field' => '',
       'ticket_fork_field' => '',
       'ticket_form_id' => '',
+      'excluded_elements' => [],
     ];
   }
 
@@ -469,10 +472,25 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
+      $form['elements'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Included fields in webform_submission:values token'),
+        '#description' => $this->t('The selected elements will be included in the [webform_submission:values] token.'),
+        '#open' => false,
+      ];
+      $form['elements']['excluded_elements'] = [
+        '#type' => 'webform_excluded_elements',
+        '#webform_id' => $this->webform->id(),
+        '#default_value' => $this->configuration['excluded_elements'],
+        '#exclude_composite' => false,
+        '#name' => 'excluded_elements',
+      ];
+
       $form['subject']['#weight'] = -10; // Place first
       $form['comment']['#weight'] = -10;
-      $form['requester_name']['#weight'] = -10;
-      $form['requester_email']['#weight'] = -10;
+      $form['elements']['#weight'] = -10;
+      $form['requester_name']['#weight'] = -9;
+      $form['requester_email']['#weight'] = -8;
       $form['collaborators']['#weight'] = -7; // CCs
       $form['tags']['#weight'] = -5;
       $form['ticket_id_field']['#weight'] = -4;
@@ -527,6 +545,10 @@ class ZendeskHandler extends WebformHandlerBase
         $this->configuration[$key] = $submission_value[$key];
       }
     }
+
+    // move excluded_elements to top level
+    unset($this->configuration['elements']);
+    $this->configuration['excluded_elements'] = $submission_value['elements']['excluded_elements'];
   }
 
   /**
@@ -540,7 +562,7 @@ class ZendeskHandler extends WebformHandlerBase
     // Candiates for checking whether this is an upload submit:
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
-    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
+    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#parents'][0] === "submit") {
       $this->sendToZendeskAndValidateTicket($form, $form_state);
     }
   }
@@ -596,8 +618,12 @@ class ZendeskHandler extends WebformHandlerBase
       $webform_submission->setElementData($zendesk_parent_ticket_id_field_name, $parent_ticket_id);
     }
 
-    // the 2nd time through, $prev_ticket_id and $parent_ticket_id are both set
+    $token_options = [
+      'email' => TRUE,
+      'excluded_elements' => $this->configuration['excluded_elements'],
+    ];
 
+    // the 2nd time through, $prev_ticket_id and $parent_ticket_id are both set
     if ($fork_field_name) {
       // if the handler has a fork field configured, grab the values array from that field so we can
       // spin through it and stuff a single value into the webform_submission for each ticket being created.
@@ -609,7 +635,8 @@ class ZendeskHandler extends WebformHandlerBase
       foreach ($fork_field_array as $key => $value) {
         $data[$fork_field_name] = $fork_field_array[$key];
         $webform_submission->setData($data);
-        $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
+        // email=true uses nicer template for webform_submission:values HTML
+        $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], $token_options);
 
         // call function to create ticket in Zendesk and store resulting ticket ID
         $ticket_id = $this->submitTicket($webform_submission, $configuration);
@@ -622,7 +649,8 @@ class ZendeskHandler extends WebformHandlerBase
       $new_ticket_id = implode(",", $ticket_ids);
 
     } else {
-      $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
+      // email=true uses nicer template for webform_submission:values HTML
+      $configuration = $this->token_manager->replace($this->configuration, $webform_submission, [], $token_options);
       $new_ticket_id = $this->submitTicket($webform_submission, $configuration);
       $data = $webform_submission->getData();
     }
@@ -660,6 +688,9 @@ class ZendeskHandler extends WebformHandlerBase
 
     // Allow for either values coming from other fields or static/tokens
     foreach ($this->defaultConfigurationNames() as $field) {
+      // Skip non-scalar configuration fields that aren't part of the ticket create payload
+      if (!is_scalar($configuration[$field])) continue;
+
       $request[$field] = $configuration[$field];
       if (!empty($submission_fields['data'][$configuration[$field]])) {
         $request[$field] = $submission_fields['data'][$configuration[$field]];
@@ -790,7 +821,16 @@ class ZendeskHandler extends WebformHandlerBase
     // get all webform elements
     $elements = $this->getWebform()->getElementsInitializedAndFlattened();
 
+    $lock = \Drupal::lock();
+    $sid  = $webform_submission->id();
+    $key  = 'zendesk_send:' . ($sid ?: $webform_submission->uuid());
+
+    if (!$lock->acquire($key, 30)) {
+      throw new \RuntimeException('Duplicate submission in progress.');
+    }
+
     // attempt to send request to create zendesk ticket
+    $__temp_paths = [];
     try {
       // initiate api client
       $client = new ZendeskClient();
@@ -805,7 +845,7 @@ class ZendeskHandler extends WebformHandlerBase
           $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
           // Get fids from composite sub-elements.
           // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
-          if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+          if ($element_plugin instanceof WebformCompositeBase) {
             $managed_file_keys = $element_plugin->getManagedFiles($element);
             // Convert single composite value to array of multiple composite values.
             $data = $multiple ? $field_data : [$field_data];
@@ -832,10 +872,12 @@ class ZendeskHandler extends WebformHandlerBase
               $request['comment']['uploads'] = [];
             }
 
-            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
-            // upload file and get response
+            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);
+
+            $path = $this->pathForZendeskUpload($file);   // new helper below
+            $__temp_paths[] = $path;                      // remember to clean up
             $attachment = $client->attachments()->upload([
-              'file' => $file->getFileUri(),
+              'file' => $path,                             // real path, not private://
               'type' => $file->getMimeType(),
               'name' => $filename,
             ]);
@@ -866,10 +908,61 @@ class ZendeskHandler extends WebformHandlerBase
         '@message' => $message,
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
+    } finally {
+      // always remove any temporary copies we created
+      $this->cleanupTempUploads($__temp_paths);
+      $lock->release($key);
     }
 
     return $new_ticket_id;
 
+  }
+
+  /**
+   * Resolve a File entity to a real path suitable for Zendesk SDK.
+   * If private:// path isn't real yet or contains "/_sid_/", copy to temporary://.
+   */
+  private function pathForZendeskUpload(File $file): string
+  {
+    $fs = \Drupal::service('file_system');
+    $uri = $file->getFileUri();
+    $real = $fs->realpath($uri) ?: '';
+    $needs_copy = !$real || !file_exists($real) || str_contains($uri, '/_sid_/');
+
+    if ($needs_copy) {
+      $dir = 'temporary://zendesk_uploads';
+      $fs->prepareDirectory($dir, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+
+      // Create a unique temp name (Drupal wrapper around tempnam()).
+      $dest = $fs->tempnam($fs->realpath($dir), 'zd-');
+      // Convert it back to a stream wrapper URI so `copy()` can use it.
+      // If $dest is a real path, get a matching URI:
+      $dest_uri = $fs->realpath($dir) ? $dir . '/' . basename($dest) : $dest;
+
+      $copied = $fs->copy($uri, $dest_uri, FileSystemInterface::EXISTS_REPLACE);
+      $real = $fs->realpath($copied) ?: '';
+    }
+
+    if (!$real || !file_exists($real)) {
+      throw new \RuntimeException(sprintf('Upload source missing for fid=%d (uri=%s)', $file->id(), $uri));
+    }
+    return $real;
+  }
+
+  private function cleanupTempUploads(array $paths): void
+  {
+    $fs = \Drupal::service('file_system');
+    $base = rtrim($fs->realpath('temporary://zendesk_uploads'), DIRECTORY_SEPARATOR);
+
+    foreach ($paths as $p) {
+      if (!is_string($p)) {
+        continue;
+      }
+      $real = realpath($p) ?: $p;
+      if ($base && $real && str_starts_with($real, $base . DIRECTORY_SEPARATOR)) {
+        @$fs->unlink($real);
+      }
+    }
   }
 
   /**
@@ -923,12 +1016,12 @@ class ZendeskHandler extends WebformHandlerBase
   {
     $markup = [];
     $configNames = array_keys($this->defaultConfiguration());
-    $excluded_fields = ['comment','custom_fields'];
+    $excluded_fields = ['comment', 'custom_fields', 'excluded_elements'];
 
     // loop through fields to display an at-a-glance summary of settings
     foreach($configNames as $configName){
       if(! in_array($configName, $excluded_fields) ) {
-        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . ($this->configuration[$configName]);
+        $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . htmlentities($this->configuration[$configName]);
       }
     }
 

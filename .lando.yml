@@ -1,16 +1,19 @@
 name: portlandor
 recipe: pantheon
 config:
-  framework: drupal9
+  framework: drupal10
   site: portlandor
   id: 5c6715db-abac-4633-ada8-1c9efe354629
   index: false
   edge: false
   cache: false
-  composer_version: 2
+  composer_version: 2.8.12    # Pinned to older version due to https://github.com/composer/composer/issues/12623
 proxy:
   solr:
     - solr-portlandor.lndo.site:8983
+  mailpit:
+    - mailpit.portlandor.lndo.site
+
 services:
   appserver:
     build_as_root:
@@ -22,7 +25,6 @@ services:
     run:
       - terminus self:update
       - terminus self:plugin:reload
-      - terminus self:plugin:install pantheon-systems/terminus-secrets-plugin
       - terminus self:plugin:install pantheon-systems/terminus-composer-plugin
     xdebug: false
     config:
@@ -35,18 +37,14 @@ services:
         # Move /app/vendor/bin from the start of the path to the end so that `composer` executes /usr/local/bin/composer
         PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/.composer/vendor/bin:/srv/bin:/app/vendor/bin
   node:
-    type: node:custom
+    type: lando
     overrides:
+      user: root
       image: cimg/node:lts-browsers
       environment:
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
-    build_as_root:
-      - /bin/sh -c "mkdir /home/node"
-      - /bin/sh -c "chmod -R 777 /home/node"
+        LANDO_DROP_USER: www-data
     run_as_root:
-      - /bin/sh -c "adduser www-data node"
-      - /bin/sh -c "adduser www-data dialout"
-      - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
     build:
       - echo "Installing Node.js dependencies and building theme..."
@@ -57,6 +55,11 @@ services:
     portforward: true
     config:
       dir: private/solr-conf
+  mailpit:
+    type: mailpit
+    overrides:
+      environment:
+        MP_ALLOW_UNTRUSTED_TLS: TRUE
 
 tooling:
   drush:
@@ -147,8 +150,9 @@ tooling:
       - appserver: echo "Run drush cim -y..."
       - appserver: drush cim -y
       - appserver: echo "Import interface translations..."
-      - appserver: drush locale:check > /dev/null
-      - appserver: drush locale:update > /dev/null
+      - appserver: drush locale:check 2> /dev/null
+      - appserver: drush locale:update 2> /dev/null
+      - appserver: drush locale:import ar ../translations/custom-translations.ar.po --type=customized --override=all 2> /dev/null
       - appserver: drush locale:import es ../translations/custom-translations.es.po --type=customized --override=all 2> /dev/null
       - appserver: drush locale:import ru ../translations/custom-translations.ru.po --type=customized --override=all 2> /dev/null
       - appserver: drush locale:import vi ../translations/custom-translations.vi.po --type=customized --override=all 2> /dev/null
@@ -162,10 +166,16 @@ tooling:
     description: CUSTOM Reindex the Solr searcher
     service: appserver
     cmd:
-      - echo "Reindexing the Solr server... (this might take several minutes; use 'lando reindex &' to run the command in the background)"
-      - drush --root=/app/web search-api:reset-tracker
-      - drush --root=/app/web search-api:index > /dev/null 2>&1
-      - echo "Done reindexing the Solr server."
+      - echo "Reindexing the Solr server..."
+      - echo "(This runs in the background and will take several minutes to complete. Use 'lando stillindexing' to check progress.)"
+      - drush --root=/app/web sapi-fast full_index reindex
+      - drush --root=/app/web sapi-fast documents reindex
+  stillindexing:
+    description: CUSTOM Check if Solr indexing is still in progress
+    service: appserver
+    cmd:
+      - echo "Indexing is still in progress if the following number is greater than 0:"
+      - ps -ef | grep -c "php\ /app/vendor/bin/drush.*search-api-index-fast-queue"
   cupex:
     description: CUSTOM Composer update, database update, and config export to get a clean module or theme update
     cmd:
@@ -206,6 +216,7 @@ tooling:
       - appserver: drush cset locale.settings translation.use_source remote_and_local -y
       - appserver: drush locale:check
       - appserver: drush locale:update
+      - appserver: drush locale:export ar --types=customized > translations/custom-translations.ar.po
       - appserver: drush locale:export es --types=customized > translations/custom-translations.es.po
       - appserver: drush locale:export ru --types=customized > translations/custom-translations.ru.po
       - appserver: drush locale:export vi --types=customized > translations/custom-translations.vi.po

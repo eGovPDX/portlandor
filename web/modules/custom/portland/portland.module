@@ -28,6 +28,8 @@ use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
+use Drupal\node\Entity\Node;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -45,7 +47,7 @@ function getGroupIdsByEntity($entity)
 
   $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
-    $group_ids[] = $group_content->getGroup()->id();
+    $group_ids[] = $group_content->getGroup()?->id();
   }
 
   return $group_ids;
@@ -179,6 +181,7 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('EventDateTime', []);
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
+  $node->addConstraint('LinkUrl', []);
 }
 
 /**
@@ -232,7 +235,7 @@ function portland_node_presave($node)
   // field values and modify a field value but the node hasn't been saved yet so it doesn't have a
   // node ID or URL which is required to send the email. So that part will happen in
   // hook_node_update() after it's saved.
-  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value 
+  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value
       && $node->get('moderation_state')->getString() == "published"
       && ($node->isNew() || $node->original->get('moderation_state')->getString() != "published")
       ) {
@@ -275,7 +278,7 @@ function _add_node_to_govdelivery_queue($node)
     }
     $only_custom_newsletter = $group->get("field_only_custom_newsletter")->value == true;
   }
-  
+
   if (!$use_custom_newsletter || !$only_custom_newsletter) {
     // Get the GovDelivery topic code from the group's associated service area or council district.
     // Look in parent group(s) if no service area or council district is associated with the current group.
@@ -310,7 +313,7 @@ function _add_node_to_govdelivery_queue($node)
       }
     }
   }
-  
+
   if ($use_custom_newsletter) {
     if ($only_custom_newsletter || $topic_code == null) {
       $topic_code = $group_topic_code;
@@ -324,12 +327,12 @@ function _add_node_to_govdelivery_queue($node)
   $featured_image_id = $node->get("field_featured_media")[0]?->getValue()['target_id'];
   if ($featured_image_id) {
     $featured_image = \Drupal::entityTypeManager()->getStorage('media')->load($featured_image_id);
-    
+
     // Render the media entity using the 'email' view mode.
     $view_builder = \Drupal::entityTypeManager()->getViewBuilder('media');
     $render_array = $view_builder->view($featured_image, 'email');
     $image_html = \Drupal::service('renderer')->renderRoot($render_array);
-    
+
     // Convert relative image URLs to absolute URLs
     $base_url = \Drupal::request()->getSchemeAndHttpHost();
     $search_str = ['href="/', 'src="/', 'srcset="/', 'action="/'];
@@ -340,15 +343,16 @@ function _add_node_to_govdelivery_queue($node)
   }
 
   // Build the email content
-  $body = sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
+  $body = '<div class="emailBody">';
+  $body .= sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
   $body .= sprintf('<h2>%s</h2>', $node->getTitle());
   $body .= sprintf('%s', $image_html);
-  
+
   // If the node is an event, render the group date twig template and include the output in the email body
   if ($node->bundle() == 'event') {
     $twig = \Drupal::service('twig');
     $template = 'themes/custom/cloudy/templates/field/field-group-html-element--group-date--content.html.twig';
-    
+
     $variables = [
       'element' => [
         'field_display_date' => [''],
@@ -362,34 +366,34 @@ function _add_node_to_govdelivery_queue($node)
     $group_date_output = trim($twig->render($template, $variables));
     $body .= sprintf('<p>%s</p>', $group_date_output);
   }
-  
+
   $body .= sprintf('<p>%s</p>', $node->get("field_summary")->value);
   $body .= sprintf('<p><a href="%s">Read more</a></p>', $node->toUrl()->setAbsolute()->toString());
+  $body .= '</div>';
   $body .= '<div class="clear" />';
   $body .= "
     <style>
+      .emailBody {
+        max-width: 53em;
+      }
       .groupHeading {
         margin-bottom: -1rem;
         font-size: .9rem;
         text-transform: uppercase;
         color: #666;
       }
-      div.field--type-image {
-        float: right;
-        margin-left: 1em;
-      }
       .clear {
         clear: both;
       }
     </style>";
-  
+
   // $topic_code can be a comma-delimited list, so send a separate email for each topic
   // (If multiple topics are specified in the same email, the email won't use the correct
   // header and footer configured for the topics.)
   $topics = explode(",", $topic_code);
   foreach ($topics as $topic) {
     $topic = trim($topic);
-    
+
     // Add an email to the GovDelivery queue
     \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')
       ->setFlag('dedupe', TRUE)  // Optional
@@ -409,7 +413,7 @@ function _add_node_to_govdelivery_queue($node)
       // ->setXmlBool('urgent', FALSE)  // Optional
       ->addToQueueAndReset();
   }
-  
+
   \Drupal::messenger()->addMessage('GovDelivery email has been queued for delivery.');
 }
 
@@ -513,7 +517,7 @@ function _build_log_message($entity)
 
   $parentGroupTitle = '';
   if ($entity->getEntityTypeId() == 'group_content') {
-    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()->label() . ',   ';
+    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()?->label() . ',   ';
     $titleText = 'Title=' . $entity->label->value . ','; // Group content didn't implement "label()"
   } else {
     $titleText = 'Title=' . $entity->label() . ',';
@@ -641,7 +645,7 @@ function portland_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInt
   }
 
   $node = $route_match->getParameter('node');
-  if(!empty($node) && ($node instanceof Drupal\node\Entity\Node) && $node->bundle() == "park_facility") {
+  if(!empty($node) && ($node instanceof Node) && $node->bundle() == "park_facility") {
     $breadcrumb->addLink(Link::createFromRoute(t("Find a park"), "view.park_finder.page_1"));
   }
 }
@@ -666,6 +670,12 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
     if ($entity_form['#bundle'] == 'document') {
       $entity_form['#element_validate'][] = '_validate_document';
     }
+  }
+
+  // PGOV-488 Convert image alt text field to textarea
+  if(isset($entity_form['image'])) {
+    $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+    $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
   }
 }
 
@@ -748,7 +758,46 @@ function portland_form_alter(&$form, &$form_state, $form_id)
       $form[$field_name]['#group'] = 'footer';
     }
   }
-  
+
+  // PGOV-488 Convert image alt text field to textarea
+  if ($form_id === "media_image_add_form" || $form_id === "media_image_edit_form") {
+    if(isset($form['image'])) {
+      $form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+      $form['#validate'][] = '_remove_linebreak_from_image_alt';
+    }
+  }
+}
+
+/**
+ * Remove line breaks from image alt text
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
+  $form_state->getValue('image')[0]['alt'] = preg_replace('/\s+/', ' ', $form_state->getValue('image')[0]['alt']);
+}
+
+/**
+ * Change image alt text field to textarea
+ * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
+ */
+function _convert_image_alt_to_textarea($element, FormStateInterface $form_state, &$complete_form) {
+  // Do nothing if alt field doesn't exist
+  if(! isset($element['alt'])) return $element;
+
+  // Alt field exists → convert to textarea
+  if (!empty($element['alt']) && $element['alt']['#type'] === 'textfield') {
+    $element['alt']['#type'] = 'textarea';
+    $element['alt']['#rows'] = 6;
+    $element['alt']['#description'] = new TranslatableMarkup('@original_text @additional_text', [
+      '@original_text' => $element['alt']['#description'],
+      '@additional_text' => t(" If the alt text has multiple lines, it will be merged into one line with line breaks converted into blank spaces."),
+    ]);
+    $element['alt']['#attributes']['data-maxlength'] = 160;
+    $element['alt']['#attributes']['class'][] = 'maxlength';
+    $element['alt']['#attached']['library'][] = 'maxlength/maxlength';
+    $element['alt']['#attributes']['maxlength_js_label'] = 'The suggested max length of alternative text is @limit characters, remaining: <strong>@remaining</strong>';
+  }
+  return $element;
 }
 
 /**
@@ -781,12 +830,9 @@ function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
- * Implements hook_form_BASE_FORM_ID_alter().
- *
- * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ * @see portland_form_node_form_alter()
  */
-function portland_form_node_form_alter(&$form, &$form_state) {
-  $node = $form_state->getFormObject()->getEntity();
+function _add_translation_warning(&$form, Node $node) {
   // false = exclude default language
   $translation_langs = $node->getTranslationLanguages(false);
   $translation_langs_friendly = join(', ', array_map(fn($lang) => $lang->getName(), $translation_langs));
@@ -811,6 +857,43 @@ function portland_form_node_form_alter(&$form, &$form_state) {
   }
 }
 
+/**
+ * The TID of the "Service" page subtype taxonomy term.
+ */
+const PAGE_SUBTYPE_SERVICE_TID = 1032;
+/**
+ * Restrict the Service page subtype to those with the Glossary editor role.
+ * TODO: remove this once use of the new service design is expanded.
+ *
+ * @see portland_form_node_form_alter()
+ */
+function _hide_ppd_service_subtype(&$form, Node $node) {
+  $user = \Drupal::currentUser();
+  $roles = $user->getRoles();
+  $is_allowed = in_array('glossary_editor', $roles) || in_array('administrator', $roles);
+  if (array_key_exists('field_page_type', $form) && !$is_allowed) {
+    if ($node->get('field_page_type')->target_id === (string) PAGE_SUBTYPE_SERVICE_TID) {
+      // if page type is Service, disable the field completely so they can't switch it back
+      $form['field_page_type']['#disabled'] = true;
+    } else {
+      // else just hide the option
+      unset($form['field_page_type']['widget']['#options'][PAGE_SUBTYPE_SERVICE_TID]);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * - Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ * - Hide the "Service subtype" for those without Glossary editor role. TODO: remove this once use of the new service design is expanded.
+ */
+function portland_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  _add_translation_warning($form, $node);
+  _hide_ppd_service_subtype($form, $node);
+}
+
 const FILE_EXTENSION_TO_MIMETYPE_MAP = [
   "PDF" => "application/pdf",
   "DOC" => "application/msword",
@@ -826,7 +909,7 @@ const FILE_EXTENSION_TO_MIMETYPE_MAP = [
 /**
  * A helper function to validate document.
  */
-function _validate_document(&$form, FormStateInterface $form_state, $form_id = []) 
+function _validate_document(&$form, FormStateInterface $form_state, $form_id = [])
 {
   $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
@@ -921,11 +1004,27 @@ function _validate_document(&$form, FormStateInterface $form_state, $form_id = [
           $entity = ($form["#id"] === "edit-inline-entity-form")? $form["#entity"] : $form_state->getFormObject()->getEntity();
           $record_type_name = $json_data["Results"][0]["RecordRecordType"]["RecordTypeName"]["Value"];
           switch($record_type_name) {
+            case "Archival Box":
+            case "Archival Folder":
+            case "Archival Object":
+            case "Archival Photo Folder":
+            case "Archival Series":
+            case "E-Box":
             case "E-Folder":
               $entity->set('field_file_size', 0);
               $entity->set('field_mime_type', "");
               break;
+            case "Archival Document":
+            case "Archival Map":
+            case "Archival Photo":
+            case "Archival Video":
+            case "Council Document - Main Document":
+            case "Council Document - Supplemental Document":
+            case "Deed - Original":
+            case "Digital Audio Recording":
+            case "Document":
             case "E-Document":
+            case "Microfilm":
               if( !isset($json_data["Results"][0]["RecordDocumentSize"]["Value"]) ||  !isset($json_data["Results"][0]["RecordExtension"]["Value"])) {
                 $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "Cannot retrieve RecordDocumentSize or RecordExtension for the eFiles link: $external_file_url. Please report to the site administrater.");
                 \Drupal::logger('portland')->error("Cannot retrieve RecordDocumentSize or RecordExtension for the eFiles link: $external_file_url");
@@ -994,17 +1093,25 @@ function _validate_group_group_path(&$form, FormStateInterface $form_state)
  */
 function portland_cron()
 {
-  // Send content notification email to powr@portlandoregon.gov
-  _send_content_email();
+  // Send content notification email
+  try {
+    _send_content_email();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed sending content review email: " . $e->getMessage());
+  }
 
   // Send queued GovDelivery emails
-  _process_govdelivery_queue();
+  try {
+    _process_govdelivery_queue();
+  } catch (\Exception $e) {
+    \Drupal::logger('portland')->error("Failed processing GovDelivery queue: " . $e->getMessage());
+  }
 }
 
 
 /**
  * Helper function to send content notification email.
- * Retrieve a view and send it to powr@portlandoregon.gov
+ * Retrieve a view and send it to BTS-eGov@portlandoregon.gov
  */
 function _send_content_email()
 {
@@ -1064,7 +1171,7 @@ function _send_content_email()
     $params['title'] = 'Portland.gov list of content to review' . $environment_name;
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
-    $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+    $sent_successfully = _send_email($key, $to, $langcode, $params, 'website@portlandoregon.gov');
     if ($sent_successfully) {
       \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
       \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
@@ -1249,7 +1356,6 @@ function portland_mail_alter(&$message)
         $user_name = $config->get('name');
         $user_email = $config->get('mail');
       }
-      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
       break;
   }
 }
@@ -1553,7 +1659,7 @@ function portland_preprocess_fieldset(&$variables): void {
     unset($variables["errors"]);
   }
 }
- 
+
 /**
  * Implements hook_field_widget_single_element_form_alter().
  */
@@ -1562,5 +1668,30 @@ function portland_field_widget_single_element_form_alter(array &$element, FormSt
   if (isset($context["widget"]) && isset($context["items"]) &&
     $context['widget']->getPluginId() === 'link_default' && $context["items"]->getName() === "field_efiles_link") {
     $element['uri']['#description'] = t('Enter a valid eFiles URL in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.');
+  }
+}
+
+/**
+ * Implements hook_preprocess_media().
+ * Only show additional properties of a banner image in Node and Group add/edit forms.
+ */
+function portland_preprocess_media(&$variables) {
+  /** @var \Drupal\media\Entity\Media $media */
+  $media = $variables['media'];
+  $view_mode = $variables['view_mode'] ?? '';
+  if ($media?->bundle() === 'image' && $view_mode === 'banner') {
+    // Only display the additional fields in Node and Group add/edit forms
+    $route_name = \Drupal::routeMatch()->getRouteName();
+    if( in_array($route_name, [
+      'node.add',
+      'entity.node.edit_form',
+      'entity.group_content.create_form',
+      'entity.group.add_form',
+      'entity.group.edit_form',
+    ]) ) {
+      return;
+    }
+
+    unset($variables["content"]["media_eva_banner_image_info"]);
   }
 }

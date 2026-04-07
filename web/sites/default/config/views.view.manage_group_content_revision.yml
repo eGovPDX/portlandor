@@ -5,6 +5,7 @@ dependencies:
   config:
     - field.storage.group.field_group_path
     - field.storage.node.field_event_type
+    - field.storage.node.field_fragment_type
     - field.storage.node.field_news_type
     - field.storage.node.field_page_type
     - field.storage.node.field_policy_type
@@ -13,6 +14,7 @@ dependencies:
     - node.type.city_service
     - node.type.construction_project
     - node.type.contact
+    - node.type.content_fragment
     - node.type.council_document
     - node.type.event
     - node.type.external_resource
@@ -22,6 +24,7 @@ dependencies:
     - node.type.page
     - node.type.policy
     - node.type.service_location
+    - taxonomy.vocabulary.content_fragment_type
   module:
     - content_lock
     - content_moderation
@@ -32,6 +35,7 @@ dependencies:
     - portland
     - rest
     - serialization
+    - taxonomy
     - views_bulk_operations
     - views_data_export
 id: manage_group_content_revision
@@ -106,6 +110,8 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
             0:
               action_id: 'entity:break_lock:node'
@@ -1393,20 +1399,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -1448,20 +1440,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -1502,20 +1480,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -1634,20 +1598,6 @@ display:
             multiple: true
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             argument: ''
             reduce: true
           is_grouped: false
@@ -1675,6 +1625,7 @@ display:
             field_news_type: field_news_type
             field_page_type: field_page_type
             field_policy_type: field_policy_type
+            field_fragment_type: field_fragment_type
             type: type
             type_1: type_1
             type_2: type_2
@@ -1683,12 +1634,15 @@ display:
             field_group_path: field_group_path
             is_locked: is_locked
             field_reviewer: field_reviewer
+            uid: uid
+            created: created
             revision_uid: revision_uid
             revision_log: revision_log
             moderation_state_1: moderation_state_1
             changed: changed
             translated_into: translated_into
             operations: operations
+            nothing: nothing
           default: changed
           info:
             views_bulk_operations_bulk_form:
@@ -1731,6 +1685,13 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
+            field_fragment_type:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
             type:
               sortable: true
               default_sort_order: asc
@@ -1739,7 +1700,7 @@ display:
               empty_column: false
               responsive: ''
             type_1:
-              sortable: false
+              sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
@@ -1785,6 +1746,20 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
+            uid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            created:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
             revision_uid:
               sortable: false
               default_sort_order: asc
@@ -1825,12 +1800,18 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
+            nothing:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
           override: true
           sticky: false
           summary: ''
           empty_table: false
           caption: ''
           description: ''
+          class: ''
       row:
         type: fields
       query:
@@ -1990,33 +1971,51 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
-          force_selection_info: false
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
-            0:
+            -
               action_id: 'entity:break_lock:node'
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Break lock'
-            8:
-              action_id: portland_archive_action
+                message_override: ''
+            -
+              action_id: vbo_change_group_ownership
               preconfiguration:
-                add_confirmation: false
-                label_override: Unpublish
-            10:
+                add_confirmation: true
+                confirm_help_text: "<div class=\"messages messages--warning\" role=\"alert\">\r\nThis action cannot be undone. After this update:\r\n<ul>\r\n    <li>The selected entities will be permanently removed from the original primary group.</li>\r\n    <li>Only users with the Admin and Editor roles in the new primary group will be able to edit them.</li>\r\n    <li>URLs and breadcrumbs will change to match the new primary group.</li>\r\n</ul>\r\nAre you sure you want to continue?\r\n</div>"
+                label_override: 'Change group ownership'
+                message_override: ''
+            -
               action_id: mark_for_review_action
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Mark for Review'
-            11:
+                message_override: ''
+            -
               action_id: portland_publish_action
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: Publish
-            15:
+                message_override: ''
+            -
               action_id: 'entity:save_action:node'
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: Save
+                message_override: ''
+            -
+              action_id: portland_archive_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Unpublish
+                message_override: ''
         status:
           id: status
           table: node_field_data
@@ -3358,20 +3357,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -3413,20 +3398,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -3480,20 +3451,6 @@ display:
             multiple: true
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             argument: ''
             reduce: true
           is_grouped: false
@@ -3537,23 +3494,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -3754,23 +3694,44 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
-            0:
+            -
               action_id: 'entity:break_lock:node'
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Break lock'
-            11:
-              action_id: portland_publish_action
+                message_override: ''
+            -
+              action_id: vbo_change_group_ownership
               preconfiguration:
-                label_override: Publish
-            13:
-              action_id: portland_archive_action
-              preconfiguration:
-                label_override: Unpublish
-            14:
+                add_confirmation: true
+                confirm_help_text: "<div class=\"messages messages--warning\" role=\"alert\">\r\nThis action cannot be undone. After this update:\r\n<ul>\r\n    <li>The selected entities will be permanently removed from the original primary group.</li>\r\n    <li>Only users with the Admin and Editor roles in the new primary group will be able to edit them.</li>\r\n    <li>URLs and breadcrumbs will change to match the new primary group.</li>\r\n</ul>\r\nAre you sure you want to continue?\r\n</div>"
+                label_override: 'Change group ownership'
+                message_override: ''
+            -
               action_id: mark_for_review_action
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Mark for Review'
+                message_override: ''
+            -
+              action_id: portland_publish_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Publish
+                message_override: ''
+            -
+              action_id: portland_archive_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Unpublish
+                message_override: ''
         status:
           id: status
           table: node_field_data
@@ -4828,20 +4789,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -4883,20 +4830,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -4937,20 +4870,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -5033,20 +4952,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -5089,23 +4994,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -5314,37 +5202,50 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
-          force_selection_info: false
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
             -
               action_id: 'entity:break_lock:node'
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Break lock'
                 message_override: ''
             -
-              action_id: portland_archive_action
+              action_id: vbo_change_group_ownership
               preconfiguration:
-                add_confirmation: false
-                label_override: Unpublish
+                add_confirmation: true
+                confirm_help_text: "<div class=\"messages messages--warning\" role=\"alert\">\r\nThis action cannot be undone. After this update:\r\n<ul>\r\n    <li>The selected entities will be permanently removed from the original primary group.</li>\r\n    <li>Only users with the Admin and Editor roles in the new primary group will be able to edit them.</li>\r\n    <li>URLs and breadcrumbs will change to match the new primary group.</li>\r\n</ul>\r\nAre you sure you want to continue?\r\n</div>"
+                label_override: 'Change group ownership'
                 message_override: ''
             -
               action_id: mark_for_review_action
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Mark for Review'
                 message_override: ''
             -
               action_id: portland_publish_action
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: Publish
                 message_override: ''
             -
               action_id: 'entity:save_action:node'
               preconfiguration:
                 add_confirmation: false
+                confirm_help_text: ''
                 label_override: Save
+                message_override: ''
+            -
+              action_id: portland_archive_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Unpublish
                 message_override: ''
         status:
           id: status
@@ -5667,6 +5568,69 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
+        field_fragment_type:
+          id: field_fragment_type
+          table: node__field_fragment_type
+          field: field_fragment_type
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         type:
           id: type
           table: node_field_data
@@ -5746,7 +5710,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '{{ field_news_type }}{{ field_page_type }}{{ field_service_location_type }}{{ field_policy_type }} '
+            text: '{{ field_news_type }}{{ field_page_type }}{{ field_service_location_type }}{{ field_policy_type }}{{ field_fragment_type }}'
             make_link: false
             path: ''
             absolute: false
@@ -6669,6 +6633,11 @@ display:
           empty_zero: false
           hide_alter_empty: true
           destination: false
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          plugin_id: custom
       filters:
         latest_translation_affected_revision:
           id: latest_translation_affected_revision
@@ -6737,20 +6706,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -6790,24 +6745,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_author: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -6849,20 +6786,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -6968,20 +6891,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -7009,6 +6918,7 @@ display:
           value:
             construction_project: construction_project
             contact: contact
+            content_fragment: content_fragment
             council_document: council_document
             event: event
             location: location
@@ -7035,20 +6945,6 @@ display:
             multiple: true
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             argument: ''
             reduce: true
           is_grouped: false
@@ -7063,6 +6959,52 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+        field_fragment_type_target_id:
+          id: field_fragment_type_target_id
+          table: node__field_fragment_type
+          field: field_fragment_type_target_id
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_fragment_type_target_id_op
+            label: 'Fragment type'
+            description: ''
+            use_operator: false
+            operator: field_fragment_type_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_fragment_type_target_id
+            required: false
+            remember: true
+            multiple: false
+            remember_roles:
+              glossary_editor: glossary_editor
+              administrator: administrator
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: true
+          vid: content_fragment_type
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
         langcode:
           id: langcode
           table: node_field_data
@@ -7092,23 +7034,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -7249,6 +7174,7 @@ display:
         - 'user.node_grants:view'
       tags:
         - 'config:field.storage.group.field_group_path'
+        - 'config:field.storage.node.field_fragment_type'
         - 'config:field.storage.node.field_news_type'
         - 'config:field.storage.node.field_page_type'
         - 'config:field.storage.node.field_policy_type'
@@ -7319,23 +7245,44 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
-            0:
+            -
               action_id: 'entity:break_lock:node'
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Break lock'
-            11:
-              action_id: portland_publish_action
+                message_override: ''
+            -
+              action_id: vbo_change_group_ownership
               preconfiguration:
-                label_override: Publish
-            13:
-              action_id: portland_archive_action
-              preconfiguration:
-                label_override: Unpublish
-            14:
+                add_confirmation: true
+                confirm_help_text: "<div class=\"messages messages--warning\" role=\"alert\">\r\nThis action cannot be undone. After this update:\r\n<ul>\r\n    <li>The selected entities will be permanently removed from the original primary group.</li>\r\n    <li>Only users with the Admin and Editor roles in the new primary group will be able to edit them.</li>\r\n    <li>URLs and breadcrumbs will change to match the new primary group.</li>\r\n</ul>\r\nAre you sure you want to continue?\r\n</div>"
+                label_override: 'Change group ownership'
+                message_override: ''
+            -
               action_id: mark_for_review_action
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Mark for Review'
+                message_override: ''
+            -
+              action_id: portland_publish_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Publish
+                message_override: ''
+            -
+              action_id: portland_archive_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Unpublish
+                message_override: ''
         status:
           id: status
           table: node_field_data
@@ -8648,20 +8595,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -8703,20 +8636,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -8757,20 +8676,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -8921,23 +8826,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -9149,23 +9037,44 @@ display:
           buttons: false
           action_title: Action
           clear_on_exposed: true
+          show_multipage_selection_box: default
+          show_select_all: default
           selected_actions:
-            0:
+            -
               action_id: 'entity:break_lock:node'
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Break lock'
-            11:
-              action_id: portland_publish_action
+                message_override: ''
+            -
+              action_id: vbo_change_group_ownership
               preconfiguration:
-                label_override: Publish
-            13:
-              action_id: portland_archive_action
-              preconfiguration:
-                label_override: Unpublish
-            14:
+                add_confirmation: true
+                confirm_help_text: "<div class=\"messages messages--warning\" role=\"alert\">\r\nThis action cannot be undone. After this update:\r\n<ul>\r\n    <li>The selected entities will be permanently removed from the original primary group.</li>\r\n    <li>Only users with the Admin and Editor roles in the new primary group will be able to edit them.</li>\r\n    <li>URLs and breadcrumbs will change to match the new primary group.</li>\r\n</ul>\r\nAre you sure you want to continue?\r\n</div>"
+                label_override: 'Change group ownership'
+                message_override: ''
+            -
               action_id: mark_for_review_action
               preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
                 label_override: 'Mark for Review'
+                message_override: ''
+            -
+              action_id: portland_publish_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Publish
+                message_override: ''
+            -
+              action_id: portland_archive_action
+              preconfiguration:
+                add_confirmation: false
+                confirm_help_text: ''
+                label_override: Unpublish
+                message_override: ''
         status:
           id: status
           table: node_field_data
@@ -10416,20 +10325,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -10471,20 +10366,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -10525,20 +10406,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -10689,23 +10556,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -11704,20 +11554,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -11759,20 +11595,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -11813,20 +11635,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -11945,20 +11753,6 @@ display:
             multiple: true
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             argument: ''
             reduce: true
           is_grouped: false
@@ -12903,20 +12697,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             placeholder: ''
           is_grouped: false
           group_info:
@@ -12958,20 +12738,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
           is_grouped: false
           group_info:
             label: ''
@@ -13012,20 +12778,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             reduce: false
           is_grouped: false
           group_info:
@@ -13144,20 +12896,6 @@ display:
             multiple: true
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
             argument: ''
             reduce: true
           is_grouped: false

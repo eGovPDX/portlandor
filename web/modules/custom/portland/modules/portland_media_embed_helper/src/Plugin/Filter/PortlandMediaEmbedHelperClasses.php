@@ -33,7 +33,7 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
     if (str_contains($text, 'data-embed-button')) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
-      foreach ($xpath->query('//*[@data-embed-button]') as $node) {
+      foreach ($xpath->query('//drupal-entity[@data-embed-button]') as $node) {
         // Read the data-caption attribute's value; this is used to determine media type
         $embed_button = Html::escape($node->getAttribute('data-embed-button'));
 

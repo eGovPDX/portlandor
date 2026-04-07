@@ -22,12 +22,12 @@ categories: {  }
 elements: |-
   markup_intro:
     '#type': webform_markup
-    '#markup': '<p>This page is for internal PP&amp;R staff to report security, safety, property damage, and bias-hate incidents in parks. The public needing to report park incidents should call Portland Park Rangers at 503-823-1637.</p><p>Three steps for PP&amp;R staff to report an incident in parks:</p><ol><li>For emergencies, always call 911.</li><li>For park rule violations, call <a href="/parks/rangers">Portland Park Rangers</a> at <a href="tel:+1-503-823-1637">503-823-1637</a>.</li><li>In all cases, close the loop by filling out the PP&amp;R Incident Report fprm below.&nbsp;</li></ol><p>Once your form is submitted, you may be asked by the Safety team to complete additional forms for workers compensation, guest accident, or property damage. Refer to the PP&amp;R Red Book for more information.</p><p><strong>This form is for Portland Parks &amp; Recreation internal use only. Unauthorized submissions will be disregarded.</strong></p>'
+    '#markup': '<p>This page is for internal PP&amp;R staff to report security, safety, property damage, and bias-hate incidents in parks. The public needing to report park incidents should call Portland Park Rangers at 503-823-1637.</p><p>Three steps for PP&amp;R staff to report an incident in parks:</p><ol><li>For emergencies, always call 911.</li><li>For park rule violations, call <a href="/parks/rangers">Portland Park Rangers</a> at <a href="tel:+1-503-823-1637">503-823-1637</a>.</li><li>In all cases, close the loop by filling out the PP&amp;R Incident Report form below.&nbsp;</li></ol><p>Once your form is submitted, you may be asked by the Safety team to complete additional forms for workers compensation, guest accident, or property damage. Refer to the PP&amp;R Red Book for more information.</p><p><strong>This form is for Portland Parks &amp; Recreation internal use only. Unauthorized submissions will be disregarded.</strong></p>'
   container_report:
     '#type': container
     report_organization:
       '#type': webform_select_other
-      '#title': 'Reporting Organization'
+      '#title': 'Reporting organization'
       '#options':
         'PP&R Staff': 'PP&R Staff'
         'PP&R Rangers': 'PP&R Rangers'
@@ -41,18 +41,41 @@ elements: |-
       '#description_display': before
       '#options':
         'Yes, I was injured and I called my supervisor': 'Yes, I was injured and I called my supervisor'
+        'Yes, reporting on behalf of employee': 'Yes, reporting on behalf of employee'
         'Yes, a visitor (not me)': 'Yes, a visitor (not me)'
         'No': 'No'
         'No, but it was a near-miss incident that could have resulted in an injury or illness to a worker.': 'No, but it was a near-miss incident that could have resulted in an injury or illness to a worker.'
       '#required': true
     report_supervisor_name:
       '#type': textfield
-      '#title': "Supervisor's name"
+      '#title': 'Supervisor name'
       '#required': true
       '#states':
         visible:
-          ':input[name="report_injury"]':
-            value: 'Yes, I was injured and I called my supervisor'
+          - ':input[name="report_injury"]':
+              value: 'Yes, I was injured and I called my supervisor'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, reporting on behalf of employee'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, a visitor (not me)'
+    report_supervisor_email:
+      '#type': textfield
+      '#title': 'Supervisor email'
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#states':
+        visible:
+          - ':input[name="report_injury"]':
+              value: 'Yes, I was injured and I called my supervisor'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, reporting on behalf of employee'
+          - or
+          - ':input[name="report_injury"]':
+              value: 'Yes, a visitor (not me)'
     markup_urgent:
       '#type': webform_markup
       '#states':
@@ -62,14 +85,15 @@ elements: |-
       '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><p class="mb-0">For staff or visitor injuries that result in a trip to a hospital or clinic, contact the safety team at Park Ranger Dispatch 503-823-1637.</p></div>'
     report_issue_category:
       '#type': select
-      '#title': 'Issue Category'
+      '#title': 'Issue category'
       '#options':
         'Crime related': 'Crime related'
         'Environmental/infrastructure hazard': 'Environmental/infrastructure hazard'
-        'Medical event/first aid': 'Medical event/first aid'
+        'Employee Incident/Injury/First Aid Care': 'Employee Incident/Injury/First Aid Care'
         'Park violation or safety issue': 'Park violation or safety issue'
         'Trail or facility hazard': 'Trail or facility hazard'
         'Vehicle damage or collision': 'Vehicle damage or collision'
+        'Visitor Incident/Injury/First Aid Care': 'Visitor Incident/Injury/First Aid Care'
       '#required': true
     report_issue_type_crime:
       '#type': select
@@ -103,9 +127,9 @@ elements: |-
             value: 'Environmental/infrastructure hazard'
     report_issue_type_medical:
       '#type': select
-      '#title': 'What type of medical event/first aid issue?'
+      '#title': 'What type of employee or visitor injury/first aid care?'
       '#options':
-        'Initial care provided': 'Initial care provided'
+        'Initial Injury Report': 'Initial Injury Report'
         'Medica emergency (CPR, stroke, substance OD)': 'Medical emergency (CPR, stroke, substance OD)'
         'Mental health crisis': 'Mental health crisis'
         'Wellness check': 'Wellness check'
@@ -114,8 +138,11 @@ elements: |-
       '#required': true
       '#states':
         visible:
-          ':input[name="report_issue_category"]':
-            value: 'Medical event/first aid'
+          - ':input[name="report_issue_category"]':
+              value: 'Employee Incident/Injury/First Aid Care'
+          - or
+          - ':input[name="report_issue_category"]':
+              value: 'Visitor Incident/Injury/First Aid Care'
     report_issue_type_violations_safety:
       '#type': select
       '#title': 'What type of park violation or safety issue?'
@@ -152,6 +179,7 @@ elements: |-
       '#options':
         Employee: Employee
         Public: Public
+        'Both Employee and Public': 'Both Employee and Public'
       '#states':
         visible:
           ':input[name="report_issue_category"]':
@@ -208,6 +236,14 @@ elements: |-
         '#required': true
         '#counter_type': character
         '#counter_maximum': 2000
+      report_corrective_action:
+        '#type': textarea
+        '#title': 'Corrective actions taken as a result of this incident'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="report_issue_category"]':
+              value: 'Employee Incident/Injury/First Aid Care'
       report_photo:
         '#type': webform_image_file
         '#title': Photo
@@ -232,10 +268,11 @@ elements: |-
           'Community center': 'Community center'
           'Community garden': 'Community garden'
           'Office or maintenance facility': 'Office or maintenance facility'
+          'Not on PP&R Property. Mark the location on the map below': 'Not on PP&R Property. Mark the location on the map below'
         '#default_value': 'Park or natural area'
       report_location_name:
         '#type': webform_entity_select
-        '#title': 'Location Name'
+        '#title': 'Location name'
         '#description': '<p>Please select the name of the park, community center, or garden.</p>'
         '#description_display': before
         '#select2': true
@@ -243,6 +280,10 @@ elements: |-
           invisible:
             ':input[name="report_location_type"]':
               value: 'Office or maintenance facility'
+          optional:
+            ':input[name="report_location_type"]':
+              value:
+                pattern: 'Office or maintenance facility|Not on PP&R Property. Mark the location on the map below'
         '#format': label
         '#target_type': node
         '#selection_handler': 'default:node'
@@ -252,10 +293,9 @@ elements: |-
           sort:
             field: title
             direction: ASC
-        '#required': true
       report_location_name_text:
         '#type': textfield
-        '#title': 'Location Name'
+        '#title': 'Location name'
         '#states':
           visible:
             ':input[name="report_location_type"]':
@@ -263,7 +303,7 @@ elements: |-
         '#required': true
       report_location:
         '#type': portland_location_picker
-        '#title': 'Location of Issue'
+        '#title': 'Location of issue'
         '#prepopulate': true
         '#location_search__description': 'If you believe it would be worthwhile to capture the exact location, please use the location picker to drop a pin in the approximate location within the park or facility where the incident took place.'
         '#location_details__access': false
@@ -276,7 +316,7 @@ elements: |-
         '#region_id_property_name': Name
       computed_location_address:
         '#type': webform_computed_twig
-        '#title': 'Computed Location Address'
+        '#title': 'Computed location address'
         '#display_on': none
         '#mode': text
         '#template': |
@@ -290,33 +330,37 @@ elements: |-
       contact_name:
         '#type': textfield
         '#title': Name
+        '#autocomplete': name
         '#required': true
       contact_phone:
         '#type': textfield
         '#title': Phone
+        '#autocomplete': tel-national
         '#input_mask': '(999) 999-9999'
         '#required': true
       contact_email:
         '#type': textfield
         '#title': Email
         '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
+        '#autocomplete': email
+        '#required': true
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
     additional_details:
       '#type': webform_section
-      '#title': 'Additional Details'
+      '#title': 'Additional details'
       details_other_steps:
         '#type': checkboxes
         '#title': 'What other steps have you taken?'
         '#options':
-          'I notified my supervisor. THIS IS REQUIRED!': 'I notified my supervisor. THIS IS REQUIRED!'
+          'I notified my supervisor.': 'I notified my supervisor.'
           'I placed a work order for the damage': 'I placed a work order for the damage'
           'I called 911, but no one responded': 'I called 911, but no one responded'
           'I called 911 and police or fire responded': 'I called 911 and police or fire responded'
           'I submitted an online police report': 'I submitted an online police report'
       details_police_info:
         '#type': textfield
-        '#title': 'PPB Case Number / officer information (if 911 responded)'
+        '#title': 'PPB case number / officer information (if 911 responded)'
       details_file_upload:
         '#type': webform_document_file
         '#title': 'Form upload(s)'
@@ -326,9 +370,22 @@ elements: |-
       markup_pre_submit:
         '#type': webform_markup
         '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><ul><li>For guest accidents and employee injuries, additional forms are needed. Please refer to the Red Book.&nbsp;</li><li>For criminal activity, remember to also fill out an online police report.</li></ul><p><strong>Except for specific health/injury information for employees or visitors, all submissions are considered public record.</strong> If you have questions, please reach out to the safety team or a supervisor by phone before submitting.</p></div>'
+      computed_report_recipients:
+        '#type': webform_computed_twig
+        '#title': 'A copy of this incident report will be sent to the following recipients'
+        '#states':
+          visible:
+            ':input[name="contact_name"]':
+              filled: true
+        '#mode': html
+        '#template': |-
+          <p>{{ data.contact_name }}{% if data.report_injury starts with 'No' == false %} and {{ data.report_supervisor_name }}{% endif %}
+          </p>
+        '#whitespace': spaceless
+        '#ajax': true
       support_agent_use_only:
         '#type': portland_support_agent_widget
-        '#title': 'Internal Use Only'
+        '#title': 'Internal use only'
         '#access_create_roles':
           - authenticated
         '#zendesk_request_number__access': false
@@ -340,10 +397,10 @@ elements: |-
       '#title': 'Submit button(s)'
   request_ticket_id:
     '#type': hidden
-    '#title': 'Zendesk Ticket ID'
+    '#title': 'Zendesk ticket ID'
   computed_issue_description:
     '#type': webform_computed_twig
-    '#title': 'Computed Issue Description'
+    '#title': 'Computed issue description'
     '#display_on': none
     '#mode': html
     '#template': |+
@@ -401,8 +458,8 @@ elements: |-
 
       <p><strong>Contact information:</strong><br>
       {{ data.contact_name }}<br>
-      {{ data.contact_phone }}
-      {% if data.contact_email %}<br>{{ data.contact_email }}{% endif %}</p>
+      {{ data.contact_phone }}<br>
+      {{ data.contact_email }}</p>
 
       {% if data.details_other_steps or data.details_police_info or data.details_file_upload|length > 0 %}
         <p><strong>Additional details:</strong><br>
@@ -422,14 +479,14 @@ elements: |-
     '#whitespace': spaceless
   computed_subject:
     '#type': webform_computed_twig
-    '#title': 'Computed Subject'
+    '#title': 'Computed subject'
     '#display_on': none
     '#mode': text
     '#template': 'Park incident: {{ data.report_issue_category }}'
     '#whitespace': spaceless
   computed_tags:
     '#type': webform_computed_twig
-    '#title': 'Computed Tags'
+    '#title': 'Computed tags'
     '#display_on': none
     '#mode': text
     '#template': |-
@@ -545,7 +602,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Submission received'
-  confirmation_message: '<p>Your incident report has been received and will be triaged to get the most appropriate visibility and response. If you provided an email address, please check your email for a copy of your submission.</p><p><strong>Report ID:</strong> [webform_submission:values:request_ticket_id]</p><p>[webform_submission:values:computed_issue_description:html]</p>'
+  confirmation_message: '<p>Your incident report has been received and will be triaged to get the most appropriate visibility and response. Please check your email for a copy of your submission.</p><p><strong>Report ID:</strong> [webform_submission:values:request_ticket_id]</p><p>[webform_submission:values:computed_issue_description:html]</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -632,7 +689,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -662,7 +719,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -682,17 +739,14 @@ handlers:
       ticket_form_id: '24762621756055'
       is_child_incident: ''
       parent_ticket_id_field: ''
-  email:
+  requester_confirmation:
     id: email
-    handler_id: email
+    handler_id: requester_confirmation
     label: 'Email confirmation to requester'
     notes: ''
     status: true
-    conditions:
-      enabled:
-        ':input[name="contact_email"]':
-          filled: true
-    weight: 2
+    conditions: {  }
+    weight: 5
     settings:
       states:
         - completed
@@ -720,6 +774,51 @@ handlers:
       attachments: true
       twig: false
       theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
+  supervisor_notification:
+    id: email
+    handler_id: supervisor_notification
+    label: 'Email to Supervisor'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_injury"]':
+          value:
+            pattern: 'Yes'
+        ':input[name="report_supervisor_email"]':
+          filled: true
+    weight: 4
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:report_supervisor_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: '[webform_submission:values:contact_email:raw]'
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Park incident report - staff injury notification'
+      body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: true
+      twig: false
+      theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
 variants: {  }

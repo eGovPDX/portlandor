@@ -11,80 +11,122 @@ label: 'Policy Approval'
 type: content_moderation
 type_settings:
   states:
+    attorney_review:
+      label: 'City Attorney review (if needed)'
+      weight: -1
+      published: false
+      default_revision: false
     bureau_review:
-      label: 'Bureau review'
-      weight: 2
+      label: 'Bureau review (if needed)'
+      weight: -2
+      published: false
+      default_revision: false
+    city_administrator_review:
+      label: 'City Administrator review (if needed)'
+      weight: 0
       published: false
       default_revision: false
     draft:
       label: Draft
-      weight: 0
+      weight: -4
       published: false
       default_revision: false
     policy_editor_review:
       label: 'Policy editor review'
-      weight: 3
+      weight: 1
       published: false
       default_revision: false
     published:
       label: Published
-      weight: 1
+      weight: -3
       published: true
       default_revision: true
     unpublished:
       label: Unpublished
-      weight: 4
+      weight: 2
       published: false
       default_revision: true
   transitions:
     create_new_draft:
       label: 'Create New Draft'
       from:
+        - attorney_review
         - bureau_review
+        - city_administrator_review
         - draft
         - policy_editor_review
         - published
         - unpublished
       to: draft
-      weight: -3
+      weight: -4
     move_to_bureau_review:
       label: 'Move to bureau review'
       from:
+        - attorney_review
         - bureau_review
+        - city_administrator_review
         - draft
         - policy_editor_review
         - published
       to: bureau_review
+      weight: -3
+    move_to_city_administrator_review:
+      label: 'Move to city administrator review'
+      from:
+        - attorney_review
+        - bureau_review
+        - city_administrator_review
+        - draft
+        - policy_editor_review
+        - published
+      to: city_administrator_review
+      weight: -1
+    move_to_city_attorney_review:
+      label: 'Move to city attorney review'
+      from:
+        - attorney_review
+        - bureau_review
+        - city_administrator_review
+        - draft
+        - policy_editor_review
+        - published
+      to: attorney_review
       weight: -2
     move_to_policy_editor_review:
       label: 'Move to policy editor review'
       from:
+        - attorney_review
         - bureau_review
+        - city_administrator_review
         - draft
         - policy_editor_review
         - published
         - unpublished
       to: policy_editor_review
-      weight: -1
+      weight: 0
     move_to_unpublished:
       label: 'Move to unpublished'
       from:
+        - attorney_review
         - bureau_review
+        - city_administrator_review
         - draft
         - policy_editor_review
         - published
       to: unpublished
-      weight: 1
+      weight: 2
     publish:
       label: Publish
       from:
+        - attorney_review
         - bureau_review
+        - city_administrator_review
         - draft
         - policy_editor_review
         - published
         - unpublished
       to: published
-      weight: 0
+      weight: 1
   entity_types:
     node:
       - policy

@@ -74,13 +74,23 @@ elements: |-
         '#place_name__title': 'Location Notes'
         '#place_name__description': 'Please provide information to <b>help us find this site</b>.'
         '#place_name__states':
+          invisible:
+            ':input[name="report_location[location_region_id]"]':
+              '!value': ''
           required:
             ':input[name="report_location[location_type_park]"]':
               value: 'true'
         '#location_details__title': 'Additional Information'
         '#location_details__description': 'Please provide any additional information we should know about this site.'
+        '#location_details__states':
+          invisible:
+            ':input[name="report_location[location_region_id]"]':
+              '!value': ''
+        '#precision_text__states':
+          invisible:
+            ':input[name="report_location[location_region_id]"]':
+              '!value': ''
         '#location_asset_id__access': false
-        '#location_region_id__access': false
         '#location_type__title': 'On what type of property is the campsite located?'
         '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A{{x}}%2C+%22y%22%3A{{y}}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+3857%7D%7D&f=json'
         '#click_query_property_path': address.Address
@@ -89,6 +99,10 @@ elements: |-
         '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/33/query?where=1%3D1&returnGeometry=true&f=geojson'
         '#out_of_bounds_message': 'You''ve selected a location outside our service area. Please try again, or call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> for assistance.'
         '#disable_place_name_autofill': true
+        '#primary_layer_behavior': informational
+        '#primary_layer_type': region-hidden
+        '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/IRP_Boundary_Layers/MapServer/2/query?where=1%3D1&f=geojson'
+        '#region_id_property_name': odot_type
       markup_private_property_stop:
         '#type': webform_markup
         '#states':
@@ -101,13 +115,23 @@ elements: |-
 
           <p class="mb-0">The City does not have the authority to address camping or related impacts on private property. <a href="/homelessnessimpactreduction/private-property-issues">Learn more about other resources</a>.</p>
           </div>
+      markup_odot_row_stop:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_location[location_region_id]"]':
+              '!value': ''
+        '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">As of July 1, 2025, the City of Portland does not have the authority to address camping or related impacts on Oregon Department of Transportation (ODOT) property.</p><p class="mb-0">&nbsp;</p><p class="mb-0">Please <a href="https://www.oregon.gov/odot/Regions/Pages/Reg-1-camps.aspx"><strong>report this campsite to ODOT online.</strong></a></p></div>'
     container_report_details:
       '#type': webform_section
       '#title': 'Campsite info'
       '#states':
         invisible:
-          ':input[name="report_location_is_private"]':
-            value: 'Yes'
+          - ':input[name="report_location_is_private"]':
+              value: 'Yes'
+          - or
+          - ':input[name="report_location[location_region_id]"]':
+              '!value': ''
       container_campsite:
         '#type': container
         report_blocking_pedestrians:
@@ -142,7 +166,8 @@ elements: |-
           '#prepopulate': true
           '#options':
             tent_structure: 'Tent, tarp, or other shelter'
-            vehicle: 'A vehicle, such as a car, truck, RV, trailer, motorcycle, or boat'
+            vehicle: 'A vehicle, such as a car, truck, RV, trailer, motorcycle, or boat in the right of way'
+            boat: 'A boat or vessel on the water'
           '#options_none': true
           '#options_none_value': trash
           '#options_none_text': 'Trash or debris only'
@@ -157,26 +182,16 @@ elements: |-
                 unchecked: true
               ':input[name="report_visible_items[trash]"]':
                 unchecked: true
-              ':input[name="report_visible_items[none]"]':
+              ':input[name="report_visible_items[boat]"]':
                 unchecked: true
-          '#markup': |-
-            <p><br />
-            <strong>Please select an option above to continue, or call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> so we can assist you further.</strong></p>
-      container_none_of_the_above:
-        '#type': container
+          '#markup': '<p><br><strong>Please select an option above to continue, or call </strong><a href="tel:311"><strong>3-1-1</strong></a><strong> or </strong><a href="tel:+15038234000"><strong>503-823-4000</strong></a><strong> so we can assist you further.</strong></p>'
+      report_need_more_info_text_1:
+        '#type': webform_markup
         '#states':
           visible:
-            ':input[name="report_visible_items[none]"]':
+            ':input[name="report_visible_items[boat]"]':
               checked: true
-        report_need_more_info_text_1:
-          '#type': webform_markup
-          '#markup': |-
-            <div class="alert alert--info next-steps">
-              <h2>
-                Next Steps
-              </h2>
-            <p>Please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">(503) 823-4000</a> to discuss further.&nbsp;We need more information to determine if we can address your concerns.</p>
-            </div>
+        '#markup': '<div class="alert alert--info next-steps" role="status"><h2>Information</h2><p><strong data-start="83" data-end="165">Boat issues are handled by the Oregon Department of State Lands, not the City. </strong>You may continue filling out this form, but you should also <a href="https://www.oregon.gov/dsl/waterways/pages/adv.aspx" target="_blank">report a vessel concern to the Department of State Lands (link opens in new tab or window)</a>.</p></div>'
       container_abandoned_auto:
         '#type': webform_section
         '#title': 'Vehicle info'
@@ -233,7 +248,7 @@ elements: |-
               '#pattern_error': 'License plate must be alphanumerical and maximum 8 characters.'
             photo:
               '#type': webform_image_file
-              '#title': Vehicle photo
+              '#title': 'Vehicle photo'
               '#description': 'Please do not include photos where other people are present and identifiable.'
               '#description_display': before
               '#file_preview': 'medium:image'
@@ -256,9 +271,12 @@ elements: |-
             - or
             - ':input[name="report_visible_items[trash]"]':
                 checked: true
+            - or
+            - ':input[name="report_visible_items[boat]"]':
+                checked: true
         report_photo:
           '#type': webform_image_file
-          '#title': Campsite photos
+          '#title': 'Campsite photos'
           '#multiple': 3
           '#description': 'If appropriate, please include up to 3 photos of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
           '#description_display': before
@@ -276,6 +294,7 @@ elements: |-
           contact_name:
             '#type': textfield
             '#title': Name
+            '#autocomplete': name
             '#states':
               required:
                 ':input[name="report_is_ada"]':
@@ -283,6 +302,7 @@ elements: |-
           contact_phone:
             '#type': textfield
             '#title': Phone
+            '#autocomplete': tel-national
             '#input_mask': '(999) 999-9999'
             '#states':
               visible:
@@ -294,6 +314,7 @@ elements: |-
           contact_email:
             '#type': textfield
             '#title': Email
+            '#autocomplete': email
             '#description': '<p>Enter your email to receive a confirmation, or leave this field blank to remain anonymous.</p>'
             '#prepopulate': true
             '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -309,7 +330,7 @@ elements: |-
             Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.</p>
         support_agent_use_only:
           '#type': portland_support_agent_widget
-          '#title': 'Support Agent Use Only'
+          '#title': 'Support agent use only'
           '#access_create_roles':
             - authenticated
           '#access_update_roles':
@@ -324,15 +345,15 @@ elements: |-
           '#title': 'Submit button(s)'
   report_ticket_id:
     '#type': hidden
-    '#title': 'Report Ticket ID'
+    '#title': 'Report ticket ID'
   report_closest_address:
     '#type': hidden
-    '#title': 'Closest Address for AbAutos'
+    '#title': 'Closest address for AbAutos'
     '#attributes':
       id: report_closest_address
   computed_property_type:
     '#type': webform_computed_twig
-    '#title': 'Computed Property Type'
+    '#title': 'Computed property type'
     '#display_on': none
     '#mode': text
     '#template': |-
@@ -362,7 +383,7 @@ elements: |-
       {% endif %}
   computed_confirmation:
     '#type': webform_computed_twig
-    '#title': 'Computed Confirmation'
+    '#title': 'Computed confirmation'
     '#display_on': none
     '#mode': html
     '#template': |-
@@ -419,7 +440,7 @@ elements: |-
         {% endfor %}
       {% endif %}
     '#ajax': true
-css: "div.form-item-report-vehicle .webform-multiple-table table {\r\n    width: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:hover,\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n    position: relative;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table td.webform-multiple-table--operations {\r\n    position: absolute;\r\n    top: 0.25rem;\r\n    right: 0;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
+css: "path.leaflet-interactive {\r\n    cursor: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table table {\r\n    width: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:hover,\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n    position: relative;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table td.webform-multiple-table--operations {\r\n    position: absolute;\r\n    top: 0.25rem;\r\n    right: 0;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
 javascript: ''
 settings:
   ajax: false
@@ -640,6 +661,7 @@ handlers:
       custom_fields: ''
       ticket_id_field: ''
       ticket_form_id: ''
+      skip_attachments: false
   submit_to_zendesk_irp:
     id: zendesk
     handler_id: submit_to_zendesk_irp
@@ -663,11 +685,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '5873307855767'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_irp_developer_test:
     id: zendesk
     handler_id: submit_to_zendesk_irp_developer_test
@@ -691,11 +716,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_abautos:
     id: zendesk
     handler_id: submit_to_zendesk_abautos
@@ -721,11 +749,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n14510509580823: 'true'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n14510509580823: 'true'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '17751920813847'
       recipient: ''
       ticket_fork_field: report_vehicle
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_abautos_developer_test:
     id: zendesk
     handler_id: submit_to_zendesk_abautos_developer_test
@@ -751,11 +782,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n14510509580823: 'true'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n14510509580823: 'true'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '17751920813847'
       recipient: ''
       ticket_fork_field: report_vehicle
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_park_rangers:
     id: zendesk
     handler_id: submit_to_zendesk_park_rangers
@@ -781,11 +815,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_park_rangers_developer_test:
     id: zendesk
     handler_id: submit_to_zendesk_park_rangers_developer_test
@@ -811,11 +848,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_ada_developer_test:
     id: zendesk
     handler_id: submit_to_zendesk_ada_developer_test
@@ -841,11 +881,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   submit_to_zendesk_ada:
     id: zendesk
     handler_id: submit_to_zendesk_ada
@@ -871,11 +914,14 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:computed_property_type]', 'property_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n8692493739543: '[webform_submission:values:report_ticket_id]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: ''
       ticket_form_id: '12923141466007'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
   send_email_confirmation_to_community_member:
     id: email
     handler_id: send_email_confirmation_to_community_member
@@ -914,6 +960,7 @@ handlers:
       attachments: false
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
 variants: {  }

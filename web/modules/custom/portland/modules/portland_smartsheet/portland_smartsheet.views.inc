@@ -24,10 +24,16 @@ function portland_smartsheet_views_data() {
   $data['smartsheet']['cell'] = [
     'title' => t('Cell Data'),
     'help' => t('Data from a cell in current row of the sheet'),
+    'argument' => [
+      'id' => 'smartsheet_cell',
+    ],
     'field' => [
       'id' => 'smartsheet_cell',
     ],
     'sort' => [
+      'id' => 'smartsheet_cell',
+    ],
+    'filter' => [
       'id' => 'smartsheet_cell',
     ],
   ];

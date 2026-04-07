@@ -25,7 +25,7 @@ categories:
 elements: |-
   section_public_records_statement:
     '#type': webform_section
-    '#title': 'Public Records Statement'
+    '#title': 'Public records statement'
     '#title_display': invisible
     public_records_statement_standard:
       '#type': webform_markup
@@ -48,7 +48,7 @@ elements: |-
       '#required': true
     report_locked:
       '#type': radios
-      '#title': 'Is the e-scooter locked to a bike rack or a municipal sign post? (e.g. STOP sign, No Parking sign, Speed limit sign, etc...)'
+      '#title': 'Is the e-scooter locked to a bike rack or a municipal sign post? (e.g. STOP sign, no parking sign, speed limit sign, etc...)'
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
@@ -112,9 +112,18 @@ elements: |-
             - or
             - ':input[name="report_issue[radios]"]':
                 value: damaged
+      scooter_company_next_steps:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_company"]':
+              value: 'E-scooter company not specified'
+        '#markup': '<div class="webform-alert alert alert--info"><h2>Next Steps</h2><p>If the scooter has an easy to locate ID on it, enter that alphanumeric ID below and continue with your report.<br><br>If you are looking to report a BIKETOWN (Lyft) Bicycle, please use their report form: <a href="https://lyft-bikes-scooters.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000807254&amp;bss_market=pdx&amp;return_to=https://biketownpdx.zendesk.com/hc/en-us">Submit a request – Lyft Bikes &amp; Scooters</a>.&nbsp;<br><br>If you need help determining the best place to submit a report or have questions, please contact us at 311 or <a href="mailto:311@portlandoregon.gov">311@portlandoregon.gov</a> for assistance.</p></div>'
       report_asset_id:
         '#type': textfield
         '#title': 'E-scooter ID'
+        '#description': '<p>Example formats: Lime (YFXNSR); BIKETOWN (520-7568)</p>'
+        '#description_display': before
         '#minlength': 5
         '#maxlength': 12
         '#prepopulate': true
@@ -165,14 +174,16 @@ elements: |-
         '#attachment_image_style': webform_report_uploaded_image
       section_contact:
         '#type': webform_section
-        '#title': 'Your Contact Information'
+        '#title': 'Your contact information'
         '#title_display': invisible
         contact_name:
           '#type': textfield
-          '#title': 'Your Name'
+          '#title': 'Your name'
+          '#autocomplete': name
         contact_email:
           '#type': email
-          '#title': 'Your Email'
+          '#title': 'Your email'
+          '#autocomplete': email
           '#description': '<p>The City of Portland and the selected e-scooter company will use your email to confirm your submission and respond if necessary.</p>'
           '#input_mask': ''
           '#required': true
@@ -180,7 +191,7 @@ elements: |-
           '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
         support_agent_use_only:
           '#type': portland_support_agent_widget
-          '#title': 'Support Agent Use Only'
+          '#title': 'Support agent use only'
           '#access_create_roles':
             - authenticated
           '#access_update_roles':
@@ -198,7 +209,7 @@ elements: |-
           '#submit__label': Submit
   company_sla:
     '#type': webform_computed_twig
-    '#title': 'Service Level Expectation (in hours)'
+    '#title': 'Service level expectation (in hours)'
     '#title_display': inline
     '#wrapper_attributes':
       style: 'background-color: #ccc;     padding: 15px;'
@@ -211,6 +222,7 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#display_on': form
     '#mode': text
     '#template': |
       {% set response = 'NA' %}
@@ -265,13 +277,13 @@ elements: |-
     '#hide_empty': true
   computed_urgency:
     '#type': webform_computed_twig
-    '#title': 'Computed Urgency'
+    '#title': 'Computed urgency'
     '#display_on': none
     '#template': "{% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}URGENT {% endif %}"
     '#ajax': true
   computed_urgency_text:
     '#type': webform_computed_twig
-    '#title': 'Computed Urgency Text'
+    '#title': 'Computed urgency text'
     '#display_on': none
     '#template': |-
       {% if data.company_sla == "1.5" %}
@@ -283,21 +295,21 @@ elements: |-
     '#ajax': true
   computed_resolution_url:
     '#type': webform_computed_twig
-    '#title': 'Computed Resolution URL'
-    '#display_on': view
-    '#template': |-
+    '#title': 'Computed resolution URL'
+    '#display_on': none
+    '#template': |
       {% if data.report_issue != "riding on sidewalk" %}
-      {{ webform_token('[site:url]', webform_submission, [], options) }}form/report-e-scooter-resolution?report_issue={{ data.report_issue }}&report_issue_other={{ data.report_issue_other }}&report_company={{ data.report_company }}&report_asset_id={{ data.report_asset_id }}&report_ticket_id={{ data.report_ticket_id }}&company_sla={{ data.company_sla }}&report_blocking={{ data.report_blocking}}&report_private_property={{ data.report_private_property }}&original_submission_key={{ webform_token('[webform_submission:uuid]', webform_submission, [], options) }}
+      {{ webform_token('[site:url]', webform_submission, [], options) }}form/report-e-scooter-resolution?report_issue={{ data.report_issue }}&report_issue_other={{ data.report_issue_other }}&report_company={{ data.report_company }}&report_asset_id={{ data.report_asset_id }}&report_ticket_id={{ data.report_ticket_id }}&company_sla={{ data.company_sla }}&report_blocking={{ data.report_blocking}}&report_private_property={{ data.report_private_property }}&report_urgency={{ (data.computed_urgency ? data.computed_urgency ~ "-- " : "") ~ (data.company_sla and data.company_sla != "NA" ? "SLA is " ~ data.company_sla ~ " hours" : "NA")}}&original_submission_key={{ webform_token('[webform_submission:uuid]', webform_submission, [], options) }}&location_address={{ data.report_location.location_address|url_encode }}&location_lat={{ data.report_location.location_lat }}&location_lon={{ data.report_location.location_lon }}&location_details={{ data.report_location.location_details|url_encode }}&place_name={{ data.report_location.place_name|url_encode }}
       {% else %}
       #
       {% endif %}
     '#whitespace': trim
   report_ticket_id:
     '#type': hidden
-    '#title': 'Support Ticket ID'
+    '#title': 'Support ticket ID'
   computed_recipient:
     '#type': webform_computed_twig
-    '#title': 'Computed Recipient'
+    '#title': 'Computed recipient'
     '#admin_notes': '<p>If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.</p>'
     '#display_on': view
     '#template': |-
@@ -608,7 +620,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
+      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -618,6 +630,7 @@ handlers:
       attachments: true
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   email_notification_company_no_resolution:
@@ -652,7 +665,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p>This is a Riding on Sidewalk report. No resolution is necessary.</p>\r\n</div>"
+      body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p>This is a Riding on Sidewalk report. No resolution is necessary.</p>\r\n</div>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -662,6 +675,7 @@ handlers:
       attachments: true
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   email_notification_no_company_selected:
@@ -696,7 +710,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p style="border:solid 1px red;padding:5px;"><strong>NOTE: The e-scooter company was not specified in this report. Please check your records to determine whether you have an e-scooter deployed at this location and respond accordingly. If not, you may disregard this report.</strong></p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
+      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p style="border:solid 1px red;padding:5px;"><strong>NOTE: The e-scooter company was not specified in this report. Please check your records to determine whether you have an e-scooter deployed at this location and respond accordingly. If not, you may disregard this report.</strong></p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -706,6 +720,7 @@ handlers:
       attachments: true
       twig: false
       theme_name: ''
+      langcode: ''
       parameters: {  }
       debug: false
   create_zendesk_ticket_developer_test:

@@ -32,6 +32,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
     if (!$entity->isLatestRevision()) {
       return $this->t("Revision processed");
     }
+    /** @var RevisionableStorageInterface $media_storage */
     $media_storage = \Drupal::entityTypeManager()->getStorage('media');
     $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
     $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
@@ -60,7 +61,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
+  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE)
   {
     if ($account == null) return false;
     return $account->hasPermission('administer media');
