@@ -243,6 +243,7 @@ elements: |-
       '#title': Location
       '#title_display': none
       '#location_search__title': Location
+      '#location_lat__required': true
       '#place_name__access': false
       '#location_details__access': false
       '#require_boundary': true
@@ -251,8 +252,11 @@ elements: |-
       '#type': container
       '#states':
         visible:
-          ':input[name="report_vegetation_source"]':
-            value: 'Private property'
+          - ':input[name="report_row_tree_source"]':
+              value: 'Private property or parking strip'
+          - or
+          - ':input[name="report_bike_lane_tree_source"]':
+              value: 'Private property or parking strip'
       report_location_private_details:
         '#type': textarea
         '#title': 'Additional private property location details'
@@ -286,8 +290,10 @@ elements: |-
       '#type': container
       '#states':
         visible:
-          ':input[name="report_vegetation_source"]':
-            '!value': 'Private property'
+          ':input[name="report_row_tree_source"]':
+            '!value': 'Private property or parking strip'
+          ':input[name="report_bike_lane_tree_source"]':
+            '!value': 'Private property or parking strip'
       report_location_additional_details:
         '#type': textarea
         '#title': 'Additional Location Details'
@@ -312,14 +318,35 @@ elements: |-
       contact_name:
         '#type': textfield
         '#title': Name
+        '#states':
+          required:
+            - ':input[name="report_row_tree_source"]':
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_bike_lane_tree_source"]':
+                value: 'Private property or parking strip'
       contact_phone:
         '#type': textfield
         '#title': Phone
         '#input_mask': '(999) 999-9999'
+        '#states':
+          required:
+            - ':input[name="report_row_tree_source"]':
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_bike_lane_tree_source"]':
+                value: 'Private property or parking strip'
       contact_email:
         '#type': textfield
         '#title': Email
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#states':
+          required:
+            - ':input[name="report_row_tree_source"]':
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_bike_lane_tree_source"]':
+                value: 'Private property or parking strip'
       contact_address:
         '#type': portland_address_verifier
         '#title': Address
@@ -343,6 +370,79 @@ elements: |-
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
+  computed_routing:
+    '#type': webform_computed_twig
+    '#title': 'Computed Routing'
+    '#display_on': none
+    '#mode': text
+    '#template': |+
+      {% if data.reported_issue is not iterable %}
+
+        {# code enforcement ------------------ #}
+        {% if (
+               (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+                and data.report_tree_causing_issues == "Growing into the sidewalk, public pathway, or other travel lane"
+                and data.report_row_tree_source == "Private property or parking strip")
+                  or
+               (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+                and data.report_tree_causing_issues == "Growing into a bike lane"
+                and data.report_bike_lane_tree_source == "Private property or parking strip")
+           ) %}
+          codec@portlandoregon.gov
+          
+        {# bike lane maintenance ------------------ #}
+        {% elseif (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+                    and data.report_tree_causing_issues == "Growing into a bike lane"
+                    and data.report_bike_lane_tree_source == "Median, traffic island, or other parts of the street or right-of-way") %}
+          PBOT MO: Bike Lane Maintenance
+
+        {# sidewalks ------------------ #}
+        {% elseif (data.report_issue == "Sidewalk lifting or cracking because of tree roots") %}
+          PBOT sidewalks team TBD
+
+        {# default ------------------ #}
+        {% else %}
+          PP&R: UF Permitting
+        {% endif %}
+
+      {% endif %}
+
+    '#whitespace': trim
+    '#ajax': true
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags'
+    '#display_on': none
+    '#mode': text
+    '#template': |
+      {% if data.reported_issue is not iterable %}
+
+        {% if (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+               and data.report_tree_causing_issues == "Growing into the sidewalk, public pathway, or other travel lane"
+               and (data.report_row_tree_source == "Median, traffic island, or other parts of the street or right-of-way"
+                    or data.report_row_tree_source == "Park or natural area"
+                    or data.report_row_tree_source == "Something else")) %}
+          311_row_triage
+        {% elseif (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+               and data.report_tree_causing_issues == "Growing into a bike lane"
+               and (data.report_bike_lane_tree_source == "Park or natural area"
+                    or data.report_bike_lane_tree_source == "Something else")) %}
+          311_row_triage
+        {% endif %}
+
+      {% endif %}
+    '#whitespace': trim
+    '#ajax': true
+  computed_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': 'Tree issue reported: {{ data.report_issue is not iterable ? data.report_issue : "" }}'
+    '#whitespace': trim
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket ID'
 css: "#report_tree_details_table table {\r\n  border-collapse: separate;\r\n  border-spacing: 0 5px;\r\n  width: auto;\r\n}\r\n#report_tree_details_table td { padding: 0 20px 0 0; }\r\n#report_tree_details_table table tr { margin-bottom: 5px; }\r\n#report_tree_details_table table th {\r\n  background-color: none;\r\n}\r\n"
 javascript: ''
 settings:
@@ -531,23 +631,21 @@ handlers:
     id: zendesk
     handler_id: zendesk_new_request
     label: 'Create ticket in PP&R: Urban Forestry group'
-    notes: 'Enabled if Computed Email is empty, Computed Tom Jensen Triage is empty, and Test Submission is unchecked.'
+    notes: 'Enabled if routing is "PP&R: UF Permitting"'
     status: true
     conditions:
       enabled:
-        ':input[name="computed_email_recipient"]':
-          empty: true
-        ':input[name="computed_triage_message"]':
-          empty: true
+        ':input[name="computed_routing"]':
+          value: 'PP&R: UF Permitting'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -558,60 +656,69 @@ handlers:
       custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
-      ticket_form_id: '25484007225111'
-      is_child_incident: ''
+      ticket_form_id: '29567427098391'
+      is_child_incident: 0
       parent_ticket_id_field: ''
-      excluded_elements: {  }
-  test_zendesk_new_request:
-    id: zendesk
-    handler_id: test_zendesk_new_request
-    label: 'TEST: Create ticket in PP&R: Urban Forestry group'
-    notes: 'Enabled if Test Submission is checked, regardless of computed recipient.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 1
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
-      ticket_id_field: report_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '25484007225111'
-      is_child_incident: ''
-      parent_ticket_id_field: ''
-      excluded_elements: {  }
+      excluded_elements:
+        report_location__precision_text: report_location__precision_text
+        report_location__location_map: report_location__location_map
+        report_location__suggestions_modal: report_location__suggestions_modal
+        report_location__status_modal: report_location__status_modal
+        report_location__location_types: report_location__location_types
+        report_location__location_type_taxlot: report_location__location_type_taxlot
+        report_location__location_type_park: report_location__location_type_park
+        report_location__location_type_waterbody: report_location__location_type_waterbody
+        report_location__location_type_trail: report_location__location_type_trail
+        report_location__location_type_stream: report_location__location_type_stream
+        report_location__location_type_street: report_location__location_type_street
+        report_location__location_type_row: report_location__location_type_row
+        report_location__location_x: report_location__location_x
+        report_location__location_y: report_location__location_y
+        report_location__location_asset_id: report_location__location_asset_id
+        report_location__location_region_id: report_location__location_region_id
+        report_location__location_municipality_name: report_location__location_municipality_name
+        report_location__location_zipcode: report_location__location_zipcode
+        contact_address__location_full_address: contact_address__location_full_address
+        contact_address__location_address_street_number: contact_address__location_address_street_number
+        contact_address__location_address_street_quadrant: contact_address__location_address_street_quadrant
+        contact_address__location_address_street_name: contact_address__location_address_street_name
+        contact_address__location_address_street_type: contact_address__location_address_street_type
+        contact_address__unit_number: contact_address__unit_number
+        contact_address__location_jurisdiction: contact_address__location_jurisdiction
+        contact_address__av_suggestions_modal: contact_address__av_suggestions_modal
+        contact_address__status_modal: contact_address__status_modal
+        contact_address__not_found_modal: contact_address__not_found_modal
+        contact_address__location_lat: contact_address__location_lat
+        contact_address__location_lon: contact_address__location_lon
+        contact_address__location_x: contact_address__location_x
+        contact_address__location_y: contact_address__location_y
+        contact_address__location_taxlot_id: contact_address__location_taxlot_id
+        contact_address__location_is_unincorporated: contact_address__location_is_unincorporated
+        contact_address__location_address_label: contact_address__location_address_label
+        contact_address__location_capture_field: contact_address__location_capture_field
+        contact_address__location_data: contact_address__location_data
+        support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
+        support_agent_use_only__test_submission: support_agent_use_only__test_submission
+        computed_routing: computed_routing
+        computed_tags: computed_tags
   email:
     id: email
     handler_id: email
-    label: 'Email to computed recipient'
-    notes: 'Enabled if Computed Recipient is filled and Test Submission is unchecked'
+    label: 'Email to codec@portlandoregon.gov'
+    notes: 'Enabled if Computed Routing is codec@portlandoregon.gov'
     status: true
     conditions:
       enabled:
-        ':input[name="computed_email_recipient"]':
-          filled: true
-        ':input[name="computed_triage_message"]':
-          empty: true
+        ':input[name="computed_routing"]':
+          value: codec@portlandoregon.gov
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 2
+    weight: -48
     settings:
       states:
         - completed
-      to_mail: '[webform_submission:values:computed_email_recipient]'
+      to_mail: codec@portlandoregon.gov
       to_options: {  }
       bcc_mail: ''
       bcc_options: {  }
@@ -625,7 +732,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_subject]'
-      body: '<p>[webform_submission:values:computed_description:html]</p>'
+      body: '<p>[webform_submission:values:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -643,14 +750,14 @@ handlers:
     handler_id: create_ticket_for_john_dutt_triage
     label: 'Create ticket for John Dutt triage'
     notes: 'Enabled if Computed Email is empty, Computed Tom Jensen Triage is Yes, and Test Submission is unchecked. Creates ticket in 311 group and assigns to John Dutt. Additional update handler fires later to add triage note.'
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="computed_triage_message"]':
           filled: true
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 3
+    weight: -47
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -676,12 +783,12 @@ handlers:
     handler_id: update_ticket_for_triage
     label: 'Update ticket for triage'
     notes: 'Enabled if Computed Tom Jensen Triage is Yes. Updates newly created ticket with triage instructions.'
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="computed_triage_message"]':
           filled: true
-    weight: 4
+    weight: -46
     settings:
       comment: "<h3>This ticket requires additional triage</h3>\r\n<p><strong>Attention:</strong> This ticket came from the Report a Tree Code Violation form. It may need to be forwarded to Tom Jensen but requires additional triage first.</p>\r\n"
       comment_private: 1
@@ -696,4 +803,77 @@ handlers:
       ticket_id_field: report_ticket_id
       ticket_form_id: '25484007225111'
       skip_attachments: false
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Create ticket in PP&R: Urban Forestry group'
+    notes: 'Enabled if "Test submission" is checked'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '29567427098391'
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_location__precision_text: report_location__precision_text
+        report_location__location_map: report_location__location_map
+        report_location__suggestions_modal: report_location__suggestions_modal
+        report_location__status_modal: report_location__status_modal
+        report_location__location_types: report_location__location_types
+        report_location__location_type_taxlot: report_location__location_type_taxlot
+        report_location__location_type_park: report_location__location_type_park
+        report_location__location_type_waterbody: report_location__location_type_waterbody
+        report_location__location_type_trail: report_location__location_type_trail
+        report_location__location_type_stream: report_location__location_type_stream
+        report_location__location_type_street: report_location__location_type_street
+        report_location__location_type_row: report_location__location_type_row
+        report_location__location_x: report_location__location_x
+        report_location__location_y: report_location__location_y
+        report_location__location_asset_id: report_location__location_asset_id
+        report_location__location_region_id: report_location__location_region_id
+        report_location__location_municipality_name: report_location__location_municipality_name
+        report_location__location_zipcode: report_location__location_zipcode
+        contact_address__location_full_address: contact_address__location_full_address
+        contact_address__location_address_street_number: contact_address__location_address_street_number
+        contact_address__location_address_street_quadrant: contact_address__location_address_street_quadrant
+        contact_address__location_address_street_name: contact_address__location_address_street_name
+        contact_address__location_address_street_type: contact_address__location_address_street_type
+        contact_address__unit_number: contact_address__unit_number
+        contact_address__location_jurisdiction: contact_address__location_jurisdiction
+        contact_address__av_suggestions_modal: contact_address__av_suggestions_modal
+        contact_address__status_modal: contact_address__status_modal
+        contact_address__not_found_modal: contact_address__not_found_modal
+        contact_address__location_lat: contact_address__location_lat
+        contact_address__location_lon: contact_address__location_lon
+        contact_address__location_x: contact_address__location_x
+        contact_address__location_y: contact_address__location_y
+        contact_address__location_taxlot_id: contact_address__location_taxlot_id
+        contact_address__location_is_unincorporated: contact_address__location_is_unincorporated
+        contact_address__location_address_label: contact_address__location_address_label
+        contact_address__location_capture_field: contact_address__location_capture_field
+        contact_address__location_data: contact_address__location_data
+        support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
+        support_agent_use_only__test_submission: support_agent_use_only__test_submission
+        computed_routing: computed_routing
+        computed_tags: computed_tags
 variants: {  }
