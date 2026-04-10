@@ -19,7 +19,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   $attributes_enabled_by_bundle = [
     'document' => ['data-alt-link-text'],
     'iframe_embed' => ['data-align', 'data-aspect-ratio'],
-    'image' => ['data-align', 'data-caption'],
+    'image' => ['data-align', 'data-caption', 'data-is-decorative'],
     'map' => ['data-align', 'data-caption'],
     'video' => ['data-align', 'data-caption', 'data-start-cue'],
     'content_fragment' => [],
@@ -82,6 +82,20 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       $form['attributes']['data-align']['#options'][$alignment['id']]
         = "{$alignment['name']}<br><img src=\"/themes/custom/cloudy/images/icons/embed-alignment/{$alignment['icon']}\" />";
     }
+  }
+
+  if (in_array('data-is-decorative', $attributes_enabled)) {
+    $form['attributes']['data-is-decorative'] = [
+      '#type' => 'checkbox',
+      '#title' => t('This is a decorative image'),
+      '#weight' => 4,
+      '#description' => t('Marks image as decorative for screen readers and other assistive technology.<br>Check this box if the image is only used for ambiance or repeats text that is already nearby on the page.<br>See the <a href=":alt_decision">WAI alt decision tree</a> and <a href=":decorative_images">Decorative Images guide</a> for more info.', [
+        ':alt_decision' => 'https://www.w3.org/WAI/tutorials/images/decision-tree',
+        ':decorative_images' => 'https://www.w3.org/WAI/tutorials/images/decorative',
+      ]),
+      '#return_value' => "true",
+      '#default_value' => $entity_element['data-is-decorative'] ?? false,
+    ];
   }
 
   if (in_array('data-start-cue', $attributes_enabled)) {
