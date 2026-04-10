@@ -1,45 +1,47 @@
 Drupal.behaviors.liveRegion = {
   attach(context) {
-    // What classes count as "visible messages"? Editors just assign these.
-    const MESSAGE_CLASS = "form-alert"; // Change or make a list if needed
-
-    // Minimal visibility check for incremental debugging.
-    function isVisible(elem) {
-      return window.getComputedStyle(elem).display !== "none";
-    }
-
-    // Main function: scan for visible alerts, copy the newest/loudest to aria-live
-    function updateLiveRegion() {
-      const messages = Array.from(document.querySelectorAll("." + MESSAGE_CLASS))
-        .filter(isVisible)
-        .map(e => e.textContent.trim())
-        .filter(t => t.length);
-      // If there are visible messages, announce the last-most (you can change to first-most, or severity-based selection)
+    once("liveRegionVisibleLog", "body", context).forEach(() => {
       const liveRegion = document.getElementById("sr-live-message");
-      if (liveRegion) {
-        liveRegion.textContent = messages.length > 0 ? messages[messages.length - 1] : "";
+
+      if (!liveRegion) {
+        return;
       }
-    }
 
-    // Use once() to avoid attaching multiple times on AJAX updates
-    once("liveRegion", "body", context).forEach(() => {
-      // Set up a MutationObserver on the form (or document, if dynamic changes can happen anywhere)
-      const targetNode = document;
-      const observer = new MutationObserver(updateLiveRegion);
+      const alerts = document.querySelectorAll(".form-alert");
 
-      observer.observe(targetNode, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        characterData: true
+      alerts.forEach((alert) => {
+        const wrapper = alert.closest(".js-webform-states-hidden.js-form-wrapper");
+        if (!wrapper) {
+          return;
+        }
+
+        let wasVisible = isVisible(wrapper);
+
+        function isVisible(elem) {
+          const style = window.getComputedStyle(elem);
+          return style.display !== "none" && elem.getClientRects().length > 0;
+        }
+
+        function checkVisibility() {
+          const nowVisible = isVisible(wrapper);
+
+          if (nowVisible && !wasVisible) {
+            liveRegion.textContent = "Alert: " + (alert.textContent || "New message");
+            console.log("Alert visible - live region updated");
+          }
+
+          wasVisible = nowVisible;
+        }
+
+        const observer = new MutationObserver(checkVisibility);
+
+        observer.observe(wrapper, {
+          attributes: true,
+          attributeFilter: ["style", "class"],
+        });
+
+        checkVisibility();
       });
-
-      // Initial run
-      updateLiveRegion();
-
-      // Optional: if some messages are triggered by AJAX or other means, you may want to re-run on page interaction:
-      document.addEventListener("change", updateLiveRegion, true); // For selects, radios, etc.
-      document.addEventListener("input", updateLiveRegion, true); // For text fields
     });
   },
 };
