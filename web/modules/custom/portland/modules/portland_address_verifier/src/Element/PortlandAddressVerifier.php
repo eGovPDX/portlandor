@@ -53,7 +53,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Street Address'),
       '#id' => 'location_address',
-      '#autocomplete' => 'address-line1',
+      '#attributes' => ['autocomplete' => 'address-line1'],
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -91,7 +91,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
       '#id' => 'unit_number',
-      '#attributes' => ['autocomplete' => 'off'],
+      '#attributes' => ['autocomplete' => 'address-line2'],
       '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -101,7 +101,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('City'),
       '#id' => 'location_city',
-      '#autocomplete' => 'address-level2',
+      '#attributes' => ['autocomplete' => 'address-level2'],
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['webform-city', 'mb-0'],
@@ -113,7 +113,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#options' => $state_codes,
       '#default_value' => 'OR',
       '#id' => 'location_state',
-      '#autocomplete' => 'address-level1',
+      '#attributes' => ['autocomplete' => 'address-level1'],
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
     ];
@@ -121,9 +121,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('ZIP Code'),
       '#id' => 'location_zip',
-      '#autocomplete' => 'postal-code',
+      '#attributes' => ['autocomplete' => 'postal-code', 'class' => ['webform-zip']],
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
-      '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
     ];
     $element['location_jurisdiction'] = [
