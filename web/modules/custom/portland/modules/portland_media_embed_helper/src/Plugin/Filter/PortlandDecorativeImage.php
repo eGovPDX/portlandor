@@ -24,7 +24,7 @@ class PortlandDecorativeImage extends FilterBase {
   public function process($text, $langcode) {
     $result = new FilterProcessResult($text);
 
-    if (str_contains($text, 'data-alt-link-text')) {
+    if (str_contains($text, 'data-is-decorative')) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
       foreach ($xpath->query('//div[@data-is-decorative]//img') as $node) {
