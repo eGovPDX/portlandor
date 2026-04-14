@@ -598,10 +598,15 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
     var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
+        title: 'Address not found',
+        dialogClass: 'address-verifier-dialog',
+        classes: {
+            'ui-dialog': 'address-verifier-dialog'
+        },
         width: '600px',
         buttons: [{
             text: "Okay",
-            class: 'btn-default',
+            class: 'button button-primary',
             click: function () {
                 self.$notFoundModal.dialog('close');
                 // if verification is not required, set the status to "Forced"
@@ -621,10 +626,15 @@ AddressVerifierView.prototype._showOutOfBoundsErrorModal = function (address) {
     }
     this.$notFoundModal.html(`<p><strong>${this.settings.out_of_bounds_message}</strong></p><p>${address}</p>`);
     Drupal.dialog(this.$notFoundModal, {
+        title: 'Address verification error',
+        dialogClass: 'address-verifier-dialog',
+        classes: {
+            'ui-dialog': 'address-verifier-dialog'
+        },
         width: '600px',
         buttons: [{
             text: "Okay",
-            class: 'btn-default',
+            class: 'button button-primary',
             click: function () {
                 self.$notFoundModal.dialog('close');
             }
@@ -640,10 +650,15 @@ AddressVerifierView.prototype._showStatusModal = function (message, buttonText =
     }
     this.$statusModal.html('<p class="status-message mb-0">' + message + '</p>');
     Drupal.dialog(this.$statusModal, {
+        title: 'Address verification',
+        dialogClass: 'address-verifier-dialog',
+        classes: {
+            'ui-dialog': 'address-verifier-dialog'
+        },
         width: '600px',
         buttons: [{
             text: buttonText,
-            class: 'btn-primary',
+            class: 'button button-primary',
             click: function () {
                 self.$statusModal.dialog('close');
             }
