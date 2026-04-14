@@ -4,9 +4,9 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.settings = settings;
     this.$element = element;
     this.$input = element.find('[name$="[location_address]"]');
-    this.$suggestModal = element.find('[id$="-av-suggestions-modal"]');
-    this.$statusModal = element.find('[id$="-status-modal"]');
-    this.$notFoundModal = element.find('[id$="-not-found-modal"]');
+    this.$suggestModal = element.find('[id$="--av-suggestions-modal"]').first();
+    this.$statusModal = element.find('[id$="--status-modal"]').first();
+    this.$notFoundModal = element.find('[id$="--not-found-modal"]').first();
     this.$verificationStatus = element.find('[name$="[location_verification_status]"]');
     this.isVerified = false;
     this._serverError = false;
@@ -592,6 +592,9 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
+    if (this._isDialogOpen(this.$notFoundModal)) {
+        return;
+    }
     var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
@@ -613,7 +616,9 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
 
 AddressVerifierView.prototype._showOutOfBoundsErrorModal = function (address) {
     var self = this;
-    var inputVal = self.$input.val().trim();
+    if (this._isDialogOpen(this.$notFoundModal)) {
+        return;
+    }
     this.$notFoundModal.html(`<p><strong>${this.settings.out_of_bounds_message}</strong></p><p>${address}</p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
@@ -630,6 +635,9 @@ AddressVerifierView.prototype._showOutOfBoundsErrorModal = function (address) {
 
 AddressVerifierView.prototype._showStatusModal = function (message, buttonText = "Close") {
     var self = this;
+    if (this._isDialogOpen(this.$statusModal)) {
+        return;
+    }
     this.$statusModal.html('<p class="status-message mb-0">' + message + '</p>');
     Drupal.dialog(this.$statusModal, {
         width: '600px',
@@ -642,6 +650,18 @@ AddressVerifierView.prototype._showStatusModal = function (message, buttonText =
         }]
     }).showModal();
     this.$statusModal.removeClass('visually-hidden');
+}
+
+AddressVerifierView.prototype._isDialogOpen = function ($dialogElement) {
+    if (!$dialogElement || !$dialogElement.length) {
+        return false;
+    }
+
+    try {
+        return $dialogElement.hasClass('ui-dialog-content') && $dialogElement.dialog('isOpen');
+    } catch (e) {
+        return false;
+    }
 }
 
 AddressVerifierView.prototype.testIsMatch = function ($element, item) {
