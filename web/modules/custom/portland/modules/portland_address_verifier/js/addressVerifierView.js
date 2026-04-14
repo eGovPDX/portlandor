@@ -65,8 +65,8 @@ AddressVerifierView.prototype._handlePostback = function () {
 
     // if address fields are populated on postback, automatically activate verification action
     const $locationAddress = this.$element.find('[name$="[location_address]"]');
-    const $locationState = this.$element.find('[name$="[location_city]"]');
-    const $locationCity = this.$element.find('[name$="[location_state]"]');
+    const $locationCity = this.$element.find('[name$="[location_city]"]');
+    const $locationState = this.$element.find('[name$="[location_state]"]');
     const $locationZip = this.$element.find('[name$="[location_zip]"]');
 
     if ($locationAddress.val() && $locationCity.val() && $locationState.val() && $locationZip.val()) {
@@ -411,7 +411,6 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('.invalid-feedback').addClass('d-none');
 
     // hide validation message
-    view.$element.find('[name$="[location_address_label_markup]"]').removeClass('d-none');
     view.$element.find('.error').removeClass('error');
 
     if (view.settings.secondary_queries) {
@@ -596,7 +595,7 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
         return;
     }
     var remedyMessage = this.settings.verification_required ? this.settings.not_verified_remedy_required : this.settings.not_verified_remedy;
-    this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p></p>`);
+    this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${remedyMessage}</p>`);
     Drupal.dialog(this.$notFoundModal, {
         title: 'Address not found',
         dialogClass: 'address-verifier-dialog',
@@ -606,7 +605,7 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
         width: '600px',
         buttons: [{
             text: "Okay",
-            class: 'button button-primary',
+            class: 'button button--primary',
             click: function () {
                 self.$notFoundModal.dialog('close');
                 // if verification is not required, set the status to "Forced"
@@ -634,7 +633,7 @@ AddressVerifierView.prototype._showOutOfBoundsErrorModal = function (address) {
         width: '600px',
         buttons: [{
             text: "Okay",
-            class: 'button button-primary',
+            class: 'button button--primary',
             click: function () {
                 self.$notFoundModal.dialog('close');
             }
@@ -658,7 +657,7 @@ AddressVerifierView.prototype._showStatusModal = function (message, buttonText =
         width: '600px',
         buttons: [{
             text: buttonText,
-            class: 'button button-primary',
+            class: 'button button--primary',
             click: function () {
                 self.$statusModal.dialog('close');
             }
