@@ -103,7 +103,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
     $key = isset($element['#webform_key']) ? $element['#webform_key'] : "";

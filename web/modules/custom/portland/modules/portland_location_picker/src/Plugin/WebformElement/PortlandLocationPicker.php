@@ -149,7 +149,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
     $element_id = "report_location";

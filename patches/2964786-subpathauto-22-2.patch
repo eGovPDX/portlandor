@@ -38,7 +38,7 @@ index 78e7898..fc6a31a 100644
        ->set('redirect_support', $values['redirect_support'])
        ->save();
 diff --git a/src/PathProcessor.php b/src/PathProcessor.php
-index f0fd10b..d64468e 100644
+index f0fd10b..69a1ab0 100644
 --- a/src/PathProcessor.php
 +++ b/src/PathProcessor.php
 @@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
@@ -87,7 +87,7 @@ index f0fd10b..d64468e 100644
     *   The module handler service.
     */
 -  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, ?ModuleHandlerInterface $module_handler = NULL) {
-+  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, PathMatcherInterface $path_matcher, ModuleHandlerInterface $module_handler = NULL) {
++  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, PathMatcherInterface $path_matcher, ?ModuleHandlerInterface $module_handler = NULL) {
      $this->pathProcessor = $path_processor;
      $this->languageManager = $language_manager;
      $this->configFactory = $config_factory;
@@ -110,12 +110,10 @@ index f0fd10b..d64468e 100644
      $request_path = $this->getPath($request->getPathInfo());
  
      // The path won't be processed if the path has been already modified by
-@@ -155,7 +180,11 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
-   /**
+@@ -156,6 +181,10 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
     * {@inheritdoc}
     */
--  public function processOutbound($path, &$options = [], ?Request $request = NULL, ?BubbleableMetadata $bubbleableMetadata = NULL) {
-+  public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleableMetadata = NULL) {
+   public function processOutbound($path, &$options = [], ?Request $request = NULL, ?BubbleableMetadata $bubbleableMetadata = NULL) {
 +    // We don't process denylisted paths.
 +    if (!empty($this->denylist) && $this->pathMatcher->matchPath($path, $this->denylist)) {
 +      return $path;

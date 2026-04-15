@@ -24,7 +24,7 @@ class ParkDestinationPlugin extends EntityContentBase {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration = NULL) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition, ?MigrationInterface $migration = NULL) {
     return parent::create($container, $configuration, 'entity:' . static::$entityType, $plugin_definition, $migration);
   }
 
