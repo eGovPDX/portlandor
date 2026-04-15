@@ -1,0 +1,1505 @@
+From 5adf6691762acb89b0dec4998d297f6d0cf5fde8 Mon Sep 17 00:00:00 2001
+From: codebymikey <codebymikey@3573206.no-reply.drupal.org>
+Date: Thu, 10 Aug 2023 13:28:17 +0100
+Subject: [PATCH 1/8] Issue #2937191 by pfrenssen, idebr, MathieuSpil, jefuri,
+ spelcheck: Render using theme input and select instead of lists with links
+ for checkboxes and dropdown
+
+---
+ facets.module                                 |   6 +
+ js/checkbox-widget.js                         |  82 +++------
+ js/dropdown-widget.js                         |  93 +---------
+ .../facets/url_processor/QueryString.php      |   2 +
+ src/Plugin/facets/widget/CheckboxWidget.php   |  72 +++++++-
+ src/Plugin/facets/widget/DropdownWidget.php   | 161 +++++++++++++++++-
+ templates/facets-item-list.html.twig          |   4 -
+ .../facets-result-item--checkbox.html.twig    |  22 +++
+ tests/src/Functional/TestHelperTrait.php      |  93 ++++++++++
+ .../src/Functional/WidgetIntegrationTest.php  |   8 +-
+ .../src/FunctionalJavascript/WidgetJSTest.php |  33 ++--
+ .../Unit/Plugin/widget/ArrayWidgetTest.php    |   8 +-
+ .../Unit/Plugin/widget/CheckboxWidgetTest.php |  41 ++++-
+ .../Unit/Plugin/widget/DropdownWidgetTest.php |  57 +++++--
+ .../src/Unit/Plugin/widget/WidgetTestBase.php |  13 +-
+ 15 files changed, 487 insertions(+), 208 deletions(-)
+ create mode 100644 templates/facets-result-item--checkbox.html.twig
+
+diff --git a/facets.module b/facets.module
+index 4e73c52..5d29179 100644
+--- a/facets.module
++++ b/facets.module
+@@ -56,6 +56,12 @@ function facets_theme($existing, $type, $theme, $path) {
+         'is_active' => FALSE,
+       ],
+     ],
++    // Normally theme suggestion templates are only picked up when they are in
++    // themes. We explicitly define theme suggestions here so that the facet
++    // result item templates in ./templates are picked up.
++    'facets_result_item__checkbox' => [
++      'base hook' => 'facets_result_item',
++    ],
+     'facets_item_list' => [
+       'variables' => [
+         'facet' => NULL,
+diff --git a/js/checkbox-widget.js b/js/checkbox-widget.js
+index 85c5c9a..476f2af 100644
+--- a/js/checkbox-widget.js
++++ b/js/checkbox-widget.js
+@@ -1,6 +1,6 @@
+ /**
+  * @file
+- * Transforms links into checkboxes.
++ * Navigate to the correct url when a checkbox changes.
+  */
+ 
+ (function ($, Drupal, once) {
+@@ -10,7 +10,9 @@
+   Drupal.facets = Drupal.facets || {};
+   Drupal.behaviors.facetsCheckboxWidget = {
+     attach: function (context) {
+-      Drupal.facets.makeCheckboxes(context);
++      // Find all checkbox facet results and add an event listener.
++      var $checkboxes = $(once('facets-checkbox-transform', '.js-facets-checkbox-links input[type="checkbox"]', context));
++      $checkboxes.each(Drupal.facets.addCheckboxChangeListener);
+     }
+   };
+ 
+@@ -28,67 +30,15 @@
+   };
+ 
+   /**
+-   * Turns all facet links into checkboxes.
++   * Add event listener to the change event of the checkboxes to navigate to the correct url.
+    */
+-  Drupal.facets.makeCheckboxes = function (context) {
+-    // Find all checkbox facet links and give them a checkbox.
+-    var $checkboxWidgets = $(once('facets-checkbox-transform', '.js-facets-checkbox-links', context));
+-
+-    if ($checkboxWidgets.length > 0) {
+-      $checkboxWidgets.each(function (index, widget) {
+-        var $widget = $(widget);
+-        var $widgetLinks = $widget.find('.facet-item > a');
+-
+-        // Add correct CSS selector for the widget. The Facets JS API will
+-        // register handlers on that element.
+-        $widget.addClass('js-facets-widget');
+-
+-        // Transform links to checkboxes.
+-        $widgetLinks.each(Drupal.facets.makeCheckbox);
+-
+-        // We have to trigger attaching of behaviours, so that Facets JS API can
+-        // register handlers on checkbox widgets.
+-        Drupal.attachBehaviors(this.parentNode, Drupal.settings);
+-      });
+-
+-    }
+-
+-    // Set indeterminate value on parents having an active trail.
+-    $('.facet-item--expanded.facet-item--active-trail > input').prop('indeterminate', true);
+-  };
+-
+-  /**
+-   * Replace a link with a checked checkbox.
+-   */
+-  Drupal.facets.makeCheckbox = function () {
+-    var $link = $(this);
+-    var active = $link.hasClass('is-active');
+-    var description = $link.html();
+-    var href = $link.attr('href');
+-    var id = $link.data('drupal-facet-item-id');
+-
+-    var checkbox = $('<input type="checkbox" class="facets-checkbox">')
+-      .attr('id', id)
+-      .data($link.data())
+-      .data('facetsredir', href);
+-    var label = $('<label for="' + id + '">' + description + '</label>');
+-
+-    checkbox.on('change.facets', function (e) {
+-      e.preventDefault();
+-
+-      var $widget = $(this).closest('.js-facets-widget');
+-
+-      Drupal.facets.disableFacet($widget);
+-      $widget.trigger('facets_filter', [ href ]);
++  Drupal.facets.addCheckboxChangeListener = function () {
++    var $checkbox = $(this);
++    $checkbox.on('change.facets', function (e) {
++      var $widget = $checkbox.parents('.js-facets-checkbox-links');
++      Drupal.facets.disableCheckboxFacet($widget);
++      $widget.trigger('facets_filter', [ $checkbox.val() ]);
+     });
+-
+-    if (active) {
+-      checkbox.attr('checked', true);
+-      label.find('.js-facet-deactivate').remove();
+-    }
+-
+-    $link.before(checkbox).before(label).hide();
+-
+   };
+ 
+   /**
+@@ -115,6 +65,16 @@
+     $('input.facets-checkbox', $facet).attr('disabled', true);
+   };
+ 
++  /**
++   * Callback to disable checkbox facets.
++   */
++  Drupal.facets.disableCheckboxFacet = function ($widget) {
++    $widget.addClass('facets-disabled form-disabled');
++    var $checkboxes = $('input[type="checkbox"]', $widget);
++    $checkboxes.click(Drupal.facets.preventDefault);
++    $checkboxes.attr('disabled', true);
++  };
++
+   /**
+    * Event listener for easy prevention of event propagation.
+    *
+diff --git a/js/dropdown-widget.js b/js/dropdown-widget.js
+index 3561987..c4f016d 100644
+--- a/js/dropdown-widget.js
++++ b/js/dropdown-widget.js
+@@ -1,6 +1,6 @@
+ /**
+  * @file
+- * Transforms links into a dropdown list.
++ * Navigate to the correct url when a dropdown changes.
+  */
+ 
+ (function ($, Drupal, once) {
+@@ -10,94 +10,19 @@
+   Drupal.facets = Drupal.facets || {};
+   Drupal.behaviors.facetsDropdownWidget = {
+     attach: function (context, settings) {
+-      Drupal.facets.makeDropdown(context, settings);
++      // Find all dropdown facets and add an event listener.
++      $(once('facets-dropdown-change', 'select.js-facets-dropdown')).each(Drupal.facets.addDropdownChangeListener);
+     }
+   };
+ 
+   /**
+-   * Turns all facet links into a dropdown with options for every link.
+-   *
+-   * @param {object} context
+-   *   Context.
+-   * @param {object} settings
+-   *   Settings.
++   * Add event listener to the change event of the dropdown to navigate to the correct url.
+    */
+-  Drupal.facets.makeDropdown = function (context, settings) {
+-    // Find all dropdown facet links and turn them into an option.
+-    $(once('facets-dropdown-transform', '.js-facets-dropdown-links')).each(function () {
+-      var $ul = $(this);
+-      var $links = $ul.find('.facet-item a');
+-      var $dropdown = $('<select></select>');
+-      // Preserve all attributes of the list.
+-      $ul.each(function () {
+-        $.each(this.attributes,function (idx, elem) {
+-            $dropdown.attr(elem.name, elem.value);
+-        });
+-      });
+-      // Remove the class which we are using for .once().
+-      $dropdown.removeClass('js-facets-dropdown-links');
+-
+-      $dropdown.addClass('facets-dropdown');
+-      $dropdown.addClass('js-facets-widget');
+-      $dropdown.addClass('js-facets-dropdown');
+-
+-      var id = $(this).data('drupal-facet-id');
+-      // Add aria-labelledby attribute to reference label.
+-      $dropdown.attr('aria-labelledby', "facet_" + id + "_label");
+-      var default_option_label = settings.facets.dropdown_widget[id]['facet-default-option-label'];
+-
+-      // Add empty text option first.
+-      var $default_option = $('<option></option>')
+-        .attr('value', '')
+-        .text(default_option_label);
+-      $dropdown.append($default_option);
+-
+-      $ul.prepend('<li class="default-option"><a href="' + window.location.href.split('?')[0] + '">' + Drupal.checkPlain(default_option_label) + '</a></li>');
+-
+-      var has_active = false;
+-      $links.each(function () {
+-        var $link = $(this);
+-        var active = $link.hasClass('is-active');
+-        var $option = $('<option></option>')
+-          .attr('value', $link.attr('href'))
+-          .data($link.data());
+-        if (active) {
+-          has_active = true;
+-          // Set empty text value to this link to unselect facet.
+-          $default_option.attr('value', $link.attr('href'));
+-          $ul.find('.default-option a').attr("href", $link.attr('href'));
+-          $option.attr('selected', 'selected');
+-          $link.find('.js-facet-deactivate').remove();
+-        }
+-        $option.text(function () {
+-          // Add hierarchy indicator in case hierarchy is enabled.
+-          var $parents = $link.parent('li.facet-item').parents('li.facet-item');
+-          var prefix = '';
+-          for (var i = 0; i < $parents.length; i++) {
+-            prefix += '-';
+-          }
+-          return prefix + ' ' + $link.text().trim();
+-        });
+-        $dropdown.append($option);
+-      });
+-
+-      // Go to the selected option when it's clicked.
+-      $dropdown.on('change.facets', function () {
+-        var anchor = $($ul).find("[data-drupal-facet-item-id='" + $(this).find(':selected').data('drupalFacetItemId') + "']");
+-        var $linkElement = (anchor.length > 0) ? $(anchor) : $ul.find('.default-option a');
+-        var url = $linkElement.attr('href');
+-
+-        $(this).trigger('facets_filter', [ url ]);
+-      });
+-
+-      // Append empty text option.
+-      if (!has_active) {
+-        $default_option.attr('selected', 'selected');
+-      }
+-
+-      // Replace links with dropdown.
+-      $ul.after($dropdown).hide();
+-      Drupal.attachBehaviors($dropdown.parent()[0], Drupal.settings);
++  Drupal.facets.addDropdownChangeListener = function () {
++    // Go to the selected option when it's clicked.
++    var $this = $(this);
++    $this.on('change', function () {
++      $this.trigger('facets_filter', [$this.val()]);
+     });
+   };
+ 
+diff --git a/src/Plugin/facets/url_processor/QueryString.php b/src/Plugin/facets/url_processor/QueryString.php
+index 2ddda79..c109bf5 100644
+--- a/src/Plugin/facets/url_processor/QueryString.php
++++ b/src/Plugin/facets/url_processor/QueryString.php
+@@ -138,6 +138,8 @@ class QueryString extends UrlProcessorPluginBase {
+       $filter_params = $original_filter_params;
+ 
+       // If the value is active, remove the filter string from the parameters.
++      // This ensures that an active filter will be deactivated when clicked a
++      // second time.
+       if ($result->isActive()) {
+         foreach ($filter_params as $key => $filter_param) {
+           if ($filter_param === $filter_string || ($filter_missing && str_starts_with($filter_param, $filter_missing))) {
+diff --git a/src/Plugin/facets/widget/CheckboxWidget.php b/src/Plugin/facets/widget/CheckboxWidget.php
+index 207c1f1..e4e78a7 100644
+--- a/src/Plugin/facets/widget/CheckboxWidget.php
++++ b/src/Plugin/facets/widget/CheckboxWidget.php
+@@ -2,6 +2,11 @@
+ 
+ namespace Drupal\facets\Plugin\facets\widget;
+ 
++use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
++use Drupal\Core\Render\RendererInterface;
++use Drupal\facets\Result\ResultInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++
+ /**
+  * The checkbox / radios widget.
+  *
+@@ -11,14 +16,79 @@ namespace Drupal\facets\Plugin\facets\widget;
+  *   description = @Translation("A configurable widget that shows a list of checkboxes"),
+  * )
+  */
+-class CheckboxWidget extends LinksWidget {
++class CheckboxWidget extends LinksWidget implements ContainerFactoryPluginInterface {
++
++  /**
++   * The renderer service.
++   *
++   * @var \Drupal\Core\Render\RendererInterface
++   */
++  protected $renderer;
++
++  /**
++   * Constructs a CheckboxWidget object.
++   *
++   * @param array $configuration
++   *   A configuration array containing information about the plugin instance.
++   * @param string $plugin_id
++   *   The plugin_id for the plugin instance.
++   * @param mixed $plugin_definition
++   *   The plugin implementation definition.
++   * @param \Drupal\Core\Render\RendererInterface $renderer
++   *   The renderer service.
++   */
++  public function __construct(array $configuration, $plugin_id, $plugin_definition, RendererInterface $renderer) {
++    parent::__construct($configuration, $plugin_id, $plugin_definition);
++    $this->renderer = $renderer;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
++    return new static(
++      $configuration,
++      $plugin_id,
++      $plugin_definition,
++      $container->get('renderer')
++    );
++  }
+ 
+   /**
+    * {@inheritdoc}
+    */
+   protected function appendWidgetLibrary(array &$build) {
+     $build['#attributes']['class'][] = 'js-facets-checkbox-links';
++    $build['#attributes']['class'][] = 'js-facets-widget';
+     $build['#attached']['library'][] = 'facets/drupal.facets.checkbox-widget';
+   }
+ 
++  /**
++   * Returns the renderable array for an item.
++   *
++   * @param \Drupal\facets\Result\ResultInterface $result
++   *   A result item.
++   *
++   * @return array
++   *   The item as a render array.
++   */
++  protected function prepareLink(ResultInterface $result) {
++    $item = $this->buildResultItem($result);
++
++    if ($result->getUrl() !== NULL) {
++      $id = $this->facet->getUrlAlias() . '-' . str_replace(' ', '-', $result->getRawValue());
++      $item = [
++        '#type' => 'checkbox',
++        '#name' => $id,
++        '#id' => $id,
++        '#title' => $this->renderer->render($item),
++        '#checked' => $result->isActive() ? 1 : 0,
++        '#return_value' => $result->getUrl()->toString(),
++        '#attributes' => ['class' => ['facets-checkbox']],
++      ];
++    }
++
++    return $item;
++  }
++
+ }
+diff --git a/src/Plugin/facets/widget/DropdownWidget.php b/src/Plugin/facets/widget/DropdownWidget.php
+index d93c8e5..b9b9a55 100644
+--- a/src/Plugin/facets/widget/DropdownWidget.php
++++ b/src/Plugin/facets/widget/DropdownWidget.php
+@@ -2,8 +2,10 @@
+ 
+ namespace Drupal\facets\Plugin\facets\widget;
+ 
++use Drupal\Component\Render\FormattableMarkup;
+ use Drupal\Core\Form\FormStateInterface;
+ use Drupal\facets\FacetInterface;
++use Drupal\facets\Result\ResultInterface;
+ use Drupal\facets\Widget\WidgetPluginBase;
+ 
+ /**
+@@ -30,12 +32,59 @@ class DropdownWidget extends WidgetPluginBase {
+    * {@inheritdoc}
+    */
+   public function build(FacetInterface $facet) {
+-    $build = parent::build($facet);
+-    $build['#attributes']['class'][] = 'js-facets-dropdown-links';
+-    $build['#attached']['drupalSettings']['facets']['dropdown_widget'][$facet->id()]['facet-default-option-label'] = $this->getConfiguration()['default_option_label'];
+-    $build['#attached']['library'][] = 'facets/drupal.facets.dropdown-widget';
+-    $build['#attached']['library'][] = 'facets/drupal.facets.general';
+-    return $build;
++    $results = $facet->getResults();
++    $options = $this->buildOptions($facet, $results);
++
++    // Mark the default option as selected if there is no active result.
++    $active_result = $this->getActiveResult($results);
++    $default_option_value = $active_result ? $active_result->getUrl()->toString() : '';
++
++    $default_option = [
++      $default_option_value => $this->getConfiguration()['default_option_label'],
++    ];
++
++    $item = [
++      '#type' => 'select',
++      '#id' => $facet->id(),
++      '#name' => $facet->id(),
++      '#facet' => $facet,
++      '#options' => array_merge($default_option, $options),
++      '#value' => '',
++      '#attributes' => [
++        'data-drupal-facet-id' => $facet->id(),
++        'data-drupal-facet-alias' => $facet->getUrlAlias(),
++        'class' => [
++          $active_result ? 'facet-active' : 'facet-inactive',
++          'facets-dropdown',
++          // @todo The classes 'item-list__dropdown', 'js-facets-dropdown', and
++          //   'js-facets-widget' are included only for backwards compatibility
++          //   with an earlier implementation which rendered the dropdown in the
++          //   frontend. These classes should not be relied upon and will be
++          //   removed in Facets 2.0.
++          'item-list__dropdown',
++          'js-facets-dropdown',
++          'js-facets-widget',
++        ],
++      ],
++      '#wrapper_attributes' => ['class' => 'facets-widget-dropdown'],
++      '#attached' => [
++        'library' => [
++          'facets/drupal.facets.dropdown-widget',
++        ],
++      ],
++      '#cache' => [
++        'contexts' => [
++          'url.path',
++          'url.query_args',
++        ],
++      ],
++    ];
++
++    if ($facet->get('show_title')) {
++      $item['#title'] = $facet->getName();
++    }
++
++    return $item;
+   }
+ 
+   /**
+@@ -44,6 +93,7 @@ class DropdownWidget extends WidgetPluginBase {
+   public function buildConfigurationForm(array $form, FormStateInterface $form_state, FacetInterface $facet) {
+     $config = $this->getConfiguration();
+ 
++    // @todo Hide this warning when the setting is activated.
+     $message = $this->t('To achieve the standard behavior of a dropdown, you need to enable the facet setting below <em>"Ensure that only one result can be displayed"</em>.');
+     $form['warning'] = [
+       '#markup' => '<div class="messages messages--warning">' . $message . '</div>',
+@@ -60,4 +110,103 @@ class DropdownWidget extends WidgetPluginBase {
+     return $form;
+   }
+ 
++  /**
++   * Get the active value of the dropdown.
++   *
++   * @param \Drupal\facets\Result\ResultInterface[] $results
++   *   All possible results.
++   *
++   * @return \Drupal\facets\Result\ResultInterface|null
++   *   The result that is active, or NULL if there is no active result.
++   */
++  protected function getActiveResult(array $results): ?ResultInterface {
++    $active_value = NULL;
++    foreach ($results as $result) {
++      if ($result->isActive()) {
++        return $result;
++      }
++
++      $children = $result->getChildren();
++      if (empty($children)) {
++        continue;
++      }
++
++      $active_value = $this->getActiveResult($children);
++      if (!$active_value) {
++        continue;
++      }
++
++      return $active_value;
++    }
++
++    return $active_value;
++  }
++
++  /**
++   * Builds an array of options.
++   *
++   * @param \Drupal\facets\FacetInterface $facet
++   *   The facet we need to build.
++   * @param \Drupal\facets\Result\ResultInterface[] $results
++   *   A result item.
++   *
++   * @return array
++   *   An array of options.
++   */
++  protected function buildOptions(FacetInterface $facet, array $results) {
++    $options = [];
++    $this->appendOptions($options, $facet, $results);
++    return $options;
++  }
++
++  /**
++   * Add options to the array based on the list of results.
++   *
++   * @param array $options
++   *   The list of options for the widget.
++   * @param \Drupal\facets\FacetInterface $facet
++   *   The facet we need to build.
++   * @param \Drupal\facets\Result\ResultInterface[] $results
++   *   A list of result items.
++   */
++  protected function appendOptions(array &$options, FacetInterface $facet, array $results) {
++    foreach ($results as $result) {
++      // Don't set the URL for the active result. Since we are extending the
++      // "Links" widget the URL of the active result links will cause the filter
++      // to be _disabled_. This is because the user can disable an active filter
++      // by clicking it a second time. In a dropdown this works differently: the
++      // active filter is shown highlighted and clicking it a second time will
++      // have no action. Instead the user can select the "default" option at the
++      // top of the dropdown to reset it. We set a fake URL for the active
++      // filter, so the "default" option can use the URL of the active result.
++      $urlString = $result->isActive() ? '' : $result->getUrl()->toString();
++      $options[$urlString] = $this->buildResultOptionText($result);
++
++      $children = $result->getChildren();
++      if (empty($children)) {
++        continue;
++      }
++      $this->appendOptions($options, $facet, $children);
++    }
++  }
++
++  /**
++   * Builds a facet result option text.
++   *
++   * @param \Drupal\facets\Result\ResultInterface $result
++   *   The result item.
++   *
++   * @return string
++   *   The result option text.
++   */
++  protected function buildResultOptionText(ResultInterface $result) {
++    if ($this->getConfiguration()['show_numbers']) {
++      return new FormattableMarkup(' @value (@count)', [
++        '@value' => $result->getDisplayValue(),
++        '@count' => $result->getCount(),
++      ]);
++    }
++    return $result->getDisplayValue();
++  }
++
+ }
+diff --git a/templates/facets-item-list.html.twig b/templates/facets-item-list.html.twig
+index 06f6f1f..001ad1d 100644
+--- a/templates/facets-item-list.html.twig
++++ b/templates/facets-item-list.html.twig
+@@ -57,8 +57,4 @@
+       {{- empty -}}
+     {%- endif -%}
+   {%- endif %}
+-
+-{% if facet.widget.type == "dropdown" %}
+-  <label id="facet_{{ facet.id }}_label">{{ 'Facet'|t }} {{ facet.label }}</label>
+-{%- endif %}
+ </div>
+diff --git a/templates/facets-result-item--checkbox.html.twig b/templates/facets-result-item--checkbox.html.twig
+new file mode 100644
+index 0000000..2a2a2e5
+--- /dev/null
++++ b/templates/facets-result-item--checkbox.html.twig
+@@ -0,0 +1,22 @@
++{#
++/**
++ * @file
++ * Default theme implementation of a facet result item.
++ *
++ * Available variables:
++ * - value: The item value.
++ * - raw_value: The raw item value.
++ * - show_count: If this facet provides count.
++ * - count: The amount of results.
++ * - is_active: The item is active.
++ * - facet: The facet for this result item.
++ *   - id: the machine name for the facet.
++ *   - label: The facet label.
++ *
++ * @ingroup themeable
++ */
++#}
++<span class="facet-item__value">{{ value }}</span>
++{% if show_count %}
++  <span class="facet-item__count">({{ count }})</span>
++{% endif %}
+diff --git a/tests/src/Functional/TestHelperTrait.php b/tests/src/Functional/TestHelperTrait.php
+index ff74cf0..ecc8b70 100644
+--- a/tests/src/Functional/TestHelperTrait.php
++++ b/tests/src/Functional/TestHelperTrait.php
+@@ -21,6 +21,26 @@ trait TestHelperTrait {
+     return $this->assertArrayHasKey($index, $links, $message);
+   }
+ 
++  /**
++   * Passes if a facet with the specified label is found and is a checkbox.
++   */
++  protected function assertFacetCheckbox($label, $index = 0, $message = '') {
++    $checkboxes = $this->findFacetCheckboxes($label);
++
++    $message = ($message ?: strtr('Checkbox with label %label found.', ['%label' => $label]));
++    return static::assertTrue(isset($checkboxes[$index]), $message);
++  }
++
++  /**
++   * Passes if a facet with the specified option is found and is a select.
++   */
++  protected function assertFacetSelectOption($label, $index = 0, $message = '') {
++    $options = $this->findFacetSelectOption($label);
++
++    $message = ($message ?: strtr('Select option %label found.', ['%label' => $label]));
++    return static::assertTrue(isset($options[$index]), $message);
++  }
++
+   /**
+    * Check if a facet is active by providing a label for it.
+    *
+@@ -171,6 +191,79 @@ trait TestHelperTrait {
+     return $links;
+   }
+ 
++  /**
++   * Use xpath to find a facet checkbox.
++   *
++   * @param string $label
++   *   Label of a checkbox to find.
++   *
++   * @return array
++   *   An array of checkboxes with the facets.
++   */
++  protected function findFacetLabel($label) {
++    $label = (string) $label;
++    $label = strip_tags($label);
++    $matches = [];
++
++    if (preg_match('/(.*)\s\((\d+)\)/', $label, $matches)) {
++      $links = $this->xpath('//label[normalize-space(text())=:label]/following-sibling::span[normalize-space(text())=:count]', [':label' => $matches[1], ':count' => '(' . $matches[2] . ')']);
++    }
++    else {
++      $links = $this->xpath('//label[normalize-space(text())=:label]', [':label' => $label]);
++    }
++
++    return $links;
++  }
++
++  /**
++   * Returns the checkboxes with the given label.
++   *
++   * @param string $label
++   *   The label of the checkboxes to find.
++   *
++   * @return array
++   *   An array of checkboxes with the given label.
++   */
++  protected function findFacetCheckboxes($label) {
++    $label = strip_tags($label);
++    $matches = [];
++
++    if (preg_match('/(.*)\s\((\d+)\)/', $label, $matches)) {
++      $xpath = '//div[contains(concat(" ", normalize-space(@class), " "), " facet-item ") and label/span[contains(concat(" ", normalize-space(@class), " "), " facet-item__value ") and normalize-space(text())=:label]]/input[@type="checkbox" and contains(concat(" ", normalize-space(@class), " "), " facets-checkbox ")]';
++      $checkboxes = $this->xpath($xpath, [':label' => $matches[0]]);
++    }
++    else {
++      $xpath = '//div[contains(concat(" ", normalize-space(@class), " "), " facet-item ") and label/span[contains(concat(" ", normalize-space(@class), " "), " facet-item__value ") and starts-with(normalize-space(text()),:label)]]/input[@type="checkbox" and contains(concat(" ", normalize-space(@class), " "), " facets-checkbox ")]';
++      $checkboxes = $this->xpath($xpath, [':label' => $label]);
++    }
++
++    return $checkboxes;
++  }
++
++  /**
++   * Use xpath to find a facet select option.
++   *
++   * @param string $label
++   *   Label of a facet select option to find.
++   *
++   * @return array
++   *   An array of select options with the facets.
++   */
++  protected function findFacetSelectOption($label) {
++    $label = (string) $label;
++    $label = strip_tags($label);
++    $matches = [];
++
++    if (preg_match('/(.*)\s\((\d+)\)/', $label, $matches)) {
++      $options = $this->xpath('//option[normalize-space(text())=:label]', [':label' => $matches[0]]);
++    }
++    else {
++      $options = $this->xpath('//option[starts-with(normalize-space(text()),:label)]', [':label' => $label]);
++    }
++
++    return $options;
++  }
++
+   /**
+    * Convert facet name to machine name.
+    *
+diff --git a/tests/src/Functional/WidgetIntegrationTest.php b/tests/src/Functional/WidgetIntegrationTest.php
+index 8a402f5..bebda96 100644
+--- a/tests/src/Functional/WidgetIntegrationTest.php
++++ b/tests/src/Functional/WidgetIntegrationTest.php
+@@ -46,8 +46,8 @@ class WidgetIntegrationTest extends FacetsTestBase {
+     $this->submitForm(['widget' => 'checkbox'], 'Save');
+ 
+     $this->drupalGet('search-api-test-fulltext');
+-    $this->assertFacetLabel('item');
+-    $this->assertFacetLabel('article');
++    $this->assertFacetCheckbox('item');
++    $this->assertFacetCheckbox('article');
+   }
+ 
+   /**
+@@ -90,8 +90,8 @@ class WidgetIntegrationTest extends FacetsTestBase {
+ 
+     $this->drupalGet('search-api-test-fulltext');
+     $this->assertSession()->pageTextContains('Displaying 5 search results');
+-    $this->assertFacetLabel('item');
+-    $this->assertFacetLabel('article');
++    $this->assertFacetSelectOption('item');
++    $this->assertFacetSelectOption('article');
+   }
+ 
+   /**
+diff --git a/tests/src/FunctionalJavascript/WidgetJSTest.php b/tests/src/FunctionalJavascript/WidgetJSTest.php
+index 7230be4..8e1f741 100644
+--- a/tests/src/FunctionalJavascript/WidgetJSTest.php
++++ b/tests/src/FunctionalJavascript/WidgetJSTest.php
+@@ -131,7 +131,7 @@ class WidgetJSTest extends JsBase {
+     // The checkboxes should be wrapped in a list element that has the expected
+     // CSS classes to identify it as well as the data attributes that enable the
+     // JS functionality.
+-    $this->assertCount(1, $block->findAll('css', 'ul.facet-inactive.item-list__checkbox.js-facets-widget.js-facets-checkbox-links'));
++    $this->assertCount(1, $block->findAll('css', 'ul.facet-inactive.item-list__checkbox.js-facets-checkbox-links'));
+     $this->assertCount(1, $block->findAll('css', 'ul[data-drupal-facet-id="llama"]'));
+     $this->assertCount(1, $block->findAll('css', 'ul[data-drupal-facet-alias="llama"]'));
+ 
+@@ -232,6 +232,11 @@ class WidgetJSTest extends JsBase {
+       $this->assertCount(1, $list_item->findAll('css', 'input'));
+       $this->assertCount(1, $list_item->findAll('css', "input#{$item_id}[type='checkbox'].facets-checkbox"));
+ 
++      // The checkbox should have CSS classes that allow to attach our JS code.
++      $checkbox = $list_item->find('css', 'input');
++      $this->assertEquals($item_id, $checkbox->getAttribute('data-drupal-facet-item-id'));
++      $this->assertEquals($keyword, $checkbox->getAttribute('data-drupal-facet-item-value'));
++
+       // It should contain a label for the checkbox.
+       $labels = $list_item->findAll('css', "label[for=$item_id]");
+       $this->assertCount(1, $labels);
+@@ -243,21 +248,6 @@ class WidgetJSTest extends JsBase {
+       $expected_text = "<span class=\"facet-item__value\">$keyword</span> <span class=\"facet-item__count\">($count)</span>";
+       $this->assertTrue($label->isVisible());
+       $this->assertEquals($expected_text, trim(preg_replace('/\s+/', ' ', $label->getHtml())));
+-
+-      // There should be a hidden link that leads to the updated search results.
+-      // If a user checks a checkbox this hidden link is followed in JS.
+-      $links = $list_item->findAll('css', 'a');
+-      $this->assertCount(1, $links);
+-      $link = reset($links);
+-      // The link should not be visible.
+-      $this->assertFalse($link->isVisible());
+-      // The link should indicate that search engines shouldn't follow it.
+-      $this->assertEquals('nofollow', $link->getAttribute('rel'));
+-      // The link should have CSS classes that allow to attach our JS code.
+-      $this->assertEquals($item_id, $link->getAttribute('data-drupal-facet-item-id'));
+-      $this->assertEquals($keyword, $link->getAttribute('data-drupal-facet-item-value'));
+-      // The link text should include the keyword as well as the count.
+-      $this->assertStringContainsString($expected_text, trim(preg_replace('/\s+/', ' ', $link->getHtml())));
+     }
+   }
+ 
+@@ -277,6 +267,7 @@ class WidgetJSTest extends JsBase {
+       'field_identifier' => 'type',
+       'empty_behavior' => ['behavior' => 'none'],
+       'show_only_one_result' => TRUE,
++      'show_title' => TRUE,
+       'widget' => [
+         'type' => 'dropdown',
+         'config' => [
+@@ -318,9 +309,8 @@ class WidgetJSTest extends JsBase {
+     $this->assertCount(1, $block->findAll('css', 'select[data-drupal-facet-alias="llama"]'));
+ 
+     // The select element should have an accessible label.
+-    $this->assertCount(1, $block->findAll('css', 'select[aria-labelledby="facet_llama_label"]'));
+-    $this->assertCount(1, $block->findAll('css', 'label#facet_llama_label'));
+-    $this->assertEquals('Facet LLAMA', $block->find('css', 'label')->getHtml());
++    $this->assertCount(1, $block->findAll('css', 'label[for="llama"]'));
++    $this->assertEquals('LLAMA', $block->find('css', 'label')->getHtml());
+ 
+     // The select element should be visible.
+     $dropdown = $block->find('css', 'select');
+@@ -376,11 +366,10 @@ class WidgetJSTest extends JsBase {
+         FALSE,
+       ],
+       // The second option should now be selected, and since clicking it again
+-      // would negate it, it should also link to the search page without any
+-      // chosen facets.
++      // would not change the status, its value is empty.
+       [
+         'item (3)',
+-        base_path() . 'search-api-test-fulltext',
++        '',
+         TRUE,
+       ],
+       // The third option remains unchanged.
+diff --git a/tests/src/Unit/Plugin/widget/ArrayWidgetTest.php b/tests/src/Unit/Plugin/widget/ArrayWidgetTest.php
+index d45deb8..7e278d9 100644
+--- a/tests/src/Unit/Plugin/widget/ArrayWidgetTest.php
++++ b/tests/src/Unit/Plugin/widget/ArrayWidgetTest.php
+@@ -43,22 +43,22 @@ class ArrayWidgetTest extends WidgetTestBase {
+ 
+     $expected_links = [
+       [
+-        'url' => NULL,
++        'url' => 'http://example.com/llama',
+         'raw_value' => 'llama',
+         'values' => ['value' => 'Llama', 'count' => 10],
+       ],
+       [
+-        'url' => NULL,
++        'url' => 'http://example.com/badger',
+         'raw_value' => 'badger',
+         'values' => ['value' => 'Badger', 'count' => 20],
+       ],
+       [
+-        'url' => NULL,
++        'url' => 'http://example.com/duck',
+         'raw_value' => 'duck',
+         'values' => ['value' => 'Duck', 'count' => 15],
+       ],
+       [
+-        'url' => NULL,
++        'url' => 'http://example.com/alpaca',
+         'raw_value' => 'alpaca',
+         'values' => ['value' => 'Alpaca', 'count' => 9],
+       ],
+diff --git a/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php b/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
+index 157fd19..16fd211 100644
+--- a/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
++++ b/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
+@@ -2,7 +2,10 @@
+ 
+ namespace Drupal\Tests\facets\Unit\Plugin\widget;
+ 
++use Drupal\Core\Render\RendererInterface;
+ use Drupal\facets\Plugin\facets\widget\CheckboxWidget;
++use Prophecy\Argument;
++use Prophecy\PhpUnit\ProphecyTrait;
+ 
+ /**
+  * Unit test for widget.
+@@ -11,13 +14,34 @@ use Drupal\facets\Plugin\facets\widget\CheckboxWidget;
+  */
+ class CheckboxWidgetTest extends WidgetTestBase {
+ 
++  use ProphecyTrait;
++
++  /**
++   * The mocked renderer.
++   *
++   * @var \Prophecy\Prophecy\ObjectProphecy|\Drupal\Core\Render\RendererInterface
++   */
++  protected $renderer;
++
+   /**
+    * Creates a new processor object for use in the tests.
+    */
+   protected function setUp(): void {
+     parent::setUp();
+ 
+-    $this->widget = new CheckboxWidget(['show_numbers' => TRUE], 'checkbox_widget', []);
++    // Set the URL alias used for checkbox widgets.
++    $this->facet->setUrlAlias('checkbox_widget');
++
++    // Mock the rendering of the checkbox title in the format ":label (:count)".
++    $renderer = $this->prophesize(RendererInterface::class);
++    $expected_render_call = Argument::type('array');
++    $renderer->render($expected_render_call)->will(function (array $args): string {
++      $render_array = $args[0];
++      return $render_array['#value'] . ' (' . $render_array['#count'] . ')';
++    });
++    $this->renderer = $renderer->reveal();
++
++    $this->widget = new CheckboxWidget(['show_numbers' => TRUE], 'checkbox_widget', [], $this->renderer);
+   }
+ 
+   /**
+@@ -32,7 +56,11 @@ class CheckboxWidgetTest extends WidgetTestBase {
+     $this->assertSame('array', gettype($output));
+     $this->assertCount(4, $output['#items']);
+ 
+-    $this->assertEquals(['facet-inactive', 'js-facets-checkbox-links'], $output['#attributes']['class']);
++    $this->assertEquals([
++      'facet-inactive',
++      'js-facets-checkbox-links',
++      'js-facets-widget',
++    ], $output['#attributes']['class']);
+ 
+     $expected_links = [
+       $this->buildLinkAssertion('Llama', 'llama', $facet, 10),
+@@ -42,10 +70,13 @@ class CheckboxWidgetTest extends WidgetTestBase {
+     ];
+     foreach ($expected_links as $index => $value) {
+       $this->assertSame('array', gettype($output['#items'][$index]));
+-      $this->assertEquals($value, $output['#items'][$index]['#title']);
+-      $this->assertSame('array', gettype($output['#items'][$index]['#title']));
+-      $this->assertEquals('link', $output['#items'][$index]['#type']);
++      $this->assertEquals($this->renderer->render($value), $output['#items'][$index]['#title']);
++      $this->assertSame('string', gettype($output['#items'][$index]['#title']));
++      $this->assertEquals('checkbox', $output['#items'][$index]['#type']);
+       $this->assertEquals(['facet-item'], $output['#items'][$index]['#wrapper_attributes']['class']);
++      $this->assertEquals('checkbox_widget-' . $value['#raw_value'], $output['#items'][$index]['#name']);
++      $this->assertEquals('checkbox_widget-' . $value['#raw_value'], $output['#items'][$index]['#id']);
++      $this->assertEquals($this->originalResults[$index]->getUrl()->toString(), $output['#items'][$index]['#return_value']);
+     }
+   }
+ 
+diff --git a/tests/src/Unit/Plugin/widget/DropdownWidgetTest.php b/tests/src/Unit/Plugin/widget/DropdownWidgetTest.php
+index ea54ffa..c70dd41 100644
+--- a/tests/src/Unit/Plugin/widget/DropdownWidgetTest.php
++++ b/tests/src/Unit/Plugin/widget/DropdownWidgetTest.php
+@@ -2,6 +2,7 @@
+ 
+ namespace Drupal\Tests\facets\Unit\Plugin\widget;
+ 
++use Drupal\Component\Render\FormattableMarkup;
+ use Drupal\facets\Plugin\facets\widget\DropdownWidget;
+ 
+ /**
+@@ -30,25 +31,55 @@ class DropdownWidgetTest extends WidgetTestBase {
+     $output = $this->widget->build($facet);
+ 
+     $this->assertSame('array', gettype($output));
+-    $this->assertCount(4, $output['#items']);
++    // The dropdown contains the 4 results, as well as the empty option, so 5 in
++    // total.
++    $this->assertCount(5, $output['#options']);
+ 
+-    $this->assertEquals(['facet-inactive', 'js-facets-dropdown-links'], $output['#attributes']['class']);
++    $this->assertEquals([
++      'facet-inactive',
++      'facets-dropdown',
++      'item-list__dropdown',
++      'js-facets-dropdown',
++      'js-facets-widget',
++    ], $output['#attributes']['class']);
+ 
+-    $expected_links = [
+-      $this->buildLinkAssertion('Llama', 'llama', $facet, 10),
+-      $this->buildLinkAssertion('Badger', 'badger', $facet, 20),
+-      $this->buildLinkAssertion('Duck', 'duck', $facet, 15),
+-      $this->buildLinkAssertion('Alpaca', 'alpaca', $facet, 9),
++    // Skip the first option, it is the empty option.
++    array_shift($output['#options']);
++
++    $expected_select_options = [
++      ['Llama', 'llama', 10],
++      ['Badger', 'badger', 20],
++      ['Duck', 'duck', 15],
++      ['Alpaca', 'alpaca', 9],
+     ];
+-    foreach ($expected_links as $index => $value) {
+-      $this->assertSame('array', gettype($output['#items'][$index]));
+-      $this->assertEquals($value, $output['#items'][$index]['#title']);
+-      $this->assertSame('array', gettype($output['#items'][$index]['#title']));
+-      $this->assertEquals('link', $output['#items'][$index]['#type']);
+-      $this->assertEquals(['facet-item'], $output['#items'][$index]['#wrapper_attributes']['class']);
++    foreach ($expected_select_options as $expected_values) {
++      $actual_key = key($output['#options']);
++      $actual_value = array_shift($output['#options']);
++      $this->assertSelectOption($actual_key, $actual_value, ...$expected_values);
+     }
+   }
+ 
++  /**
++   * Asserts that an option for a select dropdown contains the expected data.
++   *
++   * @param string $actual_key
++   *   The actual key for the select option.
++   * @param string $actual_value
++   *   The actual value for the select option.
++   * @param string $expected_label
++   *   The expected label.
++   * @param string $expected_raw_value
++   *   The expected raw value.
++   * @param string $expected_count
++   *   The expected result count.
++   */
++  protected function assertSelectOption(string $actual_key, string $actual_value, string $expected_label, string $expected_raw_value, string $expected_count): void {
++    $expected_key = "http://example.com/$expected_raw_value";
++    $expected_value = (string) (new FormattableMarkup(' @label (@count)', ['@label' => $expected_label, '@count' => $expected_count]));
++    $this->assertEquals($expected_key, $actual_key);
++    $this->assertEquals($expected_value, $actual_value);
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+diff --git a/tests/src/Unit/Plugin/widget/WidgetTestBase.php b/tests/src/Unit/Plugin/widget/WidgetTestBase.php
+index 9dae93d..1b88dcb 100644
+--- a/tests/src/Unit/Plugin/widget/WidgetTestBase.php
++++ b/tests/src/Unit/Plugin/widget/WidgetTestBase.php
+@@ -54,14 +54,19 @@ abstract class WidgetTestBase extends Drupal10CompatibilityUnitTestCase {
+       new Result($facet, 'alpaca', 'Alpaca', 9),
+     ];
+ 
++    // Create a container, so we can access string translation.
++    $string_translation = $this->prophesize(TranslationInterface::class);
++    $url_generator = $this->prophesize(UrlGeneratorInterface::class);
++
+     foreach ($original_results as $original_result) {
+-      $original_result->setUrl(new Url('test'));
++      $raw_value = $original_result->getRawValue();
++      $original_result->setUrl(new Url($raw_value));
++      $result_url = "http://example.com/$raw_value";
++      $url_generator->generateFromRoute($raw_value, [], [], FALSE)->willReturn($result_url);
++      $url_generator->generateFromRoute($raw_value, [], ['absolute' => TRUE], FALSE)->willReturn($result_url);
+     }
+     $this->originalResults = $original_results;
+ 
+-    // Create a container, so we can access string translation.
+-    $string_translation = $this->prophesize(TranslationInterface::class);
+-    $url_generator = $this->prophesize(UrlGeneratorInterface::class);
+     $widget_manager = $this->prophesize(WidgetPluginManager::class);
+ 
+     $container = new ContainerBuilder();
+-- 
+2.50.1
+
+
+From f6270e48e93efa736327d21f7a1062122e0b40cd Mon Sep 17 00:00:00 2001
+From: codebymikey <codebymikey@3573206.no-reply.drupal.org>
+Date: Fri, 11 Aug 2023 12:12:32 +0100
+Subject: [PATCH 2/8] Issue #2937191: Address broken tests caused by search_api
+ >=8.x-1.29 update
+
+https://www.drupal.org/project/search_api/issues/2905497
+---
+ tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php b/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
+index a0736f6..13e6c56 100644
+--- a/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
++++ b/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
+@@ -335,6 +335,8 @@ class DefaultFacetManagerTest extends EntityKernelTestBase {
+         // Added by views view source plugin.
+         'config:views.view.search_api_test_view',
+         'config:search_api.index.database_search_index',
++        // Added in search_api https://www.drupal.org/i/2905497.
++        'search_api_list:database_search_index',
+       ],
+     ];
+     return [
+-- 
+2.50.1
+
+
+From c042cace429e4dba8675be348fb5308f3c42fd0e Mon Sep 17 00:00:00 2001
+From: mark_fullmer <mfullmer@gmail.com>
+Date: Tue, 21 Jan 2025 15:16:00 -0700
+Subject: [PATCH 3/8] Render reset_all link as a link
+
+---
+ src/Plugin/facets/widget/CheckboxWidget.php | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/Plugin/facets/widget/CheckboxWidget.php b/src/Plugin/facets/widget/CheckboxWidget.php
+index e4e78a7..f134c3c 100644
+--- a/src/Plugin/facets/widget/CheckboxWidget.php
++++ b/src/Plugin/facets/widget/CheckboxWidget.php
+@@ -76,6 +76,11 @@ class CheckboxWidget extends LinksWidget implements ContainerFactoryPluginInterf
+     $item = $this->buildResultItem($result);
+ 
+     if ($result->getUrl() !== NULL) {
++      // Render 'reset all' link normally.
++      if ($item['#raw_value'] === 'reset_all') {
++        $item = parent::prepareLink($result);
++        return $item;
++      }
+       $id = $this->facet->getUrlAlias() . '-' . str_replace(' ', '-', $result->getRawValue());
+       $item = [
+         '#type' => 'checkbox',
+-- 
+2.50.1
+
+
+From 59574eb3a52f6ac2fb635bdd8083bcd87ef14aca Mon Sep 17 00:00:00 2001
+From: mark_fullmer <mfullmer@gmail.com>
+Date: Tue, 21 Jan 2025 16:21:08 -0700
+Subject: [PATCH 4/8] Update test logic
+
+---
+ .../widget/SearchboxCheckboxWidgetTest.php       | 16 ++++++++--------
+ tests/src/Functional/FacetsUrlGeneratorTest.php  |  8 +++++++-
+ 2 files changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/modules/facets_searchbox_widget/tests/src/Unit/Plugin/widget/SearchboxCheckboxWidgetTest.php b/modules/facets_searchbox_widget/tests/src/Unit/Plugin/widget/SearchboxCheckboxWidgetTest.php
+index a5cff3c..08999ab 100644
+--- a/modules/facets_searchbox_widget/tests/src/Unit/Plugin/widget/SearchboxCheckboxWidgetTest.php
++++ b/modules/facets_searchbox_widget/tests/src/Unit/Plugin/widget/SearchboxCheckboxWidgetTest.php
+@@ -31,19 +31,19 @@ class SearchboxCheckboxWidgetTest extends CheckboxWidgetTest {
+     $this->assertSame('array', gettype($output));
+     $this->assertCount(4, $output['#items']);
+ 
+-    $this->assertEquals(['facet-inactive', 'js-facets-checkbox-links'], $output['#attributes']['class']);
++    $this->assertEquals(['facet-inactive', 'js-facets-checkbox-links', 'js-facets-widget'], $output['#attributes']['class']);
+ 
+     $expected_links = [
+-      $this->buildLinkAssertion('Llama', 'llama', $facet, 10),
+-      $this->buildLinkAssertion('Badger', 'badger', $facet, 20),
+-      $this->buildLinkAssertion('Duck', 'duck', $facet, 15),
+-      $this->buildLinkAssertion('Alpaca', 'alpaca', $facet, 9),
++      $this->buildLinkAssertion('Llama (10)', 'llama', $facet, 10),
++      $this->buildLinkAssertion('Badger (20)', 'badger', $facet, 20),
++      $this->buildLinkAssertion('Duck (15)', 'duck', $facet, 15),
++      $this->buildLinkAssertion('Alpaca (9)', 'alpaca', $facet, 9),
+     ];
+     foreach ($expected_links as $index => $value) {
+       $this->assertSame('array', gettype($output['#items'][$index]));
+-      $this->assertEquals($value, $output['#items'][$index]['#title']);
+-      $this->assertSame('array', gettype($output['#items'][$index]['#title']));
+-      $this->assertEquals('link', $output['#items'][$index]['#type']);
++      $this->assertEquals($value['#value'], $output['#items'][$index]['#title']);
++      $this->assertSame('string', gettype($output['#items'][$index]['#title']));
++      $this->assertEquals('checkbox', $output['#items'][$index]['#type']);
+       $this->assertEquals(['facet-item'], $output['#items'][$index]['#wrapper_attributes']['class']);
+     }
+   }
+diff --git a/tests/src/Functional/FacetsUrlGeneratorTest.php b/tests/src/Functional/FacetsUrlGeneratorTest.php
+index 3165279..7028ad3 100644
+--- a/tests/src/Functional/FacetsUrlGeneratorTest.php
++++ b/tests/src/Functional/FacetsUrlGeneratorTest.php
+@@ -92,7 +92,13 @@ class FacetsUrlGeneratorTest extends FacetsTestBase {
+     $facet->save();
+ 
+     $url = $this->urlGenerator->getUrl(['owl' => ['foo']]);
+-    $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2&view_id=search_api_test_view&display_id=page_1?f%5B0%5D=donkey%3Afoo', $url->toUriString());
++
++    if (version_compare(\Drupal::VERSION, '9.5.9', '>=')) {
++      $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2&view_id=search_api_test_view&display_id=page_1?f%5B0%5D=donkey%3Afoo', $url->toUriString());
++    }
++    else {
++      $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2?f%5B0%5D=donkey%3Afoo', $url->toUriString());
++    }
+ 
+     // This won't work without it being in the request, so we need to do this
+     // from a block. We first click the link, check that the "orange" facet is
+-- 
+2.50.1
+
+
+From 09b63c880ba24c295e260d8098d7db281b40d0d2 Mon Sep 17 00:00:00 2001
+From: mark_fullmer <mfullmer@gmail.com>
+Date: Tue, 21 Jan 2025 16:44:36 -0700
+Subject: [PATCH 5/8] Fix duplicated assertion
+
+---
+ tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php b/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
+index 13e6c56..7ac3c10 100644
+--- a/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
++++ b/tests/src/Kernel/FacetManager/DefaultFacetManagerTest.php
+@@ -331,7 +331,6 @@ class DefaultFacetManagerTest extends EntityKernelTestBase {
+         'fpc:build_processor',
+         // Added by build fpc_sort_processor process plugin.
+         'fpc:sort_processor',
+-        'search_api_list:database_search_index',
+         // Added by views view source plugin.
+         'config:views.view.search_api_test_view',
+         'config:search_api.index.database_search_index',
+-- 
+2.50.1
+
+
+From 6d015566c12324e97daf11747a7f1a4777ed7597 Mon Sep 17 00:00:00 2001
+From: Eric Smith <ericsmith@catalyst.net.nz>
+Date: Wed, 5 Mar 2025 11:22:19 +1300
+Subject: [PATCH 6/8] Issue #2937191: Revert changes to FacetsUrlGeneratorTest
+ to 2.0.x branch
+
+Any changes to this test are outside the scope of this MR as this does not change url generation behaviour.
+
+It looks like these changes were introduced at some point to fix unrelated test failures, but the test passed on the 2.0.x branch. Lets leave this test alone.
+---
+ tests/src/Functional/FacetsUrlGeneratorTest.php | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/tests/src/Functional/FacetsUrlGeneratorTest.php b/tests/src/Functional/FacetsUrlGeneratorTest.php
+index 7028ad3..3165279 100644
+--- a/tests/src/Functional/FacetsUrlGeneratorTest.php
++++ b/tests/src/Functional/FacetsUrlGeneratorTest.php
+@@ -92,13 +92,7 @@ class FacetsUrlGeneratorTest extends FacetsTestBase {
+     $facet->save();
+ 
+     $url = $this->urlGenerator->getUrl(['owl' => ['foo']]);
+-
+-    if (version_compare(\Drupal::VERSION, '9.5.9', '>=')) {
+-      $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2&view_id=search_api_test_view&display_id=page_1?f%5B0%5D=donkey%3Afoo', $url->toUriString());
+-    }
+-    else {
+-      $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2?f%5B0%5D=donkey%3Afoo', $url->toUriString());
+-    }
++    $this->assertEquals('route:view.search_api_test_view.page_1;arg_0&arg_1&arg_2&view_id=search_api_test_view&display_id=page_1?f%5B0%5D=donkey%3Afoo', $url->toUriString());
+ 
+     // This won't work without it being in the request, so we need to do this
+     // from a block. We first click the link, check that the "orange" facet is
+-- 
+2.50.1
+
+
+From 1c4c13238533eb3ad46c06f643162ca080429451 Mon Sep 17 00:00:00 2001
+From: Ide Braakman <ide@ezcompany.nl>
+Date: Thu, 26 Mar 2026 15:24:41 +0100
+Subject: [PATCH 7/8] Render hierarchy in checkbox
+
+---
+ src/Plugin/facets/widget/CheckboxWidget.php   | 60 +++++++------------
+ .../Unit/Plugin/widget/CheckboxWidgetTest.php | 22 +------
+ 2 files changed, 23 insertions(+), 59 deletions(-)
+
+diff --git a/src/Plugin/facets/widget/CheckboxWidget.php b/src/Plugin/facets/widget/CheckboxWidget.php
+index f134c3c..01b9b93 100644
+--- a/src/Plugin/facets/widget/CheckboxWidget.php
++++ b/src/Plugin/facets/widget/CheckboxWidget.php
+@@ -2,10 +2,8 @@
+ 
+ namespace Drupal\facets\Plugin\facets\widget;
+ 
+-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+-use Drupal\Core\Render\RendererInterface;
++use Drupal\facets\FacetInterface;
+ use Drupal\facets\Result\ResultInterface;
+-use Symfony\Component\DependencyInjection\ContainerInterface;
+ 
+ /**
+  * The checkbox / radios widget.
+@@ -16,51 +14,33 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
+  *   description = @Translation("A configurable widget that shows a list of checkboxes"),
+  * )
+  */
+-class CheckboxWidget extends LinksWidget implements ContainerFactoryPluginInterface {
+-
+-  /**
+-   * The renderer service.
+-   *
+-   * @var \Drupal\Core\Render\RendererInterface
+-   */
+-  protected $renderer;
+-
+-  /**
+-   * Constructs a CheckboxWidget object.
+-   *
+-   * @param array $configuration
+-   *   A configuration array containing information about the plugin instance.
+-   * @param string $plugin_id
+-   *   The plugin_id for the plugin instance.
+-   * @param mixed $plugin_definition
+-   *   The plugin implementation definition.
+-   * @param \Drupal\Core\Render\RendererInterface $renderer
+-   *   The renderer service.
+-   */
+-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RendererInterface $renderer) {
+-    parent::__construct($configuration, $plugin_id, $plugin_definition);
+-    $this->renderer = $renderer;
+-  }
++class CheckboxWidget extends LinksWidget {
+ 
+   /**
+    * {@inheritdoc}
+    */
+-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+-    return new static(
+-      $configuration,
+-      $plugin_id,
+-      $plugin_definition,
+-      $container->get('renderer')
+-    );
++  protected function appendWidgetLibrary(array &$build) {
++    $build['#attributes']['class'][] = 'js-facets-checkbox-links';
++    $build['#attributes']['class'][] = 'js-facets-widget';
++    $build['#attached']['library'][] = 'facets/drupal.facets.checkbox-widget';
+   }
+ 
+   /**
+    * {@inheritdoc}
+    */
+-  protected function appendWidgetLibrary(array &$build) {
+-    $build['#attributes']['class'][] = 'js-facets-checkbox-links';
+-    $build['#attributes']['class'][] = 'js-facets-widget';
+-    $build['#attached']['library'][] = 'facets/drupal.facets.checkbox-widget';
++  protected function buildListItems(FacetInterface $facet, ResultInterface $result) {
++    $build = parent::buildListItems($facet, $result);
++    if (!empty($build['children'])) {
++      $label = [
++        '#theme' => 'form_element_label',
++        '#title_display' => 'after',
++      ];
++      $label += array_intersect_key($build, array_flip(['#id', '#required', '#title']));
++      $children = [$label, $build['children']];
++      $build['#title_display'] = 'none';
++      $build['#children'] = $children;
++    }
++    return $build;
+   }
+ 
+   /**
+@@ -86,7 +66,7 @@ class CheckboxWidget extends LinksWidget implements ContainerFactoryPluginInterf
+         '#type' => 'checkbox',
+         '#name' => $id,
+         '#id' => $id,
+-        '#title' => $this->renderer->render($item),
++        '#title' => $item,
+         '#checked' => $result->isActive() ? 1 : 0,
+         '#return_value' => $result->getUrl()->toString(),
+         '#attributes' => ['class' => ['facets-checkbox']],
+diff --git a/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php b/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
+index 16fd211..6708b4c 100644
+--- a/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
++++ b/tests/src/Unit/Plugin/widget/CheckboxWidgetTest.php
+@@ -16,13 +16,6 @@ class CheckboxWidgetTest extends WidgetTestBase {
+ 
+   use ProphecyTrait;
+ 
+-  /**
+-   * The mocked renderer.
+-   *
+-   * @var \Prophecy\Prophecy\ObjectProphecy|\Drupal\Core\Render\RendererInterface
+-   */
+-  protected $renderer;
+-
+   /**
+    * Creates a new processor object for use in the tests.
+    */
+@@ -32,16 +25,7 @@ class CheckboxWidgetTest extends WidgetTestBase {
+     // Set the URL alias used for checkbox widgets.
+     $this->facet->setUrlAlias('checkbox_widget');
+ 
+-    // Mock the rendering of the checkbox title in the format ":label (:count)".
+-    $renderer = $this->prophesize(RendererInterface::class);
+-    $expected_render_call = Argument::type('array');
+-    $renderer->render($expected_render_call)->will(function (array $args): string {
+-      $render_array = $args[0];
+-      return $render_array['#value'] . ' (' . $render_array['#count'] . ')';
+-    });
+-    $this->renderer = $renderer->reveal();
+-
+-    $this->widget = new CheckboxWidget(['show_numbers' => TRUE], 'checkbox_widget', [], $this->renderer);
++    $this->widget = new CheckboxWidget(['show_numbers' => TRUE], 'checkbox_widget', []);
+   }
+ 
+   /**
+@@ -70,8 +54,8 @@ class CheckboxWidgetTest extends WidgetTestBase {
+     ];
+     foreach ($expected_links as $index => $value) {
+       $this->assertSame('array', gettype($output['#items'][$index]));
+-      $this->assertEquals($this->renderer->render($value), $output['#items'][$index]['#title']);
+-      $this->assertSame('string', gettype($output['#items'][$index]['#title']));
++      $this->assertEquals($value, $output['#items'][$index]['#title']);
++      $this->assertSame('array', gettype($output['#items'][$index]['#title']));
+       $this->assertEquals('checkbox', $output['#items'][$index]['#type']);
+       $this->assertEquals(['facet-item'], $output['#items'][$index]['#wrapper_attributes']['class']);
+       $this->assertEquals('checkbox_widget-' . $value['#raw_value'], $output['#items'][$index]['#name']);
+-- 
+2.50.1
+
+
+From 3b18538932ac2996e1c9e67f7624d9ff54c6b442 Mon Sep 17 00:00:00 2001
+From: Ide Braakman <ide@ezcompany.nl>
+Date: Fri, 27 Mar 2026 09:37:47 +0100
+Subject: [PATCH 8/8] Render hierarchy in dropdown
+
+---
+ src/Plugin/facets/widget/DropdownWidget.php   | 26 +++++++++++--------
+ .../facets-result-item--checkbox.html.twig    |  2 +-
+ 2 files changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/src/Plugin/facets/widget/DropdownWidget.php b/src/Plugin/facets/widget/DropdownWidget.php
+index b9b9a55..c7565a3 100644
+--- a/src/Plugin/facets/widget/DropdownWidget.php
++++ b/src/Plugin/facets/widget/DropdownWidget.php
+@@ -45,6 +45,8 @@ class DropdownWidget extends WidgetPluginBase {
+ 
+     $item = [
+       '#type' => 'select',
++      '#title' => $facet->getName(),
++      '#title_display' => $facet->get('show_title') ? 'before' : 'invisible',
+       '#id' => $facet->id(),
+       '#name' => $facet->id(),
+       '#facet' => $facet,
+@@ -80,10 +82,6 @@ class DropdownWidget extends WidgetPluginBase {
+       ],
+     ];
+ 
+-    if ($facet->get('show_title')) {
+-      $item['#title'] = $facet->getName();
+-    }
+-
+     return $item;
+   }
+ 
+@@ -155,7 +153,7 @@ class DropdownWidget extends WidgetPluginBase {
+    */
+   protected function buildOptions(FacetInterface $facet, array $results) {
+     $options = [];
+-    $this->appendOptions($options, $facet, $results);
++    $this->appendOptions($options, $facet, $results, 0);
+     return $options;
+   }
+ 
+@@ -168,8 +166,10 @@ class DropdownWidget extends WidgetPluginBase {
+    *   The facet we need to build.
+    * @param \Drupal\facets\Result\ResultInterface[] $results
+    *   A list of result items.
++   * @param int $depth
++   *   The current hierarchy depth.
+    */
+-  protected function appendOptions(array &$options, FacetInterface $facet, array $results) {
++  protected function appendOptions(array &$options, FacetInterface $facet, array $results, int $depth) {
+     foreach ($results as $result) {
+       // Don't set the URL for the active result. Since we are extending the
+       // "Links" widget the URL of the active result links will cause the filter
+@@ -180,13 +180,12 @@ class DropdownWidget extends WidgetPluginBase {
+       // top of the dropdown to reset it. We set a fake URL for the active
+       // filter, so the "default" option can use the URL of the active result.
+       $urlString = $result->isActive() ? '' : $result->getUrl()->toString();
+-      $options[$urlString] = $this->buildResultOptionText($result);
++      $options[$urlString] = $this->buildResultOptionText($result, $depth);
+ 
+       $children = $result->getChildren();
+-      if (empty($children)) {
+-        continue;
++      if ($children && ($facet->getExpandHierarchy() || $result->isActive() || $result->hasActiveChildren())) {
++        $this->appendOptions($options, $facet, $children, $depth + 1);
+       }
+-      $this->appendOptions($options, $facet, $children);
+     }
+   }
+ 
+@@ -195,11 +194,16 @@ class DropdownWidget extends WidgetPluginBase {
+    *
+    * @param \Drupal\facets\Result\ResultInterface $result
+    *   The result item.
++   * @param int $depth
++   *   The current hierarchy depth.
+    *
+    * @return string
+    *   The result option text.
+    */
+-  protected function buildResultOptionText(ResultInterface $result) {
++  protected function buildResultOptionText(ResultInterface $result, int $depth) {
++    if ($depth > 0) {
++      $result->setDisplayValue(str_repeat('-', $depth) . ' ' . $result->getDisplayValue());
++    }
+     if ($this->getConfiguration()['show_numbers']) {
+       return new FormattableMarkup(' @value (@count)', [
+         '@value' => $result->getDisplayValue(),
+diff --git a/templates/facets-result-item--checkbox.html.twig b/templates/facets-result-item--checkbox.html.twig
+index 2a2a2e5..9d90d19 100644
+--- a/templates/facets-result-item--checkbox.html.twig
++++ b/templates/facets-result-item--checkbox.html.twig
+@@ -1,7 +1,7 @@
+ {#
+ /**
+  * @file
+- * Default theme implementation of a facet result item.
++ * Default theme implementation of a facet result item: checkbox.
+  *
+  * Available variables:
+  * - value: The item value.
+-- 
+2.50.1
+
