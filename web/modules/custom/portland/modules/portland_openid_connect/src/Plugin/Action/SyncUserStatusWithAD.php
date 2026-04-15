@@ -57,7 +57,7 @@ class SyncUserStatusWithAD extends ActionBase
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
+  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE)
   {
     // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.
     $access_result_for_update = $object->access('update', $account);
