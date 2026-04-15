@@ -647,7 +647,7 @@ AddressVerifierView.prototype._showStatusModal = function (message, buttonText =
     if (this._isDialogOpen(this.$statusModal)) {
         return;
     }
-    this.$statusModal.html('<p class="status-message mb-0">' + message + '</p>');
+    this.$statusModal.html('<div class="status-message mb-0">' + message + '</div>');
     Drupal.dialog(this.$statusModal, {
         title: 'Address verification',
         dialogClass: 'address-verifier-dialog',
