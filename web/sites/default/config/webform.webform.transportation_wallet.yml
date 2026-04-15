@@ -186,10 +186,12 @@ elements: |-
       contact_first_name:
         '#type': textfield
         '#title': 'Applicant first name'
+        '#autocomplete': given-name
         '#required': true
       contact_last_name:
         '#type': textfield
         '#title': 'Applicant last name'
+        '#autocomplete': family-name
         '#required': true
       apply_has_hop_card_hc:
         '#type': radios
@@ -536,7 +538,6 @@ elements: |-
       computed_hop_card_type:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Type (primary applicant)'
-        '#display_on': view
         '#mode': text
         '#template': |-
           {# if option 1, will be adult or honored citizen
@@ -544,9 +545,13 @@ elements: |-
              if option 3, will be adult or honored citizen, or not needed #}
 
           {% if data.apply_wallet_package == "wallet_option_1" %}
-            {% if data.computed_age_primary < 65 %}
+            {% if data.apply_has_hop_card_hc == "Yes" %}{# if Yes, this is always HC #}
+              27985321767319_honored_citizen_hop_card
+              
+            {% elseif data.computed_age_primary < 65 %}{# under 65 and no hop card, use adult #}
               27985321767319_adult_hop_card
-            {% else %}
+              
+            {% else %}{# 65 or over and no hop card, use HC #}
               27985321767319_honored_citizen_hop_card
             {% endif %}
 
@@ -570,6 +575,7 @@ elements: |-
             
           {% endif %}
         '#whitespace': trim
+        '#ajax': true
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -1634,6 +1640,7 @@ elements: |-
         '#type': textfield
         '#title': Email
         '#description': '<p>If you do not have an email address, please provide the email of the community-based organization helping you. We will use this email if we have questions or to send important updates about your application.</p>'
+        '#autocomplete': email
         '#required': true
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
@@ -1641,6 +1648,7 @@ elements: |-
         '#type': textfield
         '#title': Phone
         '#description': '<p>Please provide your phone number in case we need additional information.</p>'
+        '#autocomplete': tel-national
         '#input_mask': '(999) 999-9999'
       contact_text_message:
         '#type': radios
@@ -1888,7 +1896,7 @@ elements: |-
 
       {% if data.apply_wallet_package == "wallet_option_1" %}
         {% if data.apply_has_hop_card_hc == "Yes" %}
-          Yes
+          Yes - HC
         {% else %}
           No - needs Adult
         {% endif %}
