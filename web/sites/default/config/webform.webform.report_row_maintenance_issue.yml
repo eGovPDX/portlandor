@@ -527,7 +527,7 @@ elements: |-
     report_streetlight_pole_number:
       '#type': textfield
       '#title': 'Pole number #'
-    report_issue_type_streetlight:
+    report_issue_type_signal_streetlight:
       '#type': radios
       '#title': 'Street light problem'
       '#options':
@@ -542,7 +542,7 @@ elements: |-
       '#title': 'Please describe the issue with the streetlight:'
       '#states':
         visible:
-          ':input[name="report_issue_type_streetlight"]':
+          ':input[name="report_issue_type_signal_streetlight"]':
             value:
               pattern: 'damaged|other'
       '#required': true
@@ -896,7 +896,17 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% set issue_categories = [data.report_asset_type, data['report_asset_type_' ~ data.report_asset_type], data['report_issue_type_' ~ data.report_asset_type]] %}
+      {# build the array for the maintenance issue field #}
+      {% set issue_categories = [
+        # root asset type
+        data.report_asset_type,
+        # sub-asset type
+        data['report_asset_type_' ~ data.report_asset_type],
+        # root issue for that asset
+        data['report_issue_type_' ~ data.report_asset_type],
+        # sub-issue for that sub-asset type
+        data['report_issue_type_' ~ data.report_asset_type ~ '_' ~ data['report_asset_type_' ~ data.report_asset_type]]
+      ]} %}
       23923247765911_{{ issue_categories|filter(v => v is not empty)|join('__') }}
 
       {% if 'support_agent' in webform_token('[current-user:roles]', webform_submission) %}
