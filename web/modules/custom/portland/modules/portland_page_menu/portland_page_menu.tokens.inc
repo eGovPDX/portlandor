@@ -74,7 +74,7 @@ function _get_parent_menu_link_text_array(EntityReferenceHierarchyFieldItemList 
 /**
  * Implements hook_tokens().
  */
-function portland_page_menu_tokens($type, $tokens, array $data = array(), array $options = array(), BubbleableMetadata $bubbleable_metadata = null) {
+function portland_page_menu_tokens($type, $tokens, array $data = array(), array $options = array(), ?BubbleableMetadata $bubbleable_metadata = null) {
   $replacements = [];
 
   if ($type == 'node') {
