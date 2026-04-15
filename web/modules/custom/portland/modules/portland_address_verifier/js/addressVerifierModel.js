@@ -137,7 +137,7 @@ AddressVerifierModel.buildFullAddress = function (address, city, state, zip, uni
 
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
   var lineBreak = useHtml ? "<br>" : "\r\n";
-  var unit = $element.find('#unit_number').val();
+  var unit = $element.find('[name$="[unit_number]"]').val();
   var label = item.street;
   if (item.unit) {
     label += " " + unit.toUpperCase();
