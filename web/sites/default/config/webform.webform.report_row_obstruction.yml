@@ -170,7 +170,13 @@ elements: |-
         visible:
           ':input[name="report_debris_where"]':
             value: Sidewalk
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true" data-pm-slice="1 1 []">Property owners are usually responsible for keeping the sidewalk next to their property in good condition. We aren’t able to respond to minor issues like gravel, leaves, or small amounts of litter.</p><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true">If a sidewalk or other public walkway is blocked or hard to use, please attach photos to your report so we can address it.</p><p data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true">You can report large items like mattresses, furniture, large garbage bags, or illegal dumping<a href="https://ridpatrol.oregonmetro.gov/report/start" data-prosemirror-content-type="mark" data-prosemirror-mark-name="link"> directly to Metro Rid using their online form.</a></p></div>'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+          <h2>Next Steps</h2>
+          <p>Property owners are usually responsible for keeping the sidewalk next to their property in good condition. We aren't able to respond to minor issues like gravel, leaves, or small amounts of litter.</p>
+          <p>If a sidewalk or other public walkway is blocked or hard to use, please attach photos to your report so we can address it.</p>
+          <p>You can report large items like mattresses, furniture, large garbage bags, or illegal dumping <a href="https://ridpatrol.oregonmetro.gov/report/start">directly to Metro RID using their online form.</a></p>
+        </div>
     markup_street_sweeping:
       '#type': webform_markup
       '#states':
@@ -426,7 +432,7 @@ elements: |-
             - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Private property or parking strip'
-        '#markup': '<div class="alert alert--warning next-steps"><h2>Warning</h2><p><span data-testid="comment-base-item-41360">Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without valid information.</span></p></div>'
+        '#markup': '<div class="alert alert--warning next-steps"><h2>Warning</h2><p>Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without valid information.</p></div>'
       contact_name:
         '#type': textfield
         '#title': Name
@@ -537,9 +543,46 @@ elements: |-
       '#title': 'Support agent use only'
       '#access_create_roles':
         - authenticated
-      '#access_create_roles_exclude':
-        - support_agent
       '#zendesk_request_number__access': false
+    dispatch_use_only:
+      '#type': webform_section
+      '#title': 'Dispatch Use Only'
+      '#attributes':
+        style: 'background-color: #ccc; padding: 15px;'
+      '#access_create_roles':
+        - support_agent
+        - administrator
+      dispatch_contact_format:
+        '#type': select
+        '#title': 'Contact format'
+        '#options':
+          walk_in: Walk-in
+          phone: Phone
+          radio: Radio
+          email: Email
+      dispatch_contact_type:
+        '#type': select
+        '#title': 'Contact type'
+        '#options':
+          community: Community
+          city_employee: 'City employee'
+          pbot: PBOT
+          ppb: PPB
+          boec: BOEC
+          pfr: 'PF&R'
+          ppr: 'PP&R'
+          agency_partner: 'Agency partner'
+          odot: ODOT
+          multco: 'Mult Co'
+          metro: Metro
+          trimet: TriMet
+          other: Other
+      dispatch_already_reported:
+        '#type': checkbox
+        '#title': 'Already reported'
+      dispatch_related_emergency:
+        '#type': checkbox
+        '#title': 'Related to a declared emergency'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -833,54 +876,9 @@ elements: |-
   ajax_indicator:
     '#type': portland_ajax_indicator
     '#title': 'Ajax indicator'
-  dispatch_use_only:
-    '#type': webform_section
-    '#title': 'Dispatch use only'
-    '#attributes':
-      style: 'background-color: #ccc; padding: 15px;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
-    dispatch_employee_email:
-      '#type': textfield
-      '#title': 'Employee email'
-      '#readonly': true
-      '#input_mask': "'alias': 'email'"
-      '#default_value': '[current-user:mail]'
-    dispatch_contact_format:
-      '#type': select
-      '#title': 'Contact Format'
-      '#options':
-        walk_in: Walk_in
-        phone: Phone
-        radio: Radio
-        email: Email
-    dispatch_contact_type:
-      '#type': select
-      '#title': 'Contact type'
-      '#options':
-        community: community
-        city_employee: 'City employee'
-        pbot: PBOT
-        ppb: PPB
-        boec: BOEC
-        pfr: 'PF&R'
-        ppr: 'PP&R'
-        agency_partner: 'Agency partner'
-        odot: ODOT
-        multco: 'Mult Co'
-        metro: Metro
-        trimet: TriMet
-        other: Other
-    dispatch_already_reported:
-      '#type': checkbox
-      '#title': 'Already reported'
-    dispatch_related_emergency:
-      '#type': checkbox
-      '#title': 'Related to a declared emergency'
-  submitted_by_dispatcher:
+  computed_tags:
     '#type': webform_computed_twig
-    '#title': 'Computed - submitted by dispatcher'
+    '#title': 'Computed tags'
     '#display_on': none
     '#template': "{{ 'support_agent' in webform_token('[current-user:roles]', webform_submission) ? 'submitted_by_dispatcher' }}"
 css: ''
@@ -1092,7 +1090,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']\r\n36578609768343: ['[webform_submission:values:submitted_by_dispatcher]', 'submitted_by_dispatcher']"
+      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
