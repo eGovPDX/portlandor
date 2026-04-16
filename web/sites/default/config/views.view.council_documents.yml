@@ -5,35 +5,31 @@ dependencies:
   config:
     - field.storage.node.field_amended_by_council
     - field.storage.node.field_bureau
-    - field.storage.node.field_committee
     - field.storage.node.field_council_document_status
     - field.storage.node.field_council_document_type
     - field.storage.node.field_date_of_final_disposition
-    - field.storage.node.field_doc_published_date
     - field.storage.node.field_document_number
     - field.storage.node.field_full_document_title
     - field.storage.node.field_introduced_by
     - field.storage.node.field_is_emergency_ordinance
-    - field.storage.node.field_requested_council_date
     - field.storage.relation.field_allows_testimony
     - field.storage.relation.field_session_start_datetime
+    - field.storage.relation.field_view_testimony_link
     - node.type.council_document
     - taxonomy.vocabulary.council_committee
     - taxonomy.vocabulary.council_document_status
-    - workflows.workflow.council_document_workflow
   content:
     - 'taxonomy_term:council_committee:7e9d0dac-e638-4764-8dfc-23e9a4eb4118'
     - 'taxonomy_term:council_document_status:580781d7-c574-402c-b884-b2c55b050ff9'
     - 'taxonomy_term:council_document_status:bd320817-c68b-4f1c-929a-8e133907fc00'
   module:
-    - content_moderation
     - datetime
+    - link
     - node
     - options
     - portland_relations
     - taxonomy
     - user
-    - views_sort_null_field
 id: council_documents
 label: 'Council Documents'
 module: views
@@ -2272,6 +2268,73 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
+        field_view_testimony_link:
+          id: field_view_testimony_link
+          table: relation__field_view_testimony_link
+          field: field_view_testimony_link
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: uri
+          type: link
+          settings:
+            trim_length: 80
+            url_only: true
+            url_plain: true
+            rel: '0'
+            target: '0'
+          group_column: ''
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         nid:
           id: nid
           table: node_field_data
@@ -2286,7 +2349,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "{% set council_document_type_tid = field_council_document_type|render|striptags|trim %}\r\n{% set allows_testimony = field_allows_testimony|render|striptags|trim %}\r\n{% set testify_text = (council_document_type_tid == 326 ? 'Sign up for public comment' : 'Testify on this item')|t %}\r\n<a class=\"btn btn-cta d-print-none\" href=\"/council-clerk/testimony-registration?doc_id={{ nid }}\">{{ testify_text }}</a>\r\n{# Hide testimony order button if verbal testimony is off, or if doc is Public Communications #}\r\n{% if council_document_type_tid != 326 and allows_testimony %}\r\n<a class=\"btn btn-cta-outline d-print-none mt-6\" href=\"{{ drupal_url('node/' ~ nid ~ '/testimony-order') }}\">{{ 'View testimony order'|t }}</a>\r\n{% endif %}"
+            text: "{% set council_document_type_tid = field_council_document_type|render|striptags|trim %}\r\n{% set allows_testimony = field_allows_testimony|render|striptags|trim %}\r\n{% set testify_text = (council_document_type_tid == 326 ? 'Sign up for public comment' : 'Testify on this item')|t %}\r\n<a class=\"btn btn-cta d-print-none\" href=\"/council-clerk/testimony-registration?doc_id={{ nid }}\">{{ testify_text }}</a>\r\n{# Hide testimony order button if verbal testimony is off, or if doc is Public Communications #}\r\n{% if council_document_type_tid != 326 and allows_testimony %}\r\n{% set testimony_order_url = field_view_testimony_link ? field_view_testimony_link : drupal_url('node/' ~ nid ~ '/testimony-order') %}\r\n<a class=\"btn btn-cta-outline d-print-none mt-6\" href=\"{{ testimony_order_url }}\">{{ 'View testimony order'|t }}</a>\r\n{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -2638,6 +2701,7 @@ display:
       tags:
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.relation.field_allows_testimony'
+        - 'config:field.storage.relation.field_view_testimony_link'
   entity_reference_all_council_docs:
     id: entity_reference_all_council_docs
     display_title: 'Entity Reference All Council Documents'
