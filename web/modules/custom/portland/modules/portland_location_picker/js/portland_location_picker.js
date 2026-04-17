@@ -40,7 +40,7 @@
         const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
         const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
         const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it.<br><br>For keyboard navigation, use Tab to move focus to the map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
-        const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center.';
+        const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center. Use plus or minus keys to zoom.';
         const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
         const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
@@ -160,6 +160,9 @@
         var keyboardOpenedPopupReturnFocusTarget = null;
         var shouldFocusPopupCloseButton = false;
         var selectedMarkerPopupToReopenAfterZoom = null;
+        var keyboardPanAnnouncementTimeoutId = null;
+        var lastKeyboardPanAnnouncementText = '';
+        var pendingKeyboardZoomAnnouncement = false;
 
         // flags for server error handling
         var serverErrorHard = false;
@@ -255,6 +258,7 @@
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
           map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
+          map.on('zoomend', announceKeyboardMapZoomStatus);
           map.on('popupopen', handlePopupOpen);
           map.on('popupclose', handlePopupClose);
 
@@ -1557,6 +1561,7 @@
             if (isZoomInKey) {
               e.preventDefault();
               cancelEventBubble(e);
+              pendingKeyboardZoomAnnouncement = true;
               map.zoomIn();
               return;
             }
@@ -1564,6 +1569,7 @@
             if (isZoomOutKey) {
               e.preventDefault();
               cancelEventBubble(e);
+              pendingKeyboardZoomAnnouncement = true;
               map.zoomOut();
               return;
             }
@@ -1615,6 +1621,8 @@
             } else if (e.key === 'ArrowRight') {
               map.panBy([KEYBOARD_PAN_PIXELS, 0]);
             }
+
+            queueKeyboardPanAnnouncement();
             return;
           }
 
@@ -1635,6 +1643,38 @@
           }
 
           doMapClick(map.getCenter());
+        }
+
+        function queueKeyboardPanAnnouncement() {
+          if (keyboardPanAnnouncementTimeoutId) {
+            window.clearTimeout(keyboardPanAnnouncementTimeoutId);
+          }
+
+          // Announce after panning pauses so held arrow keys don't create noisy output.
+          keyboardPanAnnouncementTimeoutId = window.setTimeout(function () {
+            if (!map || !map.getCenter) {
+              return;
+            }
+
+            var center = map.getCenter();
+            var message = 'Map moved. Center latitude ' + center.lat.toFixed(5) + ', longitude ' + center.lng.toFixed(5) + '. Press Enter to select location at center.';
+
+            if (message !== lastKeyboardPanAnnouncementText) {
+              announceMapStatus(message);
+              lastKeyboardPanAnnouncementText = message;
+            }
+
+            keyboardPanAnnouncementTimeoutId = null;
+          }, 450);
+        }
+
+        function announceKeyboardMapZoomStatus() {
+          if (!pendingKeyboardZoomAnnouncement || !map) {
+            return;
+          }
+
+          pendingKeyboardZoomAnnouncement = false;
+          announceMapStatus('Zoom level ' + map.getZoom() + '.');
         }
 
         function handleLocateMeFound(e) {
