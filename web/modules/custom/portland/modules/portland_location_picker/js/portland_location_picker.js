@@ -1635,6 +1635,7 @@
             return;
           }
 
+          e.preventDefault();
           cancelEventBubble(e);
 
           if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
