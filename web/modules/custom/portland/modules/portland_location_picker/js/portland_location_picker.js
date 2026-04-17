@@ -1538,6 +1538,28 @@
         }
 
         function handleMapKeyDown(e) {
+          var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
+
+          // Match Google Maps behavior: +/- zoom works from map canvas or map controls.
+          if (isMapRegionFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            var isZoomInKey = e.key === '+' || (e.key === '=' && e.shiftKey) || e.key === 'Add' || e.key === 'NumpadAdd';
+            var isZoomOutKey = e.key === '-' || e.key === '_' || e.key === 'Subtract' || e.key === 'NumpadSubtract';
+
+            if (isZoomInKey) {
+              e.preventDefault();
+              cancelEventBubble(e);
+              map.zoomIn();
+              return;
+            }
+
+            if (isZoomOutKey) {
+              e.preventDefault();
+              cancelEventBubble(e);
+              map.zoomOut();
+              return;
+            }
+          }
+
           if (e.key === 'Escape' || e.key === 'Esc') {
             var openPopup = map && map._popup ? map._popup : null;
             if (openPopup) {
@@ -1571,7 +1593,6 @@
           // when focus is directly on the map container.
 
           var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
-          var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
 
           // Arrow keys work from anywhere in the map region for panning
           if (isArrowKey && isMapRegionFocused) {
@@ -2034,7 +2055,7 @@
 
           var icon = locationMarker._icon;
           icon.setAttribute('tabindex', '0');
-          icon.setAttribute('aria-describedby', 'location-text');
+          icon.setAttribute('aria-describedby', 'location-text-value');
 
           var hasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
           if (hasPopup) {
