@@ -42,18 +42,25 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
 
+    // Generate a unique ID prefix based on the parent element's webform key.
+    // This ensures that multiple instances of this composite element on the same form
+    // have unique sub-element IDs, which is required for proper label-for associations
+    // and JavaScript selectors.
+    $parent_key = isset($element['#webform_key']) ? $element['#webform_key'] : 'address-verifier';
+    $id_prefix = str_replace('_', '-', $parent_key) . '--';
+
     $element['location_verification_status'] = [
       '#type' => 'hidden',
       '#title' => t('Address Verification'),
-      '#attributes' => [ 'id' => 'location_verification_status' ],
+      '#attributes' => [ 'id' => $id_prefix . 'location-verification-status' ],
       '#required_error' => 'The address is not verified.',
       '#element_validate' => [[static::class, 'validateVerificationStatusElement']],
     ];
     $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Street Address'),
-      '#id' => 'location_address',
-      '#attributes' => ['autocomplete' => 'address-line1'],
+      '#id' => $id_prefix . 'location-address',
+      '#autocomplete' => 'address-line1',
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -65,33 +72,33 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_full_address'] = [
       '#type' => 'hidden',
       '#title' => t('Full Address'),
-      '#attributes' => ['id' => 'location_full_address']
+      '#attributes' => ['id' => $id_prefix . 'location-full-address']
     ];
     $element['location_address_street_number'] = [
       '#type' => 'hidden',
       '#title' => t('Street Number'),
-      '#attributes' => ['id' => 'location_address_street_number']
+      '#attributes' => ['id' => $id_prefix . 'location-address-street-number']
     ];
     $element['location_address_street_quadrant'] = [
       '#type' => 'hidden',
       '#title' => t('Street Quadrant'),
-      '#attributes' => ['id' => 'location_address_street_quadrant']
+      '#attributes' => ['id' => $id_prefix . 'location-address-street-quadrant']
     ];
     $element['location_address_street_name'] = [
       '#type' => 'hidden',
       '#title' => t('Street Name'),
-      '#attributes' => ['id' => 'location_address_street_name']
+      '#attributes' => ['id' => $id_prefix . 'location-address-street-name']
     ];
     $element['location_address_street_type'] = [
       '#type' => 'hidden',
       '#title' => t('Street Type'),
-      '#attributes' => ['id' => 'location_address_street_type']
+      '#attributes' => ['id' => $id_prefix . 'location-address-street-type']
     ];
     $element['unit_number'] = [
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
-      '#id' => 'unit_number',
-      '#attributes' => ['autocomplete' => 'address-line2'],
+      '#id' => $id_prefix . 'unit-number',
+      '#attributes' => ['autocomplete' => 'off'],
       '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -100,8 +107,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_city'] = [
       '#type' => 'textfield',
       '#title' => t('City'),
-      '#id' => 'location_city',
-      '#attributes' => ['autocomplete' => 'address-level2'],
+      '#id' => $id_prefix . 'location-city',
+      '#autocomplete' => 'address-level2',
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['webform-city', 'mb-0'],
@@ -112,86 +119,86 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('State'),
       '#options' => $state_codes,
       '#default_value' => 'OR',
-      '#id' => 'location_state',
-      '#attributes' => ['autocomplete' => 'address-level1'],
+      '#id' => $id_prefix . 'location-state',
+      '#autocomplete' => 'address-level1',
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
     ];
     $element['location_zip'] = [
       '#type' => 'textfield',
       '#title' => t('ZIP Code'),
-      '#id' => 'location_zip',
-      '#attributes' => ['autocomplete' => 'postal-code', 'class' => ['webform-zip']],
+      '#id' => $id_prefix . 'location-zip',
+      '#autocomplete' => 'postal-code',
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
     ];
     $element['location_jurisdiction'] = [
       '#type' => 'hidden',
       '#title' => t('Jurisdiction'),
-      '#attributes' => [ 'id' => 'location_jurisdiction' ],
+      '#attributes' => [ 'id' => $id_prefix . 'location-jurisdiction' ],
     ];
     $element['av_suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="av_suggestions_modal" class="visually-hidden"></div>',
+      '#markup' => '<div id="' . $id_prefix . 'av-suggestions-modal" class="visually-hidden"></div>',
     ];
     $element['status_modal'] = [
       '#type' => 'markup',
       '#title' => 'Status Indicator',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
+      '#markup' => '<div id="' . $id_prefix . 'status-modal" class="visually-hidden"></div>',
     ];
     $element['not_found_modal'] = [
       '#type' => 'markup',
       '#title' => 'Address Not Found',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="not_found_modal" class="visually-hidden"></div>',
+      '#markup' => '<div id="' . $id_prefix . 'not-found-modal" class="visually-hidden"></div>',
     ];
     $element['location_lat'] = [
       '#type' => 'hidden',
       '#title' => t('Latitude'),
-      '#attributes' => [ 'id' => 'location_lat']
+      '#attributes' => [ 'id' => $id_prefix . 'location-lat']
     ];
     $element['location_lon'] = [
       '#type' => 'hidden',
       '#title' => t('Longitude'),
-      '#attributes' => [ 'id' => 'location_lon']
+      '#attributes' => [ 'id' => $id_prefix . 'location-lon']
     ];
     $element['location_x'] = [
       '#type' => 'hidden',
       '#title' => t('Coordinates X'),
-      '#attributes' => [ 'id' => 'location_x']
+      '#attributes' => [ 'id' => $id_prefix . 'location-x']
     ];
     $element['location_y'] = [
       '#type' => 'hidden',
       '#title' => t('Coordinates Y'),
-      '#attributes' => [ 'id' => 'location_y']
+      '#attributes' => [ 'id' => $id_prefix . 'location-y']
     ];
     $element['location_taxlot_id'] = [
       '#type' => 'hidden',
       '#title' => t('Taxlot ID'),
-      '#attributes' => [ 'id' => 'location_taxlot_id']
+      '#attributes' => [ 'id' => $id_prefix . 'location-taxlot-id']
     ];
     $element['location_is_unincorporated'] = [
       '#type' => 'hidden',
       '#title' => t('Is Unincorporated'),
-      '#attributes' => [ 'id' => 'location_is_unincorporated']
+      '#attributes' => [ 'id' => $id_prefix . 'location-is-unincorporated']
     ];
     $element['location_address_label'] = [
       '#type' => 'hidden',
       '#title' => t('Address Label'),
-      '#attributes' => [ 'id' => 'location_address_label']
+      '#attributes' => [ 'id' => $id_prefix . 'location-address-label']
     ];
     $element['location_capture_field'] = [
       '#type' => 'hidden',
       '#title' => t('Capture Field'),
-      '#attributes' => [ 'id' => 'location_capture_field'],
+      '#attributes' => [ 'id' => $id_prefix . 'location-capture-field'],
     ];
     $element['location_data'] = [
       '#type' => 'hidden',
       '#title' => t('Location Data'),
-      '#attributes' => [ 'id' => 'location_data']
+      '#attributes' => [ 'id' => $id_prefix . 'location-data']
     ];
 
     return $element;
