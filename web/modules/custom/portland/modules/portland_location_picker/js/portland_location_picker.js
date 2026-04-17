@@ -851,6 +851,7 @@
           var containerParent = container.parentNode;
 
           container.classList.add('keyboard-selection-enabled');
+          container.classList.remove('keyboard-crosshair-active');
           container.setAttribute('role', 'application');
           container.setAttribute('aria-label', 'Location picker map');
           container.setAttribute('tabindex', '0');
@@ -1443,6 +1444,9 @@
 
         function handleResetButtonClick() {
           collapsePanControl();
+          if (map && map.getContainer()) {
+            map.getContainer().classList.remove('keyboard-crosshair-active');
+          }
           resetLocationMarker();
           resetClickedMarker();
           clearLocationFields();
@@ -1539,12 +1543,17 @@
 
         function handleMapKeyDown(e) {
           var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
+          var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+          var isZoomInKey = e.key === '+' || (e.key === '=' && e.shiftKey) || e.key === 'Add' || e.key === 'NumpadAdd';
+          var isZoomOutKey = e.key === '-' || e.key === '_' || e.key === 'Subtract' || e.key === 'NumpadSubtract';
+          var isSelectAtCenterKey = e.key === 'Enter' || e.key === ' ';
+
+          if (isMapRegionFocused && (isArrowKey || isZoomInKey || isZoomOutKey || isSelectAtCenterKey)) {
+            map.getContainer().classList.add('keyboard-crosshair-active');
+          }
 
           // Match Google Maps behavior: +/- zoom works from map canvas or map controls.
           if (isMapRegionFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            var isZoomInKey = e.key === '+' || (e.key === '=' && e.shiftKey) || e.key === 'Add' || e.key === 'NumpadAdd';
-            var isZoomOutKey = e.key === '-' || e.key === '_' || e.key === 'Subtract' || e.key === 'NumpadSubtract';
-
             if (isZoomInKey) {
               e.preventDefault();
               cancelEventBubble(e);
@@ -1591,8 +1600,6 @@
           // Allow arrow key panning from any focused element in the map region
           // (map container, controls, or help modal), but only handle Enter/Space
           // when focus is directly on the map container.
-
-          var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
 
           // Arrow keys work from anywhere in the map region for panning
           if (isArrowKey && isMapRegionFocused) {
