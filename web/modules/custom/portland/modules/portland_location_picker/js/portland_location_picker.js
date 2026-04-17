@@ -1143,9 +1143,6 @@
           var describedBy = descriptionIds.join(' ');
           map.getContainer().setAttribute('aria-describedby', describedBy);
 
-          if (locationMarker && locationMarker._icon) {
-            locationMarker._icon.setAttribute('aria-describedby', describedBy);
-          }
         }
 
         function setMapInvalid(message) {
@@ -2037,15 +2034,7 @@
 
           var icon = locationMarker._icon;
           icon.setAttribute('tabindex', '0');
-
-          if (map && map.getContainer()) {
-            var markerDescribedBy = map.getContainer().getAttribute('aria-describedby');
-            if (markerDescribedBy) {
-              icon.setAttribute('aria-describedby', markerDescribedBy);
-            } else {
-              icon.removeAttribute('aria-describedby');
-            }
-          }
+          icon.setAttribute('aria-describedby', 'location-text');
 
           var hasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
           if (hasPopup) {
