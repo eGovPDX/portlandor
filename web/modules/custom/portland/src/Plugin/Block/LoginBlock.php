@@ -41,9 +41,7 @@ class LoginBlock extends BlockBase {
       $login_link = "";
       if ($logged_in) {
         $options = [
-          'query' => [
-            'destination' => $request->query->get("destination"),
-          ],
+          'query' => $request->query->all(),
           'absolute' => TRUE,
         ];
         $logout_url = Url::fromRoute('user.logout', [], $options)->toString();
