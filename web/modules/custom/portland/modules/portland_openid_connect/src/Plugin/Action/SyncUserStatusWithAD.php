@@ -7,6 +7,7 @@ use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Session\AccountInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\Core\Access\AccessResult;
+use Drupal\portland_openid_connect\Util\PortlandOpenIdConnectUtil;
 
 /**
  * Synchronize user status with Azure AD.
@@ -28,11 +29,12 @@ class SyncUserStatusWithAD extends ActionBase
 
     // Skip if the Drupal user is marked as "Is Distribution List"
     $users = \Drupal::entityTypeManager()->getStorage('user')
-    ->loadByProperties(['mail' => $account->getEmail()]);
-    if( empty($users) ) return;
-    if( array_values($users)[0]->field_is_distribution_list->value ) return;
+      ->loadByProperties(['mail' => $account->getEmail()]);
+    if (empty($users)) return;
+    if (array_values($users)[0]->field_is_distribution_list->value) return;
 
     // Never block these users
+    $user_email = $account->getEmail();
     $skip_emails = [
       'BTS-eGov@portlandoregon.gov',
       'ally.admin@portlandoregon.gov',
@@ -43,9 +45,21 @@ class SyncUserStatusWithAD extends ActionBase
       // 'WBUDFTeam@portlandoregon.gov',  // Outlook distribution list
       // 'council140@portlandoregon.gov',  // Actual AD group
     ];
-    if (in_array(strtolower($account->getEmail()), array_map('strtolower', $skip_emails))) return;
+    if (in_array(strtolower($user_email), array_map('strtolower', $skip_emails))) return;
 
-    $tokens = SyncUserStatusWithAD::GetAccessToken();
+    // Extract domain from email address
+    if (substr_count($user_email, "@") === 1) {
+      list(, $domain) = explode("@", $user_email);
+    } else {
+      \Drupal::logger('portland OpenID')->error("Invalid email: $user_email");
+      return;
+    }
+    if(empty($domain)) {
+      \Drupal::logger('portland OpenID')->error("Cannot extract domain from email: $user_email");
+      return;
+    }
+
+    $tokens = PortlandOpenIdConnectUtil::GetAccessToken($domain);
     if (empty($tokens) || empty($tokens['access_token'])) {
       \Drupal::logger('portland OpenID')->error("Cannot retrieve access token for Microsoft Graph. Make sure the client secret is correct.");
       return;
@@ -62,11 +76,10 @@ class SyncUserStatusWithAD extends ActionBase
     // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.
     $access_result_for_update = $object->access('update', $account);
     $access_result_for_edit = $object->access('edit', $account);
-    if( $access_result_for_update || $access_result_for_edit ) {
-      return ($return_as_object ? AccessResult::allowed() : true );
-    }
-    else {
-      return ($return_as_object ? AccessResult::forbidden() : false );
+    if ($access_result_for_update || $access_result_for_edit) {
+      return ($return_as_object ? AccessResult::allowed() : true);
+    } else {
+      return ($return_as_object ? AccessResult::forbidden() : false);
     }
   }
 
@@ -117,7 +130,7 @@ class SyncUserStatusWithAD extends ActionBase
 
       if (count($users) != 0) {
         $user = array_values($users)[0]; // Assume the lookup returns only one unique user.
-        if ( ! $user->status->value) {
+        if (! $user->status->value) {
           $user->status = 1;
           $user->save();
           \Drupal::logger('portland OpenID')->notice('User activated: ' . $user->mail->value);
@@ -140,58 +153,6 @@ class SyncUserStatusWithAD extends ActionBase
         }
       }
       return $this->t('User blocked');
-    }
-  }
-
-  /**
-   * Call Microsoft Azure AD OAuth API to retrieve the access token.
-   * Need a fresh token for each CRON job run.
-   */
-  public static function GetAccessToken()
-  {
-    static $token_expire_time = 0;
-    static $tokens = null;
-    // If the token has not expired, return the previous token
-    if (time() < $token_expire_time) return $tokens;
-
-    $windows_aad_config = \Drupal::config('openid_connect.client.windows_aad');
-    $client_id = $windows_aad_config->get('settings.client_id');
-    $tenant_id = '636d7808-73c9-41a7-97aa-8c4733642141';
-
-    $request_options = [
-      'form_params' => [
-        // 'code' => $authorization_code,
-        'client_id' => $client_id,
-        'client_secret' => $windows_aad_config->get('settings.client_secret'),
-        'grant_type' => 'client_credentials',
-        'scope' => 'https://graph.microsoft.com/.default',
-      ],
-    ];
-
-    /* @var \GuzzleHttp\ClientInterface $client */
-    $client = new Client();
-
-    try {
-      $response = $client->post("https://login.microsoftonline.com/$tenant_id/oauth2/v2.0/token", $request_options);
-      $response_data = json_decode((string) $response->getBody(), TRUE);
-
-      // Expected result.
-      $tokens = [
-        // 'id_token' => $response_data['id_token'],
-        'access_token' => $response_data['access_token'],
-      ];
-      if (array_key_exists('expires_in', $response_data)) {
-        $tokens['expire'] = \Drupal::time()->getRequestTime() + $response_data['expires_in'];
-      }
-      $token_expire_time = time() + $response_data['expires_in'];
-      return $tokens;
-    } catch (RequestException $e) {
-      $variables = [
-        '@message' => 'Could not retrieve access token',
-        '@error_message' => $e->getMessage(),
-      ];
-      \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
-      return FALSE;
     }
   }
 }
