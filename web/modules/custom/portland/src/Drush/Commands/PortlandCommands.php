@@ -28,9 +28,13 @@ class PortlandCommands extends DrushCommands {
     \Drupal::state()->deleteMultiple([
       'pgov.user_sync.stop',
       'pgov.user_sync.last_sync_date.portlandoregon.gov',
+      'pgov.user_sync.last_sync_date.police.portlandoregon.gov',
       'pgov.user_sync.last_check_removals_date.portlandoregon.gov',
-      'pgov.user_sync.drupal_user_offset',
+      'pgov.user_sync.last_check_removals_date.police.portlandoregon.gov',
+      'pgov.user_sync.drupal_user_offset.portlandoregon.gov',
+      'pgov.user_sync.drupal_user_offset.police.portlandoregon.gov',
       'pgov.user_sync.resume_url.portlandoregon.gov',
+      'pgov.user_sync.resume_url.police.portlandoregon.gov'
     ]);
 
     echo "The user sync process will start in the next cron run." . PHP_EOL;

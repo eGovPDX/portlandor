@@ -5,6 +5,7 @@ namespace Drupal\portland_openid_connect\Util;
 use GuzzleHttp\Client;
 use Drupal\group\Entity\Group;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\user\Entity\User;
@@ -19,6 +20,7 @@ class PortlandOpenIdConnectUtil
 {
   public const ROSE_DOMAIN_NAME = "portlandoregon.gov";
   public const PTLD_DOMAIN_NAME = "police.portlandoregon.gov";
+  public const PROSPER_PORTLAND_EMAIL_SUFFIX = "@prosperportland.us";
 
   // Keys
   private static $ROSE_SYNC_CLIENT_ID;
@@ -56,8 +58,8 @@ class PortlandOpenIdConnectUtil
 
     $roles = $membership->getRoles(FALSE);
     $has_employee_role = false;
-    $group_content = $membership->getGroupRelationship();
-    $group_content->group_roles = [];
+    $group_relationship = $membership->getGroupRelationship();
+    $group_relationship->group_roles = [];
     foreach ($roles as $role) {
       if ($role->id() === 'employee-employee' || $role->id() === 'private-employee') {
         $has_employee_role = true;
@@ -69,24 +71,24 @@ class PortlandOpenIdConnectUtil
       //   continue;
       // }
       /** @var ListInterface $group_roles_list */
-      $group_roles_list = $group_content->group_roles;
+      $group_roles_list = $group_relationship->group_roles;
       $group_roles_list->appendItem(['target_id' => $role->id()]);
     }
 
     // // Hotfix: comment out to avoid removal of membership
     // If the user has no role in the group, remove the user completely
     // $group = \Drupal\group\Entity\Group::load($group_id);
-    // if($group_content->group_roles->count() === 0) {
+    // if($group_relationship->group_roles->count() === 0) {
     //   $group->removeMember($account);
     //   $group->save();
     // }
     // // Else only remove the Employee roles. Keep roles like Following
     // else {
-    //   $group_content->save();
+    //   $group_relationship->save();
     // }
 
     if($has_employee_role) {
-      $group_content->save();
+      $group_relationship->save();
     }
   }
 
@@ -110,16 +112,16 @@ class PortlandOpenIdConnectUtil
       // https://drupal.stackexchange.com/questions/232530/programmatically-add-new-role-to-group-member/232646#232646
       // Array of Role-name=>Role_entity
       $roles = $membership->getRoles(FALSE);
-      $group_content = $membership->getGroupRelationship();
+      $group_relationship = $membership->getGroupRelationship();
       $has_new_role = false;
       foreach ($role_id_array as $role_id) {
         // Check if the user has the new role
         if (!isset($roles[$role_id])) {
-          $group_content->group_roles->appendItem(['target_id' => $role_id]);
+          $group_relationship->group_roles->appendItem(['target_id' => $role_id]);
           $has_new_role = true;
         }
       }
-      if ($has_new_role) $group_content->save();
+      if ($has_new_role) $group_relationship->save();
     }
   }
 
@@ -339,7 +341,7 @@ class PortlandOpenIdConnectUtil
       return $userName;
     }
 
-    // Leave 3 characters for a random number to reduce conflict
+    // Use MD5 hash (32 char) with the email domain as the user name
     if(str_contains($userName, "@")) {
       $parts = explode("@", $userName);
       return hash("md5", $parts[0]) . "@" . $parts[1];
@@ -408,6 +410,7 @@ class PortlandOpenIdConnectUtil
         $user_info['principalName'] = $response_data["account"][0]['userPrincipalName'];
         $user_info['first_name'] = $response_data['names'][0]['first'];
         $user_info['last_name'] = $response_data['names'][0]['last'];
+        $user_info['mail'] = $response_data['emails'][0]['address'];
       }
 
       // Look up Drupal user with email
@@ -423,7 +426,12 @@ class PortlandOpenIdConnectUtil
       $user->field_phone = $user_info['phone'];
       $user->field_mobile_phone = array_key_exists('mobile_phone', $user_info) ? $user_info['mobile_phone'] : '';
       $user->field_group_names = $user_info['group'];
-      $user->setUsername( self::TrimUserName($user_info['principalName']) );
+      if(str_ends_with(strtolower($user_info['mail']), PortlandOpenIdConnectUtil::PROSPER_PORTLAND_EMAIL_SUFFIX)) {
+        $user->setUsername( self::TrimUserName($user_info['mail']) );
+      }
+      else {
+        $user->setUsername( self::TrimUserName($user_info['principalName']) );
+      }
       return true;
     } catch (RequestException $e) {
       // Log a notice when the user's profile can't be retrieved but do not disable the user.
@@ -445,7 +453,7 @@ class PortlandOpenIdConnectUtil
     self::init();
 
     // PTLD has no manager info
-    if(str_ends_with($user->mail->value, self::PTLD_DOMAIN_NAME)) return;
+    if(str_ends_with(strtolower($user->mail->value), self::PTLD_DOMAIN_NAME)) return;
     // Must use Principal Name to look up manager
     $user_lookup_key = $user->field_principal_name->value ?? $user->name->value;
     try {
@@ -490,7 +498,7 @@ class PortlandOpenIdConnectUtil
           // \Drupal::logger('portland OpenID')->notice('Found existing manager: ' . $manager_ad_id);
         } else {
           $manager_stub_user = User::create([
-            'name' => self::TrimUserName($response_data['userPrincipalName']),
+            'name' => (str_ends_with(strtolower($response_data['mail']), PortlandOpenIdConnectUtil::PROSPER_PORTLAND_EMAIL_SUFFIX)) ? self::TrimUserName($response_data['mail']) : self::TrimUserName($response_data['userPrincipalName']),
             'mail' => $response_data['mail'],
             'pass' => \Drupal::service('password_generator')->generate(), // temp password
             'status' => 1,
@@ -505,11 +513,11 @@ class PortlandOpenIdConnectUtil
         $user->set('field_managers', array_unique($manager_user_ids));
       }
     } catch (RequestException $e) {
-      $variables = [
-        '@message' => 'Cannot retrieve user\'s manager information for principal name ' . $user->getAccountName(),
-        '@error_message' => $e->getMessage(),
-      ];
-      \Drupal::logger('portland OpenID')->debug('@message. Details: @error_message', $variables);
+      if($e->getCode() === 404) {
+        // User has no manager info. Clear the Managers field.
+        $user->set('field_managers', []);
+        return;
+      }
     }
   }
 
@@ -544,7 +552,7 @@ class PortlandOpenIdConnectUtil
         $user_photo_folder_name,
         FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS
       );
-      $user_photo_file = \Drupal::service('file.repository')->writeData((string) $response->getBody(), 'public://user-photo/' . $file_name . '.jpg', FileSystemInterface::EXISTS_REPLACE);
+      $user_photo_file = \Drupal::service('file.repository')->writeData((string) $response->getBody(), 'public://user-photo/' . $file_name . '.jpg', FileExists::Replace);
 
       $users = \Drupal::entityTypeManager()->getStorage('user')
         ->loadByProperties(['name' => $userPrincipalName]);
