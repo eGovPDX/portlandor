@@ -457,7 +457,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       //   $form_state->setUserInput($user_input);
       // }
 
-      $this->sendToZendeskAndValidateNoError($form_state);
+      $this->sendToZendeskAndValidateNoError($form_state, $webform_submission);
     }
   }
 
@@ -470,10 +470,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * in a custom handler is performed after all the built-in webform validation, so this is a
    * safe approach.
    */
-  private function sendToZendeskAndValidateNoError(FormStateInterface $form_state) {
+  private function sendToZendeskAndValidateNoError(FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     if (!$form_state->hasAnyErrors()) {
       // comment out the line below to test the error handling
-      $success = $this->sendToZendesk($form_state);
+      $success = $this->sendToZendesk($form_state, $webform_submission);
       if (!$success) {
         // throw error and don't let form submit
         \Drupal::messenger()->addError(t('There was a problem communicating with our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.'));
@@ -482,18 +482,17 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
   }
 
-  public function sendToZendesk(FormStateInterface $form_state)
+  public function sendToZendesk(FormStateInterface $form_state, WebformSubmissionInterface $webform_submission)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
     // be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
     // on every submit of the form.
 
-    // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
-    // a webform_submission object from form_state and pull form values from that for the API submission.
-
     // declare working variables
     $request = [];
-    $webform_submission = $form_state->getFormObject()->getEntity();
+
+    // Since we're doing this in the validate phase instead of postSave, we use
+    // the current submission object built by WebformSubmissionForm::validateForm.
 
     // manually put the report_ticket_id value in the webform submission object, so that it
     // gets used in token replacement and in custom field if needed.
