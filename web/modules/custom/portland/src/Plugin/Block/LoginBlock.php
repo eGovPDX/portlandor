@@ -40,11 +40,15 @@ class LoginBlock extends BlockBase {
       }
       $login_link = "";
       if ($logged_in) {
-        $query_string = http_build_query($request->query->all() + [
-          'csrf_token' => \Drupal::service('csrf_token')->get('user.logout'),
-        ]);
+        $options = [
+          'query' => [
+            'destination' => $request->query->get("destination"),
+          ],
+          'absolute' => TRUE,
+        ];
+        $logout_url = Url::fromRoute('user.logout', [], $options)->toString();
         $login_text = $this->t('Editor log out');
-        $login_link = "<a href=\"/user/logout?$query_string\">$login_text</a>";
+        $login_link = "<a href=\"$logout_url\">" . $login_text . "</a>";
       } else {
         $query_string = http_build_query($request->query->all());
         $login_text = $this->t('Editor log in');
