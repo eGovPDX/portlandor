@@ -40,6 +40,16 @@ class ZendeskHandler extends WebformHandlerBase
 {
   private const ANONYMOUS_EMAIL = 'anonymous@portlandoregon.gov';
   private const JSON_FORM_DATA_FIELD_ID = 17698062540823;
+  
+  /**
+   * TEMPORARY DEBUG FLAG.
+   *
+   * Set to TRUE to reliably simulate the intermittent missing upload source
+   * error by deleting temporary _sid_ files before Zendesk upload.
+   *
+   * IMPORTANT: Keep FALSE in production.
+   */
+  private const DEBUG_SIMULATE_MISSING_UPLOAD_SOURCE = FALSE;
 
   /**
    * The webform element plugin manager.
@@ -563,7 +573,7 @@ class ZendeskHandler extends WebformHandlerBase
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
     if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#parents'][0] === "submit") {
-      $this->sendToZendeskAndValidateTicket($form, $form_state);
+      $this->sendToZendeskAndValidateTicket($form, $form_state, $webform_submission);
     }
   }
 
@@ -575,10 +585,10 @@ class ZendeskHandler extends WebformHandlerBase
    * in a custom handler is performed after all the built-in webform validation, so this is a
    * safe approach.
    */
-  private function sendToZendeskAndValidateTicket(array &$form, FormStateInterface $form_state) {
+  private function sendToZendeskAndValidateTicket(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     if (!$form_state->hasAnyErrors()) {
       // comment out the line below to test the error handling
-      $ticket_id = $this->sendToZendesk($form, $form_state);
+      $ticket_id = $this->sendToZendesk($form, $form_state, $webform_submission);
       if (!$ticket_id) {
         // throw error and don't let form submit
         \Drupal::messenger()->addError(t('There was a problem submitting your report to our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.'));
@@ -587,7 +597,7 @@ class ZendeskHandler extends WebformHandlerBase
     }
   }
 
-  public function sendToZendesk(array &$form, FormStateInterface &$form_state) {
+  public function sendToZendesk(array &$form, FormStateInterface &$form_state, WebformSubmissionInterface $webform_submission) {
     // NOTE: This function will run both when a webform is created, and when it's updated, so this handler
     // should only be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
     // on every submit of the form.
@@ -600,9 +610,8 @@ class ZendeskHandler extends WebformHandlerBase
     // tickets will be forked on the field identified in the config value 'ticket_fork_field'
     $fork_field_name = $this->configuration['ticket_fork_field'];
 
-    // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
-    // a webform_submission object from form_state and pull form values from that for the API submission.
-    $webform_submission = $form_state->getFormObject()->getEntity();
+    // Since we're doing this in the validate phase instead of postSave, we use
+    // the current submission object built by WebformSubmissionForm::validateForm.
 
     // check for a report_ticket_id value in the form state; if a handler previously submitted
     // a ticket, the ID should be available to subsequent handlers.
@@ -867,12 +876,19 @@ class ZendeskHandler extends WebformHandlerBase
           foreach ($fid_to_element as $fid => $element) {
             $file = File::load($fid);
 
+            if (!$file) {
+              continue;
+            }
+
             // add uploads key to Zendesk comment, if not already present
             if ($file && !array_key_exists('uploads', $request['comment'])) {
               $request['comment']['uploads'] = [];
             }
 
             if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);
+
+            // Test helper: force missing source errors for temporary _sid_ files.
+            $this->simulateMissingUploadSourceForTesting($file);
 
             $path = $this->pathForZendeskUpload($file);   // new helper below
             $__temp_paths[] = $path;                      // remember to clean up
@@ -962,6 +978,36 @@ class ZendeskHandler extends WebformHandlerBase
       if ($base && $real && str_starts_with($real, $base . DIRECTORY_SEPARATOR)) {
         @$fs->unlink($real);
       }
+    }
+  }
+
+  /**
+   * Deliberately remove temporary _sid_ files to reproduce missing source errors.
+   *
+   * This should only be enabled for local testing.
+   */
+  private function simulateMissingUploadSourceForTesting(File $file): void
+  {
+    if (!self::DEBUG_SIMULATE_MISSING_UPLOAD_SOURCE) {
+      return;
+    }
+
+    // Only touch temporary pre-save files to avoid deleting finalized uploads.
+    $uri = $file->getFileUri();
+    if (!$file->isTemporary() || !str_contains($uri, '/_sid_/')) {
+      return;
+    }
+
+    $fs = \Drupal::service('file_system');
+    $real = $fs->realpath($uri) ?: '';
+    if ($real && file_exists($real)) {
+      @unlink($real);
+      clearstatcache(TRUE, $real);
+      $this->getLogger()->warning('DEBUG_SIMULATE_MISSING_UPLOAD_SOURCE deleted @path for fid=@fid (uri=@uri).', [
+        '@path' => $real,
+        '@fid' => $file->id(),
+        '@uri' => $uri,
+      ]);
     }
   }
 
