@@ -946,7 +946,7 @@ class ZendeskHandler extends WebformHandlerBase
             }
 
             // add uploads key to Zendesk comment, if not already present
-            if ($file && !array_key_exists('uploads', $request['comment'])) {
+            if (!array_key_exists('uploads', $request['comment'])) {
               $request['comment']['uploads'] = [];
             }
 
