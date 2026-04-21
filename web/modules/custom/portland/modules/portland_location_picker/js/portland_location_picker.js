@@ -1548,7 +1548,7 @@
         function handleMapKeyDown(e) {
           var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
           var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
-          var isZoomInKey = e.key === '+' || (e.key === '=' && e.shiftKey) || e.key === 'Add' || e.key === 'NumpadAdd';
+          var isZoomInKey = e.key === '+' || (e.key === '=') || e.key === 'Add' || e.key === 'NumpadAdd';
           var isZoomOutKey = e.key === '-' || e.key === '_' || e.key === 'Subtract' || e.key === 'NumpadSubtract';
           var isSelectAtCenterKey = e.key === 'Enter' || e.key === ' ';
 
