@@ -38,12 +38,17 @@ class LoginBlock extends BlockBase {
       if(empty($destination)) {
         $request->query->set("destination", $request->getPathInfo());
       }
-      $query_string = http_build_query($request->query->all());
       $login_link = "";
       if ($logged_in) {
+        $options = [
+          'query' => $request->query->all(),
+          'absolute' => TRUE,
+        ];
+        $logout_url = Url::fromRoute('user.logout', [], $options)->toString();
         $login_text = $this->t('Editor log out');
-        $login_link = "<a href=\"/user/logout?$query_string\">$login_text</a>";
+        $login_link = "<a href=\"$logout_url\">" . $login_text . "</a>";
       } else {
+        $query_string = http_build_query($request->query->all());
         $login_text = $this->t('Editor log in');
         $login_link = "<a href=\"/user/login?$query_string\">$login_text</a>";
       }
