@@ -18,7 +18,6 @@
   Drupal.behaviors.portland_location_picker = {
     attach: function (context) {
       once('location_picker', 'fieldset.portland-location-picker--wrapper', context).forEach(function (locationPickerEl) {
-
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
         const DEFAULT_LONGITUDE = -122.65;
@@ -28,13 +27,22 @@
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
         const FEATURE_LAYER_VISIBLE_ZOOM = 16;
-        const DEFAULT_ICON_SIZE = [27, 41];
+        const DEFAULT_ICON_SIZE = [37, 51];
         const DEFAULT_ICON_SHADOW_SIZE = [0, 0];
-        const DEFAULT_ICON_ANCHOR = [13, 41];
+        const DEFAULT_ICON_ANCHOR = [18, 51];
         const DEFAULT_ICON_SHADOW_ANCHOR = [0, 0];
-        const DEFAULT_ICON_POPUP_ANCHOR = [0, -41];
+        const DEFAULT_ICON_POPUP_ANCHOR = [0, -51];
 
-        const ZOOM_POSITION = 'topright';
+        const ZOOM_POSITION = 'topleft';
+        const RESET_POSITION = 'topleft';
+        const PAN_POSITION = 'bottomleft';
+        const KEYBOARD_PAN_PIXELS = 25;
+        const KEYBOARD_SELECTABLE_MARKER_DISTANCE = 30;
+        const PRIMARY_MARKER_FOCUS_CLASS = 'primary-marker-keyboard-focusable';
+        const MAP_HELP_POPUP_INSTRUCTIONS = 'This is an interactive map. Use your mouse to click the map and choose a location, or drag the map to reposition it.<br><br>For keyboard navigation, use Tab to move focus to the map and controls. Use arrow keys to move the map and press Enter to select the location at the crosshairs in the center.';
+        const MAP_SCREEN_READER_INSTRUCTIONS = 'Interactive map. Use Tab to reach map controls. Focus the map, then use arrow keys to move and Enter to select the location at center. Use plus or minus keys to zoom.';
+        const MAP_REQUIRED_INSTRUCTIONS = 'Required. Select a location by searching for an address or choosing a point on the map.';
+        const DEFAULT_LOCATION_REQUIRED_ERROR = 'Location is required. Please select a location.';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
@@ -102,6 +110,12 @@
         var currentView = "base";
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
+        var ResetControl = generateResetControl();
+        var PanControl = generatePanControl();
+        var HelpControl = generateHelpControl();
+        var helpControlContainer;
+        var helpModalBackdrop;
+        var panControlContainer;
         var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
@@ -141,6 +155,14 @@
 
         var locationType;
         var locationTextBlock;
+        var mapLoadingRequestCount = 0;
+        var lastAnnouncedPopupText = '';
+        var keyboardOpenedPopupReturnFocusTarget = null;
+        var shouldFocusPopupCloseButton = false;
+        var selectedMarkerPopupToReopenAfterZoom = null;
+        var keyboardPanAnnouncementTimeoutId = null;
+        var lastKeyboardPanAnnouncementText = '';
+        var pendingKeyboardZoomAnnouncement = false;
 
         // flags for server error handling
         var serverErrorHard = false;
@@ -168,9 +190,9 @@
           iconUrl: selectedMarker,
           iconSize: DEFAULT_ICON_SIZE, // size of the icon
           shadowSize: [0, 0], // size of the shadow
-          iconAnchor: [13, 41], // point of the icon which will correspond to marker's location
+          iconAnchor: DEFAULT_ICON_ANCHOR, // point of the icon which will correspond to marker's location
           shadowAnchor: [0, 0],  // the same for the shadow
-          popupAnchor: [0, -41]
+          popupAnchor: DEFAULT_ICON_POPUP_ANCHOR
         });
 
         // geofencing backwards compatibility
@@ -220,34 +242,28 @@
             zoomControl: false,
             zoom: DEFAULT_ZOOM,
             maxZoom: maxZoom,
-            gestureHandling: true
+            gestureHandling: true,
+            keyboard: false
           });
           drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+          map.addControl(new ResetControl());
+          map.addControl(new HelpControl());
+          map.addControl(new PanControl());
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
+          initializeMapAccessibility();
+          bindLocationPickerValidation();
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
+          map.on('moveend', updatePrimaryMarkerKeyboardAccessibility);
+          map.on('zoomend', announceKeyboardMapZoomStatus);
+          map.on('popupopen', handlePopupOpen);
+          map.on('popupclose', handlePopupClose);
 
-          // instantiate location text block but don't add it to the map until a location is selected.
-          locationTextBlock = L.control({
-            position: 'bottomleft'
-          });
-
-          locationTextBlock.onAdd = function (map) {
-            var customElement = L.DomUtil.create('div', 'custom-control');
-            // Prevent map interaction when clicking inside the control
-            L.DomEvent.disableClickPropagation(customElement);
-            customElement.innerHTML = `
-              <div id="location-text-container">
-                <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png"></div>
-                <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
-                  lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
-              </div>`;
-            customElement
-            return customElement;
-          };
+          initializeLocationTextBlock();
+          initializeVisibleRequiredLabel();
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -362,6 +378,7 @@
         function initializeSearchAutocomplete() {
           // set up search field with autocomplete ////////////////////////////
           $('#location_search').autocomplete({
+            appendTo: 'body',
             source: function (request, response) {
               const searchTerm = encodeURIComponent(request.term);
               var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
@@ -379,6 +396,10 @@
               });
             },
             minLength: 3,
+            open: function () {
+              // jQuery UI may set inline z-index; force it above Leaflet controls.
+              $(this).autocomplete('widget').css('z-index', 20001);
+            },
             select: function (event, ui) {
               var address = ui.item.address;
               // if in address verify mode, add all details to address
@@ -609,7 +630,9 @@
                 icon: marker,
                 draggable: false,
                 riseOnHover: true,
-                iconSize: DEFAULT_ICON_SIZE
+                iconSize: DEFAULT_ICON_SIZE,
+                keyboard: false,
+                autoPanOnFocus: false
               });
             },
             onEachFeature: function (feature, layer) {
@@ -640,6 +663,7 @@
           if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
           }
+          updatePrimaryMarkerKeyboardAccessibility();
         }
 
         function initIncidentsLayer(features, layer) {
@@ -680,7 +704,9 @@
                 icon: marker,
                 draggable: false,
                 riseOnHover: true,
-                iconSize: DEFAULT_ICON_SIZE
+                iconSize: DEFAULT_ICON_SIZE,
+                keyboard: false,
+                autoPanOnFocus: false
               });
             },
             onEachFeature: function (feature, layer) {
@@ -707,9 +733,82 @@
             onAdd: function (map) {
               locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
               locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-              locateControlContaier.title = 'Locate Me';
-              locateControlContaier.onclick = handleLocateButtonClick;
+              initializeKeyboardControl(locateControlContaier, 'Locate Me', handleLocateButtonClick);
               return locateControlContaier;
+            }
+          });
+        }
+
+        function generateResetControl() {
+          return L.Control.extend({
+            options: {
+              position: RESET_POSITION
+            },
+            onAdd: function (map) {
+              var container = L.DomUtil.create('div', 'leaflet-bar reset-control leaflet-control leaflet-control-custom');
+              container.innerHTML = '↻';
+              initializeKeyboardControl(container, 'Reset map', handleResetButtonClick);
+              return container;
+            }
+          });
+        }
+
+        function generateHelpControl() {
+          return L.Control.extend({
+            options: {
+              position: RESET_POSITION
+            },
+            onAdd: function (map) {
+              helpControlContainer = L.DomUtil.create('div', 'leaflet-bar map-help-control leaflet-control leaflet-control-custom');
+              helpControlContainer.textContent = '?';
+              initializeKeyboardControl(helpControlContainer, 'Map help', handleHelpButtonClick);
+              helpControlContainer.setAttribute('aria-pressed', 'false');
+              return helpControlContainer;
+            }
+          });
+        }
+
+        function generatePanControl() {
+          return L.Control.extend({
+            options: {
+              position: PAN_POSITION
+            },
+            onAdd: function (map) {
+              panControlContainer = L.DomUtil.create('div', 'leaflet-control pan-control leaflet-control-custom');
+              L.DomEvent.disableClickPropagation(panControlContainer);
+              L.DomEvent.disableScrollPropagation(panControlContainer);
+
+              var toggleButton = L.DomUtil.create('div', 'leaflet-bar pan-control-toggle', panControlContainer);
+              toggleButton.innerHTML = '<i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i>';
+              initializeKeyboardControl(toggleButton, 'Show map pan controls', handlePanToggleClick);
+
+              var buttonsContainer = L.DomUtil.create('div', 'pan-control-buttons', panControlContainer);
+
+              var upButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-up', buttonsContainer);
+              upButton.innerHTML = '<i class="fa-solid fa-chevron-up" aria-hidden="true"></i>';
+              initializeKeyboardControl(upButton, 'Pan map up', function (e) {
+                handlePanButtonClick(e, 0, -KEYBOARD_PAN_PIXELS);
+              });
+
+              var rightButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-right', buttonsContainer);
+              rightButton.innerHTML = '<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>';
+              initializeKeyboardControl(rightButton, 'Pan map right', function (e) {
+                handlePanButtonClick(e, KEYBOARD_PAN_PIXELS, 0);
+              });
+
+              var leftButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-left', buttonsContainer);
+              leftButton.innerHTML = '<i class="fa-solid fa-chevron-left" aria-hidden="true"></i>';
+              initializeKeyboardControl(leftButton, 'Pan map left', function (e) {
+                handlePanButtonClick(e, -KEYBOARD_PAN_PIXELS, 0);
+              });
+
+              var downButton = L.DomUtil.create('div', 'leaflet-bar pan-control-button pan-control-button-down', buttonsContainer);
+              downButton.innerHTML = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
+              initializeKeyboardControl(downButton, 'Pan map down', function (e) {
+                handlePanButtonClick(e, 0, KEYBOARD_PAN_PIXELS);
+              });
+
+              return panControlContainer;
             }
           });
         }
@@ -722,11 +821,551 @@
             onAdd: function (map) {
               aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
               aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
-              aerialControlContainer.title = 'Aerial view';
-              aerialControlContainer.onclick = handleAerialButtonClick;
+              initializeKeyboardControl(aerialControlContainer, 'Aerial view', handleAerialButtonClick);
               return aerialControlContainer;
             }
           });
+        }
+
+        function initializeKeyboardControl(controlElement, label, clickHandler) {
+          controlElement.title = label;
+          controlElement.setAttribute('aria-label', label);
+          controlElement.setAttribute('role', 'button');
+          controlElement.setAttribute('tabindex', '0');
+          L.DomEvent.on(controlElement, 'click', function (e) {
+            cancelEventBubble(e);
+            clickHandler(e);
+          });
+          L.DomEvent.on(controlElement, 'keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              cancelEventBubble(e);
+              clickHandler(e);
+            }
+          });
+        }
+
+        function initializeMapAccessibility() {
+          var container = map.getContainer();
+          var helpId = getMapAccessibilityId('instructions');
+          var descriptionId = getMapAccessibilityId('description');
+          var requiredId = getMapAccessibilityId('required');
+          var errorId = getMapAccessibilityId('error');
+          var statusId = getMapAccessibilityId('status');
+          var containerParent = container.parentNode;
+
+          container.classList.add('keyboard-selection-enabled');
+          container.classList.remove('keyboard-crosshair-active');
+          container.setAttribute('role', 'application');
+          container.setAttribute('aria-label', 'Location picker map');
+          container.setAttribute('tabindex', '0');
+
+          initializeMapHelpModal(containerParent, container, helpId);
+          initializeMapScreenReaderDescription(containerParent, container, descriptionId);
+          initializeMapRequiredMessage(containerParent, container, requiredId);
+          initializeMapErrorMessage(containerParent, container, errorId);
+          updateMapAccessibilityDescription();
+
+          if (!document.getElementById(statusId)) {
+            var status = document.createElement('div');
+            status.id = statusId;
+            status.className = 'visually-hidden';
+            status.setAttribute('aria-live', 'polite');
+            status.setAttribute('aria-atomic', 'true');
+            containerParent.insertBefore(status, container.nextSibling);
+          }
+
+          L.DomEvent.on(containerParent, 'keydown', handleMapKeyDown);
+          syncMapValidationState();
+        }
+
+        function initializeMapHelpModal(containerParent, container, helpId) {
+          var helpTitleId = getMapAccessibilityId('instructions-title');
+          var helpTextId = getMapAccessibilityId('instructions-text');
+          var helpBackdropId = getMapAccessibilityId('instructions-backdrop');
+          var existingHelp = document.getElementById(helpId);
+          helpModalBackdrop = document.getElementById(helpBackdropId);
+
+          if (!helpModalBackdrop) {
+            helpModalBackdrop = document.createElement('div');
+            helpModalBackdrop.id = helpBackdropId;
+            helpModalBackdrop.className = 'map-keyboard-help-backdrop';
+            helpModalBackdrop.setAttribute('aria-hidden', 'true');
+            helpModalBackdrop.addEventListener('click', function (event) {
+              event.preventDefault();
+              event.stopPropagation();
+            });
+            containerParent.insertBefore(helpModalBackdrop, container);
+          }
+
+          if (existingHelp) {
+            existingHelp.setAttribute('tabindex', '-1');
+            existingHelp.setAttribute('aria-hidden', 'true');
+            existingHelp.setAttribute('role', 'dialog');
+            existingHelp.setAttribute('aria-modal', 'true');
+            existingHelp.setAttribute('aria-labelledby', helpTitleId);
+            existingHelp.setAttribute('aria-describedby', helpTextId);
+            existingHelp.classList.remove('is-visible');
+            renderMapHelpModalContent(existingHelp, helpTitleId, helpTextId);
+            setHelpModalInteractiveState(existingHelp, false);
+            return;
+          }
+
+          var helpModal = document.createElement('div');
+          helpModal.id = helpId;
+          helpModal.className = 'map-keyboard-help';
+          helpModal.setAttribute('tabindex', '-1');
+          helpModal.setAttribute('role', 'dialog');
+          helpModal.setAttribute('aria-modal', 'true');
+          helpModal.setAttribute('aria-labelledby', helpTitleId);
+          helpModal.setAttribute('aria-describedby', helpTextId);
+          helpModal.setAttribute('aria-hidden', 'true');
+          renderMapHelpModalContent(helpModal, helpTitleId, helpTextId);
+          setHelpModalInteractiveState(helpModal, false);
+          containerParent.insertBefore(helpModal, container);
+
+          helpModal.addEventListener('keydown', function (event) {
+            event.stopPropagation();
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              hideMapHelpModal(true);
+              return;
+            }
+
+            if (event.key !== 'Tab') {
+              return;
+            }
+
+            event.preventDefault();
+            var closeButton = helpModal.querySelector('.map-keyboard-help__close');
+            if (closeButton) {
+              closeButton.focus();
+            }
+          });
+        }
+
+        function renderMapHelpModalContent(helpModal, helpTitleId, helpTextId) {
+          helpModal.textContent = '';
+
+          var helpTitle = document.createElement('h2');
+          helpTitle.id = helpTitleId;
+          helpTitle.className = 'visually-hidden';
+          helpTitle.textContent = 'Map help';
+
+          var helpText = document.createElement('p');
+          helpText.id = helpTextId;
+          helpText.className = 'map-keyboard-help__text';
+          helpText.innerHTML = MAP_HELP_POPUP_INSTRUCTIONS;
+
+          var closeButton = document.createElement('button');
+          closeButton.type = 'button';
+          closeButton.className = 'map-keyboard-help__close';
+          closeButton.setAttribute('aria-label', 'Close map help');
+          closeButton.textContent = 'Close';
+          closeButton.setAttribute('tabindex', '-1');
+          closeButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            hideMapHelpModal(true);
+          });
+
+          helpModal.appendChild(helpTitle);
+          helpModal.appendChild(helpText);
+          helpModal.appendChild(closeButton);
+        }
+
+        function setHelpModalInteractiveState(helpElement, isVisible) {
+          var closeButton = helpElement.querySelector('.map-keyboard-help__close');
+          helpElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+          if (helpModalBackdrop) {
+            helpModalBackdrop.classList.toggle('is-visible', isVisible);
+            helpModalBackdrop.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+          }
+          if (closeButton) {
+            closeButton.setAttribute('tabindex', isVisible ? '0' : '-1');
+          }
+        }
+
+        function toggleMapHelpModal(forceVisible) {
+          var helpElement = document.getElementById(getMapAccessibilityId('instructions'));
+          if (!helpElement) {
+            return;
+          }
+
+          var shouldShow = typeof forceVisible === 'boolean' ? forceVisible : !helpElement.classList.contains('is-visible');
+          helpElement.classList.toggle('is-visible', shouldShow);
+          setHelpModalInteractiveState(helpElement, shouldShow);
+
+          if (helpControlContainer) {
+            helpControlContainer.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+          }
+
+          if (shouldShow) {
+            window.setTimeout(function () {
+              helpElement.focus();
+            }, 0);
+          }
+        }
+
+        function hideMapHelpModal(restoreFocusToHelpControl = false) {
+          var helpElement = document.getElementById(getMapAccessibilityId('instructions'));
+          var focusTarget = null;
+
+          if (restoreFocusToHelpControl && helpControlContainer) {
+            focusTarget = helpControlContainer;
+          } else if (map && map.getContainer) {
+            focusTarget = map.getContainer();
+          }
+
+          if (helpElement && focusTarget && helpElement.contains(document.activeElement)) {
+            focusTarget.focus();
+          }
+
+          toggleMapHelpModal(false);
+
+          if (restoreFocusToHelpControl && helpControlContainer) {
+            window.setTimeout(function () {
+              helpControlContainer.focus();
+            }, 0);
+          }
+        }
+
+        function initializeMapScreenReaderDescription(containerParent, container, descriptionId) {
+          var existingDescription = document.getElementById(descriptionId);
+          if (existingDescription) {
+            existingDescription.textContent = getMapScreenReaderDescription();
+            return;
+          }
+
+          var description = document.createElement('div');
+          description.id = descriptionId;
+          description.className = 'visually-hidden';
+          description.textContent = getMapScreenReaderDescription();
+          containerParent.insertBefore(description, container.nextSibling);
+        }
+
+        function initializeMapErrorMessage(containerParent, container, errorId) {
+          if (document.getElementById(errorId)) {
+            return;
+          }
+
+          var errorMessage = document.createElement('div');
+          errorMessage.id = errorId;
+          errorMessage.className = 'visually-hidden';
+          errorMessage.setAttribute('aria-live', 'assertive');
+          errorMessage.setAttribute('aria-atomic', 'true');
+          containerParent.insertBefore(errorMessage, container.nextSibling);
+        }
+
+        function initializeMapRequiredMessage(containerParent, container, requiredId) {
+          var existingRequiredMessage = document.getElementById(requiredId);
+          if (existingRequiredMessage) {
+            existingRequiredMessage.textContent = MAP_REQUIRED_INSTRUCTIONS;
+            return;
+          }
+
+          var requiredMessage = document.createElement('div');
+          requiredMessage.id = requiredId;
+          requiredMessage.className = 'visually-hidden';
+          requiredMessage.textContent = MAP_REQUIRED_INSTRUCTIONS;
+          containerParent.insertBefore(requiredMessage, container.nextSibling);
+        }
+
+        function getMapAccessibilityId(suffix) {
+          var prefix = elementId ? elementId.replace(/[^a-zA-Z0-9_-]/g, '-') : 'location-map';
+          return prefix + '-' + suffix;
+        }
+
+        function getMapScreenReaderDescription() {
+          return MAP_SCREEN_READER_INSTRUCTIONS;
+        }
+
+        function isLocationPickerRequired() {
+          return locationPickerEl.classList.contains('required');
+        }
+
+        function getLocationLatField() {
+          return getLocationField('location_lat', 'location-lat');
+        }
+
+        function getLocationField(fieldName, fallbackClass) {
+          var byScopedName = locationPickerEl.querySelector('input[name="' + elementId + '[' + fieldName + ']"]');
+          if (byScopedName) {
+            return byScopedName;
+          }
+
+          var bySuffixName = locationPickerEl.querySelector('input[name$="[' + fieldName + ']"]');
+          if (bySuffixName) {
+            return bySuffixName;
+          }
+
+          var byId = locationPickerEl.querySelector('#' + fieldName);
+          if (byId) {
+            return byId;
+          }
+
+          if (fallbackClass) {
+            return locationPickerEl.querySelector('.' + fallbackClass);
+          }
+
+          return null;
+        }
+
+        function hasLocationSelection() {
+          var locationLatField = getLocationLatField();
+          if (!locationLatField) {
+            return false;
+          }
+
+          var value = (locationLatField.value || '').trim();
+          // Treat '' and '0' as "not selected" to match server-side validation.
+          return value !== '' && value !== '0';
+        }
+
+        function getLocationRequiredErrorMessage() {
+          var locationLatField = getLocationLatField();
+          if (locationLatField) {
+            return locationLatField.getAttribute('data-webform-required-error') || DEFAULT_LOCATION_REQUIRED_ERROR;
+          }
+
+          return DEFAULT_LOCATION_REQUIRED_ERROR;
+        }
+
+        function updateMapAccessibilityDescription() {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var descriptionIds = [getMapAccessibilityId('description')];
+          if (isLocationPickerRequired()) {
+            descriptionIds.push(getMapAccessibilityId('required'));
+          }
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+
+          if (errorElement && errorElement.textContent.trim()) {
+            descriptionIds.unshift(errorElement.id);
+          }
+
+          var describedBy = descriptionIds.join(' ');
+          map.getContainer().setAttribute('aria-describedby', describedBy);
+
+        }
+
+        function setMapInvalid(message) {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+          var errorMessage = message || getLocationRequiredErrorMessage();
+
+          if (errorElement) {
+            errorElement.textContent = errorMessage;
+          }
+
+          map.getContainer().setAttribute('aria-invalid', 'true');
+          updateMapAccessibilityDescription();
+        }
+
+        function clearMapInvalid() {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+
+          var errorElement = document.getElementById(getMapAccessibilityId('error'));
+          if (errorElement) {
+            errorElement.textContent = '';
+          }
+
+          map.getContainer().setAttribute('aria-invalid', 'false');
+          updateMapAccessibilityDescription();
+        }
+
+        function hasLocationPickerVisualError() {
+          if (!map || !map.getContainer()) {
+            return false;
+          }
+
+          var mapContainer = map.getContainer();
+          var mapFormItem = mapContainer.closest('.form-item--error, .webform-has-error, .has-error');
+          if (mapFormItem) {
+            return true;
+          }
+
+          return !!locationPickerEl.querySelector('#location_map.form-item--error');
+        }
+
+        function hasExistingLocationPickerError() {
+          var form = locationPickerEl.closest('form');
+          var locationLatField = getLocationLatField();
+
+          if (locationLatField && (locationLatField.classList.contains('error') || locationLatField.getAttribute('aria-invalid') === 'true')) {
+            return true;
+          }
+
+          if (!form || !locationPickerEl.id) {
+            return false;
+          }
+
+          var hasErrorLink = Array.from(form.querySelectorAll('a[href]')).some(function (link) {
+            var href = link.getAttribute('href');
+            if (href === '#' + locationPickerEl.id) {
+              return true;
+            }
+
+            if (locationLatField && locationLatField.id && href === '#' + locationLatField.id) {
+              return true;
+            }
+
+            return false;
+          });
+
+          if (hasErrorLink) {
+            return true;
+          }
+
+          return Array.from(form.querySelectorAll('.messages--error, [role="alert"]')).some(function (element) {
+            return element.textContent.indexOf(getLocationRequiredErrorMessage()) !== -1;
+          });
+        }
+
+        function syncMapValidationState() {
+          if (!isLocationPickerRequired()) {
+            clearMapInvalid();
+            updateVisibleRequiredLabel();
+            return;
+          }
+
+          if (!hasLocationSelection() && (hasExistingLocationPickerError() || hasLocationPickerVisualError())) {
+            setMapInvalid(getLocationRequiredErrorMessage());
+            updateVisibleRequiredLabel();
+            return;
+          }
+
+          clearMapInvalid();
+          updateVisibleRequiredLabel();
+        }
+
+        function bindLocationPickerValidation() {
+          if (locationPickerEl.dataset.locationPickerValidationBound === 'true') {
+            return;
+          }
+
+          locationPickerEl.dataset.locationPickerValidationBound = 'true';
+
+          var form = locationPickerEl.closest('form');
+
+          if (form) {
+            form.addEventListener('submit', function () {
+              if (!locationPickerEl.isConnected) {
+                return;
+              }
+
+              var wizardPage = locationPickerEl.closest('[data-webform-page]');
+              if (wizardPage && wizardPage.offsetParent === null) {
+                return;
+              }
+
+              if (locationPickerEl.offsetParent === null && locationPickerEl.getClientRects().length === 0) {
+                return;
+              }
+
+              if (isLocationPickerRequired() && !hasLocationSelection()) {
+                setMapInvalid(getLocationRequiredErrorMessage());
+                return;
+              }
+
+              clearMapInvalid();
+            });
+          }
+
+          locationPickerEl.addEventListener('location-picked', function () {
+            clearMapInvalid();
+          });
+        }
+
+        function announceMapStatus(message) {
+          var statusElement = document.getElementById(getMapAccessibilityId('status'));
+          if (statusElement) {
+            statusElement.textContent = '';
+            window.setTimeout(function () {
+              statusElement.textContent = message;
+            }, 0);
+          }
+        }
+
+        function extractAnnouncementTextFromHtml(html) {
+          if (!html) {
+            return '';
+          }
+
+          var wrapper = document.createElement('div');
+          wrapper.innerHTML = html;
+          return (wrapper.textContent || wrapper.innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+
+        function getPopupSourceFocusTarget(popup) {
+          if (!popup) {
+            return null;
+          }
+
+          var source = popup._source;
+          if (source && source._icon && document.contains(source._icon)) {
+            return source._icon;
+          }
+
+          return null;
+        }
+
+        function handlePopupOpen(e) {
+          if (!e || !e.popup) {
+            return;
+          }
+
+          var popupSourceFocusTarget = getPopupSourceFocusTarget(e.popup);
+          if (popupSourceFocusTarget) {
+            keyboardOpenedPopupReturnFocusTarget = popupSourceFocusTarget;
+          }
+
+          var popupText = extractAnnouncementTextFromHtml(e.popup.getContent());
+          if (!popupText || popupText === lastAnnouncedPopupText) {
+            return;
+          }
+
+          lastAnnouncedPopupText = popupText;
+          announceMapStatus(popupText);
+
+          if (!shouldFocusPopupCloseButton) {
+            return;
+          }
+
+          shouldFocusPopupCloseButton = false;
+          var popupElement = e.popup.getElement ? e.popup.getElement() : null;
+          if (!popupElement) {
+            return;
+          }
+
+          var closeButton = popupElement.querySelector('.leaflet-popup-close-button');
+          if (closeButton) {
+            window.setTimeout(function () {
+              closeButton.focus();
+            }, 0);
+          }
+        }
+
+        function handlePopupClose() {
+          lastAnnouncedPopupText = '';
+
+          var returnFocusTarget = keyboardOpenedPopupReturnFocusTarget;
+          if (returnFocusTarget && document.contains(returnFocusTarget)) {
+            window.setTimeout(function () {
+              returnFocusTarget.focus();
+            }, 0);
+          }
+
+          keyboardOpenedPopupReturnFocusTarget = null;
+          shouldFocusPopupCloseButton = false;
         }
 
         function generatePopupContent(feature) {
@@ -753,17 +1392,7 @@
         function handleMarkerClick(marker) {
 
           L.DomEvent.preventDefault(marker);
-          // if there was a previously set marker, reset it...
-          resetLocationMarker();
-          resetClickedMarker();
-          clearLocationFields();
-
-          if (isAssetSelectable(marker)) {
-            selectAsset(marker);
-          } else {
-            // user clicked something not selectable; reset data collection fields
-            clearLocationFields();
-          }
+          activateMarkerSelection(marker);
         }
 
         function handleLocateButtonClick(e) {
@@ -778,9 +1407,275 @@
           toggleAerialView();
         }
 
+        function handlePanToggleClick(e) {
+          cancelEventBubble(e);
+          if (!panControlContainer) {
+            return;
+          }
+
+          panControlContainer.classList.add('is-expanded');
+          var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
+          if (toggleButton) {
+            toggleButton.style.display = 'none';
+          }
+          var firstButton = panControlContainer.querySelector('.pan-control-button-up');
+          if (firstButton) {
+            firstButton.focus();
+          }
+        }
+
+        function collapsePanControl(restoreFocusToToggle = false) {
+          if (!panControlContainer) {
+            return;
+          }
+
+          panControlContainer.classList.remove('is-expanded');
+          var toggleButton = panControlContainer.querySelector('.pan-control-toggle');
+          if (toggleButton) {
+            toggleButton.style.display = '';
+          }
+        }
+
+        function handlePanButtonClick(e, x, y) {
+          cancelEventBubble(e);
+          map.panBy([x, y]);
+        }
+
+        function handleHelpButtonClick(e) {
+          cancelEventBubble(e);
+          toggleMapHelpModal(true);
+        }
+
+        function handleResetButtonClick() {
+          collapsePanControl();
+          if (map && map.getContainer()) {
+            map.getContainer().classList.remove('keyboard-crosshair-active');
+          }
+          resetLocationMarker();
+          resetClickedMarker();
+          clearLocationFields();
+          hideVerifiedLocation(false);
+          clearMapInvalid();
+          if (currentView === 'aerial') {
+            toggleAerialView();
+          }
+          map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
+          currentView = 'base';
+          announceMapStatus('Map reset to the default view.');
+        }
+
+        function initializeLocationTextBlock() {
+          var mapContainer = document.getElementById('location_map_container');
+          if (!mapContainer || !mapContainer.parentNode) {
+            return;
+          }
+
+          var existingBlock = document.getElementById('location-text-container-wrapper');
+          if (existingBlock) {
+            existingBlock.remove();
+          }
+
+          var wrapper = document.createElement('div');
+          wrapper.id = 'location-text-container-wrapper';
+          wrapper.innerHTML = `
+            <div id="location-text-container" role="status" aria-live="polite" aria-atomic="true">
+              <div id="location-text-announcement" class="visually-hidden"></div>
+              <div id="location-text-visual" aria-hidden="true">
+                <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png" alt=""></div>
+                <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
+                  lat: <span id="location-text-lat"></span>,&nbsp;lon: <span id="location-text-lng"></span></div>
+              </div>
+            </div>`;
+
+          mapContainer.parentNode.insertBefore(wrapper, mapContainer.nextSibling);
+          locationTextBlock = wrapper;
+        }
+
+        function initializeVisibleRequiredLabel() {
+          var mapContainer = document.getElementById('location_map_container');
+          if (!mapContainer || !mapContainer.parentNode) {
+            return;
+          }
+
+          var existingLabel = document.getElementById('location-required-label-wrapper');
+          if (existingLabel) {
+            return;
+          }
+
+          var wrapper = document.createElement('div');
+          wrapper.id = 'location-required-label-wrapper';
+          wrapper.className = 'location-required-label-wrapper';
+          wrapper.setAttribute('aria-hidden', 'true');
+          wrapper.innerHTML = '<div class="location-required-label"><span class="required-asterisk">*</span> Location is required</div>';
+          
+          // Insert before the map container
+          mapContainer.parentNode.insertBefore(wrapper, mapContainer);
+          
+          // Only show if the picker is required
+          updateVisibleRequiredLabel();
+        }
+
+        function updateVisibleRequiredLabel() {
+          var labelWrapper = document.getElementById('location-required-label-wrapper');
+          if (!labelWrapper) {
+            return;
+          }
+          
+          if (isLocationPickerRequired()) {
+            labelWrapper.style.display = 'block';
+          } else {
+            labelWrapper.style.display = 'none';
+          }
+        }
+
+        function updateLocationTextAnnouncement(message) {
+          var announcementElement = document.getElementById('location-text-announcement');
+          if (!announcementElement) {
+            return;
+          }
+
+          announcementElement.textContent = '';
+          window.setTimeout(function () {
+            announcementElement.textContent = message;
+          }, 0);
+        }
+
         function handleMapClick(e) {
           L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
+        }
+
+        function handleMapKeyDown(e) {
+          var isMapRegionFocused = map.getContainer().parentNode.contains(e.target);
+          var isArrowKey = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+          var isZoomInKey = e.key === '+' || (e.key === '=') || e.key === 'Add' || e.key === 'NumpadAdd';
+          var isZoomOutKey = e.key === '-' || e.key === '_' || e.key === 'Subtract' || e.key === 'NumpadSubtract';
+          var isSelectAtCenterKey = e.key === 'Enter' || e.key === ' ';
+
+          if (isMapRegionFocused && (isArrowKey || isZoomInKey || isZoomOutKey || isSelectAtCenterKey)) {
+            map.getContainer().classList.add('keyboard-crosshair-active');
+          }
+
+          // Match Google Maps behavior: +/- zoom works from map canvas or map controls.
+          if (isMapRegionFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            if (isZoomInKey) {
+              e.preventDefault();
+              cancelEventBubble(e);
+              pendingKeyboardZoomAnnouncement = true;
+              map.zoomIn();
+              return;
+            }
+
+            if (isZoomOutKey) {
+              e.preventDefault();
+              cancelEventBubble(e);
+              pendingKeyboardZoomAnnouncement = true;
+              map.zoomOut();
+              return;
+            }
+          }
+
+          if (e.key === 'Escape' || e.key === 'Esc') {
+            var openPopup = map && map._popup ? map._popup : null;
+            if (openPopup) {
+              var popupSourceFocusTarget = getPopupSourceFocusTarget(openPopup);
+              if (popupSourceFocusTarget) {
+                keyboardOpenedPopupReturnFocusTarget = popupSourceFocusTarget;
+              }
+
+              e.preventDefault();
+              cancelEventBubble(e);
+              map.closePopup(openPopup);
+              return;
+            }
+          }
+
+          if (e.key === 'Tab' && !e.shiftKey) {
+            var primaryMarkers = getVisibleTabbablePrimaryMarkers();
+            if (primaryMarkers.length > 0) {
+              var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
+              if (mapElements.length > 0 && e.target === mapElements[mapElements.length - 1]) {
+                e.preventDefault();
+                announceMapStatus('Entering map markers. ' + primaryMarkers.length + ' markers in view.');
+                primaryMarkers[0]._icon.focus();
+                return;
+              }
+            }
+          }
+
+          // Allow arrow key panning from any focused element in the map region
+          // (map container, controls, or help modal), but only handle Enter/Space
+          // when focus is directly on the map container.
+
+          // Arrow keys work from anywhere in the map region for panning
+          if (isArrowKey && isMapRegionFocused) {
+            e.preventDefault();
+            cancelEventBubble(e);
+            
+            if (e.key === 'ArrowUp') {
+              map.panBy([0, -KEYBOARD_PAN_PIXELS]);
+            } else if (e.key === 'ArrowDown') {
+              map.panBy([0, KEYBOARD_PAN_PIXELS]);
+            } else if (e.key === 'ArrowLeft') {
+              map.panBy([-KEYBOARD_PAN_PIXELS, 0]);
+            } else if (e.key === 'ArrowRight') {
+              map.panBy([KEYBOARD_PAN_PIXELS, 0]);
+            }
+
+            queueKeyboardPanAnnouncement();
+            return;
+          }
+
+          // Enter/Space only work when focus is directly on the map container
+          if (e.target !== map.getContainer()) {
+            return;
+          }
+
+          if (e.key !== 'Enter' && e.key !== ' ') {
+            return;
+          }
+
+          e.preventDefault();
+          cancelEventBubble(e);
+
+          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+            selectMarkerAtMapCenter();
+            return;
+          }
+
+          doMapClick(map.getCenter());
+        }
+
+        function queueKeyboardPanAnnouncement() {
+          if (keyboardPanAnnouncementTimeoutId) {
+            window.clearTimeout(keyboardPanAnnouncementTimeoutId);
+          }
+
+          // Announce after panning pauses so held arrow keys don't create noisy output.
+          keyboardPanAnnouncementTimeoutId = window.setTimeout(function () {
+            if (!map || !map.getCenter) {
+              return;
+            }
+
+            var center = map.getCenter();
+            var message = 'Map moved. Center latitude ' + center.lat.toFixed(5) + ', longitude ' + center.lng.toFixed(5) + '. Press Enter to select location at center.';
+
+            if (message !== lastKeyboardPanAnnouncementText) {
+              announceMapStatus(message);
+              lastKeyboardPanAnnouncementText = message;
+            }
+
+            keyboardPanAnnouncementTimeoutId = null;
+          }, 450);
+        }
+
+        function announceKeyboardMapZoomStatus() {
+          if (!pendingKeyboardZoomAnnouncement || !map) {
+            return;
+          }
+
+          pendingKeyboardZoomAnnouncement = false;
+          announceMapStatus('Zoom level ' + map.getZoom() + '.');
         }
 
         function handleLocateMeFound(e) {
@@ -803,8 +1698,11 @@
         }
 
         function handleZoomEndShowGeoJsonLayer() {
-          // close all popups when zooming
-          map.closePopup();
+          // close all popups when zooming, except when preserving a selected marker popup
+          var preserveSelectedPopup = !!selectedMarkerPopupToReopenAfterZoom;
+          if (!preserveSelectedPopup) {
+            map.closePopup();
+          }
 
           var zoomlevel = map.getZoom();
           if (zoomlevel < featureLayerVisibleZoom) {
@@ -821,6 +1719,16 @@
             }
             if (incidentsLayer && !map.hasLayer(incidentsLayer)) {
               map.addLayer(incidentsLayer);
+            }
+          }
+          updatePrimaryMarkerKeyboardAccessibility();
+
+          if (selectedMarkerPopupToReopenAfterZoom) {
+            var popupMarker = selectedMarkerPopupToReopenAfterZoom;
+            selectedMarkerPopupToReopenAfterZoom = null;
+
+            if (map.hasLayer(popupMarker) && typeof popupMarker.openPopup === 'function' && typeof popupMarker.isPopupOpen === 'function' && !popupMarker.isPopupOpen()) {
+              popupMarker.openPopup();
             }
           }
           // var bounds = map.getBounds();
@@ -874,12 +1782,77 @@
           reverseGeolocate(latlng, true, verifiedAddress);
         }
 
+        function selectMarkerAtMapCenter() {
+          var markerLayer = findNearestSelectableMarker(map.getCenter());
+
+          if (!markerLayer) {
+            announceMapStatus('No selectable location is centered on the map. Move the map and press Enter again.');
+            return;
+          }
+
+          activateMarkerSelection({
+            target: markerLayer,
+            latlng: markerLayer.getLatLng()
+          });
+        }
+
+        function findNearestSelectableMarker(latlng) {
+          var centerPoint = map.latLngToContainerPoint(latlng);
+          var closestMarker = null;
+          var closestDistance = Infinity;
+
+          if (!primaryLayer || !map.hasLayer(primaryLayer)) {
+            return null;
+          }
+
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer.getLatLng || !layer.feature) {
+              return;
+            }
+
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+
+            if (!isAssetSelectable(marker)) {
+              return;
+            }
+
+            var distance = centerPoint.distanceTo(map.latLngToContainerPoint(layer.getLatLng()));
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestMarker = layer;
+            }
+          });
+
+          return closestDistance <= KEYBOARD_SELECTABLE_MARKER_DISTANCE ? closestMarker : null;
+        }
+
         function showLoader() {
+          mapLoadingRequestCount += 1;
+          if (mapLoadingRequestCount > 1) {
+            return;
+          }
+
           $('.loader-container').css("display", "flex");
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'true');
+          }
+          announceMapStatus('Loading map data.');
         }
 
         function hideLoader() {
+          mapLoadingRequestCount = Math.max(0, mapLoadingRequestCount - 1);
+          if (mapLoadingRequestCount > 0) {
+            return;
+          }
+
           $('.loader-container').css("display", "none");
+          if (map && map.getContainer()) {
+            map.getContainer().setAttribute('aria-busy', 'false');
+          }
+          announceMapStatus('Map data loaded.');
         }
 
         function checkRegion(latlng) {
@@ -931,6 +1904,248 @@
           return true;
         }
 
+        function isPrimaryLayerKeyboardSelectable() {
+          return primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection || primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly;
+        }
+
+        function getVisibleTabbablePrimaryMarkers() {
+          var markers = [];
+          if (!primaryLayer || !map || !map.hasLayer(primaryLayer)) {
+            return markers;
+          }
+
+          var bounds = map.getBounds();
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer.getLatLng || !layer._icon || !layer.feature) {
+              return;
+            }
+
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+
+            var isSelectableAsset = isAssetSelectable(marker);
+            var hasPopup = typeof layer.getPopup === 'function' && !!layer.getPopup();
+            if (!isSelectableAsset && !hasPopup) {
+              return;
+            }
+
+            if (bounds.contains(layer.getLatLng())) {
+              markers.push(layer);
+            }
+          });
+
+          return markers;
+        }
+
+        function getMapRegionFocusableElementsExcludingPrimaryMarkers() {
+          var mapRegion = map.getContainer().parentNode;
+          var focusableSelector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+          ].join(',');
+
+          return Array.from(mapRegion.querySelectorAll(focusableSelector)).filter(function (el) {
+            return !el.classList.contains(PRIMARY_MARKER_FOCUS_CLASS) && el.offsetParent !== null;
+          });
+        }
+
+        function getNextFocusableElementAfterMapRegion() {
+          if (!map || !map.getContainer()) {
+            return null;
+          }
+
+          var mapRegion = map.getContainer().parentNode;
+          var focusableSelector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+          ].join(',');
+
+          var focusableOutsideMap = Array.from(document.querySelectorAll(focusableSelector)).filter(function (el) {
+            return el.offsetParent !== null && !mapRegion.contains(el);
+          });
+
+          for (var i = 0; i < focusableOutsideMap.length; i++) {
+            if (mapRegion.compareDocumentPosition(focusableOutsideMap[i]) & Node.DOCUMENT_POSITION_FOLLOWING) {
+              return focusableOutsideMap[i];
+            }
+          }
+
+          return null;
+        }
+
+        function updatePrimaryMarkerKeyboardAccessibility() {
+          if (!primaryLayer) {
+            return;
+          }
+
+          var visibleMarkers = getVisibleTabbablePrimaryMarkers();
+          var visibleMarkerSet = new Set(visibleMarkers);
+
+          primaryLayer.eachLayer(function (layer) {
+            if (!layer._icon) {
+              return;
+            }
+
+            var isVisibleAndTabbable = visibleMarkerSet.has(layer);
+            var icon = layer._icon;
+
+            icon.classList.remove(PRIMARY_MARKER_FOCUS_CLASS);
+            icon.removeAttribute('role');
+            icon.removeAttribute('aria-label');
+            icon.setAttribute('tabindex', '-1');
+
+            if (!isVisibleAndTabbable) {
+              return;
+            }
+
+            var markerName = (layer.feature.properties && layer.feature.properties.name) ? layer.feature.properties.name : 'Selectable map marker';
+            var popupAnnouncementText = extractAnnouncementTextFromHtml(generatePopupContent(layer.feature));
+            var markerAnnouncementText = popupAnnouncementText ? popupAnnouncementText : markerName;
+            var marker = {
+              target: layer,
+              latlng: layer.getLatLng()
+            };
+            var isSelectableAsset = isAssetSelectable(marker);
+            icon.classList.add(PRIMARY_MARKER_FOCUS_CLASS);
+            icon.setAttribute('role', 'button');
+            if (isSelectableAsset) {
+              icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to select this location.');
+            } else {
+              icon.setAttribute('aria-label', markerAnnouncementText + '. Press Enter to open location details.');
+            }
+            // Keep markers out of native tab order; we enter marker navigation explicitly.
+            icon.setAttribute('tabindex', '-1');
+
+            if (!icon.dataset.primaryMarkerFocusBound) {
+              icon.addEventListener('focus', function () {
+                var currentAnnouncementText = extractAnnouncementTextFromHtml(generatePopupContent(layer.feature));
+                if (!currentAnnouncementText) {
+                  currentAnnouncementText = markerName;
+                }
+                announceMapStatus(currentAnnouncementText);
+              });
+              icon.dataset.primaryMarkerFocusBound = 'true';
+            }
+
+            if (!icon.dataset.primaryMarkerKeydownBound) {
+              icon.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  keyboardOpenedPopupReturnFocusTarget = icon;
+                  shouldFocusPopupCloseButton = true;
+                  layer.fire('click', {
+                    latlng: layer.getLatLng(),
+                    target: layer
+                  });
+                  return;
+                }
+
+                if (e.key !== 'Tab') {
+                  return;
+                }
+
+                var currentMarkers = getVisibleTabbablePrimaryMarkers();
+                var markerIndex = currentMarkers.indexOf(layer);
+                if (markerIndex < 0) {
+                  return;
+                }
+
+                e.preventDefault();
+
+                if (e.shiftKey) {
+                  if (markerIndex > 0) {
+                    currentMarkers[markerIndex - 1]._icon.focus();
+                    return;
+                  }
+
+                  var mapElements = getMapRegionFocusableElementsExcludingPrimaryMarkers();
+                  if (mapElements.length > 0) {
+                    announceMapStatus('Leaving map markers. Returning to map controls.');
+                    mapElements[mapElements.length - 1].focus();
+                  }
+                  return;
+                }
+
+                if (markerIndex < currentMarkers.length - 1) {
+                  currentMarkers[markerIndex + 1]._icon.focus();
+                  return;
+                }
+
+                var nextFocusable = getNextFocusableElementAfterMapRegion();
+                if (nextFocusable) {
+                  announceMapStatus('Leaving map markers.');
+                  nextFocusable.focus();
+                  return;
+                }
+
+                // Fallback when no subsequent focus target exists in the document.
+                map.getContainer().focus();
+              });
+              icon.dataset.primaryMarkerKeydownBound = 'true';
+            }
+          });
+        }
+
+        function updateLocationMarkerKeyboardAccessibility() {
+          if (!locationMarker || !locationMarker._icon) {
+            return;
+          }
+
+          var icon = locationMarker._icon;
+          icon.setAttribute('tabindex', '0');
+          icon.setAttribute('aria-describedby', 'location-text-value');
+
+          var hasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
+          if (hasPopup) {
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', 'Selected location marker. Press Enter to open location details popup.');
+          } else {
+            icon.removeAttribute('role');
+            icon.setAttribute('aria-label', 'Selected location marker. Drag to adjust location.');
+          }
+
+          if (!icon.dataset.locationMarkerKeydownBound) {
+            icon.addEventListener('keydown', function (e) {
+              if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+              }
+
+              var markerHasPopup = typeof locationMarker.getPopup === 'function' && !!locationMarker.getPopup();
+              if (!markerHasPopup) {
+                return;
+              }
+
+              e.preventDefault();
+              keyboardOpenedPopupReturnFocusTarget = icon;
+              shouldFocusPopupCloseButton = true;
+              locationMarker.openPopup();
+            });
+            icon.dataset.locationMarkerKeydownBound = 'true';
+          }
+        }
+
+        function activateMarkerSelection(marker) {
+          resetLocationMarker();
+          resetClickedMarker();
+          clearLocationFields();
+
+          if (isAssetSelectable(marker)) {
+            selectAsset(marker);
+          } else {
+            clearLocationFields();
+          }
+        }
+
         function selectAsset(marker) {
           // NOTE: at this time, only assets are selectable. if we got to this point,
           // we can assume the marker is an asset. no need to handle marker clicks for
@@ -941,7 +2156,15 @@
           marker.originalIcon = marker.target.options.icon;
 
           // update asset marker to use use selected marker icon
-          newIcon = L.icon({ iconUrl: selectedMarker });
+          newIcon = L.icon({
+            iconUrl: selectedMarker,
+            iconSize: DEFAULT_ICON_SIZE,
+            shadowSize: DEFAULT_ICON_SHADOW_SIZE,
+            iconAnchor: DEFAULT_ICON_ANCHOR,
+            shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
+            popupAnchor: DEFAULT_ICON_POPUP_ANCHOR,
+            className: 'feature selected'
+          });
           marker.target.setIcon(newIcon);
           L.DomUtil.addClass(marker.target._icon, 'selected');
 
@@ -961,6 +2184,7 @@
           if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
+            updatePrimaryMarkerKeyboardAccessibility();
           }
         }
 
@@ -996,6 +2220,8 @@
           if (!disablePlaceNameAutofill) {
             $('input[name=' + elementId + '\\[place_name\\]]').val('');
           }
+
+          clearMapInvalid();
         }
 
         function setLocationDetails(results) {
@@ -1145,6 +2371,9 @@
             Drupal.dialog(suggestionsModal, {
               title: 'Multiple possible matches found',
               width: '600px',
+              classes: {
+                'ui-dialog': 'portland-webform-dialog'
+              },
               buttons: [{
                 text: 'Close',
                 click: function () {
@@ -1239,12 +2468,27 @@
         function setLatLngHiddenFields(lat, lng) {
           if (!lat) lat = "0";
           if (!lng) lng = "0";
-          $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
-          $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
+
+          var latField = getLocationField('location_lat', 'location-lat');
+          var lonField = getLocationField('location_lon', 'location-lng');
+          if (latField) {
+            latField.value = lat;
+          }
+          if (lonField) {
+            lonField.value = lng;
+          }
+
+          clearMapInvalid();
 
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
-          $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
-          $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
+          var xField = getLocationField('location_x', 'location-x');
+          var yField = getLocationField('location_y', 'location-y');
+          if (xField) {
+            xField.value = sphericalMerc.x;
+          }
+          if (yField) {
+            yField.value = sphericalMerc.y;
+          }
         }
 
         function setLocationMarker(lat, lng) {
@@ -1272,7 +2516,9 @@
             return false;
           }
 
-          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE }).addTo(map);
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, keyboard: false, iconSize: DEFAULT_ICON_SIZE, zIndexOffset: 5000 }).addTo(map);
+          updateLocationMarkerKeyboardAccessibility();
+          updatePrimaryMarkerKeyboardAccessibility();
 
           // if address marker is moved, we want to capture the new coordinates
           locationMarker.off();
@@ -1280,6 +2526,7 @@
             var latlng = locationMarker.getLatLng();
             setLatLngHiddenFields(latlng.lat, latlng.lng);
             reverseGeolocate(latlng);
+            updateLocationMarkerKeyboardAccessibility();
           });
 
           hideLoader();
@@ -1371,6 +2618,13 @@
             // if already zoomed in more, dont change zoom.
             var currentZoom = map.getZoom();
             var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : currentZoom < DEFAULT_ZOOM_CLICK - 2 ? DEFAULT_ZOOM_CLICK - 2 : currentZoom;
+
+            selectedMarkerPopupToReopenAfterZoom = null;
+            var willChangeZoom = zoomLevel !== currentZoom;
+            if (willChangeZoom && clickedMarker && clickedMarker.target && typeof clickedMarker.target.getPopup === 'function' && clickedMarker.target.getPopup() && typeof clickedMarker.target.isPopupOpen === 'function' && clickedMarker.target.isPopupOpen()) {
+              selectedMarkerPopupToReopenAfterZoom = clickedMarker.target;
+            }
+
             doZoomAndCenter(lat, lng, zoomLevel);
             var latlng = new L.LatLng(lat, lng);
             if (addressVerify && !data.taxlot) {
@@ -1454,8 +2708,7 @@
 
         function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data) {
           $('#verified_location_text').text(description);
-
-          if (!locationTextBlock.map) locationTextBlock.addTo(map);
+          $('#location-text-container').addClass('is-visible');
 
           if (!lat || !lng) {
             return false;
@@ -1467,6 +2720,7 @@
           $('#location-text-value').text(description);
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
+          updateLocationTextAnnouncement('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
 
           // if verify mode, also put location description in address field, but only the street
           if (addressVerify) {
@@ -1477,9 +2731,16 @@
           $('#location_address.location-picker-address').val(description).trigger('change');
         }
 
-        function hideVerifiedLocation() {
+        function hideVerifiedLocation(announce = true) {
+          $('#location-text-container').removeClass('is-visible');
+          $('#location-text-value').text('');
+          $('#location-text-lat').text('');
+          $('#location-text-lng').text('');
           $('#verified_location_text').text("");
           $('#verified_location').addClass('visually-hidden');
+          if (announce) {
+            updateLocationTextAnnouncement('Selected location cleared.');
+          }
         }
 
         function selfLocateBrowser() {
@@ -1497,11 +2758,13 @@
             currentView = "aerial";
             // show icon active
             aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_base.png")';
+            map.getContainer().classList.add('aerial-view');
           } else {
             map.removeLayer(aerialLayer);
             map.addLayer(baseLayer);
             currentView = "base";
             aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
+            map.getContainer().classList.remove('aerial-view');
           }
         }
 
@@ -1538,6 +2801,9 @@
           statusModal.html('<p class="status-message mb-0">' + message + '</p>');
           Drupal.dialog(statusModal, {
             width: '600px',
+            classes: {
+              'ui-dialog': 'portland-webform-dialog'
+            },
             buttons: [{
               text: 'Close',
               click: function () {

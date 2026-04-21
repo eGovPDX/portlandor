@@ -1,0 +1,85 @@
+diff --git a/docs/cheat-sheet.md b/docs/cheat-sheet.md
+index 036e974..3bec6b6 100644
+--- a/docs/cheat-sheet.md
++++ b/docs/cheat-sheet.md
+@@ -130,8 +130,17 @@ Note that drupal_field() does not work for view modes powered by Layout Builder.
+ ```
+ 
+ ## Drupal Token
++
++See Drupal\Core\Utility\Token::replace()
+ ```twig
++{# Global tokens: #}
+ {{ drupal_token('site:name') }}
++
++{# Tokens with required data (2nd parameter): #}
++{{ drupal_token('node:title', {node: node}) }}
++
++{# Tokens with required data (2nd parameter) and options (3rd parameter): #}
++{{ drupal_token('node:title', {node: node}, {clear: true}) }}
+ ```
+ 
+ ## Drupal Config
+diff --git a/src/View/BlockViewBuilder.php b/src/View/BlockViewBuilder.php
+index af20782..e239cfe 100644
+--- a/src/View/BlockViewBuilder.php
++++ b/src/View/BlockViewBuilder.php
+@@ -3,10 +3,11 @@
+ namespace Drupal\twig_tweak\View;
+ 
+ use Drupal\Core\Block\BlockPluginInterface;
++use Drupal\Core\Block\BlockManagerInterface;
+ use Drupal\Core\Block\TitleBlockPluginInterface;
+-use Drupal\Core\Cache\CacheableDependencyInterface;
+ use Drupal\Core\Cache\CacheableMetadata;
+ use Drupal\Core\Controller\TitleResolverInterface;
++use Drupal\Core\Entity\EntityInterface;
+ use Drupal\Core\Plugin\Context\ContextHandlerInterface;
+ use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
+ use Drupal\Core\Plugin\ContextAwarePluginInterface;
+@@ -23,7 +24,7 @@ class BlockViewBuilder {
+   /**
+    * The plugin.manager.block service.
+    *
+-   * @var \Drupal\Core\Cache\CacheableDependencyInterface
++   * @var \Drupal\Core\Block\BlockManagerInterface
+    */
+   protected $pluginManagerBlock;
+ 
+@@ -73,7 +74,7 @@ class BlockViewBuilder {
+    * Constructs a BlockViewBuilder object.
+    */
+   public function __construct(
+-    CacheableDependencyInterface $plugin_manager_block,
++    BlockManagerInterface $plugin_manager_block,
+     ContextRepositoryInterface $context_repository,
+     ContextHandlerInterface $context_handler,
+     AccountInterface $account,
+@@ -139,6 +140,16 @@ class BlockViewBuilder {
+ 
+       if ($block_plugin instanceof TitleBlockPluginInterface) {
+         $build['content']['#cache']['contexts'][] = 'url';
++        foreach ($this->routeMatch->getParameters() as $value) {
++          if ($value instanceof EntityInterface) {
++            $cacheTags = $value->getCacheTagsToInvalidate();
++            if (!empty($cacheTags)) {
++              $build['content']['#cache']['tags'] = isset($build['content']['#cache']['tags'])
++                ? $build['content']['#cache']['tags'] + $cacheTags
++                : $cacheTags;
++            }
++          }
++        }
+       }
+       // Some blocks return null instead of array when empty.
+       // @see https://www.drupal.org/project/drupal/issues/3212354
+diff --git a/tests/twig_tweak_test/templates/twig-tweak-test.html.twig b/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
+index 94f547c..fdcbf60 100644
+--- a/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
++++ b/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
+@@ -1,5 +1,5 @@
+ {# @cspell:ignore doremi #}
+-{% set image_attributes = {style: 'width: 30px; height 30px;'} %}
++{% set image_attributes = {style: 'width: 30px; height: 30px;'} %}
+ <style>
+   main {
+     background-color: lightyellow;
