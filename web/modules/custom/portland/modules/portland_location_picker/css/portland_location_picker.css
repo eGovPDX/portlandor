@@ -3,7 +3,8 @@
  * Portland Location Picker styles.
  */
 
-.location-map, .map-error-message {
+.location-map,
+.map-error-message {
   width: 100%;
   height: 500px;
   max-height: 80vh;
@@ -36,6 +37,116 @@ input.location-verify {
   width: 35px;
   height: 35px;
   cursor: pointer;
+}
+
+.locate-control:focus,
+.reset-control:focus,
+.map-help-control:focus,
+.pan-control-toggle:focus,
+.pan-control-button:focus,
+#location_map_container:focus {
+  outline: 2px solid #005a9c;
+  outline-offset: 2px;
+}
+
+.reset-control {
+  background-color: white;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 35px;
+  text-align: center;
+  font-weight: bold;
+  color: #222;
+}
+
+.map-help-control {
+  background-color: white;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 35px;
+  text-align: center;
+  font-weight: bold;
+  color: #222;
+}
+
+.pan-control {
+  min-width: 35px;
+  min-height: 35px;
+}
+
+.pan-control-toggle {
+  width: 35px;
+  height: 35px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pan-control-toggle .fa-solid {
+  font-size: 16px;
+  line-height: 1;
+  color: #222;
+}
+
+.pan-control-buttons {
+  display: none;
+  position: relative;
+  width: 75px;
+  height: 115px;
+}
+
+.pan-control.is-expanded .pan-control-toggle {
+  display: none;
+}
+
+.pan-control.is-expanded .pan-control-buttons {
+  display: block;
+}
+
+.pan-control-button {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: bold;
+  color: #222;
+}
+
+.pan-control-button .fa-solid {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pan-control-button-up {
+  top: 0;
+  left: 20px;
+}
+
+.pan-control-button-left {
+  top: 40px;
+  left: 0;
+}
+
+.pan-control-button-right {
+  top: 40px;
+  left: 40px;
+}
+
+.pan-control-button-down {
+  top: 80px;
+  left: 20px;
 }
 
 #status_modal {
@@ -81,15 +192,31 @@ input.location-verify {
 }
 
 #location-text-container {
+  margin-top: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 140ms ease-in-out, max-height 140ms ease-in-out, margin-top 140ms ease-in-out;
+}
+
+#location-text-container.is-visible {
+  margin-top: 12px;
+  max-height: 120px;
+  opacity: 1;
+}
+
+#location-text-visual {
   padding: 10px 20px 10px 10px;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.95);
   border: 2px solid rgba(0,0,0,0.2);
   border-radius: 2px;
   display: flex;
   align-items: flex-start;
   font-size: 0.9rem;
-  max-width: 500px;
-  min-width: 250px;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 #location-text-value {
@@ -101,17 +228,14 @@ input.location-verify {
   filter: grayscale(100%);
 }
 
-div.leaflet-bottom.leaflet-left .custom-control {
-  /* Add margin so popup doesn't overlap with controls */
-  margin-right: 50px;
-  margin-bottom: 20px;
+#location-icon img {
+  width: 37px;
+  height: 51px;
+  display: block;
 }
 
-/* Remove bottom margin at MD breakpoint since attribution control shouldn't be in the way anymore */
-@media (min-width: 768px) {
-  div.leaflet-bottom.leaflet-left .custom-control {
-    margin-bottom: 10px;
-  }
+#location-text {
+  overflow-wrap: anywhere;
 }
 
 span#verified-text {
@@ -123,6 +247,16 @@ span#verified-text {
   box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.5);
 }
 
+.ui-dialog.portland-webform-dialog .ui-dialog-titlebar .ui-dialog-title {
+  font-size: 1.2em;
+}
+
+/* Keep address suggestions above Leaflet controls so options remain clickable. */
+.ui-autocomplete,
+.ui-autocomplete.ui-front {
+  z-index: 20001 !important;
+}
+
 .boundary-key {
   display: inline-block;
   border: dashed 1px red;
@@ -131,6 +265,68 @@ span#verified-text {
 
 #location_map {
   position: relative;
+}
+
+.map-keyboard-help {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 901;
+  width: min(460px, calc(100% - 2rem));
+  padding: 0.9rem 1rem;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #111;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 140ms ease-in-out;
+}
+
+.map-keyboard-help-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 140ms ease-in-out;
+}
+
+.map-keyboard-help-backdrop.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.map-keyboard-help.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.map-keyboard-help__text {
+  margin: 0;
+}
+
+.map-keyboard-help__close {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #666;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+}
+
+.map-keyboard-help__close:focus {
+  outline: 2px solid #005a9c;
+  outline-offset: 2px;
 }
 
 .loader-container {
@@ -165,7 +361,59 @@ span#verified-text {
   position: relative; /* Ensure container allows absolutely positioned children */
 }
 
+#location_map:focus-within #location_map_container.keyboard-selection-enabled.keyboard-crosshair-active::before,
+#location_map:focus-within #location_map_container.keyboard-selection-enabled.keyboard-crosshair-active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 500;
+}
+
+#location_map:focus-within #location_map_container.keyboard-selection-enabled.keyboard-crosshair-active::before {
+  width: 30px;
+  height: 30px;
+  background:
+    linear-gradient(to right, transparent 0 13px, rgba(0, 90, 156, 0.95) 13px 17px, transparent 17px 100%),
+    linear-gradient(to bottom, transparent 0 13px, rgba(0, 90, 156, 0.95) 13px 17px, transparent 17px 100%);
+  filter: drop-shadow(0 0 2px #fff);
+}
+
+#location_map:focus-within #location_map_container.keyboard-selection-enabled.keyboard-crosshair-active.aerial-view::before {
+  background:
+    linear-gradient(to right, transparent 0 13px, rgba(255, 220, 80, 0.95) 13px 17px, transparent 17px 100%),
+    linear-gradient(to bottom, transparent 0 13px, rgba(255, 220, 80, 0.95) 13px 17px, transparent 17px 100%);
+  filter: drop-shadow(0 0 2px #000);
+}
+
+#location_map:focus-within #location_map_container.keyboard-selection-enabled.keyboard-crosshair-active::after {
+  content: none;
+}
+
 .map-error-message {
   padding: 20px;
   text-align: center;
+  color: #d32f2f;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  margin-bottom: 20px;
+}
+
+.location-required-label-wrapper {
+  margin-bottom: 12px;
+}
+
+.location-required-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.location-required-label .required-asterisk {
+  color: #d32f2f;
+  font-weight: bold;
+  margin-right: 4px;
 }

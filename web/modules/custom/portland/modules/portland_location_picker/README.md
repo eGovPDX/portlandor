@@ -4,15 +4,15 @@ This custom sub-module of the Portland module implements a custom composite elem
 
 NOTE: The widget was updated in 8/2023 with new functionality, and this readme may not be fully up to date. Major refactoring and optimization is planned for the near future, at which time the documentation will be fully updated.
 
+## Limitations
+
+This widget currently supports only a single instance per page. The implementation relies on hard-coded DOM IDs (for example, `location_map_container` and `location_map`) and a shared global `map` object, so multiple widgets rendered on the same page will conflict.
+
 ## Configuration
 
-IMPORTANT: Only one Location widget can be placed in a form page; it must be the only one on the currently viewed page. Multiple instances can be used if they're placed on different pages within the form (using the multi-page form format).
+The location_lat field should be marked required in the element configuration panel if location coordinates are required. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. If there is no location_lat value, the widget will report a validation error on the location map.
 
-In practice, at minimum the location_address and location_lat fields should usually be marked required in the element configuration panel. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. Though hidden, the location_lat field has the label "Location," so that's the label that's displayed in the error message if no coordates have been selected.
-
-When fields are marked as required in the UI, instead of the custom code for the widget, they'yre not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
-
-KNOWN ISSUE: If the parent Location element is marked as required (for display purposes only), some of the sub-elements are incorrectly marked as required even when they are not. The exact steps to reproduce this behavior are TBD, but it may occur when some of the visible sub-elements are hidden type fields.
+When fields are marked as required in the UI, instead of the custom code for the widget, they're not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
 
 ## Conditional logic
 
