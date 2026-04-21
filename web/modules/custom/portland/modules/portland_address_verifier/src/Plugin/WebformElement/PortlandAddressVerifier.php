@@ -63,6 +63,18 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   /**
    * {@inheritdoc}
    */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
+    parent::submitConfigurationForm($form, $form_state);
+
+    $user_input = $form_state->getUserInput();
+    if (isset($user_input['autocomplete_mode'])) {
+      $form_state->setValue('autocomplete_mode', $user_input['autocomplete_mode']);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
     $e = static fn($s) => Html::escape($s);
