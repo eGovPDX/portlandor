@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_address_verifier\Plugin\WebformElement;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\Core\Render\Markup;
@@ -27,6 +28,49 @@ use Drupal\Component\Utility\Html;
  * @see \Drupal\webform\Annotation\WebformElement
  */
 class PortlandAddressVerifier extends WebformCompositeBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineDefaultProperties(): array {
+    return [
+      'autocomplete_mode' => 'address',
+    ] + parent::defineDefaultProperties();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
+    $form = parent::buildConfigurationForm($form, $form_state);
+    $element = $form_state->get('element');
+
+    $form['autocomplete_mode'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Browser autocomplete mode'),
+      '#default_value' => $element['#autocomplete_mode'] ?? 'address',
+      '#options' => [
+        'address' => $this->t('Address tokens (recommended)'),
+        'off' => $this->t('Turn autocomplete off'),
+        'none' => $this->t('Do not set autocomplete attribute'),
+      ],
+      '#description' => $this->t('Controls the HTML autocomplete attribute for address, unit, city, state, and ZIP fields.'),
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
+    parent::submitConfigurationForm($form, $form_state);
+
+    $user_input = $form_state->getUserInput();
+    if (isset($user_input['autocomplete_mode'])) {
+      $form_state->setValue('autocomplete_mode', $user_input['autocomplete_mode']);
+    }
+  }
 
   /**
    * {@inheritdoc}
