@@ -29,6 +29,7 @@ elements: |-
   page_assessment:
     '#type': webform_wizard_page
     '#title': Assessment
+    '#states_clear': false
     '#states':
       invisible:
         ':input[name="assessment_prefilled"]':
@@ -48,6 +49,21 @@ elements: |-
       '#options_display': buttons_vertical
       '#options_description_display': help
       '#required': true
+    wizard_existing_permit_situation:
+      '#type': radios
+      '#title': 'What option best describes your situation?'
+      '#description': 'I need to...'
+      '#description_display': before
+      '#prepopulate': true
+      '#options':
+        change: 'Change or cancel an upcoming permit'
+        extend: 'Extend the dates of an ongoing permit, or reissue an expired permit'
+      '#options_display': buttons_vertical
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="wizard_permit_need"]':
+            value: existing_permit
   page_contact_info:
     '#type': webform_wizard_page
     '#title': 'Contact info'
@@ -150,6 +166,7 @@ elements: |-
         PBOT: PBOT
         'PP&R': 'PP&R'
         PWB: PWB
+        ODOT: ODOT
       '#options_display': buttons_vertical
       '#required': true
       '#states':
@@ -183,6 +200,7 @@ elements: |-
     complex_permit_job_number:
       '#type': textfield
       '#title': 'Job number?'
+      '#required': true
       '#states':
         visible:
           ':input[name="contact_applicant_type"]':
@@ -271,6 +289,84 @@ elements: |-
       '#access_create_roles':
         - support_agent
         - administrator
+  permit_location_metered:
+    '#type': hidden
+    '#title': 'Location metered boolean (set by JS)'
+    '#default_value': 'false'
+  permit_location_parking_zone:
+    '#type': hidden
+    '#title': 'Parking zone (set by JS)'
+  permit_location_parking_zone_type:
+    '#type': hidden
+    '#title': 'Parking zone type (set by JS)'
+  page_location:
+    '#type': webform_wizard_page
+    '#title': Location
+    '#states':
+      visible:
+        - ':input[name="wizard_permit_need"]':
+            value: parking
+        - or
+        - ':input[name="wizard_permit_need"]':
+            value: traffic
+        - or
+        - ':input[name="wizard_permit_need"]':
+            value: existing_permit
+    markup_location_info:
+      '#type': webform_markup
+      '#states':
+        invisible:
+          ':input[name="wizard_permit_need"]':
+            value: existing_permit
+      '#markup': |-
+        <p>You can only close/reserve one street per application. If you will be working on more than one street, you&#39;ll need to submit a new application for each street.</p>
+
+        <p><strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">Moratorium</a>.</p>
+    markup_location_info_change_request:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="wizard_existing_permit_situation"]':
+            value: change
+      '#markup': '<div class="webform-alert alert alert--warning"><strong>For a change request:</strong> if you are changing the location, please select the new location.<br>If you are not changing the location of your request, please select the location of your existing request.</div>'
+    markup_location_info_renewal_request:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="wizard_existing_permit_situation"]':
+            value: extend
+      '#markup': '<div class="webform-alert alert alert--warning"><strong>For a renewal request:</strong> please select the location of your existing permit.</div>'
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'Permit location'
+      '#required': true
+      '#location_search__title': 'What is the address where this closure or reservation will take place?'
+      '#location_search__description': '<p>Please enter the address below. <strong>Move the pin to the exact area of your closure/reservation.</strong></p>'
+      '#location_lat__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+      '#precision_text__access': false
+      '#waterway_instructions__access': false
+      '#require_boundary': true
+    markup_taxlot_warning:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_location[location_type_taxlot]"]':
+            value: 'true'
+      '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
+    markup_cityinstall_pilot_area:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="permit_location_parking_zone_type"]':
+            value: Non-Metered
+          ':input[name="wizard_permit_need"]':
+            value: parking
+      '#markup': '<div class="webform-alert alert alert--info" aria-live="polite"><h2>We''ll install your signs</h2><p>You have selected an area where city staff will install the parking reservation signs on your behalf. As October 2025, this now includes some ''non-metered'' areas as a part of a pilot project. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about the pilot.</a></p></div>'
   page_existing_permit:
     '#type': webform_wizard_page
     '#title': 'Request details'
@@ -285,17 +381,6 @@ elements: |-
         - ':input[name="permit_type"]':
             value: renewal_request
     '#admin_title': 'Existing Permit'
-    wizard_existing_permit_situation:
-      '#type': radios
-      '#title': 'What option best describes your situation?'
-      '#description': 'I need to...'
-      '#description_display': before
-      '#prepopulate': true
-      '#options':
-        change: 'Change or cancel an upcoming permit'
-        extend: 'Extend the dates of an ongoing permit, or reissue an expired permit'
-      '#options_display': buttons_vertical
-      '#required': true
     markup_no_renewals_notification:
       '#type': webform_computed_twig
       '#title': 'No renewals for notifications'
@@ -343,9 +428,6 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
-      change_request_location:
-        '#type': textfield
-        '#title': 'What is the location of your permit(s)?'
       change_request_change_type:
         '#type': webform_select_other
         '#title': 'What kind of change are you requesting?'
@@ -383,7 +465,7 @@ elements: |-
             value: ''
       markup_renewal_request:
         '#type': webform_markup
-        '#markup': '<h2>Please submit a Renewal Request via the below form</h2>'
+        '#markup': '<h2>Submit a renewal request</h2>'
       renewal_request_items_to_change:
         '#type': number
         '#title': 'How many permits do you need to renew or reissue?'
@@ -402,9 +484,6 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
-      renewal_request_location:
-        '#type': textfield
-        '#title': 'What is the location of your permit(s)?'
       renewal_request_permit_date_days_of_week:
         '#type': checkboxes
         '#title': 'New permit days of week'
@@ -500,63 +579,6 @@ elements: |-
       '#update_hide': true
       '#wizard_prev_hide': true
       '#wizard_next_hide': true
-  permit_location_metered:
-    '#type': hidden
-    '#title': 'Location metered boolean (set by JS)'
-    '#default_value': 'false'
-  permit_location_parking_zone:
-    '#type': hidden
-    '#title': 'Parking zone (set by JS)'
-  permit_location_parking_zone_type:
-    '#type': hidden
-    '#title': 'Parking zone type (set by JS)'
-  page_location:
-    '#type': webform_wizard_page
-    '#title': Location
-    '#states':
-      visible:
-        - ':input[name="wizard_permit_need"]':
-            value: parking
-        - or
-        - ':input[name="wizard_permit_need"]':
-            value: traffic
-    markup_location_info:
-      '#type': webform_markup
-      '#markup': |-
-        <p>You can only close/reserve one street per application. If you will be working on more than one street, you&#39;ll need to submit a new application for each street.</p>
-
-        <p><strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">Moratorium</a>.</p>
-    report_location:
-      '#type': portland_location_picker
-      '#title': 'Permit location'
-      '#required': true
-      '#location_search__title': 'What is the address where this closure or reservation will take place?'
-      '#location_search__description': '<p>Please enter the address below. <strong>Move the pin to the exact area of your closure/reservation.</strong></p>'
-      '#location_lat__required': true
-      '#place_name__access': false
-      '#location_details__access': false
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
-      '#precision_text__access': false
-      '#waterway_instructions__access': false
-      '#require_boundary': true
-    markup_taxlot_warning:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="report_location[location_type_taxlot]"]':
-            value: 'true'
-      '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
-    markup_cityinstall_pilot_area:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="permit_location_parking_zone_type"]':
-            value: Non-Metered
-          ':input[name="wizard_permit_need"]':
-            value: parking
-      '#markup': '<div class="webform-alert alert alert--info" aria-live="polite"><h2>We''ll install your signs</h2><p>You have selected an area where city staff will install the parking reservation signs on your behalf. As October 2025, this now includes some ''non-metered'' areas as a part of a pilot project. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about the pilot.</a></p></div>'
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -738,6 +760,15 @@ elements: |-
     hidden_moratorium_details:
       '#type': hidden
       '#title': 'Hidden - moratorium details, if any (computed by JS)'
+    hidden_contact_bureau:
+      '#type': webform_computed_token
+      '#title': 'Hidden - contact_bureau (used by JS)'
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#display_on': form
+      '#mode': text
+      '#template': '[webform_submission:values:contact_bureau:raw]'
     hidden_wizard_permit_need:
       '#type': webform_computed_token
       '#title': 'Hidden - wizard_permit_need (used by JS)'
@@ -831,7 +862,17 @@ elements: |-
     markup_permit_fee_estimate:
       '#type': webform_markup
       '#admin_title': 'Fee Estimate'
-      '#markup': '<p><strong>Fee estimate: </strong>$<span class="fee-estimate"></span></p>'
+      '#markup': '<p><strong>Permit fee estimate: </strong>$<span class="fee-estimate"></span></p>'
+    markup_parking_verification_info_noinstall:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="permit_location_metered"]':
+            value: 'false'
+          ':input[name="permit_location_parking_zone_type"]':
+            value: ''
+      '#markup': |
+        <p><strong>There is an additional $75 service fee if you opt to have your parking reservation sign placement verified, which is required if you would like the option of towing vehicles out of your reserved area. <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">See our website</a> for additional info about this process. Additional parking fees may also apply if you are working on a construction project covered by a building permit. <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Visit our fee guide</a> for more information about applicable fee rates.</p>
   page_7day_permit:
     '#type': webform_wizard_page
     '#title': 'Request details'
@@ -841,18 +882,17 @@ elements: |-
           value: 7day
     '#admin_title': '7-Day Permit'
     markup_7day_permit_introduction:
-      '#type': processed_text
-      '#text': |
+      '#type': webform_markup
+      '#markup': |
         <h2>Apply for a Parking Reservation</h2>
 
         <p>This permit only allows you to reserve legal parking spaces outside of the <a href="https://pdx.maps.arcgis.com/apps/MapSeries/index.html?appid=ad171d005d4442bba3c640735d070aa3" target="_blank">Metered Parking Districts.</a> This permit is not valid in the following restricted parking zones: No Parking (all hours or limited hours), Pay To Park, Transit, Car Share.</p>
 
         <p>Here are some example signs you may see in areas where this permit <strong>Shall Not Be Used</strong>:</p>
 
-        <drupal-entity data-align="narrow" data-embed-button="image_browser" data-entity-embed-display="view_mode:media.banner" data-entity-type="media" data-entity-uuid="4c68b8cf-3bc2-4b03-a35d-a332762dd870"></drupal-entity>
+        <p><img width="300" src="/sites/default/files/2022/apply_tsup-7day_permit.png" alt="Example of restricted parking signs" /></p>
 
-        <p><strong>Please read and review the&nbsp;<a href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Parking Enforcement Reservation Procedure</a>. Parking Enforcement will only enforce your no parking signs if the verification process has been completed. Additional fees apply to complete the verification process.</strong></p>
-      '#format': simplified_editor_with_media_embed
+        <p><strong>In order to reserve parking with the ability to have vehicles towed out of your reserved area, you are required to post your parking reservation signs and have them verified by Parking Enforcement staff at least 72 hours in advance of your permit start date. This optional service incurs a $75 fee. <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">View our website</a> for additional details about this process.</strong></p>
     7day_permit_street_name:
       '#type': textfield
       '#title': 'What street will you be reserving parking on?'
@@ -915,8 +955,8 @@ elements: |-
           value: parking_only
     '#admin_title': 'Simple Permit'
     markup_simple_permit_introduction:
-      '#type': processed_text
-      '#text': |
+      '#type': webform_markup
+      '#markup': |
         <h2>Apply for a Parking Reservation</h2>
 
         <p>This form should be used for parking-only requests. You cannot use this form to request the use or closure of sidewalks, bike/traffic lanes, or streets.<br />
@@ -929,7 +969,6 @@ elements: |-
         	<li>Short term construction/utility work</li>
         	<li>Tree trimming</li>
         </ul>
-      '#format': simple_editor
     simple_permit_requested_times:
       '#type': textfield
       '#title': 'Requested start and end times (include AM or PM)'
@@ -1030,91 +1069,93 @@ elements: |-
           - ':input[name="simple_permit_street_confirmation"]':
               checked: true
       '#states_clear': false
-    simple_permit_location_description:
-      '#type': textfield
-      '#title': 'Please specify exactly where you would like the parking reserved on the street'
-      '#description_display': before
-      '#description': "This information is used to help process your application. This permit application doesn't hold a particular space; that is done by placing your signage once the permit is issued."
-      '#placeholder': "e.g. 'Closest to e.g. NW 12th Ave.' or '40 ft west of e.g. NW 11th Ave'"
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="simple_permit_street_confirmation"]':
-            checked: true
-    simple_permit_bds_associated:
-      '#type': webform_radios_other
-      '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
-      '#options':
-        'No': 'No'
-      '#options_display': buttons_horizontal
-      '#other__option_label': 'Yes'
-      '#other__title': 'Please provide the permit number or IVR #'
-      '#other__placeholder': ''
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="simple_permit_street_confirmation"]':
-            checked: true
-    simple_permit_additional_info:
-      '#type': textarea
-      '#title': 'Additional info'
-      '#placeholder': "Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above."
-      '#states':
-        visible:
-          ':input[name="simple_permit_bds_associated[radios]"]':
-            checked: true
-    simple_permit_attachment:
-      '#type': webform_document_file
-      '#title': 'Optionally, attach a picture, drawing, or map showing where you would like to reserve parking.'
-      '#multiple': 8
-      '#max_filesize': '30'
-      '#file_help': help
-      '#file_extensions': 'pdf jpg jpeg png'
-      '#states':
-        visible:
-          ':input[name="simple_permit_bds_associated[radios]"]':
-            checked: true
-    container_simple_tocs:
+    container_simple_permit_after_confirmation:
       '#type': container
       '#states':
         visible:
-          ':input[name="simple_permit_bds_associated[radios]"]':
+          ':input[name="simple_permit_street_confirmation"]':
             checked: true
-      simple_permit_acknowledge_conditions:
-        '#type': checkbox
-        '#title': 'I have read and agree with the conditions of this permit (see below).'
-        '#description': 'By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />'
+      simple_permit_location_description:
+        '#type': textfield
+        '#title': 'Please specify exactly where you would like the parking reserved on the street'
+        '#description_display': before
+        '#description': "This information is used to help process your application. This permit application doesn't hold a particular space; that is done by placing your signage once the permit is issued."
+        '#placeholder': "e.g. 'Closest to e.g. NW 12th Ave.' or '40 ft west of e.g. NW 11th Ave'"
         '#required': true
-        '#required_error': 'You must agree with the permit conditions.'
-      markup_simple_toc_conditions:
-        '#type': webform_markup
-        '#markup': '<a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />'
-      markup_simple_toc_changes_refunds:
-        '#type': webform_markup
-        '#markup': '<a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a><br />'
-      markup_simple_toc_nonmetered_parking_enforcement:
-        '#type': webform_markup
+      simple_permit_bds_associated:
+        '#type': webform_radios_other
+        '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
+        '#options':
+          'No': 'No'
+        '#options_display': buttons_horizontal
+        '#other__option_label': 'Yes'
+        '#other__title': 'Please provide the permit number or IVR #'
+        '#other__placeholder': ''
+        '#required': true
+      simple_permit_additional_info:
+        '#type': textarea
+        '#title': 'Additional info'
+        '#placeholder': "Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above."
+      simple_permit_attachment:
+        '#type': webform_document_file
+        '#title': 'Optionally, attach a picture, drawing, or map showing where you would like to reserve parking.'
+        '#multiple': 8
+        '#max_filesize': '30'
+        '#file_help': help
+        '#file_extensions': 'pdf jpg jpeg png'
+      container_simple_tocs_nonmetered_noinstall:
+        '#type': container
         '#states':
           visible:
             ':input[name="permit_location_metered"]':
               value: 'false'
             ':input[name="permit_location_parking_zone_type"]':
               value: ''
-        '#markup': '<a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Non-Metered Parking Enforcement verification procedure</a>'
-      markup_simple_toc_cityinstall_parking_enforcement:
-        '#type': webform_markup
+        simple_permit_acknowledge_nonmetered_conditions:
+          '#type': checkbox
+          '#title': 'I have read and agree to the <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">applicable fees and refund policy</a>.'
+          '#required': true
+          '#required_error': 'You must agree with the fees and refund policy.'
+        simple_permit_acknowledge_install_fee:
+          '#type': checkbox
+          '#title': 'I understand that to reserve parking with the ability to have vehicles towed out of my reserved area, I am required to post parking reservation signs and have them verified by Parking Enforcement staff at least 72 hours in advance of the permit start date. I understand that this optional service incurs a $75 fee. I have reviewed the <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">details about this process</a>.'
+          '#required': true
+          '#required_error': 'You must agree with the parking verification disclaimer.'
+      container_simple_tocs_metered_or_cityinstall:
+        '#type': container
         '#states':
           visible:
-            ':input[name="permit_location_parking_zone_type"]':
-              value: Non-Metered
-        '#markup': '<a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">City Installed Parking Reservation procedure</a>'
-      markup_simple_toc_metered_parking_enforcement:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="permit_location_metered"]':
-              value: 'true'
-        '#markup': '<a target="_blank" href="/transportation/permitting/documents/metered-parking-reservation-overview/download">Metered Parking Enforcement verification procedure</a>'
+            - ':input[name="permit_location_parking_zone_type"]':
+                value: Non-Metered
+            - or
+            - ':input[name="permit_location_metered"]':
+                value: 'true'
+        simple_permit_acknowledge_conditions:
+          '#type': checkbox
+          '#title': 'I have read and agree with the conditions of this permit (see below).'
+          '#description': 'By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />'
+          '#required': true
+          '#required_error': 'You must agree with the permit conditions.'
+        markup_simple_toc_conditions:
+          '#type': webform_markup
+          '#markup': '<a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />'
+        markup_simple_toc_changes_refunds:
+          '#type': webform_markup
+          '#markup': '<a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a><br />'
+        markup_simple_toc_cityinstall_parking_enforcement:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="permit_location_parking_zone_type"]':
+                value: Non-Metered
+          '#markup': '<a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">City Installed Parking Reservation procedure</a>'
+        markup_simple_toc_metered_parking_enforcement:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="permit_location_metered"]':
+                value: 'true'
+          '#markup': '<a target="_blank" href="/transportation/permitting/documents/metered-parking-reservation-overview/download">Metered Parking Enforcement verification procedure</a>'
   page_complex_permit:
     '#type': webform_wizard_page
     '#title': 'Request details'
@@ -1125,65 +1166,60 @@ elements: |-
             pattern: traffic_control|fun|cbn|sidewalk_repair
     '#admin_title': 'Complex Permit (Traffic Control/FUN/CBN/Sidewalk Repair)'
     markup_complex_permit_introduction_traffic_control:
-      '#type': processed_text
+      '#type': webform_markup
       '#states':
         visible:
           ':input[name="permit_type"]':
             value:
               pattern: traffic_control
-      '#text': |
+      '#markup': |
         <h2>Apply for a permit with Traffic Control</h2>
 
         <p>This permit is required for the temporary use or closure of a sidewalk, bike/traffic lane, or street, and any associated parking.</p>
-      '#format': simple_editor
     markup_complex_permit_introduction_fun:
-      '#type': processed_text
+      '#type': webform_markup
       '#states':
         visible:
           ':input[name="permit_type"]':
             value: fun
-      '#text': |
+      '#markup': |
         <h2>Submit a Franchise Utility Notification</h2>
 
         <p>This Notification is a condition of the Franchise Utility Notification (FUN) permit. Parties eligible to use this form have been issued an annual FUN Permit.</p>
-      '#format': simple_editor
     markup_complex_permit_introduction_city_employees:
-      '#type': processed_text
+      '#type': webform_markup
       '#states':
         visible:
           ':input[name="permit_type"]':
             value: cbn
           ':input[name="contact_city_work_type"]':
             value: city_employees
-      '#text': |
+      '#markup': |
         <h2>Notification of City Bureau Work in the Right of Way</h2>
 
         <p>This Notification serves to coordinate work in the Right of Way</p>
-      '#format': simple_editor
     markup_complex_permit_introduction_contractor:
-      '#type': processed_text
+      '#type': webform_markup
       '#states':
         visible:
           ':input[name="permit_type"]':
             value: cbn
           ':input[name="contact_city_work_type"]':
             value: contractor
-      '#text': |
+      '#markup': |
         <h2>Notification of Contracted City Bureau Work in the Right of Way</h2>
 
         <p>This Notification serves to coordinate contracted work in the Right of Way being performed by companies under contract for the City of Portland or City Partner Agencies.</p>
-      '#format': simple_editor
     markup_complex_permit_introduction_sidewalk_repair:
-      '#type': processed_text
+      '#type': webform_markup
       '#states':
         visible:
           ':input[name="permit_type"]':
             value: sidewalk_repair
-      '#text': |
+      '#markup': |
         <h2>Notification of Sidewalk Repair Work</h2>
 
         <p>If you have obtained a Voluntary Sidewalk Repair Permit, Mandatory Sidewalk Repair Permit, or Minor Improvement Permit and need close the sidewalk to perform the work, please use this form to notify PBOT of your sidewalk closure dates. Please reference your permit number below.</p>
-      '#format': simple_editor
     section_complex_permit_details:
       '#type': webform_section
       '#title': 'Request details'
@@ -1866,12 +1902,11 @@ elements: |-
           value: moratorium_appeal
     '#admin_title': 'Moratorium Appeal'
     markup_page_moratorium_appeal:
-      '#type': processed_text
-      '#text': |
+      '#type': webform_markup
+      '#markup': |
         <h2>Submit a Moratorium Appeal</h2>
 
         <p>Exemptions are granted based on certain criteria. All appeals are reviewed by the Portland Bureau of Transportation (PBOT)’s Moratorium Committee. If you have an emergency situation or extenuating circumstances and want to appeal a restriction, complete this form and submit it for review.</p>
-      '#format': simple_editor
     moratorium_permit_number:
       '#type': textfield
       '#title': 'Permit/Application number (Optional)'
@@ -1947,9 +1982,8 @@ elements: |-
           value: tcp_coordination
     '#admin_title': 'TCP Coordination'
     markup_page_tcp_coordination:
-      '#type': processed_text
-      '#text': '<h2>Submit a Traffic Control Plan for coordination review</h2><p>This form is intended for two scenarios:</p><ol><li>You will be performing a traffic closure on a street that is not under Portland Bureau of Transportation (PBOT) jurisdiction, but the closure will have a traffic impact on PBOT streets. Please use this form to submit your traffic control plan (TCP) for our review. For example, if you have a permit from Multnomah County to restrict vehicle traffic on a bridge that they control, PBOT would like to review your TCP for any impacts it may have to traffic circulation.<br>&nbsp;</li><li>You will be hosting an event on private property that may result in a traffic impact. Please use this form to submit your plan details so we can review and provide guidance. For example, if you will be hosting a drive-through medical screening in a private parking lot, please use this form so we can review any potential traffic impacts.</li></ol><p>Do not use this form if:</p><ol><li>You will be performing construction on private property and need to close any adjacent City of Portland right-of-way (sidewalk, parking, travel lanes).<br>&nbsp;</li><li>You will be performing utility work in a City of Portland street and need to close the adjacent sidewalk, parking, or travel lanes.</li></ol><p>In those cases, please submit a Temporary Street Use Permit Application.</p><p>Typical traffic management measures PBOT may recommend include reserving on-street parking, closing a travel lane, adding directional signage, prohibiting certain turning movements, etc.</p><p>Fees may apply to this process, and you will be responsible for providing all the required traffic control devices (signs, barricades, cones, etc).</p><p>In order to begin the process, please fill out this form to provide us with the necessary information. Our staff will assess your situation and follow up with more information about fees and next steps.</p><p>Please note that to place any traffic control devices on city streets, you need to provide PBOT with a current certificate of insurance.</p><p>Visit our <a target="_blank" href="/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way">insurance requirements page</a> or our <a target="_blank" href="/transportation/safestreetspdx/basic-traffic-control-devices-and-vendors">basic traffic control devices and vendors</a> to learn more.</p>'
-      '#format': simple_editor
+      '#type': webform_markup
+      '#markup': '<h2>Submit a Traffic Control Plan for coordination review</h2><p>This form is intended for two scenarios:</p><ol><li>You will be performing a traffic closure on a street that is not under Portland Bureau of Transportation (PBOT) jurisdiction, but the closure will have a traffic impact on PBOT streets. Please use this form to submit your traffic control plan (TCP) for our review. For example, if you have a permit from Multnomah County to restrict vehicle traffic on a bridge that they control, PBOT would like to review your TCP for any impacts it may have to traffic circulation.<br>&nbsp;</li><li>You will be hosting an event on private property that may result in a traffic impact. Please use this form to submit your plan details so we can review and provide guidance. For example, if you will be hosting a drive-through medical screening in a private parking lot, please use this form so we can review any potential traffic impacts.</li></ol><p>Do not use this form if:</p><ol><li>You will be performing construction on private property and need to close any adjacent City of Portland right-of-way (sidewalk, parking, travel lanes).<br>&nbsp;</li><li>You will be performing utility work in a City of Portland street and need to close the adjacent sidewalk, parking, or travel lanes.</li></ol><p>In those cases, please submit a Temporary Street Use Permit Application.</p><p>Typical traffic management measures PBOT may recommend include reserving on-street parking, closing a travel lane, adding directional signage, prohibiting certain turning movements, etc.</p><p>Fees may apply to this process, and you will be responsible for providing all the required traffic control devices (signs, barricades, cones, etc).</p><p>In order to begin the process, please fill out this form to provide us with the necessary information. Our staff will assess your situation and follow up with more information about fees and next steps.</p><p>Please note that to place any traffic control devices on city streets, you need to provide PBOT with a current certificate of insurance.</p><p>Visit our <a target="_blank" href="/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way">insurance requirements page</a> or our <a target="_blank" href="/transportation/safestreetspdx/basic-traffic-control-devices-and-vendors">basic traffic control devices and vendors</a> to learn more.</p>'
     tcpcoord_permit_number:
       '#type': textfield
       '#title': 'Permit/Application number (Optional)'
@@ -2484,14 +2518,20 @@ elements: |-
         <h3>Change details</h3>
         <ul>
           <li>Amount of items to change: <strong>{{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</strong></li>
-          <li>Identifying Number: <strong>{{ data.change_request_id|default([])|map(id => '#' ~ id)|join(', ') }}</strong></li>
-          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:change_request_location]', webform_submission) }}</strong></li>
+          <li>Identifying Number: <strong>{{ data.change_request_id|default([])|map(id => id is not iterable ? '#' ~ id)|join(', ') }}</strong></li>
           <li>Type of change requested: <strong>{{ webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
         </ul>
         {% if data.change_request_additional_info %}
         <p><strong>Change details:</strong></p>
         <p>{{ webform_token('[webform_submission:values:change_request_additional_info]', webform_submission) }}</p>
         {% endif %}
+        <h3>Location</h3>
+        <ul>
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
+          {% if data.hidden_location_busy %}
+          <li>Busy: <strong>Yes</strong></li>
+          {% endif %}
+        </ul>
         {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
@@ -2504,13 +2544,19 @@ elements: |-
         <h3>Renewal details</h3>
         <ul>
           <li>Amount of permits to renew: <strong>{{ webform_token('[webform_submission:values:renewal_request_items_to_change]', webform_submission) }}</strong></li>
-          <li>Identifying Number: <strong>{{ data.renewal_request_id|default([])|map(id => '#' ~ id)|join(', ') }}</strong></li>
-          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:renewal_request_location]', webform_submission) }}</strong></li>
+          <li>Identifying Number: <strong>{{ data.renewal_request_id|default([])|map(id => id is not iterable ? '#' ~ id)|join(', ') }}</strong></li>
         </ul>
         {% if data.renewal_request_additional_info %}
         <p><strong>Renewal details:</strong></p>
         <p>{{ webform_token('[webform_submission:values:renewal_request_additional_info]', webform_submission) }}</p>
         {% endif %}
+        <h3>Location</h3>
+        <ul>
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
+          {% if data.hidden_location_busy %}
+          <li>Busy: <strong>Yes</strong></li>
+          {% endif %}
+        </ul>
         <h3>Dates</h3>
         <ul>
           <li>Days of week: <strong>{{ webform_token('[webform_submission:values:renewal_request_permit_date_days_of_week]', webform_submission) }}</strong></li>
@@ -2709,7 +2755,7 @@ elements: |-
     '#title': 'Contact prefilled (skips contact page)'
     '#prepopulate': true
 css: ''
-javascript: "(function ($, Drupal) {\r\n  const setParkingZoneData = (features) => {\r\n    const feature = features[0];\r\n\r\n    const zoneName = feature ? feature.properties.Zone : \"\";\r\n    const zoneType = feature ? feature.properties.ZoneType : \"\";\r\n    const isMetered = zoneType === \"Metered\";\r\n\r\n    const meteredEl = document.querySelector(\r\n      \"input[name='permit_location_metered']\"\r\n    );\r\n    if (meteredEl) {\r\n      meteredEl.value = isMetered;\r\n      $(meteredEl).trigger(\"change\");\r\n    }\r\n\r\n    const parkingZoneEl = document.querySelector(\r\n      \"input[name='permit_location_parking_zone']\"\r\n    );\r\n    if (parkingZoneEl) {\r\n      parkingZoneEl.value = zoneName;\r\n      $(parkingZoneEl).trigger(\"change\");\r\n    }\r\n\r\n    const parkingZoneTypeEl = document.querySelector(\r\n      \"input[name='permit_location_parking_zone_type']\"\r\n    );\r\n    if (parkingZoneTypeEl) {\r\n      parkingZoneTypeEl.value = zoneType;\r\n      $(parkingZoneTypeEl).trigger(\"change\");\r\n    }\r\n  };\r\n\r\n  const resetMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    dataEl.value = \"[]\";\r\n  };\r\n\r\n  const appendMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    const moratoriumData = JSON.parse(dataEl.value || \"[]\");\r\n    moratoriumData.push(...features);\r\n    dataEl.value = JSON.stringify(moratoriumData);\r\n  };\r\n\r\n  const resetBusyValue = (val) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    busyEl.value = \"\";\r\n  };\r\n\r\n  const appendBusyIfData = (name, features) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    if (features.length > 0)\r\n      busyEl.value = busyEl.value\r\n        .split(\",\")\r\n        .filter(Boolean)\r\n        .concat(name)\r\n        .join(\",\");\r\n  };\r\n\r\n  Drupal.behaviors.tsupLayerCheck = {\r\n    FEATURE_LAYERS: {\r\n      parkingZones: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Tickets_Layers/MapServer/2/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          outFields: \"Zone,ZoneType\",\r\n        },\r\n        handler: setParkingZoneData,\r\n      },\r\n      holidayMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/3/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      roseFestivalMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/4/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      busLines: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transit/MapServer/8/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"ROUTE\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"busLines\"),\r\n      },\r\n      trafficSignals: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Assets/MapServer/199/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 250,\r\n          units: \"esriSRUnit_Foot\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"trafficSignals\"),\r\n      },\r\n      lineMarkings: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transportation/MapServer/65/query\",\r\n        query: {\r\n          // MLCenterlineST, MLTrafficLaneST, MLTurnLaneST\r\n          where: \"LineType IN (3611, 3612, 3616)\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          resultRecordCount: 1,\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"lineMarkings\"),\r\n      },\r\n    },\r\n\r\n    attach(context) {\r\n      once(\r\n        \"tsupLayerCheck\",\r\n        \"[data-drupal-selector='edit-report-location']\",\r\n        context\r\n      ).forEach((el) => {\r\n        el.addEventListener(\"location-picked\", () => {\r\n          const nextButton = document.querySelector(\".webform-button--next\");\r\n          const originalValue = Drupal.t(\"Next page\");\r\n          const resetNextButton = () => {\r\n            nextButton.disabled = false;\r\n            nextButton.value = originalValue;\r\n          };\r\n\r\n          nextButton.disabled = true;\r\n          nextButton.value = Drupal.t(\"Loading...\");\r\n\r\n          resetMoratoriumData();\r\n          resetBusyValue();\r\n\r\n          const x = document.querySelector(\"#location_x\").value;\r\n          const y = document.querySelector(\"#location_y\").value;\r\n          const requestPromises = [];\r\n          for (const [key, { url, query }] of Object.entries(\r\n            this.FEATURE_LAYERS\r\n          )) {\r\n            requestPromises.push(\r\n              fetch(\r\n                `${url}?${new URLSearchParams({\r\n                  ...query,\r\n                  geometry: `${x},${y}`,\r\n                  geometryType: \"esriGeometryPoint\",\r\n                  returnGeometry: false,\r\n                  f: \"geojson\",\r\n                })}`\r\n              )\r\n                .then((res) => res.json())\r\n                .then(({ features }) =>\r\n                  this.FEATURE_LAYERS[key].handler(features)\r\n                )\r\n            );\r\n          }\r\n\r\n          Promise.all(requestPromises).then(resetNextButton, resetNextButton);\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupDateCalculator = {\r\n    FRIENDLY_MORATORIUM_CATEGORIES: {\r\n      HOLIDAY: \"Holiday\",\r\n      ROSEFESTIVAL: \"Rose Festival\",\r\n    },\r\n    FRIENDLY_MORATORIUM_RESTRICTION_TYPES: {\r\n      \"TRAVEL-SIDEWALK\": \"travel lanes and sidewalks\",\r\n      \"PARK-TRAVEL-SIDEWALK\": \"parking, travel lanes, and sidewalks\",\r\n    },\r\n\r\n    attach(context) {\r\n      const isDateSame = (a, b) =>\r\n        a.getFullYear() === b.getFullYear() &&\r\n        a.getMonth() === b.getMonth() &&\r\n        a.getDate() === b.getDate();\r\n      const dayNameToNum = {\r\n        sunday: 0,\r\n        monday: 1,\r\n        tuesday: 2,\r\n        wednesday: 3,\r\n        thursday: 4,\r\n        friday: 5,\r\n        saturday: 6,\r\n      };\r\n\r\n      const setDateSpan = (amtDays) => {\r\n        $(\"input[name='permit_date_span']\").val(amtDays);\r\n        $(\"input[name='permit_date_span']\").trigger(\"change\");\r\n      };\r\n\r\n      const getEarliestStartDate = () => {\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        // Metered if metered zone, Non-Metered if in a sign install zone, blank if non-metered and no install\r\n        const parkingZoneType = $(\"input[name='permit_location_parking_zone_type']\").val();\r\n\r\n        const startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n          ? 12\r\n          : parkingZoneType !== \"\"\r\n          ? 5\r\n          : 0;\r\n        const earliestStartDate = new Date();\r\n        // Zero out the time portion of the date\r\n        earliestStartDate.setHours(0);\r\n        earliestStartDate.setMinutes(0);\r\n        earliestStartDate.setSeconds(0);\r\n        earliestStartDate.setMilliseconds(0);\r\n        if (startDateOffsetDays === 0) return earliestStartDate;\r\n\r\n        // Add the offset considering business days only\r\n        for (let i = 0; i < startDateOffsetDays; i++) {\r\n          earliestStartDate.setDate(earliestStartDate.getDate() + 1);\r\n          if (earliestStartDate.getDay() === 6) {\r\n            earliestStartDate.setDate(earliestStartDate.getDate() + 2);\r\n          } else if (earliestStartDate.getDay() === 0) {\r\n            earliestStartDate.setDate(earliestStartDate.getDate() + 1);\r\n          }\r\n        }\r\n\r\n        return earliestStartDate;\r\n      };\r\n\r\n      const calculateDateSpan = () => {\r\n        const moratoriumFeatures = JSON.parse(\r\n          $(\"input[name='hidden_moratorium_data']\").val() || \"[]\"\r\n        );\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        const wizardPermitNeed = $(\r\n          \"input[name='hidden_wizard_permit_need']\"\r\n        ).val();\r\n\r\n        const daysOfWeek =\r\n          $(\"input[name*='permit_date_days_of_week']\")\r\n            .filter(\":checked\")\r\n            .map((_, el) => dayNameToNum[el.value])\r\n            .get() || [];\r\n        const startValue = $(\"input[name='permit_date_start']\").val();\r\n        const endValue = $(\"input[name='permit_date_end']\").val();\r\n        if (!startValue || !endValue) return;\r\n        $(\".date-calculator\").html(\"\");\r\n        $(\".date-error\").text(\"\");\r\n\r\n        const startDate = new Date(startValue + \"T00:00\");\r\n        const endDate = new Date(endValue + \"T00:00\");\r\n        if (\r\n          isNaN(startDate.getTime()) ||\r\n          isNaN(endDate.getTime()) ||\r\n          startDate.getTime() > endDate.getTime()\r\n        ) {\r\n          $(\".date-error\").text(\r\n            \"Your start date cannot be later than your end date.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        if (daysOfWeek.length === 0) {\r\n          $(\".date-error\").text(\r\n            \"You must select the days of the week you'd like your permit to be active.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        const todayDate = new Date();\r\n        todayDate.setHours(0, 0, 0, 0);\r\n        if (todayDate.getTime() > startDate.getTime()) {\r\n          $(\".date-error\").text(\"Your start date cannot be in the past.\");\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        // if start date is too early, mark as unenforceable\r\n        $(\"input[name='permit_date_unenforceable']\")\r\n          .val(startDate.getTime() < getEarliestStartDate().getTime())\r\n          .trigger(\"change\");\r\n\r\n        let amtDays = 0;\r\n        // non-metered billing is calculated by the raw date range,\r\n        // regardless of any days of the week selected. only restrict days if metered\r\n        if (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n        const curDate = new Date(startValue + \"T00:00\");\r\n        const daysOfWeekFound = {};\r\n        // check the start date and mark if we found the day of the week, as the while loop below will\r\n        // skip the first day.\r\n        const startDay = startDate.getDay();\r\n        if (daysOfWeek.includes(startDay)) daysOfWeekFound[startDay] = true;\r\n\r\n        while (!isDateSame(curDate, endDate)) {\r\n          curDate.setDate(curDate.getDate() + 1);\r\n\r\n          const day = curDate.getDay();\r\n          // reference comment above -- non-metered ignores days of week selected\r\n          if (!isMetered || daysOfWeek.includes(day)) {\r\n            amtDays++;\r\n            daysOfWeekFound[day] = true;\r\n          }\r\n        }\r\n\r\n        setDateSpan(amtDays);\r\n\r\n        if (amtDays === 0 || !daysOfWeek.every((day) => daysOfWeekFound[day])) {\r\n          $(\".date-error\").text(\r\n            \"The time period you selected does not contain all of the days of the week you selected.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        // max range is 28 days for fun/cbn/sidewalk_repair, else 26 weeks.\r\n        if (\r\n          permitType === \"fun\" ||\r\n          permitType === \"cbn\" ||\r\n          permitType === \"sidewalk_repair\"\r\n        ) {\r\n          if (amtDays > 28) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 28 days. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        } else {\r\n          if (amtWeeks > 26) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 26 weeks. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        }\r\n\r\n        const foundMoratorium = moratoriumFeatures.find(\r\n          (f) =>\r\n            startDate.getTime() <= f.properties.MoratoriumEndDate &&\r\n            endDate.getTime() >= f.properties.MoratoriumStartDate\r\n        );\r\n        const category = foundMoratorium?.properties.MoratoriumCategory;\r\n        const restrictionType =\r\n          foundMoratorium?.properties.MoratoriumRestrictionType;\r\n        // Travel-Sidewalk moratoriums are not applicable to parking-only permits.\r\n        const restrictionApplicable =\r\n          restrictionType === \"TRAVEL-SIDEWALK\"\r\n            ? wizardPermitNeed !== \"parking\"\r\n            : true;\r\n        if (foundMoratorium && restrictionApplicable) {\r\n          const friendlyCategory =\r\n            this.FRIENDLY_MORATORIUM_CATEGORIES[category] || category;\r\n          const friendlyRestrictionType =\r\n            this.FRIENDLY_MORATORIUM_RESTRICTION_TYPES[restrictionType] ||\r\n            restrictionType;\r\n          const friendlyDates = `${new Date(\r\n            foundMoratorium.properties.MoratoriumStartDate\r\n          ).toLocaleDateString()} to ${new Date(\r\n            foundMoratorium.properties.MoratoriumEndDate\r\n          ).toLocaleDateString()}`;\r\n          $(\".moratorium-category\").text(friendlyCategory);\r\n          $(\".moratorium-restriction-type\").text(friendlyRestrictionType);\r\n          $(\".moratorium-dates\").text(friendlyDates);\r\n          $(\"input[name='hidden_moratorium_details']\")\r\n            .val(\r\n              `${friendlyCategory}, ${friendlyDates} (${friendlyRestrictionType})`\r\n            )\r\n            .trigger(\"change\");\r\n\r\n          // Hide \"I am moving\" option if permit type is not parking-only\r\n          $(\"input[name=moratorium_choice][value=moving]\")\r\n            .parent()\r\n            .css(\"display\", wizardPermitNeed === \"parking\" ? \"\" : \"none\");\r\n\r\n          const moratoriumChoice = $(\r\n            \"input[name=moratorium_choice]:checked\"\r\n          ).val();\r\n          // If the user hasn't selected a moratorium exception or has indicated they will change their dates, prevent them from continuing.\r\n          if (!moratoriumChoice || moratoriumChoice === \"change_dates\") {\r\n            setDateSpan(0);\r\n\r\n            return;\r\n          }\r\n        } else {\r\n          $(\"input[name='hidden_moratorium_details']\")\r\n            .val(\"\")\r\n            .trigger(\"change\");\r\n        }\r\n\r\n        if (isMetered) {\r\n          $(\".date-calculator\").html(\r\n            `You've requested <strong>${\r\n              amtDays === 1 ? \"1 day\" : `${amtDays} days`\r\n            }</strong> of closure.`\r\n          );\r\n        } else if (\r\n          amtDays > 7 &&\r\n          permitType !== \"fun\" &&\r\n          permitType !== \"cbn\" &&\r\n          permitType !== \"sidewalk_repair\"\r\n        ) {\r\n          // we only show weeks date range if >1 week and not fun/cbn/sidewalk_repair\r\n          $(\".date-calculator\").html(\r\n            `The date range you have selected spans <strong>${amtWeeks} weeks</strong>. The fees in this area are calculated on a weekly basis.`\r\n          );\r\n        }\r\n      };\r\n\r\n      once(\r\n        \"tsupDateCalculator\",\r\n        \"input[name='permit_date_start']\",\r\n        context\r\n      ).forEach(() => {\r\n        $(\r\n          \"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week'], input[name='moratorium_choice']\"\r\n        ).change(calculateDateSpan);\r\n        calculateDateSpan();\r\n\r\n        const earliestStartDate = getEarliestStartDate();\r\n        $(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupFeeEstimator = {\r\n    NONMETERED_WEEKLY_FEE: 45,\r\n    METERED_DAILY_FEE: 82,\r\n\r\n    attach(context) {\r\n      const calculateFeeEstimate = () => {\r\n        const numParkingSpaces = parseInt(\r\n          document.querySelector(\"input[name='permit_amount_20ft_spaces']\")\r\n            .value\r\n        );\r\n        if (isNaN(numParkingSpaces)) return;\r\n\r\n        const amtDays = parseInt(\r\n          document.querySelector(\"input[name='permit_date_span']\").value\r\n        );\r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        const isMetered =\r\n          document.querySelector(\"input[name='permit_location_metered']\")\r\n            .value === \"true\";\r\n        let fee = 0;\r\n        if (isMetered) {\r\n          fee = this.METERED_DAILY_FEE * numParkingSpaces * amtDays;\r\n        } else {\r\n          fee = this.NONMETERED_WEEKLY_FEE * numParkingSpaces * amtWeeks;\r\n        }\r\n\r\n        document.querySelector(\".fee-estimate\").textContent =\r\n          fee.toLocaleString();\r\n      };\r\n\r\n      once(\r\n        \"tsupFeeEstimator\",\r\n        \"input[name='permit_amount_20ft_spaces']\",\r\n        context\r\n      ).forEach(() => {\r\n        document\r\n          .querySelector(\"input[name='permit_amount_20ft_spaces']\")\r\n          .addEventListener(\"input\", calculateFeeEstimate);\r\n        calculateFeeEstimate();\r\n      });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function ($, Drupal) {\r\n  const setParkingZoneData = (features) => {\r\n    const feature = features[0];\r\n\r\n    const zoneName = feature ? feature.properties.Zone : \"\";\r\n    const zoneType = feature ? feature.properties.ZoneType : \"\";\r\n    const isMetered = zoneType === \"Metered\";\r\n\r\n    const meteredEl = document.querySelector(\r\n      \"input[name='permit_location_metered']\"\r\n    );\r\n    if (meteredEl) {\r\n      meteredEl.value = isMetered;\r\n      $(meteredEl).trigger(\"change\");\r\n    }\r\n\r\n    const parkingZoneEl = document.querySelector(\r\n      \"input[name='permit_location_parking_zone']\"\r\n    );\r\n    if (parkingZoneEl) {\r\n      parkingZoneEl.value = zoneName;\r\n      $(parkingZoneEl).trigger(\"change\");\r\n    }\r\n\r\n    const parkingZoneTypeEl = document.querySelector(\r\n      \"input[name='permit_location_parking_zone_type']\"\r\n    );\r\n    if (parkingZoneTypeEl) {\r\n      parkingZoneTypeEl.value = zoneType;\r\n      $(parkingZoneTypeEl).trigger(\"change\");\r\n    }\r\n  };\r\n\r\n  const resetMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    dataEl.value = \"[]\";\r\n  };\r\n\r\n  const appendMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    const moratoriumData = JSON.parse(dataEl.value || \"[]\");\r\n    moratoriumData.push(...features);\r\n    dataEl.value = JSON.stringify(moratoriumData);\r\n  };\r\n\r\n  const resetBusyValue = (val) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    busyEl.value = \"\";\r\n  };\r\n\r\n  const appendBusyIfData = (name, features) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    if (features.length > 0)\r\n      busyEl.value = busyEl.value\r\n        .split(\",\")\r\n        .filter(Boolean)\r\n        .concat(name)\r\n        .join(\",\");\r\n  };\r\n\r\n  Drupal.behaviors.tsupLayerCheck = {\r\n    FEATURE_LAYERS: {\r\n      parkingZones: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Tickets_Layers/MapServer/2/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          outFields: \"Zone,ZoneType\",\r\n        },\r\n        handler: setParkingZoneData,\r\n      },\r\n      holidayMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/3/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      roseFestivalMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/4/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      busLines: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transit/MapServer/8/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"ROUTE\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"busLines\"),\r\n      },\r\n      trafficSignals: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Assets/MapServer/199/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 250,\r\n          units: \"esriSRUnit_Foot\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"trafficSignals\"),\r\n      },\r\n      lineMarkings: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transportation/MapServer/65/query\",\r\n        query: {\r\n          // MLCenterlineST, MLTrafficLaneST, MLTurnLaneST\r\n          where: \"LineType IN (3611, 3612, 3616)\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          resultRecordCount: 1,\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"lineMarkings\"),\r\n      },\r\n    },\r\n\r\n    attach(context) {\r\n      once(\r\n        \"tsupLayerCheck\",\r\n        \"[data-drupal-selector='edit-report-location']\",\r\n        context\r\n      ).forEach((el) => {\r\n        el.addEventListener(\"location-picked\", () => {\r\n          const nextButton = document.querySelector(\".webform-button--next\");\r\n          const originalValue = Drupal.t(\"Next page\");\r\n          const resetNextButton = () => {\r\n            nextButton.disabled = false;\r\n            nextButton.value = originalValue;\r\n          };\r\n\r\n          nextButton.disabled = true;\r\n          nextButton.value = Drupal.t(\"Loading...\");\r\n\r\n          resetMoratoriumData();\r\n          resetBusyValue();\r\n\r\n          const x = document.querySelector(\"#location_x\").value;\r\n          const y = document.querySelector(\"#location_y\").value;\r\n          const requestPromises = [];\r\n          for (const [key, { url, query }] of Object.entries(\r\n            this.FEATURE_LAYERS\r\n          )) {\r\n            requestPromises.push(\r\n              fetch(\r\n                `${url}?${new URLSearchParams({\r\n                  ...query,\r\n                  geometry: `${x},${y}`,\r\n                  geometryType: \"esriGeometryPoint\",\r\n                  returnGeometry: false,\r\n                  f: \"geojson\",\r\n                })}`\r\n              )\r\n                .then((res) => res.json())\r\n                .then(({ features }) =>\r\n                  this.FEATURE_LAYERS[key].handler(features)\r\n                )\r\n            );\r\n          }\r\n\r\n          Promise.all(requestPromises).then(resetNextButton, resetNextButton);\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupDateCalculator = {\r\n    FRIENDLY_MORATORIUM_CATEGORIES: {\r\n      HOLIDAY: \"Holiday\",\r\n      ROSEFESTIVAL: \"Rose Festival\",\r\n    },\r\n    FRIENDLY_MORATORIUM_RESTRICTION_TYPES: {\r\n      \"TRAVEL-SIDEWALK\": \"travel lanes and sidewalks\",\r\n      \"PARK-TRAVEL-SIDEWALK\": \"parking, travel lanes, and sidewalks\",\r\n    },\r\n\r\n    attach(context) {\r\n      const isDateSame = (a, b) =>\r\n        a.getFullYear() === b.getFullYear() &&\r\n        a.getMonth() === b.getMonth() &&\r\n        a.getDate() === b.getDate();\r\n      const dayNameToNum = {\r\n        sunday: 0,\r\n        monday: 1,\r\n        tuesday: 2,\r\n        wednesday: 3,\r\n        thursday: 4,\r\n        friday: 5,\r\n        saturday: 6,\r\n      };\r\n\r\n      const setDateSpan = (amtDays) => {\r\n        $(\"input[name='permit_date_span']\").val(amtDays);\r\n        $(\"input[name='permit_date_span']\").trigger(\"change\");\r\n      };\r\n\r\n      const getEarliestStartDate = () => {\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        // Metered if metered zone, Non-Metered if in a sign install zone, blank if non-metered and no install\r\n        const parkingZoneType = $(\"input[name='permit_location_parking_zone_type']\").val();\r\n\r\n        const startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n          ? 12\r\n          : parkingZoneType !== \"\"\r\n          ? 5\r\n          : 0;\r\n        const earliestStartDate = new Date();\r\n        // Zero out the time portion of the date\r\n        earliestStartDate.setHours(0);\r\n        earliestStartDate.setMinutes(0);\r\n        earliestStartDate.setSeconds(0);\r\n        earliestStartDate.setMilliseconds(0);\r\n        if (startDateOffsetDays === 0) return earliestStartDate;\r\n\r\n        // Add the offset considering business days only\r\n        for (let i = 0; i < startDateOffsetDays; i++) {\r\n          earliestStartDate.setDate(earliestStartDate.getDate() + 1);\r\n          if (earliestStartDate.getDay() === 6) {\r\n            earliestStartDate.setDate(earliestStartDate.getDate() + 2);\r\n          } else if (earliestStartDate.getDay() === 0) {\r\n            earliestStartDate.setDate(earliestStartDate.getDate() + 1);\r\n          }\r\n        }\r\n\r\n        return earliestStartDate;\r\n      };\r\n\r\n      const calculateDateSpan = () => {\r\n        const moratoriumFeatures = JSON.parse(\r\n          $(\"input[name='hidden_moratorium_data']\").val() || \"[]\"\r\n        );\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n        const contactBureau = $(\"input[name='hidden_contact_bureau']\").val();\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        const wizardPermitNeed = $(\r\n          \"input[name='hidden_wizard_permit_need']\"\r\n        ).val();\r\n\r\n        const daysOfWeek =\r\n          $(\"input[name*='permit_date_days_of_week']\")\r\n            .filter(\":checked\")\r\n            .map((_, el) => dayNameToNum[el.value])\r\n            .get() || [];\r\n        const startValue = $(\"input[name='permit_date_start']\").val();\r\n        const endValue = $(\"input[name='permit_date_end']\").val();\r\n        if (!startValue || !endValue) return;\r\n        $(\".date-calculator\").html(\"\");\r\n        $(\".date-error\").text(\"\");\r\n\r\n        const startDate = new Date(startValue + \"T00:00\");\r\n        const endDate = new Date(endValue + \"T00:00\");\r\n        if (\r\n          isNaN(startDate.getTime()) ||\r\n          isNaN(endDate.getTime()) ||\r\n          startDate.getTime() > endDate.getTime()\r\n        ) {\r\n          $(\".date-error\").text(\r\n            \"Your start date cannot be later than your end date.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        if (daysOfWeek.length === 0) {\r\n          $(\".date-error\").text(\r\n            \"You must select the days of the week you'd like your permit to be active.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        const todayDate = new Date();\r\n        todayDate.setHours(0, 0, 0, 0);\r\n        if (todayDate.getTime() > startDate.getTime()) {\r\n          $(\".date-error\").text(\"Your start date cannot be in the past.\");\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        // if start date is too early, mark as unenforceable\r\n        $(\"input[name='permit_date_unenforceable']\")\r\n          .val(startDate.getTime() < getEarliestStartDate().getTime())\r\n          .trigger(\"change\");\r\n\r\n        let amtDays = 0;\r\n        // non-metered billing is calculated by the raw date range,\r\n        // regardless of any days of the week selected. only restrict days if metered\r\n        if (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n        const curDate = new Date(startValue + \"T00:00\");\r\n        const daysOfWeekFound = {};\r\n        // check the start date and mark if we found the day of the week, as the while loop below will\r\n        // skip the first day.\r\n        const startDay = startDate.getDay();\r\n        if (daysOfWeek.includes(startDay)) daysOfWeekFound[startDay] = true;\r\n\r\n        while (!isDateSame(curDate, endDate)) {\r\n          curDate.setDate(curDate.getDate() + 1);\r\n\r\n          const day = curDate.getDay();\r\n          // reference comment above -- non-metered ignores days of week selected\r\n          if (!isMetered || daysOfWeek.includes(day)) {\r\n            amtDays++;\r\n            daysOfWeekFound[day] = true;\r\n          }\r\n        }\r\n\r\n        setDateSpan(amtDays);\r\n\r\n        if (amtDays === 0 || !daysOfWeek.every((day) => daysOfWeekFound[day])) {\r\n          $(\".date-error\").text(\r\n            \"The time period you selected does not contain all of the days of the week you selected.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        // max range is 120 days for ODOT, 28 days for fun/cbn/sidewalk_repair, else 26 weeks.\r\n        if (contactBureau === \"ODOT\") {\r\n          if (amtDays > 120) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 120 days. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        } else if (\r\n          permitType === \"fun\" ||\r\n          permitType === \"cbn\" ||\r\n          permitType === \"sidewalk_repair\"\r\n        ) {\r\n          if (amtDays > 28) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 28 days. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        } else {\r\n          if (amtWeeks > 26) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 26 weeks. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        }\r\n\r\n        const foundMoratorium = moratoriumFeatures.find(\r\n          (f) =>\r\n            startDate.getTime() <= f.properties.MoratoriumEndDate &&\r\n            endDate.getTime() >= f.properties.MoratoriumStartDate\r\n        );\r\n        const category = foundMoratorium?.properties.MoratoriumCategory;\r\n        const restrictionType =\r\n          foundMoratorium?.properties.MoratoriumRestrictionType;\r\n        // Travel-Sidewalk moratoriums are not applicable to parking-only permits.\r\n        const restrictionApplicable =\r\n          restrictionType === \"TRAVEL-SIDEWALK\"\r\n            ? wizardPermitNeed !== \"parking\"\r\n            : true;\r\n        if (foundMoratorium && restrictionApplicable) {\r\n          const friendlyCategory =\r\n            this.FRIENDLY_MORATORIUM_CATEGORIES[category] || category;\r\n          const friendlyRestrictionType =\r\n            this.FRIENDLY_MORATORIUM_RESTRICTION_TYPES[restrictionType] ||\r\n            restrictionType;\r\n          const friendlyDates = `${new Date(\r\n            foundMoratorium.properties.MoratoriumStartDate\r\n          ).toLocaleDateString()} to ${new Date(\r\n            foundMoratorium.properties.MoratoriumEndDate\r\n          ).toLocaleDateString()}`;\r\n          $(\".moratorium-category\").text(friendlyCategory);\r\n          $(\".moratorium-restriction-type\").text(friendlyRestrictionType);\r\n          $(\".moratorium-dates\").text(friendlyDates);\r\n          $(\"input[name='hidden_moratorium_details']\")\r\n            .val(\r\n              `${friendlyCategory}, ${friendlyDates} (${friendlyRestrictionType})`\r\n            )\r\n            .trigger(\"change\");\r\n\r\n          // Hide \"I am moving\" option if permit type is not parking-only\r\n          $(\"input[name=moratorium_choice][value=moving]\")\r\n            .parent()\r\n            .css(\"display\", wizardPermitNeed === \"parking\" ? \"\" : \"none\");\r\n\r\n          const moratoriumChoice = $(\r\n            \"input[name=moratorium_choice]:checked\"\r\n          ).val();\r\n          // If the user hasn't selected a moratorium exception or has indicated they will change their dates, prevent them from continuing.\r\n          if (!moratoriumChoice || moratoriumChoice === \"change_dates\") {\r\n            setDateSpan(0);\r\n\r\n            return;\r\n          }\r\n        } else {\r\n          $(\"input[name='hidden_moratorium_details']\")\r\n            .val(\"\")\r\n            .trigger(\"change\");\r\n        }\r\n\r\n        if (isMetered) {\r\n          $(\".date-calculator\").html(\r\n            `You've requested <strong>${\r\n              amtDays === 1 ? \"1 day\" : `${amtDays} days`\r\n            }</strong> of closure.`\r\n          );\r\n        } else if (\r\n          amtDays > 7 &&\r\n          permitType !== \"fun\" &&\r\n          permitType !== \"cbn\" &&\r\n          permitType !== \"sidewalk_repair\"\r\n        ) {\r\n          // we only show weeks date range if >1 week and not fun/cbn/sidewalk_repair\r\n          $(\".date-calculator\").html(\r\n            `The date range you have selected spans <strong>${amtWeeks} weeks</strong>. The fees in this area are calculated on a weekly basis.`\r\n          );\r\n        }\r\n      };\r\n\r\n      once(\r\n        \"tsupDateCalculator\",\r\n        \"input[name='permit_date_start']\",\r\n        context\r\n      ).forEach(() => {\r\n        $(\r\n          \"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week'], input[name='moratorium_choice']\"\r\n        ).change(calculateDateSpan);\r\n        calculateDateSpan();\r\n\r\n        const earliestStartDate = getEarliestStartDate();\r\n        $(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupFeeEstimator = {\r\n    NONMETERED_WEEKLY_FEE: 45,\r\n    METERED_DAILY_FEE: 82,\r\n\r\n    attach(context) {\r\n      const calculateFeeEstimate = () => {\r\n        const numParkingSpaces = parseInt(\r\n          document.querySelector(\"input[name='permit_amount_20ft_spaces']\")\r\n            .value\r\n        );\r\n        if (isNaN(numParkingSpaces)) return;\r\n\r\n        const amtDays = parseInt(\r\n          document.querySelector(\"input[name='permit_date_span']\").value\r\n        );\r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        const isMetered =\r\n          document.querySelector(\"input[name='permit_location_metered']\")\r\n            .value === \"true\";\r\n        let fee = 0;\r\n        if (isMetered) {\r\n          fee = this.METERED_DAILY_FEE * numParkingSpaces * amtDays;\r\n        } else {\r\n          fee = this.NONMETERED_WEEKLY_FEE * numParkingSpaces * amtWeeks;\r\n        }\r\n\r\n        document.querySelector(\".fee-estimate\").textContent =\r\n          fee.toLocaleString();\r\n      };\r\n\r\n      once(\r\n        \"tsupFeeEstimator\",\r\n        \"input[name='permit_amount_20ft_spaces']\",\r\n        context\r\n      ).forEach(() => {\r\n        document\r\n          .querySelector(\"input[name='permit_amount_20ft_spaces']\")\r\n          .addEventListener(\"input\", calculateFeeEstimate);\r\n        calculateFeeEstimate();\r\n      });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
@@ -2924,6 +2970,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: ''
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   create_new_zendesk_request_developer_test:
     id: zendesk
     handler_id: create_new_zendesk_request_developer_test
@@ -2956,6 +3003,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: ''
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_general:
     id: zendesk
     handler_id: zendesk_general
@@ -2990,6 +3038,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_general_dev:
     id: zendesk
     handler_id: zendesk_general_dev
@@ -3024,6 +3073,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_moratorium_appeal:
     id: zendesk
     handler_id: zendesk_moratorium_appeal
@@ -3058,6 +3108,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_moratorium_appeal_dev:
     id: zendesk
     handler_id: zendesk_moratorium_appeal_dev
@@ -3092,6 +3143,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_tcp_coordination:
     id: zendesk
     handler_id: zendesk_tcp_coordination
@@ -3112,7 +3164,7 @@ handlers:
       requester_email: contact_email
       subject: 'TCP Coordination Request ([webform_submission:values:tcpcoord_requested_start_date] - [webform_submission:values:tcpcoord_requested_end_date])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
-      tags: 'drupal webform tsup needs_tcp cbn 12281632679959_tcp_coordination [webform_submission:values:computed_tags]'
+      tags: 'drupal webform tsup needs_tcp 12281632679959_tcp_coordination [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '12281750992407'
@@ -3126,6 +3178,7 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_tcp_coordination_dev:
     id: zendesk
     handler_id: zendesk_tcp_coordination_dev
@@ -3146,7 +3199,7 @@ handlers:
       requester_email: contact_email
       subject: 'TCP Coordination Request ([webform_submission:values:tcpcoord_requested_start_date] - [webform_submission:values:tcpcoord_requested_end_date])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
-      tags: 'drupal webform tsup needs_tcp cbn 12281632679959_tcp_coordination [webform_submission:values:computed_tags]'
+      tags: 'drupal webform tsup needs_tcp 12281632679959_tcp_coordination [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '4549352062487'
@@ -3160,4 +3213,5 @@ handlers:
       ticket_fork_field: ''
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
 variants: {  }
