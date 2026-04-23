@@ -252,9 +252,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
       // is handled by the custom validator below instead.
       $element['#required'] = FALSE;
       $element['#_required'] = FALSE;
-      // Preserve ARIA cue for the overall composite wrapper.
+      // Preserve ARIA cue and a stable required indicator for the overall
+      // composite wrapper. The client-side behavior determines requiredness
+      // from the wrapper, so re-add the required marker without restoring
+      // native hidden-input validation.
       $element['#attributes']['aria-required'] = 'true';
       $element['#wrapper_attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['class'][] = 'required';
+      $element['#wrapper_attributes']['data-location-picker-required'] = 'true';
 
       // Clear lat/lon required flags so Drupal does not try to validate or
       // scroll to a hidden input. The custom validator below handles enforcement.
