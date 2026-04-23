@@ -1,20 +1,20 @@
-From a2f74016019e6f1ed7e56bac4ab9aebfa8a47ffe Mon Sep 17 00:00:00 2001
+From a8836075035df274e310f25f626628a332c4d573 Mon Sep 17 00:00:00 2001
 From: Oden <hello@odensc.com>
-Date: Thu, 16 Apr 2026 15:56:26 -0700
+Date: Thu, 23 Apr 2026 14:59:48 -0700
 Subject: [PATCH] Fix disappearing AJAX elements when using "invisible" state
 
 ---
- src/WebformSubmissionConditionsValidator.php | 21 ++++++++++----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ src/WebformSubmissionConditionsValidator.php | 26 +++++++++++---------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
 
 diff --git a/src/WebformSubmissionConditionsValidator.php b/src/WebformSubmissionConditionsValidator.php
-index cb153ac..c297bcd 100644
+index cb153ac..8b595a1 100644
 --- a/src/WebformSubmissionConditionsValidator.php
 +++ b/src/WebformSubmissionConditionsValidator.php
 @@ -124,17 +124,6 @@ class WebformSubmissionConditionsValidator implements WebformSubmissionCondition
          $all_targets_visible = (array_sum($targets) === count($targets));
          $has_cross_page_targets = (!$all_targets_visible && array_sum($targets));
-
+ 
 -        // Skip if evaluating conditions when all targets are visible.
 -        if ($all_targets_visible) {
 -          // Add .js-webform-states-hidden to element's that are not visible when
@@ -29,23 +29,28 @@ index cb153ac..c297bcd 100644
          // Replace hidden cross page targets with hidden inputs.
          if ($has_cross_page_targets) {
            $cross_page_targets = array_filter(
-@@ -157,6 +146,16 @@ class WebformSubmissionConditionsValidator implements WebformSubmissionCondition
+@@ -157,7 +146,20 @@ class WebformSubmissionConditionsValidator implements WebformSubmissionCondition
          // Negate the result.
          $result = ($negate) ? !$result : $result;
-
-+        // Skip removing the state and clearing the value from elements that are not visible
-+        // when the form is rendered, if all of its targets are present on the current page.
-+        // Instead, just add the add the .js-webform-states-hidden class.
-+        // This way visiblity can be re-computed in the browser based on later user input.
-+        if ($all_targets_visible && str_starts_with($state, 'visible') && !$result) {
-+          $this->addStatesHiddenToElement($element);
+ 
+-        // Apply result to element state.
++        // If all targets are visible on the current page, skip applying the result to the element,
++        // because the state may be re-computed in the browser based on future user input.
++        if ($all_targets_visible) {
++          // If the state controls visibility and evaluates to false, add the .js-webform-states-hidden
++          // class to the element to prevent a flash of content before the state is evaluated in the browser.
++          if (str_starts_with($state, 'visible') && !$result) {
++            $this->addStatesHiddenToElement($element);
++          }
 +
 +          continue;
 +        }
 +
-         // Apply result to element state.
++        // If not all targets are visible, the state is immutable, so there's no point in
++        // keeping it around for the browser. Apply the result to the element.
          switch ($state) {
            case 'required':
---
+             $element['#required'] = $result;
+-- 
 2.34.1
 
