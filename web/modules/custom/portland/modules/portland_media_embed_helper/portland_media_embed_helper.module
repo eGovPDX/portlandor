@@ -19,7 +19,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   $attributes_enabled_by_bundle = [
     'document' => ['data-alt-link-text'],
     'iframe_embed' => ['data-align', 'data-aspect-ratio'],
-    'image' => ['data-align', 'data-caption', 'data-is-decorative'],
+    'image' => ['data-align', 'data-caption', 'data-alt-override'],
     'map' => ['data-align', 'data-caption'],
     'video' => ['data-align', 'data-caption', 'data-start-cue'],
     'content_fragment' => [],
@@ -84,7 +84,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     }
   }
 
-  if (in_array('data-is-decorative', $attributes_enabled)) {
+  if (in_array('data-alt-override', $attributes_enabled)) {
     $form['attributes']['data-is-decorative'] = [
       '#type' => 'checkbox',
       '#title' => t('This is a decorative image'),
@@ -95,6 +95,19 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       ]),
       '#return_value' => "true",
       '#default_value' => $entity_element['data-is-decorative'] ?? false,
+    ];
+    $form['attributes']['data-alt-override'] = [
+      '#type' => 'textarea',
+      '#title' => t('Override alt text'),
+      '#weight' => 5,
+      '#rows' => 2,
+      '#description' => t("Provide an overridden alt text for the image. If left blank, the image's default alt text will be used."),
+      '#states' => [
+        'invisible' => [
+          ':input[name="attributes[data-is-decorative]"]' => ['checked' => true],
+        ],
+      ],
+      '#default_value' => $entity_element['data-alt-override'] ?? '',
     ];
   }
 
@@ -169,7 +182,16 @@ function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, Fo
     } else {
       $form_state->unsetValue(['attributes', 'data-align']);
     }
-  }
+  } else if ($entity->bundle() === 'image') {
+    $alt_override = $form_state->getValue(['attributes', 'data-alt-override']);
+    if ($alt_override) {
+      // Replace line breaks with space in the alt override text.
+      $form_state->setValue(
+        ['attributes', 'data-alt-override'],
+        preg_replace('/\s+/', ' ', $alt_override)
+      );
+    }
+   }
 }
 
 function portland_media_embed_helper_after_build($form, &$form_state)
