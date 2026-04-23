@@ -39,9 +39,17 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    // #location_selection_required is set by the Plugin's prepare() method, but
+    // getCompositeElements() may run before prepare(). Also check composite-level
+    // #required/#_required and lon-based flags so the required label is rendered
+    // whenever the widget is required, regardless of call order.
     $locationIsRequired = !empty($element['#location_selection_required'])
+      || !empty($element['#required'])
+      || !empty($element['#_required'])
       || !empty($element['#location_lat__required'])
-      || (!empty($element['location_lat']) && (!empty($element['location_lat']['#required']) || !empty($element['location_lat']['#_required'])));
+      || !empty($element['#location_lon__required'])
+      || (!empty($element['location_lat']) && (!empty($element['location_lat']['#required']) || !empty($element['location_lat']['#_required'])))
+      || (!empty($element['location_lon']) && (!empty($element['location_lon']['#required']) || !empty($element['location_lon']['#_required'])));
 
     $element['location_search'] = [
       '#type' => 'textfield',
