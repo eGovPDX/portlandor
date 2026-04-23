@@ -285,6 +285,18 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
   public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
+    // Skip required validation when the picker is hidden by visibility states.
+    // Webform marks conditionally hidden elements with js-webform-states-hidden.
+    if (!\Drupal\Core\Render\Element::isVisibleElement($element)) {
+      return;
+    }
+    $wrapper_classes = isset($element['#wrapper_attributes']['class']) ? (array) $element['#wrapper_attributes']['class'] : [];
+    $element_classes = isset($element['#attributes']['class']) ? (array) $element['#attributes']['class'] : [];
+    if (in_array('js-webform-states-hidden', $wrapper_classes, TRUE)
+      || in_array('js-webform-states-hidden', $element_classes, TRUE)) {
+      return;
+    }
+
     // Use the element's parents path so nested elements validate correctly.
     $parents = $element['#parents'] ?? NULL;
     if ($parents === NULL) {
