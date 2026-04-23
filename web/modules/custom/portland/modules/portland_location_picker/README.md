@@ -10,7 +10,17 @@ This widget currently supports only a single instance per page. The implementati
 
 ## Configuration
 
-The location_lat field should be marked required in the element configuration panel if location coordinates are required. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. If there is no location_lat value, the widget will report a validation error on the location map.
+### Making location required
+
+There are two ways to make location selection required:
+
+1. **Mark the composite element itself as required** in the element's configuration panel (the "Required" checkbox at the top level of the element). This is the simplest approach.
+
+2. **Mark the `location_lat` sub-element as required** in the element configuration panel. This is the legacy method and remains in place for backwards compatibility.
+
+Either approach produces the same result: a "* Location is required" label is rendered between the search field and the map, `aria-required` is set on the composite wrapper, and a custom validator ensures a location has been selected (i.e., `location_lat` has a non-empty value) before the form can be submitted. The `location_search` field is never marked required regardless of configuration, since users can also satisfy location selection by clicking the map.
+
+The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. If there is no location_lat value, the widget will report a validation error on the location map.
 
 When fields are marked as required in the UI, instead of the custom code for the widget, they're not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
 

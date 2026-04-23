@@ -229,7 +229,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $lonRequired = !empty($element['#location_lon__required'])
       || (!empty($element['location_lon'])
         && (!empty($element['location_lon']['#required']) || !empty($element['location_lon']['#_required'])));
-    $isLocationRequired = $latRequired || $lonRequired;
+    // Composite-level #required is a third way to declare the widget required.
+    $compositeExplicitRequired = !empty($element['#required']) || !empty($element['#_required']);
+    $isLocationRequired = $latRequired || $lonRequired || $compositeExplicitRequired;
 
     // Keep a stable location-required flag for rendering cues that should not
     // depend on Webform moving #required <-> #_required during states handling.
@@ -243,29 +245,19 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element['location_search']['#required'] = FALSE;
       $element['location_search']['#_required'] = FALSE;
     }
-    
-    // Keep composite-level required behavior only when explicitly configured on
-    // the composite itself. Do not promote hidden lat/lon required flags to
-    // composite #required, because conditional #states handling can then mark
-    // visible sub-element labels as required incorrectly.
-    $compositeExplicitRequired = !empty($element['#required']) || !empty($element['#_required']);
-    if ($compositeExplicitRequired) {
-      $element['#required'] = TRUE;
-      $element['#attributes']['aria-required'] = 'true';
-      $element['#wrapper_attributes']['aria-required'] = 'true';
-    }
-    elseif ($isLocationRequired) {
-      // Preserve ARIA cue for the overall interaction without triggering
-      // composite required rendering behavior.
-      $element['#attributes']['aria-required'] = 'true';
-      $element['#wrapper_attributes']['aria-required'] = 'true';
-    }
 
-    // If location_lat or location_lon was marked required (via YAML shorthand or direct
-    // #required), clear the built-in required flag so Drupal doesn't try to
-    // validate or scroll to a hidden input. Instead, register a validator on
-    // the composite that can attach the error to a visible part of the widget.
     if ($isLocationRequired) {
+      // Clear composite #required so Webform's conditional states handling does
+      // not propagate required markers to visible sub-element labels. Validation
+      // is handled by the custom validator below instead.
+      $element['#required'] = FALSE;
+      $element['#_required'] = FALSE;
+      // Preserve ARIA cue for the overall composite wrapper.
+      $element['#attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['aria-required'] = 'true';
+
+      // Clear lat/lon required flags so Drupal does not try to validate or
+      // scroll to a hidden input. The custom validator below handles enforcement.
       $element['#location_lat__required'] = FALSE;
       $element['#location_lon__required'] = FALSE;
       // Avoid creating a sparse location_lat child override before Webform has
