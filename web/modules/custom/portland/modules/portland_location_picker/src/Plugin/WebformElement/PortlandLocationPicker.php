@@ -223,15 +223,40 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $latRequired = !empty($element['#location_lat__required']) || (!empty($element['location_lat']) && !empty($element['location_lat']['#required']));
-    $lonRequired = !empty($element['#location_lon__required']) || (!empty($element['location_lon']) && !empty($element['location_lon']['#required']));
+    $latRequired = !empty($element['#location_lat__required'])
+      || (!empty($element['location_lat'])
+        && (!empty($element['location_lat']['#required']) || !empty($element['location_lat']['#_required'])));
+    $lonRequired = !empty($element['#location_lon__required'])
+      || (!empty($element['location_lon'])
+        && (!empty($element['location_lon']['#required']) || !empty($element['location_lon']['#_required'])));
     $isLocationRequired = $latRequired || $lonRequired;
+
+    // Keep a stable location-required flag for rendering cues that should not
+    // depend on Webform moving #required <-> #_required during states handling.
+    $element['#location_selection_required'] = $isLocationRequired;
+
+    // location_search should never be required on its own. Users can satisfy
+    // location requirements by searching OR clicking the map, so ignore any
+    // location_search required flags set in UI config.
+    $element['#location_search__required'] = FALSE;
+    if (!empty($element['location_search']) && isset($element['location_search']['#type'])) {
+      $element['location_search']['#required'] = FALSE;
+      $element['location_search']['#_required'] = FALSE;
+    }
     
-    if (!empty($element['#required']) || $isLocationRequired) {
-      // A required location should be indicated on the composite title/legend,
-      // since the validated value is hidden and the visible interaction is the
-      // overall search-and-map widget.
+    // Keep composite-level required behavior only when explicitly configured on
+    // the composite itself. Do not promote hidden lat/lon required flags to
+    // composite #required, because conditional #states handling can then mark
+    // visible sub-element labels as required incorrectly.
+    $compositeExplicitRequired = !empty($element['#required']) || !empty($element['#_required']);
+    if ($compositeExplicitRequired) {
       $element['#required'] = TRUE;
+      $element['#attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['aria-required'] = 'true';
+    }
+    elseif ($isLocationRequired) {
+      // Preserve ARIA cue for the overall interaction without triggering
+      // composite required rendering behavior.
       $element['#attributes']['aria-required'] = 'true';
       $element['#wrapper_attributes']['aria-required'] = 'true';
     }

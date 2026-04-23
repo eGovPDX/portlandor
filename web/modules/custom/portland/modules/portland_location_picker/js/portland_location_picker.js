@@ -263,7 +263,6 @@
           map.on('popupclose', handlePopupClose);
 
           initializeLocationTextBlock();
-          initializeVisibleRequiredLabel();
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -1231,18 +1230,15 @@
         function syncMapValidationState() {
           if (!isLocationPickerRequired()) {
             clearMapInvalid();
-            updateVisibleRequiredLabel();
             return;
           }
 
           if (!hasLocationSelection() && (hasExistingLocationPickerError() || hasLocationPickerVisualError())) {
             setMapInvalid(getLocationRequiredErrorMessage());
-            updateVisibleRequiredLabel();
             return;
           }
 
           clearMapInvalid();
-          updateVisibleRequiredLabel();
         }
 
         function bindLocationPickerValidation() {
@@ -1489,43 +1485,6 @@
 
           mapContainer.parentNode.insertBefore(wrapper, mapContainer.nextSibling);
           locationTextBlock = wrapper;
-        }
-
-        function initializeVisibleRequiredLabel() {
-          var mapContainer = document.getElementById('location_map_container');
-          if (!mapContainer || !mapContainer.parentNode) {
-            return;
-          }
-
-          var existingLabel = document.getElementById('location-required-label-wrapper');
-          if (existingLabel) {
-            return;
-          }
-
-          var wrapper = document.createElement('div');
-          wrapper.id = 'location-required-label-wrapper';
-          wrapper.className = 'location-required-label-wrapper';
-          wrapper.setAttribute('aria-hidden', 'true');
-          wrapper.innerHTML = '<div class="location-required-label"><span class="required-asterisk">*</span> Location is required</div>';
-          
-          // Insert before the map container
-          mapContainer.parentNode.insertBefore(wrapper, mapContainer);
-          
-          // Only show if the picker is required
-          updateVisibleRequiredLabel();
-        }
-
-        function updateVisibleRequiredLabel() {
-          var labelWrapper = document.getElementById('location-required-label-wrapper');
-          if (!labelWrapper) {
-            return;
-          }
-          
-          if (isLocationPickerRequired()) {
-            labelWrapper.style.display = 'block';
-          } else {
-            labelWrapper.style.display = 'none';
-          }
         }
 
         function updateLocationTextAnnouncement(message) {
