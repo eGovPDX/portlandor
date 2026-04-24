@@ -4,6 +4,7 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform\WebformSubmissionForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
@@ -223,24 +224,46 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $latRequired = !empty($element['#location_lat__required']) || (!empty($element['location_lat']) && !empty($element['location_lat']['#required']));
-    $lonRequired = !empty($element['#location_lon__required']) || (!empty($element['location_lon']) && !empty($element['location_lon']['#required']));
-    $isLocationRequired = $latRequired || $lonRequired;
-    
-    if (!empty($element['#required']) || $isLocationRequired) {
-      // A required location should be indicated on the composite title/legend,
-      // since the validated value is hidden and the visible interaction is the
-      // overall search-and-map widget.
-      $element['#required'] = TRUE;
-      $element['#attributes']['aria-required'] = 'true';
-      $element['#wrapper_attributes']['aria-required'] = 'true';
+    $latRequired = !empty($element['#location_lat__required'])
+      || (!empty($element['location_lat'])
+        && (!empty($element['location_lat']['#required']) || !empty($element['location_lat']['#_required'])));
+    $lonRequired = !empty($element['#location_lon__required'])
+      || (!empty($element['location_lon'])
+        && (!empty($element['location_lon']['#required']) || !empty($element['location_lon']['#_required'])));
+    // Composite-level #required is a third way to declare the widget required.
+    $compositeExplicitRequired = !empty($element['#required']) || !empty($element['#_required']);
+    $isLocationRequired = $latRequired || $lonRequired || $compositeExplicitRequired;
+
+    // Keep a stable location-required flag for rendering cues that should not
+    // depend on Webform moving #required <-> #_required during states handling.
+    $element['#location_selection_required'] = $isLocationRequired;
+
+    // location_search should never be required on its own. Users can satisfy
+    // location requirements by searching OR clicking the map, so ignore any
+    // location_search required flags set in UI config.
+    $element['#location_search__required'] = FALSE;
+    if (!empty($element['location_search']) && isset($element['location_search']['#type'])) {
+      $element['location_search']['#required'] = FALSE;
+      $element['location_search']['#_required'] = FALSE;
     }
 
-    // If location_lat or location_lon was marked required (via YAML shorthand or direct
-    // #required), clear the built-in required flag so Drupal doesn't try to
-    // validate or scroll to a hidden input. Instead, register a validator on
-    // the composite that can attach the error to a visible part of the widget.
     if ($isLocationRequired) {
+      // Clear composite #required so Webform's conditional states handling does
+      // not propagate required markers to visible sub-element labels. Validation
+      // is handled by the custom validator below instead.
+      $element['#required'] = FALSE;
+      $element['#_required'] = FALSE;
+      // Preserve ARIA cue and a stable required indicator for the overall
+      // composite wrapper. The client-side behavior determines requiredness
+      // from the wrapper, so re-add the required marker without restoring
+      // native hidden-input validation.
+      $element['#attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['aria-required'] = 'true';
+      $element['#wrapper_attributes']['class'][] = 'required';
+      $element['#wrapper_attributes']['data-location-picker-required'] = 'true';
+
+      // Clear lat/lon required flags so Drupal does not try to validate or
+      // scroll to a hidden input. The custom validator below handles enforcement.
       $element['#location_lat__required'] = FALSE;
       $element['#location_lon__required'] = FALSE;
       // Avoid creating a sparse location_lat child override before Webform has
@@ -263,6 +286,56 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
   public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
+    // Skip required validation when conditional logic currently hides or
+    // disables this widget (or one of its parent containers) for submitted
+    // values.
+    $webform_submission = NULL;
+    if (!empty($form['#webform_submission']) && $form['#webform_submission'] instanceof WebformSubmissionInterface) {
+      $webform_submission = $form['#webform_submission'];
+    }
+    else {
+      $form_object = $form_state->getFormObject();
+      if ($form_object instanceof WebformSubmissionForm) {
+        $webform_submission = $form_object->getEntity();
+      }
+    }
+
+    if ($webform_submission instanceof WebformSubmissionInterface) {
+      $webform = $webform_submission->getWebform();
+      if ($webform) {
+        $element_values = array_intersect_key(
+          (array) $form_state->getValues(),
+          $webform->getElementsInitializedFlattenedAndHasValue()
+        );
+        $webform_submission->setData($element_values + $webform_submission->getData());
+      }
+
+      $conditions_validator = \Drupal::service('webform_submission.conditions_validator');
+      $elements_to_check = [];
+      $array_parents = $element['#array_parents'] ?? [];
+      if (!empty($array_parents)) {
+        $current = $form;
+        foreach ($array_parents as $part) {
+          if (!is_array($current) || !array_key_exists($part, $current) || !is_array($current[$part])) {
+            break;
+          }
+          $current = $current[$part];
+          $elements_to_check[] = $current;
+        }
+      }
+
+      if (empty($elements_to_check)) {
+        $elements_to_check[] = $element;
+      }
+
+      foreach ($elements_to_check as $element_to_check) {
+        if (!$conditions_validator->isElementVisible($element_to_check, $webform_submission)
+          || !$conditions_validator->isElementEnabled($element_to_check, $webform_submission)) {
+          return;
+        }
+      }
+    }
+
     // Use the element's parents path so nested elements validate correctly.
     $parents = $element['#parents'] ?? NULL;
     if ($parents === NULL) {

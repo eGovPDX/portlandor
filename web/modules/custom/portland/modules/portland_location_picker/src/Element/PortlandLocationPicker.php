@@ -39,17 +39,31 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    // #location_selection_required is set by the Plugin's prepare() method, but
+    // getCompositeElements() may run before prepare(). Also check composite-level
+    // #required/#_required and lon-based flags so the required label is rendered
+    // whenever the widget is required, regardless of call order.
+    $locationIsRequired = !empty($element['#location_selection_required'])
+      || !empty($element['#required'])
+      || !empty($element['#_required'])
+      || !empty($element['#location_lat__required'])
+      || !empty($element['#location_lon__required'])
+      || (!empty($element['location_lat']) && (!empty($element['location_lat']['#required']) || !empty($element['location_lat']['#_required'])))
+      || (!empty($element['location_lon']) && (!empty($element['location_lon']['#required']) || !empty($element['location_lon']['#_required'])));
+
     $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location search'),
       '#id' => 'location_search',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
+      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to pick a location.'),
       '#description_display' => 'before',
     ];
-    if (!empty($element['#location_search__required']) || !empty($element['location_search']['#required'])) {
-      $element['location_search']['#attributes']['aria-required'] = 'true';
-    }
+    $element['location_required_label'] = [
+      '#type' => 'markup',
+      '#access' => $locationIsRequired,
+      '#markup' => '<div class="location-required-label-wrapper" aria-hidden="true"><div class="location-required-label"><span class="required-asterisk">*</span> ' . t('Location is required') . '</div></div>',
+    ];
     $element['precision_text'] = [
       '#type' => 'markup',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text">' . t('<strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.') . '</div>',
