@@ -4,6 +4,7 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform\WebformSubmissionForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
@@ -285,6 +286,56 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
   public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
+    // Skip required validation when conditional logic currently hides or
+    // disables this widget (or one of its parent containers) for submitted
+    // values.
+    $webform_submission = NULL;
+    if (!empty($form['#webform_submission']) && $form['#webform_submission'] instanceof WebformSubmissionInterface) {
+      $webform_submission = $form['#webform_submission'];
+    }
+    else {
+      $form_object = $form_state->getFormObject();
+      if ($form_object instanceof WebformSubmissionForm) {
+        $webform_submission = $form_object->getEntity();
+      }
+    }
+
+    if ($webform_submission instanceof WebformSubmissionInterface) {
+      $webform = $webform_submission->getWebform();
+      if ($webform) {
+        $element_values = array_intersect_key(
+          (array) $form_state->getValues(),
+          $webform->getElementsInitializedFlattenedAndHasValue()
+        );
+        $webform_submission->setData($element_values + $webform_submission->getData());
+      }
+
+      $conditions_validator = \Drupal::service('webform_submission.conditions_validator');
+      $elements_to_check = [];
+      $array_parents = $element['#array_parents'] ?? [];
+      if (!empty($array_parents)) {
+        $current = $form;
+        foreach ($array_parents as $part) {
+          if (!is_array($current) || !array_key_exists($part, $current) || !is_array($current[$part])) {
+            break;
+          }
+          $current = $current[$part];
+          $elements_to_check[] = $current;
+        }
+      }
+
+      if (empty($elements_to_check)) {
+        $elements_to_check[] = $element;
+      }
+
+      foreach ($elements_to_check as $element_to_check) {
+        if (!$conditions_validator->isElementVisible($element_to_check, $webform_submission)
+          || !$conditions_validator->isElementEnabled($element_to_check, $webform_submission)) {
+          return;
+        }
+      }
+    }
+
     // Use the element's parents path so nested elements validate correctly.
     $parents = $element['#parents'] ?? NULL;
     if ($parents === NULL) {
