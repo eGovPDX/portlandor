@@ -2632,7 +2632,13 @@
           // rather than the "described" address that is less accurate
           var description = addressVerify && verifiedAddress ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
-          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data);
+          // Keep the visible search field in sync when the location comes from
+          // a map interaction (mouse click, keyboard selection, or marker drag).
+          // Autocomplete already manages the field value before reverse geocode,
+          // so only force the search field when there is no pre-verified address.
+          var syncSearchField = !verifiedAddress;
+
+          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data, syncSearchField);
 
           // if park, set location name
           if (data.park) {
@@ -2687,7 +2693,7 @@
           }, jsonObject);
         }
 
-        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data) {
+        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data, syncSearchField = false) {
           $('#verified_location_text').text(description);
           $('#location-text-container').addClass('is-visible');
 
@@ -2703,8 +2709,11 @@
           $('#location-text-lng').text(lng);
           updateLocationTextAnnouncement('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
 
-          // if verify mode, also put location description in address field, but only the street
-          if (addressVerify) {
+          // In address verify mode the search field has always been updated with
+          // the verified description. Extend that same behavior to map-based
+          // reverse geocode results so the visible search input reflects the
+          // selected location after a click, keyboard selection, or marker drag.
+          if (addressVerify || syncSearchField) {
             $('#location_search').val(description);
           };
 

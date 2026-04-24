@@ -5,6 +5,7 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
 
@@ -28,8 +29,6 @@ use Drupal\Component\Utility\Html;
  * @see \Drupal\webform\Annotation\WebformElement
  */
 class PortlandLocationPicker extends WebformCompositeBase {
-
-  public string $element_id;
 
   /**
    * {@inheritdoc}
@@ -174,8 +173,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    // Key that we can use to set errors on this element in our custom validation handler.
-    $this->element_id = $element_id;
+    // NOTE ABOUT SERIALIZATION SAFETY:
+    // Do not store transient per-element data on $this for use during submit.
+    // In wizard forms Drupal rebuilds and caches form structures between pages.
+    // Any callback bound to $this can force the plugin instance into form cache
+    // serialization, which is what triggered the previous regression.
+    //
+    // Keep this local variable as scalar data used only to populate settings.
     $addressVerify = array_key_exists('#address_verify', $element) ? $element['#address_verify'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
@@ -255,7 +259,18 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * {@inheritdoc}
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state) {
-    $form['#validate'][] = [$this, 'validateForm'];
+    // IMPORTANT:
+    // Register a static callback instead of [$this, 'validateForm'].
+    //
+    // Why this matters:
+    // - Wizard forms cache/rebuild between pages.
+    // - Form callbacks become part of that cached structure.
+    // - A callback bound to $this can drag the plugin object into serialization.
+    // - Plugin instances can indirectly reference non-serializable services.
+    //
+    // A static callback keeps form cache serializable and avoids that class of
+    // regression while preserving this element's validation behavior.
+    $form['#validate'][] = [static::class, 'validateForm'];
   }
 
   /**
@@ -264,19 +279,68 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * Registers the error on the search element rather than the hidden
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
-  public function validateForm(&$form, FormStateInterface $form_state) {
+  public static function validateForm(&$form, FormStateInterface $form_state) {
+    // We intercept all current errors, then re-apply them with one adjustment:
+    // required location validation is normalized to the hidden location_lat
+    // sub-element (whether required came from parent composite required,
+    // location_address required, or legacy location_lat required). When that
+    // hidden field fails required validation, move the error to the visible
+    // search field so scroll-to-error and focus behavior target an interactive
+    // control the user can act on.
     $errors = $form_state->getErrors();
     $form_state->clearErrors();
 
+    // Build a list of all location picker webform keys present in this form.
+    // We derive keys from the form tree at runtime instead of relying on object
+    // properties so this method remains static and serialization-safe.
+    $location_picker_keys = static::getLocationPickerKeys($form);
+
     // Reinstate all errors except ours.
     foreach ($errors as $name => $error) {
-      // Catch our error on the location_lat element, move it to the search element instead.
-      if ($name === $this->element_id . '][location_lat') {
-        $form_state->setErrorByName($this->element_id . '][location_search', $error);
-        continue;
+      // If this error belongs to any picker's hidden location_lat sub-element,
+      // remap it to that same picker's visible location_search field.
+      foreach ($location_picker_keys as $location_picker_key) {
+        if ($name === $location_picker_key . '][location_lat') {
+          $form_state->setErrorByName($location_picker_key . '][location_search', $error);
+          // continue 2 jumps to the next original error entry.
+          continue 2;
+        }
       }
 
+      // For all other validation messages, preserve original behavior exactly.
       $form_state->setErrorByName($name, $error);
     }
+  }
+
+  /**
+   * Recursively find all webform keys for location picker elements.
+   *
+   * Why this helper exists:
+   * - The previous implementation depended on plugin instance state
+   *   ($this->element_id).
+   * - Static callbacks cannot rely on per-request instance properties.
+   * - Runtime discovery from the current form array is deterministic and safe.
+   *
+   * @param array $element
+   *   Any branch of the rendered form array.
+   *
+   * @return array
+   *   Unique list of location picker webform keys.
+   */
+  protected static function getLocationPickerKeys(array $element): array {
+    $keys = [];
+
+    // Capture this branch when it is the composite we care about.
+    if (($element['#type'] ?? NULL) === 'portland_location_picker' && !empty($element['#webform_key'])) {
+      $keys[] = $element['#webform_key'];
+    }
+
+    // Recurse only through recognized child elements.
+    foreach (Element::children($element) as $child_key) {
+      $keys = array_merge($keys, static::getLocationPickerKeys($element[$child_key]));
+    }
+
+    // Deduplicate while keeping output as a simple numeric array.
+    return array_values(array_unique($keys));
   }
 }
