@@ -30,15 +30,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
-
-    $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
-
-    $element_id = "report_location";
-
-    if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-    }
-
     $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location search'),
