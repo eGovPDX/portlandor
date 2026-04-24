@@ -30,6 +30,9 @@ use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
 use Drupal\node\Entity\Node;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -1693,5 +1696,19 @@ function portland_preprocess_media(&$variables) {
     }
 
     unset($variables["content"]["media_eva_banner_image_info"]);
+  }
+}
+
+/**
+ * Implements hook_cloned_node_alter().
+ */
+function portland_cloned_node_alter(NodeInterface $cloned_node, NodeInterface $original_node) {
+  // Check if the cloned node has a published or updated field and update its value to the current date and time
+  $now = new DrupalDateTime('now', new \DateTimeZone('UTC'))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  if ($cloned_node->hasField('field_published_on')) {
+    $cloned_node->set('field_published_on', $now);
+  }
+  if ($cloned_node->hasField('field_updated_on')) {
+    $cloned_node->set('field_updated_on', $now);
   }
 }
