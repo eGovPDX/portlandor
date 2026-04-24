@@ -47,9 +47,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
       '#description_display' => 'before',
     ];
-    if (!empty($element['#location_search__required']) || !empty($element['location_search']['#required'])) {
-      $element['location_search']['#attributes']['aria-required'] = 'true';
-    }
     $element['precision_text'] = [
       '#type' => 'markup',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text">' . t('<strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.') . '</div>',
@@ -163,9 +160,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',
     ];
-    if (!empty($element['#place_name__required']) || !empty($element['place_name']['#required'])) {
-      $element['place_name']['#attributes']['aria-required'] = 'true';
-    }
     $element['location_details'] = [
       '#type' => 'textarea',
       '#id' => 'location_details',
@@ -177,9 +171,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
     ];
-    if (!empty($element['#location_details__required']) || !empty($element['location_details']['#required'])) {
-      $element['location_details']['#attributes']['aria-required'] = 'true';
-    }
     $element['location_attributes'] = [
       '#type' => 'hidden',
       '#title' => t('Location attributes'),
