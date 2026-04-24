@@ -35,7 +35,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Location search'),
       '#id' => 'location_search',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
+      '#description' => t('Search for an address, cross streets, park, or community center. Or use the map to pick a location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
