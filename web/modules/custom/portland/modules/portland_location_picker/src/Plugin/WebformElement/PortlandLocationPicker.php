@@ -152,6 +152,20 @@ class PortlandLocationPicker extends WebformCompositeBase {
     /**
    * {@inheritdoc}
    */
+  public function form(array $form, FormStateInterface $form_state) {
+    $form = parent::form($form, $form_state);
+
+    $element_properties = $form_state->get('element_properties');
+    // Update #required label.
+    $form['validation']['required_container']['required']['#title'] = $this->t('Required');
+    $form['validation']['required_container']['required']['#description'] = $this->t('If checked, the user must select a location on the map or using the search field in order to submit.');
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
@@ -226,11 +240,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $isLocationRequired = !empty($element['#location_lat__required']) || !empty($element['#location_address__required']);
+    $isLocationRequired = !empty($element['#required']) || (!empty($element['#location_lat__required']) || !empty($element['#location_address__required']));
     if ($isLocationRequired) {
       // Flag location as required to the JS and add our custom validation.
       $element['#attributes']['data-location-picker-required'] = 'true';
-      // Unset location address as required, this should be set on location lat instead.
+      // Any requirement should be set on location lat instead.
+      $element['#required'] = false;
       $element['#location_address__required'] = false;
       $element['#location_lat__required'] = true;
     }
