@@ -263,7 +263,9 @@
           map.on('popupclose', handlePopupClose);
 
           initializeLocationTextBlock();
-          initializeVisibleRequiredLabel();
+          updateRequiredStatus();
+          // Update required status when webform conditional state changes.
+          $('#location_lat').on('state:required', updateRequiredStatus);
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -1080,7 +1082,7 @@
         }
 
         function isLocationPickerRequired() {
-          return locationPickerEl.classList.contains('required');
+          return locationPickerEl.dataset.locationPickerRequired;
         }
 
         function getLocationLatField() {
@@ -1231,18 +1233,18 @@
         function syncMapValidationState() {
           if (!isLocationPickerRequired()) {
             clearMapInvalid();
-            updateVisibleRequiredLabel();
+            updateRequiredStatus();
             return;
           }
 
           if (!hasLocationSelection() && (hasExistingLocationPickerError() || hasLocationPickerVisualError())) {
             setMapInvalid(getLocationRequiredErrorMessage());
-            updateVisibleRequiredLabel();
+            updateRequiredStatus();
             return;
           }
 
           clearMapInvalid();
-          updateVisibleRequiredLabel();
+          updateRequiredStatus();
         }
 
         function bindLocationPickerValidation() {
@@ -1491,40 +1493,19 @@
           locationTextBlock = wrapper;
         }
 
-        function initializeVisibleRequiredLabel() {
-          var mapContainer = document.getElementById('location_map_container');
-          if (!mapContainer || !mapContainer.parentNode) {
-            return;
-          }
-
-          var existingLabel = document.getElementById('location-required-label-wrapper');
-          if (existingLabel) {
-            return;
-          }
-
-          var wrapper = document.createElement('div');
-          wrapper.id = 'location-required-label-wrapper';
-          wrapper.className = 'location-required-label-wrapper';
-          wrapper.setAttribute('aria-hidden', 'true');
-          wrapper.innerHTML = '<div class="location-required-label"><span class="required-asterisk">*</span> Location is required</div>';
-          
-          // Insert before the map container
-          mapContainer.parentNode.insertBefore(wrapper, mapContainer);
-          
-          // Only show if the picker is required
-          updateVisibleRequiredLabel();
-        }
-
-        function updateVisibleRequiredLabel() {
-          var labelWrapper = document.getElementById('location-required-label-wrapper');
-          if (!labelWrapper) {
-            return;
-          }
-          
+        function updateRequiredStatus() {
+          const legendEl = locationPickerEl.querySelector('legend .fieldset-legend');
+          const searchLabelEl = locationPickerEl.querySelector('label[for="location_search"]');
+          const requiredStr = Drupal.t('(Required)');
+          const strippedLegendContent = legendEl.textContent.replace(' ' + requiredStr, '');
+          // If the location picker is required, add that indication to the fieldset legend for screen readers.
+          // Also add the required class to the search label to show the asterisk visually.
           if (isLocationPickerRequired()) {
-            labelWrapper.style.display = 'block';
+            legendEl.textContent = strippedLegendContent + ' ' + requiredStr;
+            searchLabelEl.classList.add('js-form-required', 'form-required');
           } else {
-            labelWrapper.style.display = 'none';
+            legendEl.textContent = strippedLegendContent;
+            searchLabelEl.classList.remove('js-form-required', 'form-required');
           }
         }
 
@@ -2651,7 +2632,13 @@
           // rather than the "described" address that is less accurate
           var description = addressVerify && verifiedAddress ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
-          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data);
+          // Keep the visible search field in sync when the location comes from
+          // a map interaction (mouse click, keyboard selection, or marker drag).
+          // Autocomplete already manages the field value before reverse geocode,
+          // so only force the search field when there is no pre-verified address.
+          var syncSearchField = !verifiedAddress;
+
+          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data, syncSearchField);
 
           // if park, set location name
           if (data.park) {
@@ -2706,7 +2693,7 @@
           }, jsonObject);
         }
 
-        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data) {
+        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress, data, syncSearchField = false) {
           $('#verified_location_text').text(description);
           $('#location-text-container').addClass('is-visible');
 
@@ -2722,9 +2709,14 @@
           $('#location-text-lng').text(lng);
           updateLocationTextAnnouncement('Selected location ' + description + '. Latitude ' + lat + ', longitude ' + lng + '.');
 
-          // if verify mode, also put location description in address field, but only the street
+          // In address verify mode the search field has always been updated with
+          // the verified description. Extend that same behavior to map-based
+          // reverse geocode results so the visible search input reflects the
+          // selected location after a click, keyboard selection, or marker drag.
           if (addressVerify) {
             $('#location_search').val(description);
+          } else {
+            $('#location_search').val(data.describe ? data.describe : description);
           };
 
           if (isVerifiedAddress) setVerified();

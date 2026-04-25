@@ -5,6 +5,7 @@ namespace Drupal\portland_location_picker\Plugin\WebformElement;
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
 
@@ -150,15 +151,35 @@ class PortlandLocationPicker extends WebformCompositeBase {
     /**
    * {@inheritdoc}
    */
+  public function form(array $form, FormStateInterface $form_state) {
+    $form = parent::form($form, $form_state);
+
+    $element_properties = $form_state->get('element_properties');
+    // Update #required label.
+    $form['validation']['required_container']['required']['#title'] = $this->t('Required');
+    $form['validation']['required_container']['required']['#description'] = $this->t('If checked, the user must select a location on the map or using the search field in order to submit.');
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
     $element_id = "report_location";
-
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
 
+    // NOTE ABOUT SERIALIZATION SAFETY:
+    // Do not store transient per-element data on $this for use during submit.
+    // In wizard forms Drupal rebuilds and caches form structures between pages.
+    // Any callback bound to $this can force the plugin instance into form cache
+    // serialization, which is what triggered the previous regression.
+    //
+    // Keep this local variable as scalar data used only to populate settings.
     $addressVerify = array_key_exists('#address_verify', $element) ? $element['#address_verify'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
@@ -223,69 +244,103 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $latRequired = !empty($element['#location_lat__required']) || (!empty($element['location_lat']) && !empty($element['location_lat']['#required']));
-    $lonRequired = !empty($element['#location_lon__required']) || (!empty($element['location_lon']) && !empty($element['location_lon']['#required']));
-    $isLocationRequired = $latRequired || $lonRequired;
-    
-    if (!empty($element['#required']) || $isLocationRequired) {
-      // A required location should be indicated on the composite title/legend,
-      // since the validated value is hidden and the visible interaction is the
-      // overall search-and-map widget.
-      $element['#required'] = TRUE;
-      $element['#attributes']['aria-required'] = 'true';
-      $element['#wrapper_attributes']['aria-required'] = 'true';
-    }
-
-    // If location_lat or location_lon was marked required (via YAML shorthand or direct
-    // #required), clear the built-in required flag so Drupal doesn't try to
-    // validate or scroll to a hidden input. Instead, register a validator on
-    // the composite that can attach the error to a visible part of the widget.
+    $isLocationRequired = !empty($element['#required']) || (!empty($element['#location_lat__required']) || !empty($element['#location_address__required']));
     if ($isLocationRequired) {
-      $element['#location_lat__required'] = FALSE;
-      $element['#location_lon__required'] = FALSE;
-      // Avoid creating a sparse location_lat child override before Webform has
-      // initialized the composite sub-elements, otherwise the real hidden
-      // element definition can be replaced and disappear from rendered markup.
-      if (!empty($element['location_lat']) && isset($element['location_lat']['#type'])) {
-        $element['location_lat']['#required'] = FALSE;
-      }
-      if (!empty($element['location_lon']) && isset($element['location_lon']['#type'])) {
-        $element['location_lon']['#required'] = FALSE;
-      }
-      $element['#element_validate'][] = [static::class, 'validateLocationRequired'];
+      // Flag location as required to the JS and add our custom validation.
+      $element['#attributes']['data-location-picker-required'] = 'true';
+      // Any requirement should be set on location lat instead.
+      $element['#required'] = false;
+      $element['#location_address__required'] = false;
+      $element['#location_lat__required'] = true;
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function alterForm(array &$element, array &$form, FormStateInterface $form_state) {
+    // IMPORTANT:
+    // Register a static callback instead of [$this, 'validateForm'].
+    //
+    // Why this matters:
+    // - Wizard forms cache/rebuild between pages.
+    // - Form callbacks become part of that cached structure.
+    // - A callback bound to $this can drag the plugin object into serialization.
+    // - Plugin instances can indirectly reference non-serializable services.
+    //
+    // A static callback keeps form cache serializable and avoids that class of
+    // regression while preserving this element's validation behavior.
+    $form['#validate'][] = [static::class, 'validateForm'];
   }
 
   /**
    * Validates that a location has been selected when location_lat is required.
    *
-   * Registers the error on the composite element rather than the hidden
+   * Registers the error on the search element rather than the hidden
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
-  public static function validateLocationRequired(array &$element, FormStateInterface $form_state, array &$form) {
-    // Use the element's parents path so nested elements validate correctly.
-    $parents = $element['#parents'] ?? NULL;
-    if ($parents === NULL) {
-      // Fallback for cases where #parents is not available.
-      $key = $element['#webform_key'] ?? 'report_location';
-      $parents = [$key];
+  public static function validateForm(&$form, FormStateInterface $form_state) {
+    // We intercept all current errors, then re-apply them with one adjustment:
+    // required location validation is normalized to the hidden location_lat
+    // sub-element (whether required came from parent composite required,
+    // location_address required, or legacy location_lat required). When that
+    // hidden field fails required validation, move the error to the visible
+    // search field so scroll-to-error and focus behavior target an interactive
+    // control the user can act on.
+    $errors = $form_state->getErrors();
+    $form_state->clearErrors();
+
+    // Build a list of all location picker webform keys present in this form.
+    // We derive keys from the form tree at runtime instead of relying on object
+    // properties so this method remains static and serialization-safe.
+    $location_picker_keys = static::getLocationPickerKeys($form);
+
+    // Reinstate all errors except ours.
+    foreach ($errors as $name => $error) {
+      // If this error belongs to any picker's hidden location_lat sub-element,
+      // remap it to that same picker's visible location_search field.
+      foreach ($location_picker_keys as $location_picker_key) {
+        if ($name === $location_picker_key . '][location_lat') {
+          $form_state->setErrorByName($location_picker_key . '][location_search', $error);
+          // continue 2 jumps to the next original error entry.
+          continue 2;
+        }
+      }
+
+      // For all other validation messages, preserve original behavior exactly.
+      $form_state->setErrorByName($name, $error);
     }
-    $values = $form_state->getValue($parents);
-    $lat = is_array($values) ? ($values['location_lat'] ?? '') : '';
-
-    if (!empty($lat) && $lat !== '0') {
-      return;
-    }
-
-    $message = !empty($element['location_lat']['#required_error'])
-      ? $element['location_lat']['#required_error']
-      : t('Location is required. Please select a location by searching or clicking the map.');
-
-    // Register this error against the visible map child instead of the
-    // composite wrapper to avoid the same message being repeated for each
-    // sub-element by composite error rendering.
-    $error_element = $element['location_map'] ?? $element;
-    $form_state->setError($error_element, $message);
   }
 
+  /**
+   * Recursively find all webform keys for location picker elements.
+   *
+   * Why this helper exists:
+   * - The previous implementation depended on plugin instance state
+   *   ($this->element_id).
+   * - Static callbacks cannot rely on per-request instance properties.
+   * - Runtime discovery from the current form array is deterministic and safe.
+   *
+   * @param array $element
+   *   Any branch of the rendered form array.
+   *
+   * @return array
+   *   Unique list of location picker webform keys.
+   */
+  protected static function getLocationPickerKeys(array $element): array {
+    $keys = [];
+
+    // Capture this branch when it is the composite we care about.
+    if (($element['#type'] ?? NULL) === 'portland_location_picker' && !empty($element['#webform_key'])) {
+      $keys[] = $element['#webform_key'];
+    }
+
+    // Recurse only through recognized child elements.
+    foreach (Element::children($element) as $child_key) {
+      $keys = array_merge($keys, static::getLocationPickerKeys($element[$child_key]));
+    }
+
+    // Deduplicate while keeping output as a simple numeric array.
+    return array_values(array_unique($keys));
+  }
 }
