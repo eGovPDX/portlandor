@@ -2713,8 +2713,10 @@
           // the verified description. Extend that same behavior to map-based
           // reverse geocode results so the visible search input reflects the
           // selected location after a click, keyboard selection, or marker drag.
-          if (addressVerify || syncSearchField) {
+          if (addressVerify) {
             $('#location_search').val(description);
+          } else {
+            $('#location_search').val(data.describe ? data.describe : description);
           };
 
           if (isVerifiedAddress) setVerified();
