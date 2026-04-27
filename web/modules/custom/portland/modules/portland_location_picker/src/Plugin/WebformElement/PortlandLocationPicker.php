@@ -240,6 +240,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $isLocationRequired = !empty($element['#required'])
       || !empty($element['#location_lat__required'])
+      || !empty($element['#location_lon__required'])
       || !empty($element['#location_address__required'])
       || !empty($element['#location_search__required']);
     if ($isLocationRequired) {
@@ -247,7 +248,16 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element['#required'] = false;
       $element['#location_address__required'] = false;
       $element['#location_search__required'] = false;
+      $element['#location_lon__required'] = false;
       $element['#location_lat__required'] = true;
+      // We have to fully overwrite the attributes array so we need to include the class and ID.
+      $element['#location_lat__attributes'] = [
+        // Add .js-form-item to prevent drupal states JS from adding required asterisks to random parent .js-form-item labels.
+        'class' => ['location-lat', 'js-form-item'],
+        'id' => 'location_lat',
+        // Set required cue for our JS.
+        'required' => 'required',
+      ];
     }
 
     // Move any required/optional states from the composite element to the location_lat field that controls requirements.
