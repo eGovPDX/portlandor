@@ -107,12 +107,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['id' => 'location_type_row'],
     ];
 
-    $location_required_error = "Location is required. Please select a location by searching or clicking the map.";
+    $location_required_error = t("Location is required. Please select a location by searching or use the map to pick a location.");
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
 
     if ($primaryLayerBehavior == "selection-only" && $primaryLayerType == "assets") {
-      $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
+      $location_required_error = t("Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.");
     }
 
     $element['location_lat'] = [

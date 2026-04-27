@@ -221,7 +221,7 @@
             if (e.keyCode == 13) {
               // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
               if ($locationSearch.autocomplete('widget') && $locationSearch.autocomplete('widget').has('.ui-state-active').length) return;
-                
+
               if (!verifyHidden) {
                 e.preventDefault();
                 $('#location_verify').click();
@@ -265,7 +265,7 @@
           initializeLocationTextBlock();
           updateRequiredStatus();
           // Update required status when webform conditional state changes.
-          $('#location_lat').on('state:required', updateRequiredStatus);
+          $('#location_lat').on('state:required', (e) => updateRequiredStatus(e.value));
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -1081,12 +1081,12 @@
           return MAP_SCREEN_READER_INSTRUCTIONS;
         }
 
-        function isLocationPickerRequired() {
-          return locationPickerEl.dataset.locationPickerRequired;
-        }
-
         function getLocationLatField() {
           return getLocationField('location_lat', 'location-lat');
+        }
+
+        function isLocationPickerRequired() {
+          return getLocationLatField().hasAttribute('required');
         }
 
         function getLocationField(fieldName, fallbackClass) {
@@ -1493,19 +1493,37 @@
           locationTextBlock = wrapper;
         }
 
-        function updateRequiredStatus() {
+        function updateRequiredStatus(requiredValue) {
+          // Required value can be passed as an argument (e.g. via an event handler), otherwise default to checking isLocationPickerRequired().
+          const isRequired = typeof requiredValue === 'undefined' ? isLocationPickerRequired() : requiredValue;
+          let requiredLabelEl = locationPickerEl.querySelector('.location-required-label');
+          // Initialize element if it doesn't already exist.
+          if (!requiredLabelEl) {
+            const mapContainer = document.getElementById('location_map_container');
+            if (!mapContainer || !mapContainer.parentNode) {
+              return;
+            }
+
+            requiredLabelEl = document.createElement('div');
+            requiredLabelEl.classList.add('location-required-label');
+            requiredLabelEl.setAttribute('aria-hidden', 'true');
+            requiredLabelEl.innerHTML = `<div class="location-required-label"><span class="required-asterisk">*</span> ${Drupal.t('Location is required')}</div>`;
+            // Insert before the map container
+            mapContainer.parentNode.insertBefore(requiredLabelEl, mapContainer);
+          }
+
           const legendEl = locationPickerEl.querySelector('legend .fieldset-legend');
-          const searchLabelEl = locationPickerEl.querySelector('label[for="location_search"]');
           const requiredStr = Drupal.t('(Required)');
           const strippedLegendContent = legendEl.textContent.replace(' ' + requiredStr, '');
+
           // If the location picker is required, add that indication to the fieldset legend for screen readers.
-          // Also add the required class to the search label to show the asterisk visually.
-          if (isLocationPickerRequired()) {
+          // Also show the required label above the map.
+          if (isRequired) {
             legendEl.textContent = strippedLegendContent + ' ' + requiredStr;
-            searchLabelEl.classList.add('js-form-required', 'form-required');
+            requiredLabelEl.style.display = 'block';
           } else {
             legendEl.textContent = strippedLegendContent;
-            searchLabelEl.classList.remove('js-form-required', 'form-required');
+            requiredLabelEl.style.display = 'none';
           }
         }
 
@@ -1592,7 +1610,7 @@
           if (isArrowKey && isMapRegionFocused) {
             e.preventDefault();
             cancelEventBubble(e);
-            
+
             if (e.key === 'ArrowUp') {
               map.panBy([0, -KEYBOARD_PAN_PIXELS]);
             } else if (e.key === 'ArrowDown') {

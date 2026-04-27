@@ -29,7 +29,7 @@ use Drupal\Component\Utility\Html;
  */
 class PortlandLocationPicker extends WebformCompositeBase {
 
-  public string $element_id;
+  private string $element_id;
 
   /**
    * {@inheritdoc}
@@ -155,8 +155,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
-    $element_properties = $form_state->get('element_properties');
-    // Update #required label.
+    // Update #required label to remove "(Display purposes only)" text since
+    // we have customized the composite such that this checkbox actually works.
     $form['validation']['required_container']['required']['#title'] = $this->t('Required');
     $form['validation']['required_container']['required']['#description'] = $this->t('If checked, the user must select a location on the map or using the search field in order to submit.');
 
@@ -174,8 +174,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    // Key that we can use to set errors on this element in our custom validation handler.
-    $this->element_id = $element_id;
     $addressVerify = array_key_exists('#address_verify', $element) ? $element['#address_verify'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
@@ -240,14 +238,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['max_zoom'] = $maxZoom;
 
-    $isLocationRequired = !empty($element['#required']) || (!empty($element['#location_lat__required']) || !empty($element['#location_address__required']));
+    $isLocationRequired = !empty($element['#required'])
+      || !empty($element['#location_lat__required'])
+      || !empty($element['#location_address__required'])
+      || !empty($element['#location_search__required']);
     if ($isLocationRequired) {
-      // Flag location as required to the JS and add our custom validation.
-      $element['#attributes']['data-location-picker-required'] = 'true';
-      // Any requirement should be set on location lat instead.
+      // Any requirement should be set on location lat instead, for our custom validation to work properly.
       $element['#required'] = false;
       $element['#location_address__required'] = false;
+      $element['#location_search__required'] = false;
       $element['#location_lat__required'] = true;
+    }
+
+    // Move any required/optional states from the composite element to the location_lat field that controls requirements.
+    if (array_key_exists('#states', $element)) {
+      if (array_key_exists('required', $element['#states'])) {
+        $element['#location_lat__states']['required'] = $element['#states']['required'];
+        unset($element['#states']['required']);
+      }
+
+      if (array_key_exists('optional', $element['#states'])) {
+        $element['#location_lat__states']['optional'] = $element['#states']['optional'];
+        unset($element['#states']['optional']);
+      }
     }
   }
 
@@ -255,7 +268,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * {@inheritdoc}
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state) {
-    $form['#validate'][] = [$this, 'validateForm'];
+    // Save the element key on the form object so our custom validation handler has access.
+    $form['#portland_location_picker_keys'][] = $element['#webform_key'];
+    $form['#validate'][] = [get_called_class(), 'validateForm'];
   }
 
   /**
@@ -264,15 +279,21 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * Registers the error on the search element rather than the hidden
    * location_lat sub-element, so Drupal's scroll-to-error behaviour works.
    */
-  public function validateForm(&$form, FormStateInterface $form_state) {
+  public static function validateForm(&$form, FormStateInterface $form_state) {
+    if (!array_key_exists('#portland_location_picker_keys', $form)) {
+      return;
+    }
+
+    $element_keys = $form['#portland_location_picker_keys'];
     $errors = $form_state->getErrors();
     $form_state->clearErrors();
 
     // Reinstate all errors except ours.
     foreach ($errors as $name => $error) {
-      // Catch our error on the location_lat element, move it to the search element instead.
-      if ($name === $this->element_id . '][location_lat') {
-        $form_state->setErrorByName($this->element_id . '][location_search', $error);
+      $error_keys = explode('][', $name);
+      // Catch any errors from a location picker widget on the location_lat field, and move it to the search element instead.
+      if (in_array($error_keys[0], $element_keys) && isset($error_keys[1]) && $error_keys[1] === 'location_lat') {
+        $form_state->setErrorByName($error_keys[0] . '][location_search', $error);
         continue;
       }
 
