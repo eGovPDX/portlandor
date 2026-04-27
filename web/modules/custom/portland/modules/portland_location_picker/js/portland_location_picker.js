@@ -1507,7 +1507,7 @@
             requiredLabelEl = document.createElement('div');
             requiredLabelEl.classList.add('location-required-label');
             requiredLabelEl.setAttribute('aria-hidden', 'true');
-            requiredLabelEl.innerHTML = `<div class="location-required-label"><span class="required-asterisk">*</span> ${Drupal.t('Location is required')}</div>`;
+            requiredLabelEl.innerHTML = `<span class="required-asterisk">*</span> ${Drupal.t('Location is required')}`;
             // Insert before the map container
             mapContainer.parentNode.insertBefore(requiredLabelEl, mapContainer);
           }
