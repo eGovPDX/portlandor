@@ -41,6 +41,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public static function getCompositeElements(array $element) {
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
+    $autocomplete_mode = $element['#autocomplete_mode'] ?? 'address';
 
     // Generate a unique ID prefix based on the parent element's webform key.
     // This ensures that multiple instances of this composite element on the same form
@@ -60,7 +61,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Street Address'),
       '#id' => $id_prefix . 'location-address',
-      '#autocomplete' => 'address-line1',
+      '#attributes' => static::getAutocompleteAttributes($autocomplete_mode, 'address-line1'),
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -98,7 +99,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
       '#id' => $id_prefix . 'unit-number',
-      '#attributes' => ['autocomplete' => 'off'],
+      '#attributes' => static::getAutocompleteAttributes($autocomplete_mode, 'address-line2'),
       '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
       '#wrapper_attributes' => [
         'class' => ['mb-0'],
@@ -108,7 +109,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('City'),
       '#id' => $id_prefix . 'location-city',
-      '#autocomplete' => 'address-level2',
+      '#attributes' => static::getAutocompleteAttributes($autocomplete_mode, 'address-level2'),
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => [
         'class' => ['webform-city', 'mb-0'],
@@ -120,7 +121,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#options' => $state_codes,
       '#default_value' => 'OR',
       '#id' => $id_prefix . 'location-state',
-      '#autocomplete' => 'address-level1',
+      '#attributes' => static::getAutocompleteAttributes($autocomplete_mode, 'address-level1'),
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
       '#wrapper_attributes' => ['class' => ['webform-state', 'mb-0']],
     ];
@@ -128,9 +129,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('ZIP Code'),
       '#id' => $id_prefix . 'location-zip',
-      '#autocomplete' => 'postal-code',
+      '#attributes' => static::getAutocompleteAttributes($autocomplete_mode, 'postal-code'),
       '#pre_render' => [[static::class, 'preRenderConditionalRequiredIndicator']],
-      '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip', 'mb-0']],
     ];
     $element['location_jurisdiction'] = [
@@ -203,6 +203,21 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     ];
 
     return $element;
+  }
+
+  /**
+   * Builds HTML autocomplete attributes based on configured mode.
+   */
+  protected static function getAutocompleteAttributes(string $mode, string $address_token): array {
+    if ($mode === 'off') {
+      return ['autocomplete' => 'off'];
+    }
+
+    if ($mode === 'none') {
+      return [];
+    }
+
+    return ['autocomplete' => $address_token];
   }
 
   /**
