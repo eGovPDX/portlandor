@@ -30,48 +30,30 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
-
-    $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
-
-    $element_id = "report_location";
-
-    if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-    }
-
     $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location search'),
       '#id' => 'location_search',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
+      '#description' => t('Search for an address, cross streets, park, or community center. Or use the map to pick a location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
       '#type' => 'markup',
-      '#title' => 'Precision',
-      '#title_display' => 'invisible',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text">' . t('<strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.') . '</div>',
     ];
     $element['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
-      '#title' => 'Location map',
       '#description' => '',
-      '#description_display' => 'before',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
+      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status" aria-live="polite"><div class="loader"></div></div>',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
-      '#title' => 'Suggestions',
-      '#title_display' => 'invisible',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
     $element['status_modal'] = [
       '#type' => 'markup',
-      '#title' => 'Status indicator',
-      '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
     $element['location_address'] = [
@@ -125,12 +107,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['id' => 'location_type_row'],
     ];
 
-    $location_required_error = "Location is required. Please select a location by searching or clicking the map.";
+    $location_required_error = t("Location is required. Please select a location by searching or use the map to pick a location.");
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
 
     if ($primaryLayerBehavior == "selection-only" && $primaryLayerType == "assets") {
-      $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
+      $location_required_error = t("Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.");
     }
 
     $element['location_lat'] = [
