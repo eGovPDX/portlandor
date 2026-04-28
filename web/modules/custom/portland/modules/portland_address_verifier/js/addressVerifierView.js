@@ -216,6 +216,7 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
 AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 
     var self = this;
+    const originalAutocomplete = this.$input.attr('autocomplete');
 
     this.$input.on('keydown', function (e) {
         if (e.keyCode == 13) {
@@ -267,6 +268,14 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
             };
         }
     });
+
+    // jQuery UI Autocomplete sets autocomplete="off" by default.
+    // Restore whatever the server rendered for this field.
+    if (typeof originalAutocomplete === 'undefined') {
+        this.$input.removeAttr('autocomplete');
+    } else {
+        this.$input.attr('autocomplete', originalAutocomplete);
+    }
 
 }
 
