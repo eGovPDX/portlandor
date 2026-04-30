@@ -2436,12 +2436,12 @@
 
         function showPrecisionText() {
           if (!addressVerify) {
-            $('#precision_text').removeClass('visually-hidden');
+            $('#precision_text').removeClass('visually-hidden').attr('aria-hidden', 'false');
           }
         }
 
         function hidePrecisionText() {
-          $('#precision_text').addClass('visually-hidden');
+          $('#precision_text').addClass('visually-hidden').attr('aria-hidden', 'true');
         }
 
         function captureSelectedAssetMarkerData(marker) {
