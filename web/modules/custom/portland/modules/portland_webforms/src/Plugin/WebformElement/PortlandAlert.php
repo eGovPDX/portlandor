@@ -21,121 +21,134 @@ use Drupal\webform\Plugin\WebformElementDisplayOnInterface;
  */
 class PortlandAlert extends WebformMarkup {
 
-	/**
-	 * Normalizes HTML editor values to a plain markup string.
-	 *
-	 * The webform HTML editor can submit nested value arrays depending on the
-	 * configured format widget. This method safely extracts the underlying text.
-	 *
-	 * @param mixed $value
-	 *   A potential string or nested editor value array.
-	 *
-	 * @return string
-	 *   The editor markup as a plain string.
-	 */
-	protected function normalizeHtmlEditorValue($value): string {
-		if (is_string($value)) {
-			return $value;
-		}
+  /**
+   * Normalizes HTML editor values to a plain markup string.
+   *
+   * The webform HTML editor can submit nested value arrays depending on the
+   * configured format widget. This method safely extracts the underlying text.
+   *
+   * @param mixed $value
+   *   A potential string or nested editor value array.
+   *
+   * @return string
+   *   The editor markup as a plain string.
+   */
+  protected function normalizeHtmlEditorValue($value): string {
+    if (is_string($value)) {
+      return $value;
+    }
 
-		if (is_array($value)) {
-			if (array_key_exists('value', $value)) {
-				return $this->normalizeHtmlEditorValue($value['value']);
-			}
+    if (is_array($value)) {
+      if (array_key_exists('value', $value)) {
+        return $this->normalizeHtmlEditorValue($value['value']);
+      }
 
-			return '';
-		}
+      return '';
+    }
 
-		return is_scalar($value) ? (string) $value : '';
-	}
+    return is_scalar($value) ? (string) $value : '';
+  }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function defineDefaultProperties() {
-		$properties = parent::defineDefaultProperties();
-		$properties['display_on'] = WebformElementDisplayOnInterface::DISPLAY_ON_FORM;
-		return [
-			'alert_markup' => '',
-			'alert_variation' => 'info',
-		] + $properties;
-	}
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineDefaultProperties() {
+    $properties = parent::defineDefaultProperties();
+    $properties['display_on'] = WebformElementDisplayOnInterface::DISPLAY_ON_FORM;
+    return [
+      'alert_markup' => '',
+      'alert_variation' => 'info',
+    ] + $properties;
+  }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function defineTranslatableProperties() {
-		return array_merge(parent::defineTranslatableProperties(), ['alert_markup']);
-	}
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineTranslatableProperties() {
+    return array_merge(parent::defineTranslatableProperties(), ['alert_markup']);
+  }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
-		parent::prepare($element, $webform_submission);
+  /**
+   * Gets the appropriate ARIA role for an alert variation.
+   *
+   * @param string $variation
+   *   The configured alert variation.
+   *
+   * @return string
+   *   The ARIA role for the rendered alert.
+   */
+  protected function getAlertRole(string $variation): string {
+    return $variation === 'warning' ? 'alert' : 'status';
+  }
 
-		$variation = in_array($element['#alert_variation'] ?? '', ['info', 'warning', 'success'], TRUE)
-			? $element['#alert_variation']
-			: 'info';
+  /**
+   * {@inheritdoc}
+   */
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
+    parent::prepare($element, $webform_submission);
 
-		$body_markup = $this->normalizeHtmlEditorValue($element['#alert_markup'] ?? '');
+    $variation = in_array($element['#alert_variation'] ?? '', ['info', 'warning'], TRUE)
+      ? $element['#alert_variation']
+      : 'info';
 
-		$element['#markup'] = '<div class="alert alert--' . $variation . ' next-steps form-alert">' . $body_markup . '</div>';
-	}
+    $body_markup = $this->normalizeHtmlEditorValue($element['#alert_markup'] ?? '');
+    $role = $this->getAlertRole($variation);
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function preview() {
-		return parent::preview() + [
-			'#alert_variation' => 'info',
-			'#alert_markup' => '<p>' . $this->t('This is preview text for the Portland Alert element.') . '</p>',
-		];
-	}
+    $element['#markup'] = '<div class="alert alert--' . $variation . ' next-steps form-alert" role="' . $role . '">' . $body_markup . '</div>';
+  }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function form(array $form, FormStateInterface $form_state) {
-		$form = parent::form($form, $form_state);
+  /**
+   * {@inheritdoc}
+   */
+  public function preview() {
+    return parent::preview() + [
+      '#alert_variation' => 'info',
+      '#alert_markup' => '<p>' . $this->t('This is preview text for the Portland Alert element.') . '</p>',
+    ];
+  }
 
-		$form['markup']['#title'] = $this->t('Alert settings');
-		unset($form['markup']['markup'], $form['markup']['display_on']);
+  /**
+   * {@inheritdoc}
+   */
+  public function form(array $form, FormStateInterface $form_state) {
+    $form = parent::form($form, $form_state);
 
-		$form['markup']['alert_variation'] = [
-			'#type' => 'select',
-			'#title' => $this->t('Variation'),
-			'#options' => [
-				'info' => $this->t('Info'),
-				'warning' => $this->t('Warning'),
-				'success' => $this->t('Success'),
-			],
-			'#required' => TRUE,
-			'#default_value' => $this->configuration['alert_variation'] ?? 'info',
-		];
+    $form['markup']['#title'] = $this->t('Alert settings');
+    unset($form['markup']['markup'], $form['markup']['display_on']);
 
-		$form['markup']['alert_markup'] = [
-			'#type' => 'webform_html_editor',
-			'#title' => $this->t('HTML markup'),
-			'#description' => $this->t('Enter the body content for this alert.'),
-			'#required' => TRUE,
-			'#default_value' => $this->normalizeHtmlEditorValue($this->configuration['alert_markup'] ?? ''),
-		];
+    $form['markup']['alert_variation'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Variation'),
+      '#options' => [
+        'info' => $this->t('Info'),
+        'warning' => $this->t('Warning'),
+      ],
+      '#required' => TRUE,
+      '#default_value' => $this->configuration['alert_variation'] ?? 'info',
+    ];
 
-		return $form;
-	}
+    $form['markup']['alert_markup'] = [
+      '#type' => 'webform_html_editor',
+      '#title' => $this->t('HTML markup'),
+      '#description' => $this->t('Enter the body content for this alert.'),
+      '#required' => TRUE,
+      '#default_value' => $this->normalizeHtmlEditorValue($this->configuration['alert_markup'] ?? ''),
+    ];
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
-		parent::submitConfigurationForm($form, $form_state);
+    return $form;
+  }
 
-		$properties_value = $form_state->getValue(['properties', 'alert_markup']);
-		$direct_value = $form_state->getValue('alert_markup');
-		$markup_value = $properties_value ?? $direct_value;
+  /**
+   * {@inheritdoc}
+   */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
+    parent::submitConfigurationForm($form, $form_state);
 
-		$form_state->setValue('alert_markup', $this->normalizeHtmlEditorValue($markup_value));
-	}
+    $properties_value = $form_state->getValue(['properties', 'alert_markup']);
+    $direct_value = $form_state->getValue('alert_markup');
+    $markup_value = $properties_value ?? $direct_value;
+
+    $form_state->setValue('alert_markup', $this->normalizeHtmlEditorValue($markup_value));
+  }
 
 }
