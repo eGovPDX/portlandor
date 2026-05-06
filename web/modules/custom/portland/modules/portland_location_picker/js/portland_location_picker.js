@@ -221,7 +221,7 @@
             if (e.keyCode == 13) {
               // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
               if ($locationSearch.autocomplete('widget') && $locationSearch.autocomplete('widget').has('.ui-state-active').length) return;
-                
+
               if (!verifyHidden) {
                 e.preventDefault();
                 $('#location_verify').click();
@@ -263,7 +263,9 @@
           map.on('popupclose', handlePopupClose);
 
           initializeLocationTextBlock();
-          initializeVisibleRequiredLabel();
+          updateRequiredStatus();
+          // Update required status when webform conditional state changes.
+          $('#location_lat').on('state:required', (e) => updateRequiredStatus(e.value));
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -1079,12 +1081,12 @@
           return MAP_SCREEN_READER_INSTRUCTIONS;
         }
 
-        function isLocationPickerRequired() {
-          return locationPickerEl.classList.contains('required');
-        }
-
         function getLocationLatField() {
           return getLocationField('location_lat', 'location-lat');
+        }
+
+        function isLocationPickerRequired() {
+          return getLocationLatField().hasAttribute('required');
         }
 
         function getLocationField(fieldName, fallbackClass) {
@@ -1231,18 +1233,18 @@
         function syncMapValidationState() {
           if (!isLocationPickerRequired()) {
             clearMapInvalid();
-            updateVisibleRequiredLabel();
+            updateRequiredStatus();
             return;
           }
 
           if (!hasLocationSelection() && (hasExistingLocationPickerError() || hasLocationPickerVisualError())) {
             setMapInvalid(getLocationRequiredErrorMessage());
-            updateVisibleRequiredLabel();
+            updateRequiredStatus();
             return;
           }
 
           clearMapInvalid();
-          updateVisibleRequiredLabel();
+          updateRequiredStatus();
         }
 
         function bindLocationPickerValidation() {
@@ -1491,40 +1493,37 @@
           locationTextBlock = wrapper;
         }
 
-        function initializeVisibleRequiredLabel() {
-          var mapContainer = document.getElementById('location_map_container');
-          if (!mapContainer || !mapContainer.parentNode) {
-            return;
+        function updateRequiredStatus(requiredValue) {
+          // Required value can be passed as an argument (e.g. via an event handler), otherwise default to checking isLocationPickerRequired().
+          const isRequired = typeof requiredValue === 'undefined' ? isLocationPickerRequired() : requiredValue;
+          let requiredLabelEl = locationPickerEl.querySelector('.location-required-label');
+          // Initialize element if it doesn't already exist.
+          if (!requiredLabelEl) {
+            const mapContainer = document.getElementById('location_map_container');
+            if (!mapContainer || !mapContainer.parentNode) {
+              return;
+            }
+
+            requiredLabelEl = document.createElement('div');
+            requiredLabelEl.classList.add('location-required-label');
+            requiredLabelEl.setAttribute('aria-hidden', 'true');
+            requiredLabelEl.innerHTML = `<span class="required-asterisk">*</span> ${Drupal.t('Location is required')}`;
+            // Insert before the map container
+            mapContainer.parentNode.insertBefore(requiredLabelEl, mapContainer);
           }
 
-          var existingLabel = document.getElementById('location-required-label-wrapper');
-          if (existingLabel) {
-            return;
-          }
+          const legendEl = locationPickerEl.querySelector('legend .fieldset-legend');
+          const requiredStr = Drupal.t('(Required)');
+          const strippedLegendContent = legendEl.textContent.replace(' ' + requiredStr, '');
 
-          var wrapper = document.createElement('div');
-          wrapper.id = 'location-required-label-wrapper';
-          wrapper.className = 'location-required-label-wrapper';
-          wrapper.setAttribute('aria-hidden', 'true');
-          wrapper.innerHTML = '<div class="location-required-label"><span class="required-asterisk">*</span> Location is required</div>';
-          
-          // Insert before the map container
-          mapContainer.parentNode.insertBefore(wrapper, mapContainer);
-          
-          // Only show if the picker is required
-          updateVisibleRequiredLabel();
-        }
-
-        function updateVisibleRequiredLabel() {
-          var labelWrapper = document.getElementById('location-required-label-wrapper');
-          if (!labelWrapper) {
-            return;
-          }
-          
-          if (isLocationPickerRequired()) {
-            labelWrapper.style.display = 'block';
+          // If the location picker is required, add that indication to the fieldset legend for screen readers.
+          // Also show the required label above the map.
+          if (isRequired) {
+            legendEl.textContent = strippedLegendContent + ' ' + requiredStr;
+            requiredLabelEl.style.display = 'block';
           } else {
-            labelWrapper.style.display = 'none';
+            legendEl.textContent = strippedLegendContent;
+            requiredLabelEl.style.display = 'none';
           }
         }
 
@@ -1611,7 +1610,7 @@
           if (isArrowKey && isMapRegionFocused) {
             e.preventDefault();
             cancelEventBubble(e);
-            
+
             if (e.key === 'ArrowUp') {
               map.panBy([0, -KEYBOARD_PAN_PIXELS]);
             } else if (e.key === 'ArrowDown') {
@@ -2437,12 +2436,12 @@
 
         function showPrecisionText() {
           if (!addressVerify) {
-            $('#precision_text').removeClass('visually-hidden');
+            $('#precision_text').removeClass('visually-hidden').attr('aria-hidden', 'false');
           }
         }
 
         function hidePrecisionText() {
-          $('#precision_text').addClass('visually-hidden');
+          $('#precision_text').addClass('visually-hidden').attr('aria-hidden', 'true');
         }
 
         function captureSelectedAssetMarkerData(marker) {
