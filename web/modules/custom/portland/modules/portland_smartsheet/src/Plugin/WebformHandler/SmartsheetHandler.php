@@ -284,7 +284,7 @@ class SmartsheetHandler extends WebformHandlerBase {
         $field_data = $fields[$field_id];
       }
 
-      if (array_key_exists($col_id, $field_handlers) && $field_handlers[$col_id] === "MULTI_PICKLIST" && is_array($field_data)) {
+      if (array_key_exists($col_id, $field_handlers) && $field_handlers[$col_id] === "MULTI_PICKLIST" && is_array($field_data) && !empty($field_data)) {
         $cells[] = [
           'columnId' => (int) $col_id,
           'objectValue' => [
