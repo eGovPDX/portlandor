@@ -12,7 +12,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Exception\UndefinedLinkTemplateException;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Symfony\Component\Inflector\Inflector;
+use Symfony\Component\String\Inflector\EnglishInflector;
 
 /**
  * Plugin implementation of the 'leaflet_default' formatter.
@@ -26,6 +26,18 @@ use Symfony\Component\Inflector\Inflector;
  * )
  */
 class PluralLabelFormatter extends EntityReferenceFormatterBase {
+
+  private EnglishInflector $inflector;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct() {
+    parent::__construct(...func_get_args());  
+    
+    $this->inflector = new EnglishInflector();
+  }
+
 
   /**
    * {@inheritdoc}
@@ -62,7 +74,7 @@ class PluralLabelFormatter extends EntityReferenceFormatterBase {
     foreach ($this->getEntitiesToView($items, $langcode) as $delta => $entity) {
       $label = $entity->label();
 
-      $elements[$delta] = ['#plain_text' => Inflector::pluralize($label)];
+      $elements[$delta] = ['#plain_text' => $this->inflector->pluralize($label)[0]];
       $elements[$delta]['#cache']['tags'] = $entity->getCacheTags();
     }
     return $elements;
