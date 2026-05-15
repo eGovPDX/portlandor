@@ -1,60 +1,50 @@
-diff --git a/docs/cheat-sheet.md b/docs/cheat-sheet.md
-index 036e974..3bec6b6 100644
---- a/docs/cheat-sheet.md
-+++ b/docs/cheat-sheet.md
-@@ -130,8 +130,17 @@ Note that drupal_field() does not work for view modes powered by Layout Builder.
- ```
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 7e9416a..02ac89d 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -6,21 +6,21 @@ include:
+       - '/includes/include.drupalci.variables.yml'
+       - '/includes/include.drupalci.workflows.yml'
+ variables:
+-  CORE_PHP_MIN: '8.4'
++  CORE_PHP_MIN: '8.3'
+   OPT_IN_TEST_MAX_PHP: 1
+   OPT_IN_TEST_NEXT_MINOR: 1
+   OPT_IN_TEST_NEXT_MAJOR: 1
+-  _CSPELL_WORDS: '"selfdoc", "Привет", "sqlq", "docblocks" '
++  _CSPELL_WORDS: '"selfdoc", "Привет", "sqlq" '
  
- ## Drupal Token
-+
-+See Drupal\Core\Utility\Token::replace()
- ```twig
-+{# Global tokens: #}
- {{ drupal_token('site:name') }}
-+
-+{# Tokens with required data (2nd parameter): #}
-+{{ drupal_token('node:title', {node: node}) }}
-+
-+{# Tokens with required data (2nd parameter) and options (3rd parameter): #}
-+{{ drupal_token('node:title', {node: node}, {clear: true}) }}
- ```
- 
- ## Drupal Config
+ composer-lint: {allow_failure: false}
+ eslint: {allow_failure: false}
+ cspell: {allow_failure: false}
+ phpcs: {allow_failure: false}
+-phpstan: {allow_failure: true}
+-phpstan (max PHP version): {allow_failure: true}
+-phpstan (next minor): {allow_failure: true}
+-phpstan (next major): {allow_failure: true}
+-phpunit: {allow_failure: false}
++phpstan: {allow_failure: false}
++phpstan (max PHP version): {allow_failure: false}
++phpstan (next minor): {allow_failure: false}
++phpstan (next major): {allow_failure: true} # @todo Fix this in 4.x
++phpunit: {allow_failure: true}
+ phpunit (max PHP version): {allow_failure: true}
+-phpunit (next minor): {allow_failure: true}
+-phpunit (next major): {allow_failure: true}
++phpunit (next minor): {allow_failure: false}
++phpunit (next major): {allow_failure: false}
 diff --git a/src/View/BlockViewBuilder.php b/src/View/BlockViewBuilder.php
-index af20782..e239cfe 100644
+index da02b87..e239cfe 100644
 --- a/src/View/BlockViewBuilder.php
 +++ b/src/View/BlockViewBuilder.php
-@@ -3,10 +3,11 @@
- namespace Drupal\twig_tweak\View;
- 
- use Drupal\Core\Block\BlockPluginInterface;
-+use Drupal\Core\Block\BlockManagerInterface;
+@@ -7,6 +7,7 @@ use Drupal\Core\Block\BlockManagerInterface;
  use Drupal\Core\Block\TitleBlockPluginInterface;
--use Drupal\Core\Cache\CacheableDependencyInterface;
  use Drupal\Core\Cache\CacheableMetadata;
  use Drupal\Core\Controller\TitleResolverInterface;
 +use Drupal\Core\Entity\EntityInterface;
  use Drupal\Core\Plugin\Context\ContextHandlerInterface;
  use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
  use Drupal\Core\Plugin\ContextAwarePluginInterface;
-@@ -23,7 +24,7 @@ class BlockViewBuilder {
-   /**
-    * The plugin.manager.block service.
-    *
--   * @var \Drupal\Core\Cache\CacheableDependencyInterface
-+   * @var \Drupal\Core\Block\BlockManagerInterface
-    */
-   protected $pluginManagerBlock;
- 
-@@ -73,7 +74,7 @@ class BlockViewBuilder {
-    * Constructs a BlockViewBuilder object.
-    */
-   public function __construct(
--    CacheableDependencyInterface $plugin_manager_block,
-+    BlockManagerInterface $plugin_manager_block,
-     ContextRepositoryInterface $context_repository,
-     ContextHandlerInterface $context_handler,
-     AccountInterface $account,
 @@ -139,6 +140,16 @@ class BlockViewBuilder {
  
        if ($block_plugin instanceof TitleBlockPluginInterface) {
@@ -72,14 +62,106 @@ index af20782..e239cfe 100644
        }
        // Some blocks return null instead of array when empty.
        // @see https://www.drupal.org/project/drupal/issues/3212354
-diff --git a/tests/twig_tweak_test/templates/twig-tweak-test.html.twig b/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
-index 94f547c..fdcbf60 100644
---- a/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
-+++ b/tests/twig_tweak_test/templates/twig-tweak-test.html.twig
-@@ -1,5 +1,5 @@
- {# @cspell:ignore doremi #}
--{% set image_attributes = {style: 'width: 30px; height 30px;'} %}
-+{% set image_attributes = {style: 'width: 30px; height: 30px;'} %}
- <style>
-   main {
-     background-color: lightyellow;
+diff --git a/tests/src/Functional/TwigTweakTest.php b/tests/src/Functional/TwigTweakTest.php
+index b1b2f66..24e58b0 100644
+--- a/tests/src/Functional/TwigTweakTest.php
++++ b/tests/src/Functional/TwigTweakTest.php
+@@ -75,7 +75,6 @@ final class TwigTweakTest extends BrowserTestBase {
+     $node_values = [
+       'title' => 'Alpha',
+       'uuid' => 'ad1b902a-344f-41d1-8c61-a69f0366dbfa',
+-      'body' => 'The node content.',
+       'field_image' => [
+         'target_id' => $image_file->id(),
+         'alt' => 'Alt text',
+@@ -153,8 +152,8 @@ final class TwigTweakTest extends BrowserTestBase {
+ 
+     // -- Entity (default view mode).
+     $xpath = '//div[@class = "tt-entity-default"]';
+-    $xpath .= '/article[contains(@class, "node") and contains(@class, "node--view-mode-full")]';
+-    $xpath .= '/div[@class = "node__content"]/div/p[text() = "The node content."]';
++    $xpath .= '/article[contains(@class, "node") and not(contains(@class, "node--view-mode-teaser"))]';
++    $xpath .= '/h2/a/span[text() = "Alpha"]';
+     $this->assertXpath($xpath);
+ 
+     // -- Entity (teaser view mode).
+@@ -166,7 +165,7 @@ final class TwigTweakTest extends BrowserTestBase {
+     // -- Entity by UUID.
+     $xpath = '//div[@class = "tt-entity-uuid"]';
+     $xpath .= '/article[contains(@class, "node")]';
+-    $xpath .= '/div[@class = "node__content"]/div/p[text() = "The node content."]';
++    $xpath .= '/h2/a/span[text() = "Alpha"]';
+     $this->assertXpath($xpath);
+ 
+     // -- Entity by UUID (missing).
+diff --git a/tests/src/Kernel/EntityViewBuilderTest.php b/tests/src/Kernel/EntityViewBuilderTest.php
+index 19c4ed8..548d338 100644
+--- a/tests/src/Kernel/EntityViewBuilderTest.php
++++ b/tests/src/Kernel/EntityViewBuilderTest.php
+@@ -88,6 +88,7 @@ final class EntityViewBuilderTest extends AbstractTestCase {
+ 
+     $expected_html = <<< 'HTML'
+       <article>
++        <h2><a href="/node/1" rel="bookmark"><span>Public node</span></a></h2>
+         <div></div>
+       </article>
+     HTML;
+@@ -175,6 +176,7 @@ final class EntityViewBuilderTest extends AbstractTestCase {
+ 
+     $expected_html = <<< 'HTML'
+       <article>
++        <h2><a href="/node/2" rel="bookmark"><span>Private node</span></a></h2>
+         <div></div>
+       </article>
+     HTML;
+diff --git a/tests/src/Kernel/RegionViewBuilderTest.php b/tests/src/Kernel/RegionViewBuilderTest.php
+index 15d1183..08edea7 100644
+--- a/tests/src/Kernel/RegionViewBuilderTest.php
++++ b/tests/src/Kernel/RegionViewBuilderTest.php
+@@ -84,17 +84,17 @@ final class RegionViewBuilderTest extends AbstractTestCase {
+       'public_block' => [
+         '#cache' =>
+           [
++            'keys' => [
++              'entity_view',
++              'block',
++              'public_block',
++            ],
+             'contexts' => [],
+             'tags' => [
+               'block_view',
+               'config:block.block.public_block',
+             ],
+             'max-age' => Cache::PERMANENT,
+-            'keys' => [
+-              'entity_view',
+-              'block',
+-              'public_block',
+-            ],
+           ],
+         '#weight' => 0,
+         '#lazy_builder' => [
+diff --git a/tests/twig_tweak_test/config/install/field.storage.node.body.yml b/tests/twig_tweak_test/config/install/field.storage.node.body.yml
+deleted file mode 100644
+index 73edd16..0000000
+--- a/tests/twig_tweak_test/config/install/field.storage.node.body.yml
++++ /dev/null
+@@ -1,18 +0,0 @@
+-langcode: en
+-status: true
+-dependencies:
+-  module:
+-    - node
+-    - text
+-id: node.body
+-field_name: body
+-entity_type: node
+-type: text_with_summary
+-settings: {  }
+-module: text
+-locked: false
+-cardinality: 1
+-translatable: true
+-indexes: {  }
+-persist_with_no_fields: true
+-custom_storage: false
