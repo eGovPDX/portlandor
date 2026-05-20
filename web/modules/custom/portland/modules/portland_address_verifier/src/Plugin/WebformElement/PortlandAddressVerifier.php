@@ -193,8 +193,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    */
   public static function validateElement(array &$element, FormStateInterface $form_state, array &$complete_form): void {
     $value = $form_state->getValue($element['#webform_key']);
-    $value['location_full_address'] = self::buildFullAddress($value);
+    if (!is_array($value)) return;
 
+    $value['location_full_address'] = self::buildFullAddress($value);
     $element['#value'] = $value;
     $form_state->setValueForElement($element, $value);
   }
