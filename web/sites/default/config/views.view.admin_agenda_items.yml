@@ -2047,6 +2047,69 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
+        field_committee:
+          id: field_committee
+          table: node__field_committee
+          field: field_committee
+          relationship: field_council_agenda
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         view_node:
           id: view_node
           table: node
@@ -2239,7 +2302,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"field field--label-inline d-flex\">\r\n  <div class=\"field__label\">Last Council action</div>\r\n  <div class=\"field__item\">\r\n    {{ field_agenda_item_disposition }}{% if field_committee_1|striptags|trim %} {{ field_committee_1 }}{% endif %} <a href=\"{{ view_node }}#relation-{{ id }}\">{{ 'on @date'|t({ '@date': field_session_start_datetime }) }}</a>\r\n  </div>\r\n</div>\r\n"
+            text: "<div class=\"field field--label-inline\">\r\n  <div class=\"field__label\">{{ 'Last action'|t }}</div>\r\n  <div class=\"field__item\">\r\n    {{ field_committee }} {{ field_agenda_item_disposition }}{% if field_committee_1|striptags|trim %} {{ field_committee_1 }}{% endif %} <a href=\"{{ view_node }}#relation-{{ id }}\">{{ 'on @date'|t({ '@date': field_session_start_datetime }) }}</a>\r\n  </div>\r\n</div>\r\n"
             make_link: false
             path: ''
             absolute: false
@@ -2299,6 +2362,18 @@ display:
         type: perm
         options:
           perm: 'access content'
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text_custom
+          empty: true
+          content: "{% set president_committee = drupal_field('field_president_committee', 'node', raw_arguments.nid ?? 0, { label: 'hidden' }) %}\r\n{% if president_committee.0 %}\r\n<div class=\"field field--label-inline\">\r\n  <div class=\"field__label\">{{ 'Last action'|t }}</div>\r\n  <div class=\"field__item\">\r\n    {{ 'Referred to @committee by Council President'|t({ '@committee': president_committee.0|render }) }}\r\n  </div>\r\n</div>\r\n{% endif %}"
+          tokenize: true
       sorts:
         field_session_start_datetime_value:
           id: field_session_start_datetime_value
@@ -2473,6 +2548,7 @@ display:
           separator: ''
           hide_empty: false
       defaults:
+        empty: false
         access: false
         pager: false
         style: false
@@ -2531,6 +2607,7 @@ display:
         - url
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_committee'
         - 'config:field.storage.relation.field_agenda_item_disposition'
         - 'config:field.storage.relation.field_committee'
         - 'config:field.storage.relation.field_session_start_datetime'
