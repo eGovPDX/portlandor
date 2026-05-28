@@ -3,7 +3,18 @@ langcode: en
 status: open
 dependencies:
   module:
+    - antibot
+    - honeypot
+    - portland
     - portland_smartsheet
+third_party_settings:
+  antibot:
+    antibot: true
+  honeypot:
+    honeypot: true
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -30,6 +41,8 @@ elements: |-
     '#title': 'Your contact email'
     '#autocomplete': email
     '#input_mask': "'alias': 'email'"
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
   report_bicycle_location:
     '#type': textarea
     '#title': 'Bicycle Location'
@@ -269,7 +282,7 @@ handlers:
   email:
     id: email
     handler_id: email
-    label: Email
+    label: 'Send submission by email'
     notes: ''
     status: true
     conditions: {  }
@@ -310,7 +323,10 @@ handlers:
     label: 'Confirmation email'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="contact_email"]':
+          filled: true
     weight: 0
     settings:
       states:
