@@ -27,39 +27,30 @@ description: ''
 categories:
   - Report
 elements: |-
-  contact_name:
-    '#type': textfield
-    '#title': 'Your name'
-    '#autocomplete': name
-  contact_phone_number:
-    '#type': textfield
-    '#title': 'Your contact phone number'
-    '#autocomplete': tel
-    '#input_mask': '(999) 999-9999'
-  contact_email:
-    '#type': textfield
-    '#title': 'Your contact email'
-    '#autocomplete': email
-    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  report_bicycle_location:
-    '#type': textarea
+  report_location:
+    '#type': portland_location_picker
     '#title': 'Bicycle location'
-    '#description': '<p>Please be as specific as possible.</p>'
-    '#description_display': before
+    '#required': true
+    '#place_name__access': false
+    '#location_search__title': 'Bicycle location'
+    '#location_details__access': false
+    '#require_boundary': true
   report_bicycle_description:
     '#type': textarea
     '#title': 'Bicycle description'
     '#description': '<p>Please be as detailed as possible.</p>'
     '#description_display': before
+    '#required': true
   report_bike_movement:
     '#type': radios
     '#title': 'Has the bicycle moved within 72 hours?'
     '#options': yes_no
+    '#required': true
   report_bike_storage:
     '#type': radios
     '#title': 'Is the bicycle attached to a City of Portland rack?'
     '#options': yes_no
+    '#required': true
   report_additional_comments_questions:
     '#type': textarea
     '#title': 'Additional comments or questions'
@@ -73,6 +64,26 @@ elements: |-
     '#sanitize': true
     '#max_resolution': 1280x1280
     '#attachment_image_style': webform_report_uploaded_image
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your contact information'
+    contact_name:
+      '#type': textfield
+      '#title': Name
+      '#autocomplete': name
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': '<p>We will use your email to confirm your submission.</p>'
+      '#autocomplete': email
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#autocomplete': tel-national
+      '#input_mask': '(999) 999-9999'
 css: ''
 javascript: ''
 settings:
@@ -270,9 +281,10 @@ handlers:
       column_mappings:
         7898164926648196: _submission_id_
         579815532171140: contact_name
-        5083415159541636: contact_phone_number
+        5083415159541636: contact_phone
         2831615345856388: contact_email
-        7377946609487748: report_bicycle_location
+        7377946609487748: report_location__location_lat
+        6843166736289668: report_location__location_lon
         1748447075274628: report_bicycle_description
         6252046702645124: report_bike_movement
         4000246888959876: report_bike_storage
@@ -342,7 +354,7 @@ handlers:
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
-      from_mail: _default
+      from_mail: noreply@portlandoregon.gov
       from_options: {  }
       from_name: _default
       reply_to: ''
@@ -350,17 +362,8 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Abandoned bicycle report received'
-      body: '<p>Thank you for reporting an abandoned bicycle. A City staff person will investigate within 10 business days. &nbsp;</p><p>You may not receive a direct response to your report, but the issue will be investigated. If you would like to contact a staff person please email <a href="mailto:abandonedbikes@portlandoregon.gov">abandonedbikes@portlandoregon.gov</a> or call <a href="tel:+1-503-823-5816">(503) 823-5816</a>.</p><p>Thank you!</p>'
-      excluded_elements:
-        contact_name: contact_name
-        contact_phone_number: contact_phone_number
-        contact_email: contact_email
-        report_bicycle_location: report_bicycle_location
-        report_bicycle_description: report_bicycle_description
-        report_bike_movement: report_bike_movement
-        report_bike_storage: report_bike_storage
-        report_additional_comments_questions: report_additional_comments_questions
-        report_bike_pictures: report_bike_pictures
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>Thank you for reporting an abandoned bicycle. A City staff person will investigate within 10 business days. &nbsp;</p><p>You may not receive a direct response to your report, but the issue will be investigated. If you would like to contact a staff person please email <a href="mailto:abandonedbikes@portlandoregon.gov">abandonedbikes@portlandoregon.gov</a> or call <a href="tel:+1-503-823-5816">(503) 823-5816</a>.</p><p>Thank you!</p>'
+      excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
