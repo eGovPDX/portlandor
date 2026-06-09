@@ -84,7 +84,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       : '';
 
     if (!empty($address)) {
-      $address = '<strong>' . $verified . 'Address:</strong> ' . Html::escape($value['location_address']);
+      $address = '<strong>' . $verified . 'Address:</strong> ' . Html::escape($address);
     }
 
     // IMPORTANT for composites: return a LIST of render arrays.
