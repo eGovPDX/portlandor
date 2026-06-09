@@ -1,81 +1,95 @@
-uuid: bbf233f4-ef71-4b30-b6f9-e4722d7b27c5
+uuid: 06e355bb-7562-4b25-8f5c-4361eaf7bd8b
 langcode: en
 status: open
 dependencies:
   module:
-    - portland_smartsheet
+    - portland_zendesk
 weight: 0
 open: null
 close: null
-uid: 151
+uid: 221
 template: false
 archive: false
-id: apply_wildland_urban_assessment
-title: 'Apply for a Wildland-Urban Interface Home Assessment'
+id: request_lien_reduction_review
+title: 'Request a Lien Reduction Review'
 description: ''
 categories: {  }
 elements: |-
-  contact_name:
-    '#type': textfield
-    '#title': Name
-    '#autocomplete': name
-    '#required': true
-  contact_address:
+  apply_site_address:
     '#type': portland_address_verifier
-    '#title': Address
-    '#required': true
+    '#title': 'Site address'
+    '#description_display': before
+    '#location_verification_status__required': true
+    '#location_address__title': 'Site address'
+    '#location_address__description': '<p>Please provide the address where you are requesting a Lien Reduction. Begin typing to see a list of possible address matches within the Portland metro area.</p>'
     '#location_address__required': true
+    '#unit_number__access': false
     '#location_city__required': true
     '#location_state__required': true
     '#location_zip__required': true
-    '#location_verification_status__required': true
-  contact_phone:
+    '#require_portland_city_limits': 1
+  request_lien_number:
     '#type': textfield
-    '#title': Phone
-    '#autocomplete': tel-national
-    '#input_mask': '(999) 999-9999'
+    '#title': 'Lien number'
     '#required': true
-  contact_email:
-    '#type': textfield
-    '#title': Email
-    '#autocomplete': email
-    '#required': true
-    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  apply_group_name_affiliation:
-    '#type': textfield
-    '#title': 'Group name or affiliation'
-    '#description': "<p>If applicable, provide the name of the Firewise community or neighborhood association you're affiliated with.</p>"
-    '#description_display': before
-  apply_preferred_date:
-    '#type': date
-    '#title': 'Please select your preferred date'
-    '#description': '<p>Assessments are available Tuesdays, Thursdays, and Fridays.</p>'
-    '#description_display': before
-    '#required': true
-    '#date_days':
-      - '2'
-      - '4'
-      - '5'
-  apply_preferred_time_for_assessment:
-    '#type': webform_time
-    '#title': 'Preferred time for assessment'
-    '#description': '<p>Assessments are available between the hours of 9:00am and 3:00pm.</p>'
-    '#description_display': before
-    '#required': true
-    '#time_format': 'g:i A'
-    '#min': '09:00:00'
-    '#max': '15:00:00'
-  apply_additional_info:
+  markup_please_explain:
+    '#type': webform_markup
+    '#markup': '<p>Please explain any reasons or extenuating circumstances that PP&amp;D should consider for a possible lien reduction. Please include any documentation such as last year(s) tax forms if you are low income, contractor receipts showing work completion date(s), etc., which you feel are relevant and can help with the decision-making process. If you are submitting tax forms or other related items, please remove your SSN or other sensitive information.</p>'
+  request_explanation:
     '#type': textarea
-    '#title': 'Additional info'
-    '#description': '<p>Do you have any additional needs, requests, or information you would like to share with us?</p>'
+    '#title': 'Please explain:'
+    '#required': true
+  request_attachments:
+    '#type': webform_document_file
+    '#title': 'File upload'
+    '#description': '<p><strong>Videos: </strong>If you want to share a video or additional photos, please reply to the confirmation email you will receive after submitting this form.</p>'
     '#description_display': before
-  report_completed_by:
-    '#type': textfield
-    '#title': 'Form completed by'
-    '#description': "<p>If you're filling out this form on someone else's behalf, please enter your name here.</p>"
-    '#description_display': before
+    '#multiple': 5
+    '#max_filesize': '30'
+    '#file_extensions': 'pdf jpg png jpeg'
+    '#sanitize': true
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your contact information'
+    contact_name:
+      '#type': textfield
+      '#title': Name
+      '#description_display': before
+      '#required': true
+    contact_email:
+      '#type': webform_email_confirm
+      '#title': Email
+      '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+      '#description_display': before
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#autocomplete': email
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#description': '<p>Please provide your phone number in case we need additional information.</p>'
+      '#description_display': before
+      '#input_mask': '(999) 999-9999'
+      '#required': true
+      '#autocomplete': tel-national
+    apply_mailing_address_different:
+      '#type': checkbox
+      '#title': 'Check here if your mailing address is different than the site address'
+    contact_mailing_address:
+      '#type': portland_address_verifier
+      '#title': 'Mailing address'
+      '#states':
+        visible:
+          ':input[name="apply_mailing_address_different"]':
+            checked: true
+      '#location_address__title': 'Mailing address'
+      '#location_address__description': 'Please provide a full mailing address.'
+      '#location_address__required': true
+      '#location_city__required': true
+      '#location_state__required': true
+      '#location_zip__required': true
+      '#address_suggest': '0'
 css: ''
 javascript: ''
 settings:
@@ -183,8 +197,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: '<p>Thank you for signing up for a wildland-urban interface home assessment. One of our team members will contact you within 1-2 business days to confirm if the day and time requested can be fulfilled. If not, we will provide alternative times to visit your home.</p>'
+  confirmation_title: 'Thank you!'
+  confirmation_message: '<p>The Portland Permitting &amp; Development Lien Reduction Review program has received your application. Because of reduced staffing, lien reviews are still being completed, but processing times are longer than usual. Please allow at least three months for this review.<br><br>Thank you in advance for your patience.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -261,72 +275,33 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  smartsheet_add_row_to_existing_sheet:
-    id: smartsheet_add_row
-    handler_id: smartsheet_add_row_to_existing_sheet
-    label: 'Smartsheet: add row to existing sheet'
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
     notes: ''
     status: true
     conditions: {  }
     weight: 0
     settings:
-      column_mappings:
-        1461919982243716: contact_name
-        5965519609614212: contact_address__location_full_address
-        3713719795928964: contact_phone
-        4156793454022532: contact_email
-        8660393081393028: apply_group_name_affiliation
-        497618756784004: apply_preferred_date
-        6359286798831492: apply_preferred_time_for_assessment
-        2749418570469252: apply_additional_info
-        5001218384154500: report_completed_by
-        7091419516456836: _submission_id_
-      multiple_rows_enable: null
-      multiple_rows_field: ''
-      multiple_rows_separator: ''
-      row_location: toTop
-      sheet_id: '687936044486532'
-      upload_attachments: '1'
-      field_handlers: {  }
-  email:
-    id: email
-    handler_id: email
-    label: 'Confirmation Email'
-    notes: ''
-    status: true
-    conditions:
-      disabled:
-        ':input[name="contact_email"]':
-          empty: true
-    weight: 0
-    settings:
-      states:
-        - completed
-      to_mail: '[webform_submission:values:contact_email:raw]'
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: portlandfireWUI@portlandoregon.gov
-      from_options: {  }
-      from_name: 'Portland Fire & Rescue'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'Wildland-Urban Interface Home Assessment Request Received'
-      body: '<p>Thank you for signing up for a wildland-urban interface home assessment. One of our team members will contact you within 1-2 business days to confirm if the day and time requested can be fulfilled. If not, we will provide alternative times to visit your home. <strong>Questions? Reply to this email or contact us at <a href="mailto:portlandfireWUI@portlandoregon.gov">portlandfireWUI@portlandoregon.gov</a></strong></p>'
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Lien Reduction Request'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '38194724565271'
+      assignee_id: ''
+      type: question
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'request_lien_reduction_review'"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '39505747816087'
+      excluded_elements:
+        request_attachments: request_attachments
 variants: {  }

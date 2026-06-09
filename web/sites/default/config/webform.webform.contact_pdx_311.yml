@@ -23,10 +23,17 @@ elements: |-
       'Provide general comment or feedback': 'Provide general comment or feedback'
       'Contact an elected official': 'Contact an elected official'
       'Provide website feedback': 'Provide website feedback'
-    '#default_value': 'Ask a question or get help with a report or request'
+    '#required': true
+  markup_01:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_contact_type"]':
+          unchecked: true
+    '#markup': '<p><em><strong>Make a selection to continue</strong></em></p>'
   section_report_other_issue:
     '#type': webform_section
-    '#title': 'Report or Request (Other Category)'
+    '#title': 'Report or Request'
     '#title_display': invisible
     '#states':
       visible:
@@ -104,6 +111,9 @@ elements: |-
         - or
         - ':input[name="report_contact_type"]':
             value: 'Provide general comment or feedback'
+    markup_contact_suggestion:
+      '#type': webform_markup
+      '#markup': '<p><strong>Please enter a phone number or email address for follow up.</strong></p>'
     contact_name:
       '#type': textfield
       '#title': Name
@@ -116,7 +126,6 @@ elements: |-
     contact_email:
       '#type': textfield
       '#title': Email
-      '#description': '<p>Enter your email to receive a confirmation, or leave this field blank to remain anonymous.</p>'
       '#prepopulate': true
       '#autocomplete': email
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -322,7 +331,15 @@ handlers:
     label: 'Zendesk new request'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        -
+          ':input[name="report_contact_type"]':
+            value: 'Contact an elected official'
+        - or
+        -
+          ':input[name="report_contact_type"]':
+            value: 'Provide website feedback'
     weight: 0
     settings:
       requester_name: contact_name

@@ -1,81 +1,89 @@
-uuid: bbf233f4-ef71-4b30-b6f9-e4722d7b27c5
+uuid: a7ff26d5-61c3-43bf-bf8d-4a923b82db88
 langcode: en
 status: open
 dependencies:
   module:
+    - antibot
+    - honeypot
+    - portland
     - portland_smartsheet
+third_party_settings:
+  antibot:
+    antibot: true
+  honeypot:
+    honeypot: true
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
-uid: 151
+uid: 60
 template: false
 archive: false
-id: apply_wildland_urban_assessment
-title: 'Apply for a Wildland-Urban Interface Home Assessment'
+id: report_abandoned_bicycle
+title: 'Report Abandoned Bicycle'
 description: ''
-categories: {  }
+categories:
+  - Report
 elements: |-
-  contact_name:
-    '#type': textfield
-    '#title': Name
-    '#autocomplete': name
+  report_location:
+    '#type': portland_location_picker
+    '#title': 'Bicycle location'
     '#required': true
-  contact_address:
-    '#type': portland_address_verifier
-    '#title': Address
-    '#required': true
-    '#location_address__required': true
-    '#location_city__required': true
-    '#location_state__required': true
-    '#location_zip__required': true
-    '#location_verification_status__required': true
-  contact_phone:
-    '#type': textfield
-    '#title': Phone
-    '#autocomplete': tel-national
-    '#input_mask': '(999) 999-9999'
-    '#required': true
-  contact_email:
-    '#type': textfield
-    '#title': Email
-    '#autocomplete': email
-    '#required': true
-    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  apply_group_name_affiliation:
-    '#type': textfield
-    '#title': 'Group name or affiliation'
-    '#description': "<p>If applicable, provide the name of the Firewise community or neighborhood association you're affiliated with.</p>"
-    '#description_display': before
-  apply_preferred_date:
-    '#type': date
-    '#title': 'Please select your preferred date'
-    '#description': '<p>Assessments are available Tuesdays, Thursdays, and Fridays.</p>'
-    '#description_display': before
-    '#required': true
-    '#date_days':
-      - '2'
-      - '4'
-      - '5'
-  apply_preferred_time_for_assessment:
-    '#type': webform_time
-    '#title': 'Preferred time for assessment'
-    '#description': '<p>Assessments are available between the hours of 9:00am and 3:00pm.</p>'
-    '#description_display': before
-    '#required': true
-    '#time_format': 'g:i A'
-    '#min': '09:00:00'
-    '#max': '15:00:00'
-  apply_additional_info:
+    '#place_name__access': false
+    '#location_search__title': 'Bicycle location'
+    '#location_details__access': false
+    '#require_boundary': true
+  report_bicycle_description:
     '#type': textarea
-    '#title': 'Additional info'
-    '#description': '<p>Do you have any additional needs, requests, or information you would like to share with us?</p>'
+    '#title': 'Bicycle description'
+    '#description': '<p>Please be as detailed as possible.</p>'
     '#description_display': before
-  report_completed_by:
-    '#type': textfield
-    '#title': 'Form completed by'
-    '#description': "<p>If you're filling out this form on someone else's behalf, please enter your name here.</p>"
-    '#description_display': before
+    '#required': true
+  report_bike_movement:
+    '#type': radios
+    '#title': 'Has the bicycle moved within 72 hours?'
+    '#options': yes_no
+    '#required': true
+  report_bike_storage:
+    '#type': radios
+    '#title': 'Is the bicycle attached to a City of Portland rack?'
+    '#options': yes_no
+    '#required': true
+  report_additional_comments_questions:
+    '#type': textarea
+    '#title': 'Additional comments or questions'
+  report_bike_pictures:
+    '#type': webform_image_file
+    '#title': 'Submit a picture, if possible'
+    '#file_preview': name
+    '#max_filesize': '30'
+    '#file_extensions': 'jpg png jpeg'
+    '#file_name': 'report_[webform_submission:uuid]'
+    '#sanitize': true
+    '#max_resolution': 1280x1280
+    '#attachment_image_style': webform_report_uploaded_image
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your contact information'
+    contact_name:
+      '#type': textfield
+      '#title': Name
+      '#autocomplete': name
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': '<p>We will use your email to confirm your submission.</p>'
+      '#autocomplete': email
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#autocomplete': tel-national
+      '#input_mask': '(999) 999-9999'
 css: ''
 javascript: ''
 settings:
@@ -184,7 +192,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>Thank you for signing up for a wildland-urban interface home assessment. One of our team members will contact you within 1-2 business days to confirm if the day and time requested can be fulfilled. If not, we will provide alternative times to visit your home.</p>'
+  confirmation_message: '<p>Thank you for reporting an abandoned bicycle. A City staff person will investigate within 10 business days. &nbsp;</p><p>You may not receive a direct response to your report, but the issue will be investigated. If you would like to contact a staff person please email <a href="mailto:abandonedbikes@portlandoregon.gov">abandonedbikes@portlandoregon.gov</a> or call <a href="tel:+1-503-823-5816">(503) 823-5816</a>.</p><p>Thank you!</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -271,33 +279,71 @@ handlers:
     weight: 0
     settings:
       column_mappings:
-        1461919982243716: contact_name
-        5965519609614212: contact_address__location_full_address
-        3713719795928964: contact_phone
-        4156793454022532: contact_email
-        8660393081393028: apply_group_name_affiliation
-        497618756784004: apply_preferred_date
-        6359286798831492: apply_preferred_time_for_assessment
-        2749418570469252: apply_additional_info
-        5001218384154500: report_completed_by
-        7091419516456836: _submission_id_
+        7898164926648196: _submission_id_
+        579815532171140: contact_name
+        5083415159541636: contact_phone
+        2831615345856388: contact_email
+        7377946609487748: report_location__location_lat
+        6843166736289668: report_location__location_lon
+        1748447075274628: report_bicycle_description
+        6252046702645124: report_bike_movement
+        4000246888959876: report_bike_storage
+        8503846516330372: report_additional_comments_questions
+      field_handlers: {  }
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
-      row_location: toTop
-      sheet_id: '687936044486532'
+      row_location: toBottom
+      sheet_id: '6738836942966660'
       upload_attachments: '1'
-      field_handlers: {  }
   email:
     id: email
     handler_id: email
-    label: 'Confirmation Email'
+    label: 'Send submission by email'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: abandonedbikes@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: ''
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: _default
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
+  confirmation_email:
+    id: email
+    handler_id: confirmation_email
+    label: 'Confirmation email'
     notes: ''
     status: true
     conditions:
-      disabled:
+      enabled:
         ':input[name="contact_email"]':
-          empty: true
+          filled: true
     weight: 0
     settings:
       states:
@@ -308,15 +354,15 @@ handlers:
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
-      from_mail: portlandfireWUI@portlandoregon.gov
+      from_mail: noreply@portlandoregon.gov
       from_options: {  }
-      from_name: 'Portland Fire & Rescue'
+      from_name: _default
       reply_to: ''
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: 'Wildland-Urban Interface Home Assessment Request Received'
-      body: '<p>Thank you for signing up for a wildland-urban interface home assessment. One of our team members will contact you within 1-2 business days to confirm if the day and time requested can be fulfilled. If not, we will provide alternative times to visit your home. <strong>Questions? Reply to this email or contact us at <a href="mailto:portlandfireWUI@portlandoregon.gov">portlandfireWUI@portlandoregon.gov</a></strong></p>'
+      subject: 'Abandoned bicycle report received'
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>Thank you for reporting an abandoned bicycle. A City staff person will investigate within 10 business days. &nbsp;</p><p>You may not receive a direct response to your report, but the issue will be investigated. If you would like to contact a staff person please email <a href="mailto:abandonedbikes@portlandoregon.gov">abandonedbikes@portlandoregon.gov</a> or call <a href="tel:+1-503-823-5816">(503) 823-5816</a>.</p><p>Thank you!</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
