@@ -1,7 +1,9 @@
 uuid: 34875576-e4a3-4988-9c96-4817b9a812e1
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_smartsheet
 weight: 0
 open: null
 close: null
@@ -88,6 +90,30 @@ elements: |-
       '#title': 'Is there a bus stop in front of the business?'
       '#options': yes_no
       '#required': true
+  section_contact_information:
+    '#type': webform_section
+    '#title': 'Contact Information'
+    container_applicant_contact_info:
+      '#type': container
+      apply_applicant_name:
+        '#type': textfield
+        '#title': 'Applicant name'
+        '#autocomplete': name
+        '#required': true
+      apply_applicant_email:
+        '#type': textfield
+        '#title': 'Applicant email address'
+        '#autocomplete': email
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      apply_applicant_phone:
+        '#type': textfield
+        '#title': 'Applicant phone number'
+        '#description': '<p>Optional</p>'
+        '#description_display': before
+        '#autocomplete': tel-national
+        '#input_mask': '(999) 999-9999'
   business_information:
     '#type': webform_section
     '#title': 'Business Information'
@@ -115,6 +141,7 @@ elements: |-
             checked: true
       '#location_address__title': 'Business address'
       '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one.'
+      '#unit_number__access': false
       '#location_city__access': false
       '#location_state__access': false
       '#location_zip__access': false
@@ -184,30 +211,6 @@ elements: |-
         Business: Business
         'Property owner': 'Property owner'
       '#required': true
-  section_contact_information:
-    '#type': webform_section
-    '#title': 'Contact Information'
-    container_applicant_contact_info:
-      '#type': container
-      apply_applicant_name:
-        '#type': textfield
-        '#title': 'Applicant name'
-        '#autocomplete': name
-        '#required': true
-      apply_applicant_email:
-        '#type': textfield
-        '#title': 'Applicant email address'
-        '#autocomplete': email
-        '#required': true
-        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-      apply_applicant_phone:
-        '#type': textfield
-        '#title': 'Applicant phone number'
-        '#description': '<p>Optional</p>'
-        '#description_display': before
-        '#autocomplete': tel-national
-        '#input_mask': '(999) 999-9999'
 css: ''
 javascript: ''
 settings:
@@ -316,7 +319,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: ''
+  confirmation_message: '<p>Thank you for your bike corral application. A PBOT staff person will follow up with your request within 7 business days.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -392,5 +395,86 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  email:
+    id: email
+    handler_id: email
+    label: 'Email to program manager'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: sarah.goforth@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: '<p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:user]</p><p>Submitted values are:</p><p>[webform_submission:values]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        340655904952196: _submission_id_
+        4844255532322692: apply_equipment_fee
+        2592455718637444: apply_corral_site_address__location_full_address
+        1640858134024068: apply_number_existing_racks
+        3691732895305604: apply_bikes_parked
+        7096055346007940: apply_peak_time
+        5380582755569540: apply_current_parking
+        3128782941884292: apply_metered_spaces
+        7632382569254788: apply_moving_traffic
+        2002883035041668: apply_fire_hydrant
+        6506482662412164: apply_bus_stop
+        4254682848726916: apply_applicant_name
+        173295686422404: apply_applicant_email
+        8758282476097412: apply_applicant_phone
+        876983128199044: apply_bike_corral_span
+        4676895313792900: apply_business_name
+        2425095500107652: apply_business_street_address__location_full_address
+        6928695127478148: apply_business_owner_manager
+        8195332522676100: apply_business_owner_email
+        1299195593265028: apply_business_owner_phone
+        5802795220635524: apply_name_property_owner_representative
+        3550995406950276: apply_property_owner_email
+        8054595034320772: apply_property_owner_phone
+        736245639843716: apply_business_owner_signature
+        5239845267214212: apply_property_owner_signature
+        2988045453528964: apply_maintenance_responsibility
+      field_handlers: {  }
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '8453406510239620'
+      upload_attachments: '1'
 variants: {  }
