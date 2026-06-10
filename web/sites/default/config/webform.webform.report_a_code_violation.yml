@@ -1,0 +1,544 @@
+uuid: b1853398-f9f9-4a5e-be02-05c548b4a289
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: report_a_code_violation
+title: 'Report a Code Violation (DEPRECATED)'
+description: '<p>Keep for conditional front-end questions.</p>'
+categories: {  }
+elements: |-
+  page_report_details:
+    '#type': webform_wizard_page
+    '#title': 'Report Details'
+    concern_type:
+      '#type': radios
+      '#title': 'What type of concern are you trying to report?'
+      '#options':
+        row_obstruction: 'An item that is blocking the street, sidewalk, or other part of the right-of-way'
+        noise: 'Noise or ongoing disturbances'
+        trash: 'Trash, debris, or illegal dumping'
+        property_use: 'A concern about how a property is being used'
+        construction: 'A concern about building location or construction on private property'
+        maintenance: 'A concern about property maintenance or safety'
+        property_dispute: 'Property line disputes, boundary disagreements, or damage caused by a neighbor'
+      '#required': true
+    row_redirect_message:
+      '#type': webform_markup
+      '#markup': '<div class="messages messages--warning"><p><strong>This issue should be reported using a different form.</strong></p><p>Items blocking the street, sidewalk, or right-of-way should be reported using the <a href="/transportation/pbot-maintenance-request">Report a Right-of-Way Obstruction form</a>.</p></div>'
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: row_obstruction
+    noise_redirect_message:
+      '#type': webform_markup
+      '#markup': '<div class="messages messages--warning"><p><strong>This issue should be reported using a different form.</strong></p><p>Noise concerns should be reported using the <a href="/civic/noise">Report a Noise Concern form</a>.</p></div>'
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: noise
+    trash_redirect_message:
+      '#type': webform_markup
+      '#markup': '<div class="messages messages--warning"><p><strong>This issue should be reported using a different form.</strong></p><p>Trash, debris, or illegal dumping should be reported using the <a href="/transportation/report-trash">Report Trash form</a>. That form will ask whether the issue is on private property or in the public right-of-way and route your report accordingly.</p></div>'
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: trash
+    property_dispute_exit_message:
+      '#type': webform_markup
+      '#markup': '<div class="messages messages--warning"><p><strong>The City cannot assist with this issue.</strong></p><p>Property line disputes, boundary disagreements, and damage caused by neighbors are civil matters between property owners. The City of Portland does not have jurisdiction over these issues.</p><p><strong>You may want to:</strong></p><ul><li>Contact a surveyor to establish property boundaries</li><li>Consult with a real estate attorney</li><li>Consider mediation services</li></ul><p>If you believe there is a code violation separate from the property dispute, please go back and select the appropriate category above.</p></div>'
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: property_dispute
+    report_property_use_type:
+      '#type': radios
+      '#title': 'Which of the following best describes the issue you are identifying?'
+      '#options':
+        business_rental: 'An issue related to someone running a business or renting space'
+        unapproved_living: 'Someone living in a space not approved for living, such as a garage, shed, or unpermitted space'
+        vehicles_parked_wrong: 'Cars, trucks, or RVs parked in the wrong place'
+        unallowable_activities: 'Using property for activities that are allowed only under special rules or permits? '
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: property_use
+      '#required': true
+    property_use_details:
+      '#type': radios
+      '#title': 'Select the issue that best matches your concern'
+      '#options':
+        str_rental: 'Short-term rental (i.e., Airbnb) without approval'
+        auto_repair: 'Auto repair business in a residential area or operating in the street'
+        commercial_residential: 'A business operating where only homes are allowed'
+        home_business: 'Running a home business with customers/employees but no required permit'
+        temporary_activity: 'Temporary activities going too long or too large (e.g., ongoing garage sale)'
+        exterior_storage: 'Commercial business storing or displaying items outside where its not allowed'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="report_property_use_type"]':
+            value: business_rental
+    report_property_use_sub_2:
+      '#type': radios
+      '#title': 'Select the issue that best matches your concern'
+      '#options':
+        oversized_trucks: 'Oversized trucks parked in residential zones'
+        inoperable_vehicles: 'Disabled or inoperable vehicles stored on private property'
+        unpaved_parking: 'Vehicles parked on unpaved areas'
+        rv_parking: 'Recreational vehicle parked in the wrong place on the property '
+      '#states':
+        visible:
+          ':input[name="report_property_use_type"]':
+            value: vehicles_parked_wrong
+      '#required': true
+    report_property_use_sub_3:
+      '#type': radios
+      '#title': 'Select the issue that best matches your concern'
+      '#options':
+        land_use_conditions: 'Not following conditions from a land use approval'
+        special_zone: 'Activities restricted by special zones -- (environmental, scenic, etc.)'
+        plan_district: 'Activities restricted by a plan district'
+      '#states':
+        visible:
+          ':input[name="report_property_use_type"]':
+            value: unallowable_activities
+      '#required': true
+    construction_existing_details:
+      '#type': radios
+      '#title': 'Select the specific issue'
+      '#options':
+        overheight_structure: 'Structure over 6 feet tall built inside required setbacks'
+        overheight_fence: 'Fence taller than allowed in the front yard'
+        unpermitted_work: 'Work done without required permits'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: construction
+    construction_unpermitted_details:
+      '#type': radios
+      '#title': 'Select the type of unpermitted work'
+      '#options':
+        residential_structural: 'Residential construction (additions, new garages, large sheds, demolition)'
+        trade_work: 'Electrical, plumbing, or mechanical work'
+        grading: 'Grading, excavation, or fill'
+        illegal_unit: 'An illegal unoccupied unit (unpermitted ADU or living space)'
+        commercial_structural: 'Commercial construction or change of use'
+        unpermitted_pavement: 'New pavement or parking area without permit'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="construction_existing_details"]':
+            value: unpermitted_work
+    maintenance_category:
+      '#type': radios
+      '#title': 'What is the primary concern?'
+      '#options':
+        building_condition: 'Building condition or structural safety'
+        yard_exterior: 'Yard or exterior issues'
+        lighting: 'Excessive or intrusive lighting (glare from property)'
+      '#states':
+        visible:
+          ':input[name="concern_type"]':
+            value: maintenance
+        required:
+          ':input[name="concern_type"]':
+            value: maintenance
+    maintenance_building_details:
+      '#type': radios
+      '#title': 'Select the specific building issue'
+      '#options':
+        structural_safety: 'Failing building or retaining wall (structural safety issue)'
+        building_upkeep: 'Building with major upkeep issues (roof damage, broken windows, peeling paint, etc.)'
+        derelict_building: 'Vacant or boarded building in disrepair'
+        vacant_open: 'Vacant building left open and accessible'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="maintenance_category"]':
+            value: building_condition
+    maintenance_yard_details:
+      '#type': radios
+      '#title': 'Select the specific yard or exterior issue'
+      '#options':
+        exterior_trash: 'Accumulated trash or debris on the property'
+        illegal_dumping: 'Illegal dumping of materials or garbage on property'
+        tall_grass: 'Grass or weeds overgrown (typically over 10 inches)'
+        vegetation_encroachment: 'Vegetation from property blocking or encroaching into sidewalks or streets'
+        erosion: 'Erosion, unstable slopes, or potential landslide concerns'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="maintenance_category"]':
+            value: yard_exterior
+    vegetation_note:
+      '#type': webform_markup
+      '#states':
+        visible:
+          - ':input[name="maintenance_yard_details"]':
+              value: tall_grass
+          - or
+          - ':input[name="maintenance_yard_details"]':
+              value: vegetation_encroachment
+      '#markup': '<div class="messages messages--warning"><p><strong>Note:</strong> We sometimes get reports down this path that relate to issues in the right-of-way. If the vegetation is growing from public property, please use the <a href="/transportation/pbot-maintenance-request">ROW Maintenance form</a>.</p></div>'
+  page_additional_information:
+    '#type': webform_wizard_page
+    '#title': 'Additional Information'
+    case_building_section:
+      '#type': webform_markup
+      '#states':
+        visible:
+          - ':input[name="concern_type"]':
+              value: property_use
+          - or
+          - ':input[name="concern_type"]':
+              value: construction
+          - or
+          - ':input[name="concern_type"]':
+              value: maintenance
+      '#markup': '<h2>Additional Information</h2>'
+    report_concern_description:
+      '#type': textarea
+      '#title': 'Please provide more details about the concern you are reporting'
+    visible_from_street:
+      '#type': radios
+      '#title': 'Can this issue be seen from the street or public sidewalk?'
+      '#options':
+        'yes': 'Yes, clearly visible from public space'
+        'no': 'No, only visible from private property'
+        unsure: 'Not sure'
+      '#states':
+        visible:
+          - ':input[name="concern_type"]':
+              value: property_use
+          - or
+          - ':input[name="concern_type"]':
+              value: construction
+          - or
+          - ':input[name="concern_type"]':
+              value: maintenance
+        required:
+          - ':input[name="concern_type"]':
+              value: property_use
+          - or
+          - ':input[name="concern_type"]':
+              value: construction
+          - or
+          - ':input[name="concern_type"]':
+              value: maintenance
+    legal_access:
+      '#type': radios
+      '#title': 'Do you have legal access to this property?'
+      '#options':
+        owner: 'Yes, I own it'
+        renter: 'Yes, I rent/occupy it'
+        permission: 'Yes, I have owner permission'
+        no_access: 'No'
+      '#states':
+        visible:
+          - ':input[name="visible_from_street"]':
+              value: 'no'
+          - or
+          - ':input[name="visible_from_street"]':
+              value: unsure
+    inspector_access:
+      '#type': radios
+      '#title': 'May a Code Enforcement inspector access the property for inspection?'
+      '#options':
+        yes_without_contact: 'Yes, inspector may access without contacting me first'
+        yes_with_contact: 'Yes, but please contact me before accessing'
+        no_access: 'No, I cannot grant access'
+      '#states':
+        visible:
+          - ':input[name="legal_access"]':
+              value: owner
+    portland_location_picker:
+      '#type': portland_location_picker
+      '#title': 'Location of Concern'
+      '#location_search__title': 'Location of concern'
+      '#required': true
+  page_contact_information:
+    '#type': webform_wizard_page
+    '#title': 'Contact Information'
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      '#states':
+        visible:
+          ':input[name="visible_from_street"]':
+            checked: true
+      contact_name:
+        '#type': textfield
+        '#title': 'Full Name'
+        '#description': '<p>In order for a case to be considered, a full name must be provided.</p>'
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': 'We will use your email address to respond to your report or request if needed.'
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+    contact_home_address:
+      '#type': portland_address_verifier
+      '#title': 'Your Home Address'
+      '#location_address__title': 'Your Home Address'
+      '#required': true
+    section_public_records_statement:
+      '#type': webform_section
+      '#title': 'Confidentiality Statement'
+      '#states':
+        visible:
+          ':input[name="visible_from_street"]':
+            checked: true
+      confidentiality_waiver:
+        '#type': radios
+        '#title': 'Confidentiality Waiver'
+        '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+        '#description_display': before
+        '#options':
+          'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+          'I waive confidentiality': 'I choose to waive confidentiality.'
+        '#required': true
+        '#default_value': 'I do not waive confidentiality'
+      markup_formal_complaint:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_testify_code_hearings"]':
+              value:
+                pattern: 'Yes'
+              ':input[name="confidentiality_waiver"]':
+                '!value': 'I waive confidentiality'
+        '#markup': '<div class="webform-alert alert alert--warning next-steps"><p>If you have chosen to file a formal complaint, you will need to <strong>choose to waive confidentiality</strong> in order for the City to investigate.</p></div>'
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_file_limit_message: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: Email
+      subject: 'Code Violation'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '39016235027223'
+      assignee_id: ''
+      type: question
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '39016409898519'
+variants: {  }

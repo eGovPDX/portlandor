@@ -3,15 +3,7 @@ langcode: en
 status: open
 dependencies:
   module:
-    - portland
     - portland_zendesk
-third_party_settings:
-  portland:
-    disable_demographic_form_prompt: 1
-    exclude_from_json:
-      request_document_upload: request_document_upload
-      computed_contact_full_name: computed_contact_full_name
-      computed_record_types: computed_record_types
 weight: 0
 open: null
 close: null
@@ -23,20 +15,20 @@ title: 'Request a Public Record Exemption'
 description: ''
 categories: {  }
 elements: |-
-  container_exemption_type:
-    '#type': container
-    request_exemption_type:
+  section_user_type:
+    '#type': webform_section
+    request_user_type:
       '#type': radios
       '#title': 'Which of the following best describes you?'
-      '#required': true
       '#options':
-        personal_safety: 'I am a Community Member looking to have my personal information redacted from certain City records'
-        government_attorney: 'I am a Government Attorney looking to request the City exempt specific personal information from public disclosure'
+        'I am a Community Member looking to have my personal information redacted from certain City Records': 'I am a Community Member looking to have my personal information redacted from certain City Records'
+        'I am a Government Attorney looking to request the city exempt specific personal information from public disclosure': 'I am a Government Attorney looking to request the city exempt specific personal information from public disclosure'
+      '#options_display': buttons_vertical
     markup_make_selection:
       '#type': webform_markup
       '#states':
         visible:
-          ':input[name="request_exemption_type"]':
+          ':input[name="request_user_type"]':
             unchecked: true
       '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
   section_confidentiality:
@@ -44,35 +36,28 @@ elements: |-
     '#title': Confidentiality
     '#states':
       invisible:
-        ':input[name="request_exemption_type"]':
+        ':input[name="request_user_type"]':
           unchecked: true
-    request_confidentiality:
+    report_confidentiality:
       '#type': radios
       '#title': 'I request that all the information I provide on this form, along with any attached documents, be kept confidential:'
       '#options':
-        'Yes': 'Yes, I request confidentiality -- This confirms your intention is to submit this form in confidence regardless of whether your exemption is granted or not.'
-        'No': 'No, I waive confidentiality -- This could result in the subsequent public disclosure of any nonexempt information provided in this form.'
+        'Yes, I request confidentiality': 'Yes, I request confidentiality -- This confirms your intention is to submit this form in confidence regardless of whether your exemption is granted or not.'
+        'No, I waive confidentiality': 'No, I waive confidentiality -- This could result in the subsequent public disclosure of any nonexempt information provided in this form.'
       '#required': true
   section_contact:
     '#type': webform_section
-    '#title': 'Your contact information'
+    '#title': 'Your Contact Information'
     '#states':
       invisible:
-        ':input[name="request_exemption_type"]':
+        ':input[name="request_user_type"]':
           unchecked: true
-    markup_contact_explanation:
-      '#type': webform_markup
-      '#markup': '<p>The information in this section, including your name, is generally not eligible for redaction if it appears in a public record outside of this form. The primary exception is if your "<strong>Contact Email</strong>" is the same as your exempted "<strong>Personal Email</strong>."</p>'
     contact_first_name:
       '#type': textfield
-      '#title': 'First name'
-      '#autocomplete': given-name
-      '#required': true
+      '#title': 'First Name'
     contact_last_name:
       '#type': textfield
-      '#title': 'Last name'
-      '#autocomplete': family-name
-      '#required': true
+      '#title': 'Last Name'
     contact_aliases:
       '#type': textfield
       '#title': 'Aliases, AKAs, maiden names, other names used'
@@ -80,18 +65,16 @@ elements: |-
       '#type': radios
       '#title': 'Are you currently employed by the City of Portland?'
       '#options': yes_no
-      '#required': true
-    contact_city_bureau:
+    contact_cop_bureau:
       '#type': textfield
-      '#title': 'What is the bureau/office where you work?'
-      '#required': true
+      '#title': 'Bureau/Office where you work'
       '#states':
         visible:
           ':input[name="contact_city_employee"]':
             value: 'Yes'
-    contact_city_personnel_number:
+    contact_cop_prnr:
       '#type': textfield
-      '#title': 'Personnel number (PERNR):'
+      '#title': 'PRNR Employee Number:'
       '#states':
         visible:
           ':input[name="contact_city_employee"]':
@@ -101,226 +84,141 @@ elements: |-
       '#title': 'Names of family members whose safety is at risk'
       '#description': '<p>Only include family members who currently reside with you.</p>'
       '#description_display': before
-      '#states':
-        visible:
-          ':input[name="request_exemption_type"]':
-            value: personal_safety
     contact_email:
       '#type': textfield
-      '#title': 'Contact email'
-      '#autocomplete': email
-      '#description': '<p>This is the email we will use to communicate with you regarding your request.</p><br><p>NOTE: If this is the same as a personal email address you are seeking to withhold from disclosure you must include it both here <strong>AND</strong> in the "<strong>Personal email</strong>" field in the next section.</p>'
+      '#title': 'Contact Email'
+      '#description': '<p style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:;" inter="" var",="" arial,="" helvetica,="" sans-serif,="" "segoe="" ui="" emoji",="" symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;margin:0px;orphans:2;scrollbar-color:rgb(135,="" 141,="" 171)="" rgba(0,="" 0,="" 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"="">This is the email we will use to communicate with you regarding your request.</p><p style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:;" inter="" var",="" arial,="" helvetica,="" sans-serif,="" "segoe="" ui="" emoji",="" symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;margin:0px;orphans:2;scrollbar-color:rgb(135,="" 141,="" 171)="" rgba(0,="" 0,="" 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"="">&nbsp;</p><p style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:;" inter="" var",="" arial,="" helvetica,="" sans-serif,="" "segoe="" ui="" emoji",="" symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;margin:0px;orphans:2;scrollbar-color:rgb(135,="" 141,="" 171)="" rgba(0,="" 0,="" 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"="">NOTE: If this is the same as a personal email address you are seeking to withhold from disclosure you must include it both here <strong style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);">AND </strong>in the "<strong style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);">Personal Email</strong>" field in the next section.</p>'
       '#description_display': before
       '#required': true
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern': '^[a-zA-Z0-9.%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
   section_personal_information:
     '#type': webform_section
-    '#title': 'Personal information to exempt'
+    '#title': 'Personal Information'
     '#states':
       invisible:
-        ':input[name="request_exemption_type"]':
+        ':input[name="request_user_type"]':
           unchecked: true
-    markup_personal_info_explanation:
-      '#type': webform_markup
-      '#markup': '<p><strong>I am requesting that the City of Portland withhold the following personal information and keep it confidential:</strong></p>'
-    request_personal_email:
-      '#type': textarea
-      '#title': 'Personal email(s)'
+    personal_email:
+      '#type': textfield
+      '#title': 'Personal Email'
       '#description': '<p>Personal electronic mail addresses sought to be kept confidential. Business, work, government, and other public accounts are not eligible for this exemption.</p>'
       '#description_display': before
-      '#autocomplete': email
-    request_personal_phone:
-      '#type': textfield
-      '#title': 'Personal telephone number'
-      '#description': '<p>Personal phone number sought to be kept confidential.</p>'
-      '#description_display': before
-      '#autocomplete': tel-national
-      '#input_mask': '(999) 999-9999'
-    request_personal_home_address:
+      '#pattern': '^[a-zA-Z0-9.%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    personal_home_address:
       '#type': portland_address_verifier
-      '#title': 'Home address'
-      '#location_address__title': 'Home address'
-      '#location_address__description': ''
-  section_records_info:
+      '#title': 'Home Address'
+      '#location_address__title': 'Mailing Address'
+    personal_phone_number:
+      '#type': textfield
+      '#title': 'Personal Telephone Number'
+      '#input_mask': '(999) 999-9999'
+  request_records_id:
     '#type': webform_section
-    '#title': 'Identify the records'
+    '#title': 'Identify the Records'
     '#description': '<p>Please indicate which records you would like the City of Portland to exempt by checking the appropriate boxes below. Providing as much detail as possible will greatly assist in successfully exempting your information.</p>'
     '#states':
       invisible:
-        ':input[name="request_exemption_type"]':
+        ':input[name="request_user_type"]':
           unchecked: true
-    request_record_types:
+    request_which_records:
       '#type': webform_checkboxes_other
-      '#title': 'I request that those portions of records containing my home address, email, or phone number (as specified above) be redacted or withheld from public disclosure:'
+      '#title': 'I request that those portions of records containing my home address, email, or phone number (as specified above) be redacted or withheld from public disclosure: '
       '#options':
-        311_calls: '311 Calls -- Specify date(s)'
-        911_calls: '911 Calls -- Specify date(s); Case number(s)'
-        city_classes_or_events: 'City Classes or Events'
-        city_permit_records: 'City Permit Records'
-        city_taxes: 'City Taxes'
-        elections_candidate_filing: 'Elections Candidate Filing'
-        email_to_from_city: 'Email To/From the City'
-        hr_employment_applications_resumes: 'HR - Employment Applications and Resumes'
-        police_records: 'Police Records -- Specify date(s); Case number(s)'
-        portlandmaps: PortlandMaps
-        public_comments: 'Public Comments'
-        text_messages: 'Text Messages Sent/Received with the City'
-        utility_bills: 'Utility Bills'
-        violation_notices: 'Violation Notices'
-      '#other__option_label': 'Other Records the City Possesses'
-      '#other__title': 'Other (please describe below)'
-      '#other__description_display': before
-      '#other__description': 'In order to be granted, the law requires you to describe the records needing redaction with specificity.'
-      '#required': true
-    request_election_info:
-      '#type': textarea
-      '#title': 'Identify the City of Portland office(s) sought and election year(s).'
-      '#required': true
+        '311 Calls': '311 Calls -- Specify date(s)'
+        '911 Calls': '911 Calls -- Specify date(s); Case number(s)'
+        'City Classes or Events': 'City Classes or Events'
+        'City Permit Records': 'City Permit Records'
+        'City Taxes': 'City Taxes'
+        'Elections Candidate Filing': 'Elections Candidate Filing'
+        'Email To/From the City': 'Email To/From the City'
+        'HR - Employment Applications and Resumes': 'HR - Employment Applications and Resumes'
+        'Police Records': 'Police Records -- Specify date(s); Case number(s)'
+        PortlandMaps: PortlandMaps
+        'Public Comments': 'Public Comments'
+        'Text Messages Sent/Received with the City': 'Text Messages Sent/Received with the City'
+        'Utility Bills': 'Utility Bills'
+        'Violation Notices': 'Violation Notices'
+      '#other__option_label': 'Other… (Please Describe Below)'
+      '#other__title': 'Other Records the City Possesses '
+      '#other__description': 'In order to be granted, the law requires you to describe the records needing redaction with specificity. List or describe add'
+    request_date_of_birth:
+      '#type': date
+      '#title': 'Date of Birth'
+      '#description': '<p>The date of birth is used to confirm identities in Portland Police systems and is essential for redacting your personal information from those records.</p><p>﻿If you have listed family members in the "<strong>Name of family members whose safety is at risk</strong>" field above, please include their birth dates as well.</p><p>&nbsp;</p>'
       '#states':
         visible:
-          ':input[name="request_record_types[checkboxes][elections_candidate_filing]"]':
-            checked: true
-    request_city_employment_info:
-      '#type': textarea
-      '#title': 'Identify the City of Portland position(s) applied for or held, and the approximate year(s).'
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="contact_city_employee"]':
-            value: No
-          ':input[name="request_record_types[checkboxes][hr_employment_applications_resumes]"]':
-            checked: true
-    request_birth_dates:
-      '#type': textarea
-      '#title': 'Date(s) of birth'
-      '#description': '<p>The date of birth is used to confirm identities in Portland Police systems and is essential for redacting your personal information from those records.</p><p>If you have listed family members in the "<strong>Name of family members whose safety is at risk</strong>" field above, please include their name &amp; birth dates as well.</p><p>&nbsp;</p>'
-      '#description_display': before
-      '#autocomplete': bday
-      '#required': true
-      '#states':
-        visible:
-          - ':input[name="request_record_types[checkboxes][911_calls]"]':
+          - ':input[name="request_which_records[checkboxes][911 Calls]"]':
               checked: true
           - or
-          - ':input[name="request_record_types[checkboxes][police_records]"]':
+          - ':input[name="request_which_records[checkboxes][Police Records]"]':
               checked: true
     markup_property_ownership:
       '#type': webform_markup
       '#states':
         visible:
-          ':input[name="request_record_types[checkboxes][portlandmaps]"]':
+          ':input[name="request_which_records[checkboxes][PortlandMaps]"]':
             checked: true
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">PortlandMaps property ownership is County data</h2><p class="mb-0">The City of Portland''s PortlandMaps site relies on data owned and maintained by Multnomah County. The City can replace the data on PortlandMaps, but it may still be available elsewhere or be unexpectedly replaced during an update. To complete the exemption of your ownership information at its source you must contact Julia Liberman at <a href="mailto:julia.liberman@multco.us">julia.liberman@multco.us</a></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">PortlandMaps Property Ownership is County Data</h2><p class="mb-0">The City of Portland''s PortlandMaps site relies on data owned and maintained by Multnomah County. The City can replace the data on PortlandMaps, but it may still be available elsewhere or be unexpectedly replaced during an update. To complete the exemption of your ownership information at its source you must contact Julia Liberman at</p></div>'
     report_property_id:
       '#type': textfield
       '#title': 'Property ID in PortlandMaps'
-      '#description': '<p>This code can be found on the <a href="https://www.portlandmaps.com/advanced/?action=assessor" rel="nofollow noreferrer noopener" target="_blank">PortlandMaps Assessor page</a> by searching your address and looking for the "Property ID" field in the results.</p>'
+      '#description': '<p><em style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">This code can be found in the URL of your residential address in </em><a style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;" href="PortlandMaps " rel="nofollow noreferrer noopener" target="_blank"><em style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);">PortlandMaps</em></a><em style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">. For example: </em><strong style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">R246102</strong><em style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);"><strong style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"> </strong></em><em style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">is your Property ID if your address was 1221 SW 4th Ave: </em><a style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;" href="PortlandMaps " rel="nofollow noreferrer noopener" target="_blank"><https://www.portlandmaps.com/detail/property/1220-SW-5TH-AVE/</a>><a style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 0);box-sizing:border-box;font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;" href="PortlandMaps " rel="nofollow noreferrer noopener" target="_blank">R246102</a><a style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);text-align:start;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;" href="PortlandMaps " rel="nofollow noreferrer noopener" target="_blank">_did/</a><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(95, 103, 134);display:inline !important;float:none;font-family:"Inter var", Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">.</span></p>'
       '#description_display': before
       '#states':
         visible:
-          ':input[name="request_record_types[checkboxes][portlandmaps]"]':
+          ':input[name="request_which_records[checkboxes][PortlandMaps]"]':
             checked: true
     request_records_more_information:
       '#type': textarea
-      '#title': 'Help us locate your information in City records:'
-      '#description': |-
-        <p>Provide enough information to locate and identify the records selected above. Include as much detail as possible for each selection. Helpful information might include:</p>
-        <ul>
-          <li>Timeframes, dates, date ranges, approximate year.</li>
-          <li>Specific types of records, permits, forms submitted.</li>
-          <li>Names of classes, activities, events.</li>
-          <li>Employment positions applied for.</li>
-          <li>Bureaus or specific City employees with which you have worked or communicated.</li>
-          <li>Subjects or participants of messages or correspondence.</li>
-        </ul>
+      '#title': 'Help Us Locate Your Information in City Records'
+      '#description': '<p style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:;" inter="" var",="" arial,="" helvetica,="" sans-serif,="" "segoe="" ui="" emoji",="" symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;margin:0px;orphans:2;scrollbar-color:rgb(135,="" 141,="" 171)="" rgba(0,="" 0,="" 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"="">Provide enough information to locate and identify the records selected above. Include as much detail as possible for each selection. Helpful information might include:</p><ul style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);box-sizing:border-box;color:rgb(95, 103, 134);font-family:;" inter="" var",="" arial,="" helvetica,="" sans-serif,="" "segoe="" ui="" emoji",="" symbol";font-size:12px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;list-style-position:outside;margin:0px;orphans:2;padding:0.5em="" 0.5em="" 2em;scrollbar-color:rgb(135,="" 141,="" 171)="" rgba(0,="" 0,="" 0);text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;"=""><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="e831d13b78b3a9da485ef63411277f7f2">Timeframes, dates, date ranges, approximate year.</li><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="ec13b1d0a80287f21a7595cde6fe82248">Specific types of records, permits, forms submitted.</li><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="efc03e033adda67a5cfbdfa3165d858a5">Names of classes, activities, events.</li><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="e45cd8a7e35b311700f049088325402fa">Employment positions applied for.</li><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="e2cc3680ef9733b988f6491e701a3de29">Bureaus or specific City employees with which you have worked or communicated.</li><li style="box-sizing:border-box;scrollbar-color:rgb(135, 141, 171) rgba(0, 0, 0, 0);" data-list-item-id="e07c49b2c60a8a1310237fc2add9b5290">Subjects or participants of messages or correspondence.</li></ul>'
       '#description_display': before
-  section_exemption_personal_safety:
+  request_safety_risk_explanation:
     '#type': webform_section
-    '#title': 'Eligibility for exemption (ORS 192.368)'
+    '#title': 'Explain How Your Safety is at Risk'
     '#states':
-      visible:
-        ':input[name="request_exemption_type"]':
-          value: personal_safety
+      invisible:
+        ':input[name="request_user_type"]':
+          unchecked: true
     markup_safety_risk_explanation:
       '#type': webform_markup
-      '#markup': '<p>To qualify for this exemption, you must provide evidence that disclosure of your home address, personal telephone number, or personal electronic mail address would pose a danger to your personal safety or that of a family member residing with you.</p><p><strong>How to provide evidence</strong></p><p>If you have supporting documentary evidence (e.g., police reports, court orders), please attach it below. If you do not have evidence to attach, provide as much detail as possible in your statement, including:</p><ul><li>Specific incidents, such as threats or acts of violence.</li><li>Police report numbers, court orders, or references to criminal/civil proceedings.</li><li>Dates of 911 calls or non-emergency reports.</li><li>Contacts within the City of Portland who can verify your statements.</li></ul><p><strong>Examples of statements</strong></p><ul><li>"I am a victim of domestic violence and am including related police report numbers."</li><li>"I have a protective/restraining order, temporary restraining order (TRO), or other court order, and can attach evidence."</li><li>"I have a stalker with a history of violence. These are the dates of 911 calls I have made about my situation."</li><li>"I have received direct threats to my life or safety, including the following examples (e.g., threatening messages, confrontations)."</li></ul><p><strong>Details to include in your statement</strong></p><p>Whether or not you have evidence to attach, include relevant details such as:</p><ul><li>Documentation or reference numbers for legal, medical, or public safety records.</li><li>Dates and descriptions of incidents.</li><li>Information about individuals posing a threat (if safe to disclose).</li><li>Specific information about threats that have occurred (location, what was said, etc.)</li></ul>'
+      '#markup': '<h3>Eligibility for Exemption ORS 192.368</h3><p>To qualify for this exemption, you must provide evidence that disclosure of your home address, personal telephone number, or personal electronic mail address would pose a danger to your personal safety or that of a family member residing with you.</p><p><strong>How to Provide Evidence</strong></p><p>If you have supporting documentary evidence (e.g., police reports, court orders), please attach it below. If you do not have evidence to attach, provide as much detail as possible in your statement, including:</p><ul><li>Specific incidents, such as threats or acts of violence.</li><li>Police report numbers, court orders, or references to criminal/civil proceedings.</li><li>Dates of 911 calls or non-emergency reports.</li><li>Contacts within the City of Portland who can verify your statements.</li></ul><p><strong>Examples of Statements</strong></p><ul><li>"I am a victim of domestic violence and am including related police report numbers."</li><li>"I have a protective/restraining order, temporary restraining order (TRO), or other court order, and can attach evidence."</li><li>"I have a stalker with a history of violence. These are the dates of 911 calls I have made about my situation."</li><li>"I have received direct threats to my life or safety, including the following examples (e.g., threatening messages, confrontations)."</li></ul><p><strong>Details to Include in Your Statement</strong></p><p>Whether or not you have evidence to attach, include relevant details such as:</p><ul><li>Documentation or reference numbers for legal, medical, or public safety records.</li><li>Dates and descriptions of incidents.</li><li>Information about individuals posing a threat (if safe to disclose).</li><li>Specific information about threats that have occurred (location, what was said, etc.)</li></ul>'
     request_safety_risk_write_up:
       '#type': textarea
-      '#title': 'Explain how the release of your information could endanger your personal safety:'
-      '#required': true
-  section_exemption_government_attorney:
-    '#type': webform_section
-    '#title': 'Eligibility for exemption (ORS 192.345(32))'
-    '#states':
-      visible:
-        ':input[name="request_exemption_type"]':
-          value: government_attorney
-    markup_attorney_explanation:
-      '#type': webform_markup
-      '#markup': '<p>To qualify for an ORS 192.345(32) exemption you "must be a district attorney, a deputy district attorney, the Attorney General or an assistant attorney general, the United States Attorney for the District of Oregon or an assistant United States attorney for the District of Oregon, a city attorney who engages in the prosecution of criminal matters or a deputy city attorney who engages in the prosecution of criminal matters." (ORS 192.345(32)(b)).</p>'
+      '#title': 'Explain how the release of your information could endanger your personal safety.'
     request_attorney_role:
       '#type': textarea
       '#title': 'What is your role as an attorney?'
-      '#required': true
+      '#description': '<p>To qualify for an ORS 192.345(32) exemption you "must be a district attorney, a deputy district attorney, the Attorney General or an assistant attorney general, the United States Attorney for the District of Oregon or an assistant United States attorney for the District of Oregon, a city attorney who engages in the prosecution of criminal matters or a deputy city attorney who engages in the prosecution of criminal matters." (ORS 192.345(32)(b)).</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="request_user_type"]':
+            value: 'I am a Government Attorney looking to request the city exempt specific personal information from public disclosure'
     request_bar_number:
       '#type': textfield
-      '#title': 'Bar number'
-      '#required': true
-  request_document_upload:
-    '#type': webform_document_file
-    '#title': 'Attach documentary evidence:'
-    '#states':
-      invisible:
-        ':input[name="request_exemption_type"]':
-          unchecked: true
-    '#multiple': 12
-    '#file_help': help
-    '#max_filesize': '30'
-    '#file_extensions': 'txt pdf jpg jpeg png'
-  computed_contact_full_name:
-    '#type': webform_computed_token
-    '#title': 'Computed - Requester full name'
-    '#display_on': none
-    '#mode': text
-    '#template': '[webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
-  computed_record_types:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Record types'
-    '#display_on': none
-    '#mode': text
-    '#whitespace': trim
-    '#template': |-
-      {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
-      {% for key in data.request_record_types %}
-        {% if key in element_option_keys %}
-          {# add a tag for each option that's not Other #}
-          38644290069143_{{ key }}
-        {% else %}
-          {# add tag if Other box is checked #}
-          38644290069143_other
-        {% endif %}
-      {% endfor %}
-  computed_other_record_type:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Other record type'
-    '#display_on': none
-    '#mode': text
-    '#whitespace': trim
-    '#template': |-
-      {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
-      {# we want only the data for the Other field (whatever is not in the element options) #}
-      {% for key in data.request_record_types %}
-        {% if key not in element_option_keys %}
-          {{ key }}
-        {% endif %}
-      {% endfor %}
+      '#title': 'Bar Number'
+      '#states':
+        visible:
+          ':input[name="request_user_type"]':
+            value: 'I am a Government Attorney looking to request the city exempt specific personal information from public disclosure'
+    request_document_upload:
+      '#type': webform_document_file
+      '#title': 'Attach documentary evidence:'
+      '#file_extensions': 'txt pdf doc docx ppt pptx xls xlsx'
+  request_full_name:
+    '#type': textfield
+    '#title': 'Requester Full Name'
+    '#access': false
+    '#default_value': '[webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
     '#states':
       invisible:
-        ':input[name="request_exemption_type"]':
+        ':input[name="request_user_type"]':
           unchecked: true
 css: ''
 javascript: ''
@@ -363,7 +261,6 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
-  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -429,10 +326,10 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Request received'
-  confirmation_message: "<p>The City of Portland Attorney's Office has received your Safety Exemption request. Please check the contact email address you provided for a confirmation message. If you have any questions, concerns, edits or follow-ups about this request, please reply to that email.</p><p>Depending on the workload, the City will try to contact you at the email address you provided with a decision within ten business days.</p>"
+  confirmation_title: ''
+  confirmation_message: ''
   confirmation_attributes: {  }
-  confirmation_back: false
+  confirmation_back: true
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -450,9 +347,9 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: all
-  purge_days: 14
-  results_disabled: true
+  purge: none
+  purge_days: null
+  results_disabled: false
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -516,11 +413,11 @@ handlers:
     conditions: {  }
     weight: 0
     settings:
-      requester_name: computed_contact_full_name
-      requester_email: contact_email
-      subject: 'City of Portland Response for Exemption Request'
+      requester_name: request_full_name
+      requester_email: Email
+      subject: 'Public Record Exemption'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform [webform_submission:values:computed_record_types]'
+      tags: 'drupal webform'
       priority: normal
       status: new
       recipient: ''
@@ -529,11 +426,9 @@ handlers:
       type: question
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'request_public_record_exemption'\r\n1500013095781: '[webform_submission:uuid]'\r\n38541424247831: ['38541424247831_[webform_submission:values:request_exemption_type:raw]', 'request_exemption_type']\r\n38538989655575: ['[webform_submission:values:contact_city_personnel_number]', 'contact_city_personnel_number']\r\n38539116720279: ['[webform_submission:values:contact_aliases]', 'contact_aliases']\r\n38977706851351: ['[webform_submission:values:request_birth_dates]', 'request_birth_dates']\r\n38539201633943: ['[webform_submission:values:report_property_id]', 'report_property_id']\r\n25600783638295: ['[webform_submission:values:request_personal_phone]', 'request_personal_phone']\r\n38541210666519: ['[webform_submission:values:contact_city_employee]', 'contact_city_employee']\r\n38541304431767: ['[webform_submission:values:request_confidentiality:raw]', 'request_confidentiality']\r\n38643663382295: ['[webform_submission:values:request_personal_email]', 'request_personal_email']\r\n27773229365143: ['[webform_submission:values:request_personal_home_address:location_address], [webform_submission:values:request_personal_home_address:location_city], [webform_submission:values:request_personal_home_address:location_state] [webform_submission:values:request_personal_home_address:location_zip]', 'request_personal_home_address:location_full_address']\r\n38977718034455: ['[webform_submission:values:request_records_more_information]', 'request_records_more_information']\r\n38977734502679: ['[webform_submission:values:contact_names_other]', 'contact_names_other']\r\n38644296015511: ['[webform_submission:values:computed_other_record_type]', 'computed_other_record_type']"
+      custom_fields: "6353388345367: 'request_public_record_exemption'\r\n1500013095781: '[webform_submission:uuid]'\r\n38538989655575: ['[webform_submission:values:contact_cop_prnr]', 'contact_cop_prnr']\r\n38539116720279: ['[webform_submission:values:contact_aliases]', 'contact_aliases']\r\n27985303578775: ['[webform_submission:values:request_date_of_birth]', 'request_date_of_birth']\r\n38539201633943: ['[webform_submission:values:report_property_id]', 'report_property_id']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n38541210666519: ['[webform_submission:values:contact_city_employee]', 'contact_city_employee']\r\n38541304431767: ['[webform_submission:values:confidentiality_waiver]', 'confidentiality_waiver']\r\n27773229365143: ['[webform_submission:values:contact_mailing_address:location_address], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address:location_full_address']"
       ticket_id_field: ''
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '36326315534487'
-      excluded_elements:
-        request_document_upload: request_document_upload
 variants: {  }
