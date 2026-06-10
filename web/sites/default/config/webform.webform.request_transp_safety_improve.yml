@@ -125,7 +125,12 @@ elements: |-
       '#require_boundary': true
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Planning/MapServer/36/query?geometry={{x}}%2C{{y}}&geometryType=esriGeometryPoint&outFields=IncomeIndexScore&f=json'
       '#click_query_property_path': 'features[0].attributes.IncomeIndexScore'
-      '#click_query_destination_field': household_matrix
+      '#click_query_destination_field': location_region_id
+    markup_01:
+      '#type': webform_markup
+      '#access_create_roles':
+        - anonymous
+      '#markup': '<div class="alert alert--warning next-steps"><h2>Important</h2><p><strong>City of Portland staff, please log in to use this form. </strong>You may use the "Editor log in" link in the page footer below.</p></div>'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -136,14 +141,15 @@ elements: |-
           - or
           - ':input[name="report_request_type"]':
               value: 'Removal of an ADA barrier or another type of ADA Accommodation'
-    markup_01:
-      '#type': webform_markup
-      '#access_create_roles':
-        - anonymous
-      '#markup': '<div class="alert alert--warning next-steps"><h2>Important</h2><p><strong>City of Portland staff, please log in to use this form. </strong>You may use the "Editor log in" link in the page footer below.</p></div>'
-    household_matrix:
-      '#type': hidden
+    computed_household_matrix:
+      '#type': webform_computed_twig
       '#title': 'Household Matrix'
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#mode': text
+      '#template': '{{ data.report_location.location_region_id }}'
+      '#whitespace': trim
   page_issue_details:
     '#type': webform_wizard_page
     '#title': 'Request Details'
@@ -209,7 +215,6 @@ elements: |-
           visible:
             ':input[name="report_crash_related"]':
               value: 'Yes'
-        '#date_date_element': datepicker
         '#date_time_step': '60'
       request_crash_details:
         '#type': textarea
@@ -561,11 +566,11 @@ elements: |-
         38868731455511_a
         38008128296599_study_needs_assignment
 
-      {% elseif data.report_crash_related == "No" and (data.household_matrix == "4" or data.household_matrix == "5") %}
+      {% elseif data.report_crash_related == "No" and (matrix == "4" or matrix == "5") %}
         {% set pri = "B" %}
         38868731455511_b
 
-      {% elseif data.report_crash_related == "No" and (data.household_matrix == "1" or data.household_matrix == "2" or data.household_matrix == "3") %}
+      {% elseif data.report_crash_related == "No" and (matrix == "1" or matrix == "2" or matrix == "3") %}
         {% set pri = "C" %}
         38868731455511_c
 
@@ -609,7 +614,7 @@ elements: |-
       {# Matrix is 4-5 and not pri A or M #}
       {% elseif (matrix == "4" or matrix == "5") and pri != "A" and pri != "M" %}
         {% set pri = "B" %}
-        38008128296599_b
+        38868731455511_b
         38008128296599_study_needs_assignment
         
       {# Matrix anything other than 4 or 5 #}
@@ -891,7 +896,7 @@ handlers:
       requester_name: Name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject] - [webform_submission:values:report_describe_the_issue:html]'
-      comment: "<p><strong>Ticket ID: [webform_submission:values:report_ticket_id]</strong></p>\r\n\r\n[webform_submission:values:html]"
+      comment: '[webform_submission:values:html]'
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
@@ -907,13 +912,13 @@ handlers:
       ticket_fork_field: ''
       ticket_form_id: '37898155853719'
       excluded_elements:
+        report_location__location_region_id: report_location__location_region_id
         support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
         support_agent_use_only__employee_email: support_agent_use_only__employee_email
         support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
-        report_ticket_id: report_ticket_id
   confirmation_email:
     id: email
     handler_id: confirmation_email
