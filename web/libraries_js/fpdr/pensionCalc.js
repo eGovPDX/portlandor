@@ -89,6 +89,21 @@
                 $('#edit-tax-offset').val( formatNumber(taxOffset, "$,.00") );
                 $('#edit-pension-estimate').val( formatNumber(pensionEstimate, "$,.00") );
                 $('#edit-calculated-pension-results').show();
+
+                // Announce results to screen readers via the live region
+                var liveRegion = document.getElementById('sr-live-message')
+                  || document.querySelector('.sr-live-message');
+                if (liveRegion) {
+                  liveRegion.textContent = '';
+                  requestAnimationFrame(function () {
+                    liveRegion.textContent =
+                      'Pension results calculated. ' +
+                      'Years of service: ' + formatNumber(serviceYears, ".##") + '. ' +
+                      'Base pension benefit estimate: ' + formatNumber(baseBenefit, "$,.00") + '. ' +
+                      'Tax offset benefit estimate: ' + formatNumber(taxOffset, "$,.00") + '. ' +
+                      'Monthly pension benefit estimate: ' + formatNumber(pensionEstimate, "$,.00") + '.';
+                  });
+                }
             }
 
             // Only show hiredBefore field when hire date is July 1995
