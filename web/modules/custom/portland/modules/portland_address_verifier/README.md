@@ -24,7 +24,7 @@ Allowed values: 1|0
 Default value: 0
 
 **verification_required**<br>
-OBSOLETE: Verification can be required by ticking the Required checkbox on the location_verification_status sub-element (#location_verification_status__required)
+OBSOLETE: Verification can be required by ticking the Required checkbox on the location_verification_status sub-element (#location_verification_status\_\_required)
 
 **verify_button_text**<br>
 Allows custom text to be used in the address verify button.
@@ -45,8 +45,7 @@ NOTE: This parameter is not yet implemented; currently defaults to "any"
 **address_suggest**<br>
 Controls whether address suggestions are provided after user starts typing in address field. The default is to enable this
 behavior, but it can be disabled in use cases where the address may not be in the Portland area (it can only suggest
-addresses that are in the PortlandMaps database). IMPORTANT NOTE: When suggestions are disabled and the Verify button is
-not present, the location_full_address does not get populated. The individual address parts need to be called individually.
+addresses that are in the PortlandMaps database).
 Allowed values: 1|0
 Default value: 1
 
@@ -72,13 +71,13 @@ When populated, a second API call is made to the specified API URL with the x/y 
 **secondary_query_capture_property**<br>
 A dot-notated string that defines the property path to retrieve a value from a nested JSON object. Supports:
 
-- **Nested properties** using dot syntax  
+- **Nested properties** using dot syntax
   _Example:_ `zoning.base.0.code` or `features.1.attributes.name`
 
-- **Array access** using numeric indices directly in the path  
+- **Array access** using numeric indices directly in the path
   _Example:_ `features.0.attributes.name`
 
-The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.  
+The path must exactly match the structure of the JSON object. Arrays must be accessed using explicit numeric indexes.
 This version does **not** support array mapping with empty brackets (`[]`). If any part of the path is invalid or missing, the function will return `undefined`.
 
 **verification_required**<br>
@@ -110,14 +109,15 @@ Default value: "A verified address is required. Please try again."
 **secondary_queries**<br>
 An array of queries to run when an address suggestion is selected or when an address is verified, in addition to built-in geolocation and address suggestion queries. When submitting to the PortlandMaps API, either geometry (x, y) or a detail_id (taxlotId) must be passed. When querying by geometry, pass the string `{"x":${x}, "y":${y}}`. The query functions will replace ${x} and ${y} with the coordinates that were provided by the autocomplete and verification functions. When querying by detail_id, the API expects the taxlotId. Pass an empty string or "taxlotId" as the value, and the function will use the previously retrieved taxlotId value.
 
-See the examples below. 
+See the examples below.
 
 The path property is dot-notated string that defines the property path to retrieve a value from a nested JSON object. The path must exactly match the structure of the JSON object. If any part of the path is invalid or missing, the function will return `undefined`. Supports:
-- **Nested properties** using dot syntax  
+
+- **Nested properties** using dot syntax
   _Example:_ `zoning.base[0].code`
-- **Array indexing** with bracket notation  
+- **Array indexing** with bracket notation
   _Example:_ `features[2].attributes.name`
-- **Mapping over arrays** using empty brackets `[]`, which returns an array of values from each element  
+- **Mapping over arrays** using empty brackets `[]`, which returns an array of values from each element
   _Example:_ `features[].attributes.name`
 
 <pre>
@@ -163,4 +163,3 @@ secondary_queries:
     capture:
       - path: general.percent_slope
         field: q6_project_site_slope</pre>
- 
