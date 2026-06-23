@@ -126,7 +126,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    // Add validaation hook that populates the location_full_address.
+    // Add validation hook that populates the location_full_address.
     $element['#element_validate'][] = [get_called_class(), 'validateElement'];
 
     $key = isset($element['#webform_key']) ? $element['#webform_key'] : "";
