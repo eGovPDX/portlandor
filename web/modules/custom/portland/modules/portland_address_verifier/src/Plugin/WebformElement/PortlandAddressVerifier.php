@@ -77,45 +77,21 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
-    $e = static fn($s) => Html::escape($s);
 
-    // Builds the display string used by [webform_submission:values:location].
-    $lines = [];
-
-    $address = '';
+    $address = $this->buildFullAddress($value);
     $verified = (!empty($value['location_verification_status']) && $value['location_verification_status'] === 'Verified')
       ? 'Verified '
       : '';
 
-    if (!empty($value['location_address'])) {
-      $address = '<strong>' . $verified . 'Address:</strong> ' . $e($value['location_address']);
-    }
-
-    if (!empty($value['unit_number'])) {
-      $address .= ' ' . $e($value['unit_number']);
-    }
-
-    if (!empty($value['location_city'])) {
-      $address .= ', ' . $e($value['location_city']);
-    }
-
-    if (!empty($value['location_state'])) {
-      $address .= ', ' . $e($value['location_state']);
-    }
-
-    if (!empty($value['location_zip'])) {
-      $address .= ' ' . $e($value['location_zip']);
-    }
-
-    if ($address !== '') {
-      $lines[] = $address;
+    if (!empty($address)) {
+      $address = '<strong>' . $verified . 'Address:</strong> ' . Html::escape($address);
     }
 
     // IMPORTANT for composites: return a LIST of render arrays.
     // Single item containing the full block:
     return [
       [
-        '#markup' => Markup::create('<p>' . implode('<br />', $lines) . '</p>'),
+        '#markup' => Markup::create($address),
       ],
     ];
   }
@@ -149,6 +125,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    */
   public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
+
+    // Add validation hook that populates the location_full_address.
+    $element['#element_validate'][] = [get_called_class(), 'validateElement'];
 
     $key = isset($element['#webform_key']) ? $element['#webform_key'] : "";
 
@@ -207,5 +186,42 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $secondaryQueries = array_key_exists('#secondary_queries', $element) ? $element['#secondary_queries'] : false;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_queries'] = $secondaryQueries;
+  }
+
+  /**
+   * Custom validation handler to build the full address string and set it in the element's value.
+   */
+  public static function validateElement(array &$element, FormStateInterface $form_state, array &$complete_form): void {
+    $value = $form_state->getValue($element['#webform_key']);
+    if (!is_array($value)) return;
+
+    $value['location_full_address'] = self::buildFullAddress($value);
+    $element['#value'] = $value;
+    $form_state->setValueForElement($element, $value);
+  }
+
+  /**
+   * Builds a full human-readable address string from the individual address components.
+   */
+  public static function buildFullAddress(array $value): string {
+    $address = $value['location_address'] ?? '';
+
+    if (!empty($value['unit_number'])) {
+      $address .= ', ' . $value['unit_number'];
+    }
+
+    if (!empty($value['location_city'])) {
+      $address .= ', ' . $value['location_city'];
+    }
+
+    if (!empty($value['location_state'])) {
+      $address .= ', ' . $value['location_state'];
+    }
+
+    if (!empty($value['location_zip'])) {
+      $address .= ' ' . $value['location_zip'];
+    }
+
+    return $address;
   }
 }
