@@ -1,0 +1,46 @@
+diff --git a/src/Hook/WebformFormAlterHooks.php b/src/Hook/WebformFormAlterHooks.php
+index 74659ff71..75973b6ab 100644
+--- a/src/Hook/WebformFormAlterHooks.php
++++ b/src/Hook/WebformFormAlterHooks.php
+@@ -48,7 +48,7 @@ class WebformFormAlterHooks {
+     // Alter the webform submission form.
+     if (str_starts_with($form_id, 'webform_submission') && $form_object instanceof WebformSubmissionForm) {
+       // Make sure webform libraries are always attached to submission form.
+-      _webform_page_attachments($form);
++      _webform_page_attachments($form, $form_object->getWebform());
+       // After build.
+       $form['#after_build'][] = '_webform_form_webform_submission_form_after_build';
+     }
+diff --git a/webform.module b/webform.module
+index e21081747..7594e76b0 100644
+--- a/webform.module
++++ b/webform.module
+@@ -20,6 +20,7 @@ use Drupal\Core\Session\AccountInterface;
+ use Drupal\file\FileInterface;
+ use Drupal\webform\Utility\WebformElementHelper;
+ use Drupal\webform\Utility\WebformOptionsHelper;
++use Drupal\webform\WebformInterface;
+ 
+ require_once __DIR__ . '/includes/webform.date.inc';
+ require_once __DIR__ . '/includes/webform.editor.inc';
+@@ -258,8 +259,10 @@ function webform_metatags_alter(array &$metatags, array &$context) {
+  *
+  * @param array $attachments
+  *   An array of page attachments.
++ * @param \Drupal\webform\WebformInterface|null $webform
++ *   The webform we're attaching to (if not supplied it will be determined from the request).
+  */
+-function _webform_page_attachments(array &$attachments) {
++function _webform_page_attachments(array &$attachments, ?WebformInterface $webform = NULL) {
+   // Attach webform theme specific libraries.
+   /** @var \Drupal\webform\WebformThemeManagerInterface $theme_manager */
+   $theme_manager = \Drupal::service('webform.theme_manager');
+@@ -288,7 +291,7 @@ function _webform_page_attachments(array &$attachments) {
+   // Get current webform, if it does not exist exit.
+   /** @var \Drupal\webform\WebformRequestInterface $request_handler */
+   $request_handler = \Drupal::service('webform.request');
+-  $webform = $request_handler->getCurrentWebform();
++  $webform ??= $request_handler->getCurrentWebform();
+   if (!$webform) {
+     return;
+   }
