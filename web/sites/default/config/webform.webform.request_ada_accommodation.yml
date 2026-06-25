@@ -172,6 +172,18 @@ elements: |-
         visible:
           ':input[name="report_staff_reason"]':
             value: staff_existing_request
+  report_legally_impacted:
+    '#type': radios
+    '#title': 'Do you, or a person you represent (e.g., a child or spouse), have a disability that is impacted by this obstruction?'
+    '#options':
+      'No': 'No'
+      "Yes, but I don't want to request an ADA accommodation": "Yes, but I don't want to request an ADA accommodation"
+      'Yes, I have, or represent someone with, a disability covered under the Americans with Disabilities Act (ADA).': 'Yes, I have, or represent someone with, a disability covered under the Americans with Disabilities Act (ADA). -- <em>The lack of a curb ramp is creating a barrier that preventing my/their access and I would like to request an accommodation. By checking this option, I acknowledge that the City may contact me to complete the ADA accommodation request process.</em>'
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="hidden_context"]':
+          value: 'Curb ramp request'
   request_how:
     '#type': radios
     '#title': 'How would you like to make your request?'
@@ -180,11 +192,20 @@ elements: |-
       'I would like to call the City': 'I would like to contact the City by phone or TTY'
       'I will continue with the online form': 'I will continue with the online form'
     '#required': true
+    '#states':
+      visible:
+        - ':input[name="hidden_context"]':
+            empty: true
+        - or
+        - ':input[name="report_legally_impacted"]':
+            checked: true
   markup_continue:
     '#type': webform_markup
     '#states':
       visible:
         ':input[name="request_how"]':
+          unchecked: true
+        ':input[name="report_legally_impacted"]':
           unchecked: true
     '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   request_call_city_text_stop:
@@ -309,14 +330,18 @@ elements: |-
         parks_activity_registration: 'Provide accommodations for the registration process and account set up for Portland Parks & Recreation activities'
         city_materials: 'Provide City materials in a format that is accessible to me'
         accessibility_issue: 'Fix an accessibility issue with a City app or website'
-        remove_barrier: 'Remove a barrier or make it easier for me to access a street, sidewalk, trail, park, or other City-owned space (such as removing an obstruction on a sidewalk, adding crosswalks, or improving signage)'
-        change_policy: 'Change or modify a policy or procedure (for example, allow community members with disabilities early entry to an event, allow a companion to attend a class or activity) '
+        remove_barrier: 'Remove a barrier or make it easier for me to access a street, sidewalk, trail, park, or other City-owned space -- <em>For example, removing an obstruction on a sidewalk, adding curb ramps, adding crosswalks, or improving signage</em>'
+        change_policy: 'Change or modify a policy or procedure -- <em>For example, allow community members with disabilities early entry to an event, allow a companion to attend a class or activity</em>'
       '#other__type': textarea
       '#other__option_label': 'Something else...'
       '#other__placeholder': ''
       '#other__description': 'Please describe your request. To protect your privacy, do not include any personal or health-related information.'
       '#other__rows': '3'
       '#required': true
+      '#states':
+        invisible:
+          ':input[name="hidden_context"]':
+            value: 'Curb ramp request'
       '#wrapper_attributes':
         class:
           - mb-10
@@ -515,17 +540,23 @@ elements: |-
       request_barrier_type:
         '#type': webform_radios_other
         '#title': 'What type of issue are you reporting? How can we make access easier for you?'
+        '#prepopulate': true
         '#options':
           barrier: 'Barrier - There is a barrier, obstruction, or something in the way that is preventing access'
           parking: 'Parking - There is no accessible parking, or there is a problem with existing spots'
           signage: 'Signage - There are no signs, or signs are unclear'
+          'curb ramp': 'Curb ramp request - There is an intersection where the curb ramp is missing, damaged, or otherwise preventing access to the sidewalk'
         '#other__option_label': 'Something else...'
         '#other__placeholder': ''
         '#other__description': 'Please describe.'
         '#required': true
+        '#states':
+          invisible:
+            ':input[name="hidden_context"]':
+              value: 'Curb ramp request'
       report_location:
         '#type': portland_location_picker
-        '#title': 'Location of barrier or issue'
+        '#title': Location
         '#default_value':
           location_type: ''
           location_park: ''
@@ -535,16 +566,16 @@ elements: |-
           location_lat: ''
           location_lon: ''
           location_private_owner: ''
-        '#location_type__access': false
-        '#location_park_container__access': false
-        '#location_private_owner__access': false
+        '#location_search__title': 'Please select a location'
         '#location_address__required': true
         '#location_lat__required': true
         '#location_asset_id__access': false
         '#location_region_id__access': false
         '#location_municipality_name__access': false
+        '#location_type__access': false
+        '#location_park_container__access': false
+        '#location_private_owner__access': false
         '#location_is_portland__access': false
-        '#location_search__title': 'Location of barrier or issue'
         '#geojson_layer__access': false
         '#geojson_layer_behavior__access': false
       report_barrier_description:
@@ -553,6 +584,41 @@ elements: |-
         '#description': 'Please describe the issue in detail. How can we make it easier to access your city? To protect your privacy, do not include any personal or health-related information.'
         '#description_display': before
         '#required': true
+      request_curb_ramp_mobility_device:
+        '#type': webform_radios_other
+        '#title': 'What type of mobility device do you use?'
+        '#options':
+          Scooter: Scooter
+          Wheelchair: Wheelchair
+          'Walking cane': 'Walking cane'
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe...'
+        '#states':
+          visible:
+            ':input[name="request_barrier_type[radios]"]':
+              value: 'curb ramp'
+      request_curb_ramp_access:
+        '#type': webform_radios_other
+        '#title': 'This request will provide me access to...'
+        '#options':
+          Home: Home
+          Work: Work
+          School: School
+          'Public transit': 'Public transit'
+          'Public accommodations': 'Public accommodations -- <em>E.g., government office</em>'
+        '#states':
+          visible:
+            ':input[name="request_barrier_type[radios]"]':
+              value: 'curb ramp'
+      photo_upload:
+        '#type': webform_image_file
+        '#title': 'Photo upload'
+        '#states':
+          visible:
+            ':input[name="request_barrier_type[radios]"]':
+              value: 'curb ramp'
+        '#file_placeholder': "<p>Upload a photo of the location where you'd like to request a curb ramp.</p>"
+        '#attachment_image_style': webform_report_uploaded_image
     container_change_policy:
       '#type': webform_section
       '#title': 'Change policy'
