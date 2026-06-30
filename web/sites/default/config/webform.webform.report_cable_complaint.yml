@@ -36,7 +36,45 @@ elements: |-
       visible:
         ':input[name="report_provider_situation"]':
           value: 'I am not an Xfinity (Comcast) customer (I get television and/or internet from another service provider)'
-    '#markup': '<div class="webform-alert alert alert--info next-steps"><h2>Next Steps</h2><p>Mount Hood Cable Regulatory Commission does NOT have jurisdiction over CenturyLink or other internet service providers.</p><p>If you have been unable to resolve directly with your service provider, complaints about internet service/providers should be directed to the Federal Communications Commission (FCC). Please <a href="https://consumercomplaints.fcc.gov">submit a report to the FCC online</a> or call them 8 am - 5 pm EST at <a href="tel:+18882255322">1-888-225-5322, Option 4</a>.</p><p>To determine the correct contact for a downed-wire or other utility infrastructure concern, please call <a href="tel:311">311</a> or <a href="tel:+15038234000">503-823-4000</a>.</p></div>'
+    '#markup': '<div class="webform-alert alert alert--info next-steps"><h2>Next Steps</h2><p>We are unable to take reports for CenturyLink or other internet service providers.</p><p>If you have been unable to resolve directly with your service provider, complaints about internet service/providers should be directed to the Federal Communications Commission (FCC). Please <a href="https://consumercomplaints.fcc.gov">submit a report to the FCC online</a> or call them 8 am - 5 pm EST at <a href="tel:+18882255322">1-888-225-5322, Option 4</a>.</p><p>To determine the correct contact for a downed-wire or other utility infrastructure concern, please call <a href="tel:311">311</a> or <a href="tel:+15038234000">503-823-4000</a>.</p></div>'
+  report_service_address:
+    '#type': portland_address_verifier
+    '#title': Service address
+    '#states':
+      visible:
+        - ':input[name="report_provider_situation"]':
+            value: 'I receive cable service only from Xfinity (Comcast)'
+        - or
+        - ':input[name="report_provider_situation"]':
+            value: 'I receive cable and internet service from Xfinity (Comcast)'
+    '#location_address__title': 'Address where you receive cable service'
+    '#location_address__required': true
+    '#location_city__required': true
+    '#location_state__required': true
+    '#location_zip__required': true
+    '#location_verification_status__required': true
+    '#require_portland_city_limits': 1
+    '#out_of_bounds_message': |-
+      It appears your address is outside of the jurisdiction covered by this reporting process.
+      <br><br>
+      Please see contact information below for agencies that may be able to assist you:
+      <br><br>
+      <strong>Unincorporated Multnomah County</strong><br>
+      Website: <a href="https://multco.us/info/cable-customer-complaint">Cable Customer Complaint | Multnomah County</a>
+      <br><br>
+      <strong>Gresham</strong><br>
+      Phone: <a href="tel:+1-503-618-3000">503-618-3000</a>
+      <br><br>
+      <strong>Troutdale</strong><br>
+      Email: <a href="mailto:info@troutdaleoregon.gov">info@troutdaleoregon.gov</a><br>
+      Phone: <a href="tel:+1-503-665-5175">503-665-5175</a>
+      <br><br>
+      <strong>Fairview</strong><br>
+      Phone: <a href="tel:+1-503-665-7929">503-665-7929</a>
+      <br><br>
+      <strong>Wood Village</strong><br>
+      Email: <a href="mailto:City@WoodVillageOR.gov">City@WoodVillageOR.gov</a><br>
+      Phone: <a href="tel:+1-503-667-6211">503-667-6211</a>
   report_service_provider:
     '#type': hidden
     '#title': 'Service provider'
@@ -53,7 +91,8 @@ elements: |-
     report_account_number:
       '#type': textfield
       '#title': 'Account number'
-      '#description': 'The account number assigned to you by your provider. This can usually be found on a billing statement.'
+      '#description': '<p>The account number assigned to you by your provider. This can usually be found on a billing statement.</p>'
+      '#description_display': before
     report_issue_type:
       '#type': select
       '#title': 'Select the type of issue or concern'
@@ -108,7 +147,8 @@ elements: |-
       contact_zip_code:
         '#type': textfield
         '#title': 'ZIP code'
-        '#description': '<p>The MHCRC tracks issues and concerns by ZIP code for reporting purposes.</p>'
+        '#description': '<p>Issues and concerns are tracked by ZIP code for reporting purposes.</p>'
+        '#description_display': before
         '#autocomplete': postal-code
         '#input_mask': '99999[-9999]'
         '#required': true
@@ -132,7 +172,7 @@ elements: |-
       '#title': 'Resolution URL'
       '#display_on': none
       '#mode': text
-      '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider|url_encode }}&report_account_number={{ data.report_account_number|url_encode }}&report_issue_type={{ data.report_issue_type|url_encode }}&contact_zip_code={{ data.contact_zip_code|url_encode }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&report_issue_description={{ data.report_issue_description|replace({ '\\r': ' ', '\\n': ' ', '\\t': ' ' })|url_encode }}"
+      '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider|url_encode }}&report_account_number={{ data.report_account_number|url_encode }}&report_issue_type={{ data.report_issue_type|url_encode }}&contact_zip_code={{ data.contact_zip_code|url_encode }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&report_issue_description={{ (data.report_issue_description ?? '')|truncate(1000, true, true)|replace({ '\\r': ' ', '\\n': ' ', '\\t': ' ' })|url_encode }}&report_service_address={{ data.report_service_address.location_full_address|url_encode }}"
       '#whitespace': trim
       '#store': true
       '#ajax': true
@@ -415,7 +455,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n1500012743961: ['[webform_submission:values:report_service_address:location_full_address]', 'report_service_address:location_full_address']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '16814795517079'
       recipient: ''
@@ -446,7 +486,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n1500012743961: ['[webform_submission:values:report_service_address:location_full_address]', 'report_service_address:location_full_address']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '16814795517079'
       recipient: ''
@@ -474,7 +514,7 @@ handlers:
       to_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      cc_mail: info@mhcrc.org
+      cc_mail: octutility@portlandoregon.gov
       cc_options: {  }
       from_mail: noreply@portlandoregon.gov
       from_options: {  }
