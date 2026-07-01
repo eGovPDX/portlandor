@@ -176,6 +176,18 @@ elements: |-
         visible:
           ':input[name="report_staff_reason"]':
             value: staff_existing_request
+  report_legally_impacted:
+    '#type': radios
+    '#title': 'Do you, or a person you represent (e.g., a child or spouse), have a disability that is impacted by this obstruction?'
+    '#options':
+      'No': 'No'
+      "Yes, but I don't want to request an ADA accommodation": "Yes, but I don't want to request an ADA accommodation"
+      'Yes, I have, or represent someone with, a disability covered under the Americans with Disabilities Act (ADA).': 'Yes, I have, or represent someone with, a disability covered under the Americans with Disabilities Act (ADA). -- <em>The lack of a curb ramp is creating a barrier preventing my/their access and I would like to request an accommodation. By checking this option, I acknowledge that the City may contact me to complete the ADA accommodation request process.</em>'
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="hidden_context"]':
+          value: 'curb ramp'
   request_how:
     '#type': radios
     '#title': 'How would you like to make your request?'
@@ -184,11 +196,20 @@ elements: |-
       'I would like to call the City': 'I would like to contact the City by phone or TTY'
       'I will continue with the online form': 'I will continue with the online form'
     '#required': true
+    '#states':
+      visible:
+        - ':input[name="hidden_context"]':
+            empty: true
+        - or
+        - ':input[name="report_legally_impacted"]':
+            checked: true
   markup_continue:
     '#type': webform_markup
     '#states':
       visible:
         ':input[name="request_how"]':
+          unchecked: true
+        ':input[name="report_legally_impacted"]':
           unchecked: true
     '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   request_call_city_text_stop:
@@ -1007,7 +1028,7 @@ handlers:
           '!value': curb_ramp
         ':input[name="hidden_context"]':
           '!value': 'curb ramp'
-    weight: -47
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1049,9 +1070,11 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="report_ticket_id"]':
-          filled: true
-    weight: -44
+        ':input[name="hidden_context"]':
+          '!value': 'curb ramp'
+        ':input[name="request_barrier_type[radios]"]':
+          '!value': curb_ramp
+    weight: -47
     settings:
       comment: "<h3><a href=\"[webform_submission:values:resolution_url]\">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>\r\n\r\n[webform_submission:values:section_staff_input:html]"
       comment_private: 1
@@ -1135,7 +1158,7 @@ handlers:
       enabled:
         ':input[name="report_staff_reason"]':
           value: staff_existing_request
-    weight: -43
+    weight: -44
     settings:
       states:
         - completed
@@ -1230,10 +1253,11 @@ handlers:
         -
           ':input[name="request_barrier_type[radios]"]':
             value: curb_ramp
-    weight: -48
+    weight: -46
     settings:
       column_mappings:
         1409787548176260: _submission_id_
+        5913387175546756: report_legally_impacted
         3661587361861508: request_who
         5865056779931524: request_on_behalf_of_permission
         3613256966246276: request_on_behalf_of_name
@@ -1246,6 +1270,10 @@ handlers:
         1924407105982340: report_barrier_description
         1383331455602564: request_curb_ramp_mobility_device
         5886931082973060: request_curb_ramp_access
+        4018291056349060: contact_name
+        8521890683719556: contact_email
+        359116359110532: contact_phone
+        4862715986481028: contact_phone_assistance_type
       field_handlers: {  }
       multiple_rows_enable: null
       multiple_rows_field: ''
