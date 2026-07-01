@@ -6,6 +6,7 @@ dependencies:
     - antibot
     - honeypot
     - portland
+    - portland_smartsheet
     - portland_zendesk
 third_party_settings:
   antibot:
@@ -23,16 +24,23 @@ template: false
 archive: false
 id: request_ada_accommodation
 title: 'Request A.D.A. Accommodation'
-description: ''
+description: '<p>Prepopulate the hidden element hidden_context with the value "curb ramp" to configure the form exclusively for curb ramp requests. This hides all other options.</p><p>IMPORTANT: When the element request_barrier_type is hidden due to the hidden_context configuration, it cannot be used in conditional handler logic. However, the hidden_context element can.</p>'
 categories:
   - ADA
   - Request
 elements: |-
+  hidden_context:
+    '#type': hidden
+    '#title': 'Hidden context'
+    '#prepopulate': true
   section_staff_input:
     '#type': webform_section
     '#title': 'Staff only'
     '#attributes':
       style: 'background-color: #ccc; padding: 1rem;'
+    '#title_attributes':
+      class:
+        - mt-0
     '#access_create_roles':
       - authenticated
     report_staff_reason:
@@ -305,14 +313,18 @@ elements: |-
         parks_activity_registration: 'Provide accommodations for the registration process and account set up for Portland Parks & Recreation activities'
         city_materials: 'Provide City materials in a format that is accessible to me'
         accessibility_issue: 'Fix an accessibility issue with a City app or website'
-        remove_barrier: 'Remove a barrier or make it easier for me to access a street, sidewalk, trail, park, or other City-owned space (such as removing an obstruction on a sidewalk, adding crosswalks, or improving signage)'
-        change_policy: 'Change or modify a policy or procedure (for example, allow community members with disabilities early entry to an event, allow a companion to attend a class or activity) '
+        remove_barrier: 'Remove a barrier or make it easier for me to access a street, sidewalk, trail, park, or other City-owned space -- <em>For example, remove an obstruction on a sidewalk, add a curb ramp, add a crosswalk, or improve signage</em>'
+        change_policy: 'Change or modify a policy or procedure -- <em>For example, allow community members with disabilities early entry to an event, allow a companion to attend a class or activity</em>'
       '#other__type': textarea
       '#other__option_label': 'Something else...'
       '#other__placeholder': ''
       '#other__description': 'Please describe your request. To protect your privacy, do not include any personal or health-related information.'
       '#other__rows': '3'
       '#required': true
+      '#states':
+        invisible:
+          ':input[name="hidden_context"]':
+            value: 'curb ramp'
       '#wrapper_attributes':
         class:
           - mb-10
@@ -500,28 +512,39 @@ elements: |-
             - or
             - ':input[name="request_materials_type[radios]"]':
                 value: event
-    container_remove_barrier:
+    section_remove_barrier:
       '#type': webform_section
       '#title': 'Remove barrier'
       '#title_display': invisible
-      '#states':
-        visible:
-          ':input[name="request_what[radios]"]':
-            value: remove_barrier
       request_barrier_type:
         '#type': webform_radios_other
         '#title': 'What type of issue are you reporting? How can we make access easier for you?'
+        '#prepopulate': true
         '#options':
           barrier: 'Barrier - There is a barrier, obstruction, or something in the way that is preventing access'
           parking: 'Parking - There is no accessible parking, or there is a problem with existing spots'
           signage: 'Signage - There are no signs, or signs are unclear'
+          curb_ramp: 'Curb ramp request - There is an intersection where the curb ramp is missing, damaged, or otherwise preventing access to the sidewalk'
         '#other__option_label': 'Something else...'
         '#other__placeholder': ''
         '#other__description': 'Please describe.'
         '#required': true
+        '#states':
+          visible:
+            ':input[name="request_what[radios]"]':
+              value: remove_barrier
+            ':input[name="hidden_context"]':
+              '!value': 'curb ramp'
       report_location:
         '#type': portland_location_picker
-        '#title': 'Location of barrier or issue'
+        '#title': Location
+        '#states':
+          visible:
+            - ':input[name="request_what[radios]"]':
+                value: remove_barrier
+            - or
+            - ':input[name="hidden_context"]':
+                value: 'curb ramp'
         '#default_value':
           location_type: ''
           location_park: ''
@@ -531,24 +554,82 @@ elements: |-
           location_lat: ''
           location_lon: ''
           location_private_owner: ''
-        '#location_type__access': false
-        '#location_park_container__access': false
-        '#location_private_owner__access': false
+        '#location_search__title': 'Please select a location'
         '#location_address__required': true
         '#location_lat__required': true
         '#location_asset_id__access': false
         '#location_region_id__access': false
         '#location_municipality_name__access': false
+        '#location_type__access': false
+        '#location_park_container__access': false
+        '#location_private_owner__access': false
         '#location_is_portland__access': false
-        '#location_search__title': 'Location of barrier or issue'
         '#geojson_layer__access': false
         '#geojson_layer_behavior__access': false
       report_barrier_description:
         '#type': textarea
         '#title': 'Description of issue'
-        '#description': 'Please describe the issue in detail. How can we make it easier to access your city? To protect your privacy, do not include any personal or health-related information.'
+        '#description': '<p>Please describe the issue in detail. How can we make it easier to access your city? To protect your privacy, do not include any personal or health-related information.</p>'
         '#description_display': before
         '#required': true
+        '#states':
+          visible:
+            - ':input[name="request_what[radios]"]':
+                value: remove_barrier
+            - or
+            - ':input[name="hidden_context"]':
+                value: 'curb ramp'
+      request_curb_ramp_mobility_device:
+        '#type': webform_radios_other
+        '#title': 'What type of mobility device do you use?'
+        '#options':
+          Scooter: Scooter
+          Wheelchair: Wheelchair
+          'Walking cane': 'Walking cane'
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe...'
+        '#states':
+          visible:
+            - ':input[name="request_barrier_type[radios]"]':
+                value: curb_ramp
+            - or
+            - ':input[name="hidden_context"]':
+                value: 'curb ramp'
+      request_curb_ramp_access:
+        '#type': webform_radios_other
+        '#title': 'This request will provide me access to...'
+        '#options':
+          Home: Home
+          Work: Work
+          School: School
+          'Public transit': 'Public transit'
+          'Public accommodations': 'Public accommodations -- <em>E.g., government office</em>'
+        '#states':
+          visible:
+            - ':input[name="request_barrier_type[radios]"]':
+                value: curb_ramp
+            - or
+            - ':input[name="hidden_context"]':
+                value: 'curb ramp'
+      photo_upload:
+        '#type': webform_image_file
+        '#title': 'Photo upload'
+        '#states':
+          visible:
+            - ':input[name="request_what[radios]"]':
+                value: remove_barrier
+            - or
+            - ':input[name="hidden_context"]':
+                value: 'curb ramp'
+        '#file_placeholder': "<p>Upload a photo of the location where you'd like to request a curb ramp.</p>"
+        '#attachment_image_style': webform_report_uploaded_image
+    computed_lat_lon_link:
+      '#type': webform_computed_twig
+      '#title': 'Computed lat/lon link'
+      '#display_on': none
+      '#mode': text
+      '#template': 'https://www.google.com/maps/place/{{ data.report_location.location_lat }}%2C{{ data.report_location.location_lon }}'
+      '#whitespace': trim
     container_change_policy:
       '#type': webform_section
       '#title': 'Change policy'
@@ -627,9 +708,10 @@ elements: |-
       '#access_view_roles':
         - support_agent
         - administrator
-      '#zendesk_request_number__access': false
       '#employee_notes_panel__access': false
       '#escalate_issue__access': false
+      '#test_submission__access': false
+      '#zendesk_request_number__access': false
     report_ticket_id:
       '#type': hidden
       '#title': 'Report ticket ID'
@@ -703,6 +785,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -865,15 +948,17 @@ handlers:
   zendesk_new_ticket:
     id: zendesk
     handler_id: zendesk_new_ticket
-    label: 'Zendesk new request'
+    label: 'Zendesk new request (excludes curb ramp requests)'
     notes: 'Creates a new ADA Accommodation Request in Zendesk and assigns it to the 311: ADA and Civil Rights group.'
     status: true
     conditions:
       enabled:
         ':input[name="request_what[radios]"]':
           '!value': parks_activity_registration
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
+        ':input[name="request_barrier_type[radios]"]':
+          '!value': curb_ramp
+        ':input[name="hidden_context"]':
+          '!value': 'curb ramp'
     weight: -50
     settings:
       requester_name: contact_name
@@ -887,89 +972,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: |-
-        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
-        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
-        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
-        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
-        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
-        6353388345367: 'request_ada_accommodation'
-        1500013095781: '[webform_submission:uuid]'
-        37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']
-        37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']
-        37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']
-        37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']
-        37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']
-        37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']
-        37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']
-        37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']
-        36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']
-        37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']
-        37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']
-        37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '12923141466007'
-      recipient: ''
-      ticket_fork_field: ''
-      is_child_incident: 0
-      parent_ticket_id_field: ''
-      excluded_elements:
-        report_staff_reason: report_staff_reason
-        report_staff_issue_resolved: report_staff_issue_resolved
-        report_staff_resolution_dismissed: report_staff_resolution_dismissed
-        report_staff_resolution_status: report_staff_resolution_status
-        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
-        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
-        report_staff_date_withdrawn: report_staff_date_withdrawn
-        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
-        report_staff_admin_changes: report_staff_admin_changes
-        report_staff_resolution_date: report_staff_resolution_date
-        report_staff_resolving_party: report_staff_resolving_party
-        report_staff_resolution_details: report_staff_resolution_details
-        report_staff_issue_date: report_staff_issue_date
-  zendesk_new_ticket_developer_testing:
-    id: zendesk
-    handler_id: zendesk_new_ticket_developer_testing
-    label: 'Zendesk new request- developer testing'
-    notes: 'Creates a new ADA Accommodation request and assigns it to the 311 group.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -48
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'ADA Accommodation Request'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform ada accessibility'
-      priority: normal
-      status: new
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: |-
-        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
-        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
-        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
-        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
-        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
-        6353388345367: 'request_ada_accommodation'
-        1500013095781: '[webform_submission:uuid]'
-        37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']
-        37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']
-        37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']
-        37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']
-        37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']
-        37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']
-        37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']
-        37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']
-        36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']
-        37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']
-        37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']
-        37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12923141466007'
       recipient: ''
@@ -1000,9 +1003,11 @@ handlers:
       enabled:
         ':input[name="request_what[radios]"]':
           value: parks_activity_registration
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -49
+        ':input[name="request_barrier_type[radios]"]':
+          '!value': curb_ramp
+        ':input[name="hidden_context"]':
+          '!value': 'curb ramp'
+    weight: -47
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1015,26 +1020,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: |-
-        5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']
-        5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']
-        13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']
-        13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']
-        1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']
-        6353388345367: 'request_ada_accommodation'
-        1500013095781: '[webform_submission:uuid]'
-        37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']
-        37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']
-        37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']
-        37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']
-        37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']
-        37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']
-        37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']
-        37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']
-        36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']
-        37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']
-        37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']
-        37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12923141466007'
       recipient: ''
@@ -1061,13 +1047,13 @@ handlers:
     label: 'Update Zendesk request with staff notes and resolution URL'
     notes: 'Updates the new ticket with the resolution URL including ticket ID in a private note.'
     status: true
-    conditions: {  }
-    weight: 0
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          filled: true
+    weight: -44
     settings:
-      comment: |-
-        <h3><a href="[webform_submission:values:resolution_url]">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>
-
-        [webform_submission:values:section_staff_input:html]
+      comment: "<h3><a href=\"[webform_submission:values:resolution_url]\">Resolution form for #[webform_submission:values:report_ticket_id]</a></h3><hr>\r\n\r\n[webform_submission:values:section_staff_input:html]"
       comment_private: 1
       skip_attachments: 1
       tags: ''
@@ -1090,7 +1076,7 @@ handlers:
       enabled:
         ':input[name="contact_email"]':
           filled: true
-    weight: 0
+    weight: -45
     settings:
       states:
         - completed
@@ -1149,7 +1135,7 @@ handlers:
       enabled:
         ':input[name="report_staff_reason"]':
           value: staff_existing_request
-    weight: 1
+    weight: -43
     settings:
       states:
         - completed
@@ -1180,4 +1166,91 @@ handlers:
       langcode: ''
       parameters: {  }
       debug: false
+  zendesk_new_request_curb_ramp_requests:
+    id: zendesk
+    handler_id: zendesk_new_request_curb_ramp_requests
+    label: 'Zendesk new request (curb ramp requests, created as solved)'
+    notes: 'Creates a new SOLVED curb ramp request in Zendesk and assigns it to the 311: ADA and Civil Rights group.'
+    status: true
+    conditions:
+      enabled:
+        -
+          ':input[name="hidden_context"]':
+            value: 'curb ramp'
+        - or
+        -
+          ':input[name="request_barrier_type[radios]"]':
+            value: curb_ramp
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'ADA Curb Ramp Request'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform ada accessibility'
+      priority: normal
+      status: solved
+      group_id: '4763233132567'
+      assignee_id: '1505212728301'
+      type: incident
+      collaborators: ''
+      custom_fields: "5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'request_ada_accommodation'\r\n1500013095781: '[webform_submission:uuid]'\r\n37080223143319: ['37080223143319_[webform_submission:values:report_staff_reason:raw]', 'report_staff_reason']\r\n37080352876951: ['37080352876951_[webform_submission:values:report_staff_resolution_status:raw]', 'report_staff_resolution_status']\r\n37080457320855: ['[webform_submission:values:report_staff_resolution_substatus_dismissed]', 'report_staff_resolution_substatus_dismissed']\r\n37080497145367: ['37080497145367_[webform_submission:values:report_staff_nonresponsive_attempts:raw]', 'report_staff_nonresponsive_attempts']\r\n37080482421399: ['[webform_submission:values:report_staff_date_withdrawn:html_date]', 'report_staff_date_withdrawn']\r\n37080429716119: ['[webform_submission:values:report_staff_admin_changes]', 'report_staff_admin_changes']\r\n37080444350231: ['[webform_submission:values:report_staff_resolution_date:html_date]', 'report_staff_resolution_date']\r\n37080452714263: ['[webform_submission:values:report_staff_resolving_party]', 'report_staff_resolving_party']\r\n36578609768343: ['[webform_submission:values:support_agent_use_only:employee_email:htmldecode]', 'support_agent_use_only:employee_email']\r\n37080466628247: ['[webform_submission:values:report_staff_resolution_details]', 'report_staff_resolution_details']\r\n37080423947415: ['[webform_submission:values:report_staff_issue_date:html_date]', 'report_staff_issue_date']\r\n37080441651351: ['[webform_submission:values:report_staff_resolution_substatus_action_taken]', 'report_staff_resolution_substatus_action_taken']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '12923141466007'
+      recipient: ''
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_staff_reason: report_staff_reason
+        report_staff_issue_resolved: report_staff_issue_resolved
+        report_staff_resolution_dismissed: report_staff_resolution_dismissed
+        report_staff_resolution_status: report_staff_resolution_status
+        report_staff_resolution_substatus_dismissed: report_staff_resolution_substatus_dismissed
+        report_staff_nonresponsive_attempts: report_staff_nonresponsive_attempts
+        report_staff_date_withdrawn: report_staff_date_withdrawn
+        report_staff_resolution_substatus_action_taken: report_staff_resolution_substatus_action_taken
+        report_staff_admin_changes: report_staff_admin_changes
+        report_staff_resolution_date: report_staff_resolution_date
+        report_staff_resolving_party: report_staff_resolving_party
+        report_staff_resolution_details: report_staff_resolution_details
+        report_staff_issue_date: report_staff_issue_date
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet (curb ramp request)'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        -
+          ':input[name="hidden_context"]':
+            value: 'curb ramp'
+        - or
+        -
+          ':input[name="request_barrier_type[radios]"]':
+            value: curb_ramp
+    weight: -48
+    settings:
+      column_mappings:
+        1409787548176260: _submission_id_
+        3661587361861508: request_who
+        5865056779931524: request_on_behalf_of_permission
+        3613256966246276: request_on_behalf_of_name
+        8165186989232004: confidentiality_waiver
+        8116856593616772: request_barrier_type
+        5302106826510212: computed_location_address
+        3635131269287812: computed_lat_lon_link
+        3050307012824964: report_location__place_name
+        7553906640195460: report_location__location_details
+        1924407105982340: report_barrier_description
+        1383331455602564: request_curb_ramp_mobility_device
+        5886931082973060: request_curb_ramp_access
+      field_handlers: {  }
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '6528236149231492'
+      upload_attachments: '1'
 variants: {  }
