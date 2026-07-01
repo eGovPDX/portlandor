@@ -82,6 +82,7 @@ elements: |-
       '#type': select
       '#title': 'Please select an elected official'
       '#prepopulate': true
+      '#required': true
       '#options':
         'Mayor Keith Wilson': 'Mayor Keith Wilson'
         'Auditor Simone Rede': 'Auditor Simone Rede'
@@ -470,6 +471,68 @@ elements: |-
       '#options_display': two_columns
       '#other__option_label': 'Something else...'
       '#other__placeholder': 'Please describe...'
+    computed_topic_tags:
+      '#type': webform_computed_twig
+      '#title': 'Computed topic tags'
+      '#display_on': none
+      '#mode': text
+      '#template': |-
+        {% set selected_recipient = data.request_recipient ?? data.recipient ?? '' %}
+
+        {% if selected_recipient == "Mayor Keith Wilson" %}
+          {% set tag_prefix = "mayor_" %}
+        {% elseif selected_recipient == "Auditor Simone Rede" %}
+          {% set tag_prefix = "auditor_" %}
+        {% else %}
+          {% set tag_prefix = "council_" %}
+        {% endif %}
+
+        {% set selected_topics = data.feedback_topics_entity ?? [] %}
+
+        {# Normalize selected values to lowercase #}
+        {% set normalized_topics = [] %}
+        {% for topic in selected_topics %}
+          {% set normalized_topics = normalized_topics|merge([topic|lower]) %}
+        {% endfor %}
+
+        {% set topic_tag_map = {
+          'access and ada accommodations': 'ada',
+          'biking': 'biking',
+          'city budget': 'budget',
+          'city planning': 'planning',
+          'city projects': 'city_projects',
+          'community education and outreach': 'education_outreach',
+          'construction and development': 'construction_dev',
+          'economic development': 'economic_dev',
+          'environment': 'environment',
+          'federal government policy': 'federal',
+          'fire and medical response': 'fire_medical',
+          'garbage and recycling': 'garbage_recycling',
+          'housing and homelessness': 'housing_homeless',
+          'jobs and internships': 'employment',
+          'open data, statistics, and maps': 'data_access',
+          'operating a business in portland': 'local_business',
+          'parking': 'parking',
+          'parks, recreation, and activities': 'parks_rec',
+          'police and safety': 'police',
+          'rent or own property': 'rent_own',
+          'sidewalks': 'sidewalks',
+          'transportation and roads': 'transportation',
+          'trees': 'trees',
+          'visiting': 'visiting',
+          'water, stormwater, and sewer': 'water_sewer'
+        } %}
+
+        {% set tags = [] %}
+
+        {% for topic, tag_suffix in topic_tag_map %}
+          {% if topic in normalized_topics %}
+            {% set tags = tags|merge([tag_prefix ~ tag_suffix]) %}
+          {% endif %}
+        {% endfor %}
+
+        {{ tags|join(' ') }}
+      '#whitespace': trim
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
@@ -1635,7 +1698,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject] [webform_submission:values:computed_mayor_cc]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: mayor@portlandoregon.gov
@@ -1668,7 +1731,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: councildistrict1@portlandoregon.gov
@@ -1701,7 +1764,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: councildistrict2@portlandoregon.gov
@@ -1734,7 +1797,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: councildistrict3@portlandoregon.gov
@@ -1767,7 +1830,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: councildistrict4@portlandoregon.gov
@@ -1798,7 +1861,7 @@ handlers:
       requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
       comment: "<div style=\"color: red;\">[webform_submission:values:computed_sent_to_all_message:html]</div>\r\n[webform_submission:values:computed_description:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_topic_tags]'
       priority: normal
       status: new
       recipient: ''

@@ -6,7 +6,7 @@ dependencies:
     - antibot
     - honeypot
     - portland
-    - portland_smartsheet
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -14,6 +14,7 @@ third_party_settings:
     honeypot: true
   portland:
     disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -21,7 +22,7 @@ uid: 628
 template: false
 archive: false
 id: report_camp_removal_complaint
-title: 'Campsite Removal Complaint'
+title: 'Report Campsite Removal Complaint'
 description: ''
 categories:
   - Report
@@ -56,8 +57,8 @@ elements: |-
       '#type': radios
       '#title': 'Who did the person work for?'
       '#options':
-        'Rapid Response Bio Clean': 'Rapid Response Bio Clean (employees wear a blue shirt with the program’s logo on the back) -- <img src="https://www.portland.gov/sites/default/files/styles/thumbnail/public/2024/rapidresponsebio-clean.jpg" />'
-        'Central City Concern Clean Start Employee': 'Central City Concern Clean Start Employee (employees wear a bright orange shirt with the program’s logo on the front) -- <img src="https://www.portland.gov/sites/default/files/styles/thumbnail/public/2022/clean-start-shirt.jpg" />'
+        'Rapid Response Bio Clean': 'Rapid Response Bio Clean (employees wear a blue shirt with the program''s logo on the back) -- <img src="https://www.portland.gov/sites/default/files/styles/thumbnail/public/2024/rapidresponsebio-clean.jpg" />'
+        'Central City Concern Clean Start Employee': 'Central City Concern Clean Start Employee (employees wear a bright orange shirt with the program''s logo on the front) -- <img src="https://www.portland.gov/sites/default/files/styles/thumbnail/public/2022/clean-start-shirt.jpg" />'
         'City of Roses Disposal & Recycling': 'City of Roses Disposal & Recycling (employees wear a yellow shirt with the program''s logo on the back) -- <img src="https://www.portland.gov/sites/default/files/styles/thumbnail/public/2022/cor-shirt-back_0.jpg" />'
         'Portland Bureau of Transportation': 'Portland Bureau of Transportation'
         'Portland Fire & Rescue': 'Portland Fire & Rescue'
@@ -200,16 +201,16 @@ elements: |-
           '#title': Email
           '#description': '<p>We will use your email to confirm your submission.</p>'
           '#description_display': before
-          '#required': true
           '#autocomplete': email
+          '#required': true
           '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
           '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
         contact_phone:
           '#type': textfield
           '#title': Phone
-          '#description': 'Please provide your phone number in case we need additional information.'
-          '#input_mask': '(999) 999-9999'
+          '#description': '<p>Please provide your phone number in case we need additional information.</p>'
           '#autocomplete': tel-national
+          '#input_mask': '(999) 999-9999'
         contact_preference:
           '#type': radios
           '#title': 'If needed, would you prefer that we contact you by phone or email?'
@@ -233,43 +234,33 @@ elements: |-
         '#access_view_roles':
           - support_agent
           - administrator
-        '#zendesk_request_number__access': false
         '#employee_notes_panel__access': false
         '#escalate_issue__access': false
-      computed_date:
-        '#type': webform_computed_twig
-        '#title': 'Computed date in Smartsheet format'
-        '#display_on': none
-        '#mode': text
-        '#template': "{{ data.report_date|date('c') }}"
-        '#whitespace': trim
-        '#ajax': true
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
-  computed_csr:
+        '#zendesk_request_number__access': false
+  resolution_url:
     '#type': webform_computed_twig
-    '#title': 'Computed CSR'
+    '#title': 'Resolution URL'
     '#display_on': none
     '#mode': text
-    '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
+    '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-camp-removal-resolution?report_problem_type={{ data.report_problem_type|url_encode }}&report_employer={{ data.report_employer|url_encode }}&report_date={{ data.report_date|url_encode }}&report_location[location_lat]={{ data.report_location.location_lat}}&report_location[location_lon]={{ data.report_location.location_lon}}&report_has_witnesses={{ data.report_has_witnesses|url_encode }}&resolution_first_witness_name={{ data.report_witness1_name|url_encode }}&resolution_second_witness_name={{ data.report_witness2_name|url_encode }}&report_description={{ data.report_description|replace({ '\\r': ' ', '\\n': ' ', '\\t': ' ' })|url_encode }}"
+    '#whitespace': trim
+    '#store': true
+  computed_tag:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tag'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_has_witnesses == 'Yes'%}  32430516670487_witnesses_present
+      {% endif %}
     '#whitespace': trim
     '#ajax': true
-  computed_location_address:
-    '#type': webform_computed_twig
-    '#title': 'Computed location address'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ data.report_location.location_address }}'
-    '#ajax': true
-  computed_location_lat_lon:
-    '#type': webform_computed_twig
-    '#title': 'Computed location lat/lon'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}'
-    '#whitespace': spaceless
-    '#ajax': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
 css: ''
 javascript: ''
 settings:
@@ -311,6 +302,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -470,129 +462,88 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_report_to_reportpdx:
-    id: email
-    handler_id: submit_report_to_reportpdx
-    label: 'Submit report to reportpdx@portlandoregon.gov'
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
     notes: ''
     status: true
     conditions:
-      disabled:
+      enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -49
+          unchecked: true
+    weight: -47
     settings:
-      states:
-        - completed
-      to_mail: reportpdx@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: '[webform_submission:values:contact_email:raw]'
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>Submitted on [webform_submission:created]</p>\r\n[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID:&nbsp;report_camp_removal_complaint"
-      excluded_elements:
-        markup_property_collection: markup_property_collection
-        markup_ombudsman: markup_ombudsman
-        markup_ipr: markup_ipr
-        public_records_statement_standard: public_records_statement_standard
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
-  test_submit_report_to_webforms_portlandoregon_gov:
-    id: email
-    handler_id: test_submit_report_to_webforms_portlandoregon_gov
-    label: 'TEST: Submit report to webforms@portlandoregon.gov'
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite removal complaint from [webform_submission:values:contact_name]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tag]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '27893493244695'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_camp_removal_complaint'\r\n1500012743981: ['[webform_submission:values:report_problem_type]', 'report_problem_type']\r\n37035121144727: ['[webform_submission:values:report_date:html_date]', 'report_date'] \r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '38777748700311'
+      excluded_elements: {  }
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -45
+    settings:
+      comment: 'Resolution URL: <a href="https://[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]">https://[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]</a>'
+      comment_private: 1
+      skip_attachments: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: 'https://[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '38777748700311'
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Zendesk new request'
     notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -48
+    weight: -46
     settings:
-      states:
-        - completed
-      to_mail: webforms@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: '[webform_submission:values:contact_email:raw]'
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'TEST: Campsite Removal Complaint'
-      body: "<p>Submitted on [webform_submission:created]</p>\r\n\r\n<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID:&nbsp;report_camp_removal_complaint</p>"
-      excluded_elements:
-        markup_property_collection: markup_property_collection
-        markup_ombudsman: markup_ombudsman
-        markup_ipr: markup_ipr
-        public_records_statement_standard: public_records_statement_standard
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
-  smartsheet_add_row_to_existing_sheet:
-    id: smartsheet_add_row
-    handler_id: smartsheet_add_row_to_existing_sheet
-    label: 'Smartsheet: add row to existing sheet'
-    notes: ''
-    status: true
-    conditions: {  }
-    weight: -50
-    settings:
-      column_mappings:
-        3608990247243652: report_problem_type
-        904240699494276: report_employer
-        8112589874614148: computed_date
-        794240480137092: computed_location_address
-        5407840326864772: computed_location_lat_lon
-        5297840107507588: report_description
-        7659640140550020: report_witness1_name
-        6533740233707396: report_witness1_phone
-        4281940420022148: report_witness1_email
-        2030140606336900: report_witness2_name
-        8785540047392644: report_witness2_phone
-        200553257717636: report_witness2_email
-        4704152885088132: contact_name
-        2452353071402884: contact_email
-        6955952698773380: contact_phone
-        1326453164560260: contact_preference
-        5830052791930756: computed_csr
-        6423740014350212: ''
-        4171940200664964: ''
-      multiple_rows_enable: null
-      multiple_rows_field: ''
-      multiple_rows_separator: ''
-      row_location: toBottom
-      sheet_id: '449257534345092'
-      upload_attachments: null
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite removal complaint from [webform_submission:values:contact_name]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tag]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_camp_removal_complaint'\r\n1500012743981: ['[webform_submission:values:report_problem_type]', 'report_problem_type']\r\n37035121144727: ['[webform_submission:values:report_date:html_date]', 'report_date'] \r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '38777748700311'
+      excluded_elements: {  }
 variants: {  }
