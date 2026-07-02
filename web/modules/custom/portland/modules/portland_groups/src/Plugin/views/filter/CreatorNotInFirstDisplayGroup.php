@@ -5,15 +5,16 @@ namespace Drupal\portland_groups\Plugin\views\filter;
 use Drupal\views\Plugin\views\filter\FilterPluginBase;
 
 /**
- * Filter nodes where the content author is NOT a member of the first group
- * in field_display_groups (delta 0).
+ * Filter nodes where:
+ *   1. The node has more than one group in field_display_groups, AND
+ *   2. The content author is a member of at least one of those groups.
  *
  * @ViewsFilter("creator_not_in_first_display_group")
  */
 class CreatorNotInFirstDisplayGroup extends FilterPluginBase {
 
   public function adminSummary() {
-    return $this->t('author is not member of first display group');
+    return $this->t('has multiple display groups and author is missing from at least one');
   }
 
   protected function operatorForm(&$form, $form_state) {}
@@ -26,21 +27,22 @@ class CreatorNotInFirstDisplayGroup extends FilterPluginBase {
     $this->ensureMyTable();
     $node_alias = $this->tableAlias;
 
-    // Self-contained subquery: avoids relying on Views' join deduplication,
-    // which could reuse an existing node__field_display_groups join that lacks
-    // the delta=0 constraint.
+    // Condition 1 (cheap pre-filter): only nodes with more than one display group.
+    // Condition 2: at least one of those groups does NOT have the author as a member.
     $this->query->addWhereExpression(
       0,
-      "NOT EXISTS (
+      "(SELECT COUNT(*) FROM {node__field_display_groups}
+        WHERE entity_id = $node_alias.nid AND deleted = 0) > 1
+      AND EXISTS (
         SELECT 1
         FROM {node__field_display_groups} nfdg
-        INNER JOIN {group_relationship_field_data} grf
+        LEFT JOIN {group_relationship_field_data} grf
           ON grf.gid = nfdg.field_display_groups_target_id
           AND grf.entity_id = $node_alias.uid
           AND grf.plugin_id = 'group_membership'
         WHERE nfdg.entity_id = $node_alias.nid
-          AND nfdg.delta = 0
           AND nfdg.deleted = 0
+          AND grf.id IS NULL
       )"
     );
   }
