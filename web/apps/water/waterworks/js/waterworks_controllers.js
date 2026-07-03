@@ -791,9 +791,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	function initBaseMap() {
 		// initializes the base leaflet map and positions zoom controls
-		var layer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
-				attribution: "PortlandMaps ESRI"
-		});
+		var layer = L.esri.Vector.vectorTileLayer("https://tiles.arcgis.com/tiles/quVN97tn06YNGj9s/arcgis/rest/services/Portland_Basemap_Complete/VectorTileServer", { attribution: "PortlandMaps ESRI", minZoom: 10 })
 		var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
 		var pancontrols = createPanControls({ position: ZOOM_POSITION });
 		var map = new L.Map("LeafletMap", {
