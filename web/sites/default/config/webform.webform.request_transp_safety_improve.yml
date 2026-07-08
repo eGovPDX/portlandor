@@ -89,7 +89,7 @@ elements: |-
           ':input[name="report_request_type"]':
             value: street_improvement
     report_who_are_you:
-      '#type': radios
+      '#type': webform_radios_other
       '#title': 'Which of the following best describes you?'
       '#options':
         'PBOT Data Collection': 'PBOT Data Collection'
@@ -97,14 +97,13 @@ elements: |-
         'Other City employee': 'Other City employee'
         'Transportation agency (non-City)': 'Transportation agency (non-City)'
         Utility: Utility
-        Other...: Other...
       '#other__option_label': 'Other agency...'
       '#other__placeholder': 'Name of agency...'
+      '#required': true
       '#states':
         visible:
           ':input[name="report_is_transportation_agency"]':
             value: 'Yes'
-      '#required': true
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of issue'
@@ -276,24 +275,19 @@ elements: |-
       '#title': 'Computed Request Area'
       '#title_display': invisible
       '#display_on': form
-      '#ajax': true
       '#template': |-
         {% if data.report_describe_the_issue and data.report_describe_the_issue is iterable %}
           <strong>Your requested safety areas:</strong>
           <ul>
             {% for key, item in data.report_describe_the_issue %}
               {# Ignore the structural '_other_' key, only print valid string options #}
-              {% if key != '_other_' and item is not iterable and item is not empty %}
-                <li>{{ item }}</li>
+              {% if item is not iterable and item is not empty %}
+                <li>{{ item }}{% if item == "Other..." %}{{ data.report_describe_the_issue_other }}{% endif %}</li>
               {% endif %}
             {% endfor %}
-
-            {# Instantly render the typed custom text if they used the 'Other...' option #}
-            {% if data.report_describe_the_issue._other_ is defined and data.report_describe_the_issue._other_ is not empty %}
-              <li>Other: {{ data.report_describe_the_issue._other_ }}</li>
-            {% endif %}
           </ul>
         {% endif %}
+      '#ajax': true
     container_proposed_solution:
       '#type': container
       report_ideal_solution:
@@ -317,7 +311,7 @@ elements: |-
           'Traffic or crossing signal improvements': 'Traffic or crossing signal improvements'
           'Truck restrictions': 'Truck restrictions'
           'Unimproved roadway or gravel street improvements': 'Unimproved roadway or gravel street improvements'
-          'General evaluation or something else': 'General evaluation or something else -- <em>Please describe below</em>'
+          'General evaluation or something else': 'General evaluation or something else -- <em>Please describe below...</em>'
         '#other__option_label': 'General evaluation or something else'
         '#other__placeholder': 'Please describe'
     section_improvement_specifics:
@@ -335,7 +329,7 @@ elements: |-
           'Bike lane protections': 'Bike lane protections -- Concrete separators, parking protected bike lane, or other treatments to prevent cars entering the bike lane'
           'Right-turn pocket': 'Right-turn pocket -- Dedicated area for bicyclists making a right turn'
           'Bike box improvements': 'Bike box improvements -- Dedicated area for bicyclists at traffic signals'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Bike route improvements]"]':
@@ -353,7 +347,7 @@ elements: |-
         '#options':
           'New marked crosswalk': 'New marked crosswalk'
           'Improvements to existing marked crosswalk (signals, pavement markings, signage, crossing buttons)': 'Improvements to existing marked crosswalk (signals, pavement markings, signage, crossing buttons)'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Crosswalk improvements]"]':
@@ -364,7 +358,7 @@ elements: |-
         '#options':
           'Parking removal': 'Parking removal -- For issues with turning or visibility issues.'
           'Curbside parking and loading': 'Curbside parking and loading -- For issues with loading zones, ADA parking, or time‑limited parking'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Parking changes]"]':
@@ -384,7 +378,7 @@ elements: |-
           'Crosswalk or intersection': 'Crosswalk or intersection'
           'Travel lane lines (yellow or white)': 'Travel lane lines (yellow or white)'
           'Parking lines or markings': 'Parking lines or markings'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Pavement marking improvements]"]':
@@ -411,7 +405,7 @@ elements: |-
           'School zone': 'School zone'
           'Directional or wayfinding signage': 'Directional or wayfinding signage'
           'Railroad crossing warning': 'Railroad crossing warning'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Signs]"]':
@@ -420,7 +414,7 @@ elements: |-
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="report_ideal_solution[40340737233559_traffic_enforcement]"]':
+            ':input[name="report_ideal_solution[Traffic enforcement]"]':
               checked: true
         '#markup': '<div class="webform-alert alert alert--info"><h2>Information</h2><p>Speed and traffic enforcement cameras are not placed based on requests. They are installed based on crash data and whether the location is suitable. To learn more, please visit the <a href="/transportation/vision-zero/safety-cameras">Speed and intersection safety cameras webpage</a>.</p><p>PBOT does not decide or manage traffic enforcement. Because the Police Traffic Division has limited hours, we also recommend contacting <a href="/police/divisions/precincts">your local police precinct</a> to share your concerns.</p><p>PBOT’s Vision Zero program offers free yard signs to encourage safe driving. If you are interested, you can find more information on the <a href="/transportation/vision-zero/yard-signs">Vision Zero webpage</a>.</p></div>'
       report_signal_improvement:
@@ -433,7 +427,7 @@ elements: |-
           'Changes to pedestrian crossing timing': 'Changes to pedestrian crossing timing'
           'Protected turn signal': 'Protected turn signal'
           'Pedestrian head start (a.k.a. Leading Pedestrian Interval)': 'Pedestrian head start (a.k.a. Leading Pedestrian Interval) -- <em>Gives pedestrians a “head start” by showing a walk signal a few seconds before a green light.</em>'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[Traffic or crossing signal improvements]"]':
@@ -446,7 +440,7 @@ elements: |-
           'School loading zones': 'School loading zones'
           'School bus zones': 'School bus zones'
           'Turn restrictions or one-way signage near a school': 'Turn restrictions or one-way signage near a school'
-          Other...: 'Other... -- Please describe below'
+          Other...: 'Other... -- <em>Please describe below...</em>'
         '#states':
           visible:
             ':input[name="report_ideal_solution[School zone improvements (traffic-flow/circulation)]"]':
@@ -583,16 +577,21 @@ elements: |-
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed tags'
-    '#display_on': form
+    '#display_on': none
     '#mode': text
     '#template': |+
       {# -------- Computed routing -------- #}
       {% set pri = "" %}
       {% set matrix = data.report_location.location_region_id %}
 
-      {# Related to collision #}
-      {% if data.report_crash_related == "Yes" %}
+      {# *** Priority M short circuits all other priority settings *** #}
+      {% if data.report_is_transportation_agency == "Yes" and 
+           (data.report_who_are_you == "PBOT Maintenance" or data.report_who_are_you == "Utility" or data.report_who_are_you == "PBOT Data Collection") %}
+            {% set pri = "M" %}
+            38868731455511_m
 
+      {% elseif data.report_crash_related == "Yes" %}
+        {# Related to collision #}
         38008128296599_study_needs_assignment
         {% if data.report_crash_involvement_type == "Involving a pedestrian or a bicyclist" or data.report_crash_involvement_type == "A vehicle ran off the roadway during the crash" %}
           {% set pri = "A" %}
@@ -774,14 +773,14 @@ elements: |-
 
       {% if 'General evaluation or something else' in data.report_ideal_solution %}40340737233559_general_evaluation_or_something {% endif %}
 
-    '#ajax': true
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
   computed_crash_involvement_type:
     '#type': webform_computed_twig
     '#title': 'Computed Crash Involvement Type'
-    '#display_on': form
+    '#display_on': none
+    '#mode': html
     '#template': |-
       {% if data.report_crash_related and data.report_crash_related is not iterable %}
         {% if data.report_crash_related == "No" %}
@@ -792,15 +791,22 @@ elements: |-
           {{ data.report_crash_involvement_type }}  
         {% endif %}
       {% endif %}
-    '#ajax': true
-  test_computed:
+    '#whitespace': trim
+  computed_requester_type:
     '#type': webform_computed_twig
-    '#title': 'Test Computed'
+    '#title': 'Computed Requester Type'
     '#display_on': form
     '#mode': text
     '#template': |-
-      {% if attribute(data.report_parking_changes, 'radios') == '_other_' %}
-        41755046478615_other
+      {% if data.report_staff_use_type is not iterable and data.report_staff_use_type == "city_staff" and data.report_is_transportation_agency == "No" %}
+        Community member
+
+      {% elseif data.report_staff_use_type is not iterable and data.report_staff_use_type == "city_staff" and data.report_is_transportation_agency is not iterable and data.report_is_transportation_agency == "Yes" %}
+        {{ data.report_who_are_you }}
+
+      {% elseif data.report_staff_use_type is not iterable and data.report_staff_use_type == "safety_staff" %}
+        Traffic Safety staff person
+       
       {% endif %}
     '#whitespace': trim
     '#ajax': true
@@ -1011,7 +1017,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6353388345367: 'request_transp_safety_improve'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n37899104165271: ['[webform_submission:values:report_crash_related]', 'collision_related']\r\n37899134522903: ['[webform_submission:values:computed_crash_involvement_type]', 'computed_crash_involvement_type']\r\n40340593642775: ['[webform_submission:values:report_describe_the_issue_other]', 'report_describe_the_issue_other']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n26253458420759: ['[webform_submission:values:contact_org_name]', 'contact_org_name']"
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6353388345367: 'request_transp_safety_improve'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n37899104165271: ['[webform_submission:values:report_crash_related]', 'collision_related']\r\n37899134522903: ['[webform_submission:values:computed_crash_involvement_type]', 'computed_crash_involvement_type']\r\n40340593642775: ['[webform_submission:values:report_describe_the_issue_other]', 'report_describe_the_issue_other']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n26253458420759: ['[webform_submission:values:contact_org_name]', 'contact_org_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']"
       ticket_id_field: report_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
