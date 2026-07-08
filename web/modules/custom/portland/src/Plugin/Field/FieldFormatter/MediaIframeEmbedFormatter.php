@@ -42,6 +42,8 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
       "^https?:\/\/publish\.smartsheet\.com\/.+$",
       // RankedVote
       "^https:\/\/app.rankedvote.co\/rv\/[^\/]+\/vote\/embed-rv\/?$",
+      // PowerBI
+      "^https:\/\/app.powerbigov.us\/view\?.+$",
     ];
 
     return "/" . join("|", $patterns) . "/";
@@ -51,7 +53,7 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
    * {@inheritdoc}
    */
   public static function getValidUrlExampleStrings(): array {
-    return ['Only supports embeddable links from arcg.is, www.arcgis.com, pdx.maps.arcgis.com, Google Maps, PortlandMaps.com, PortlandOregon.gov, app.rankedvote.co, Tableau, and Smartsheet (links starting with app.smartsheet.com/b/form or publish.smartsheet.com).'];
+    return ['Only supports embeddable links from arcg.is, www.arcgis.com, pdx.maps.arcgis.com, PowerBI, Google Maps, PortlandMaps.com, PortlandOregon.gov, app.rankedvote.co, Tableau, and Smartsheet (links starting with app.smartsheet.com/b/form or publish.smartsheet.com).'];
   }
 
   /**
