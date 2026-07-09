@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
+use Drupal\portland_relations\Entity\Relation;
 
 /**
  * Helper function that checks if the node should have its title overwritten
@@ -260,13 +261,36 @@ function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, Rout
  * Only allow council clerk/admins to view unpublished agendas
  */
 function portland_ecouncil_node_access(Node $node, $op, AccountInterface $account) {
-  if ($op === 'view' || $op === 'view all revisions') {
-    if ($node->bundle() === 'council_agenda' && !$node->isPublished()) {
-      $roles = $account->getRoles();
-      if (!in_array('council_clerk', $roles) && !in_array('administrator', $roles)) {
-        return AccessResult::forbidden();
-      }
+  if (($op === 'view' || $op === 'view all revisions')
+      && $node->bundle() === 'council_agenda'
+      && !$node->isPublished()) {
+    $roles = $account->getRoles();
+    if (!in_array('council_clerk', $roles) && !in_array('administrator', $roles)) {
+      return AccessResult::forbidden();
     }
+  }
+
+  return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ *
+ * Prevent users from viewing agenda items or sessions when they don't have access to view the parent agenda.
+ */
+function portland_glossary_relation_access(Relation $relation, $op, AccountInterface $account) {
+  if ($op !== 'view' && $op !== 'view all revisions') return;
+
+  $entity_to_check = null;
+  if ($relation->bundle() === 'council_agenda_item') {
+    $entity_to_check = $relation->field_council_session?->entity?->field_council_agenda?->entity;
+  } else if ($relation->bundle() === 'council_session') {
+    $entity_to_check = $relation->field_council_agenda?->entity;
+  }
+
+  if ($entity_to_check instanceof EntityInterface) {
+    // Inherit the parent agenda's access (3rd parameter to access() returns the AccessResult object)
+    return $entity_to_check->access('view', $account, true) ?? AccessResult::forbidden();
   }
 
   return AccessResult::neutral();
