@@ -1,10 +1,12 @@
 <?php
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Breadcrumb\Breadcrumb;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
 
 /**
@@ -242,8 +244,7 @@ function portland_ecouncil_relation_update(EntityInterface $relation) {
  *
  * On public council document pages, add a breadcrumb link with the committee, if set.
  */
-function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context)
-{
+function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context) {
   $node = $route_match->getParameter('node');
   if (!empty($node) && $node instanceof Node && $node->bundle() === 'council_document') {
     $committee = $node->field_committee->entity;
@@ -251,4 +252,22 @@ function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, Rout
       $breadcrumb->addLink($committee->toLink());
     }
   }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ *
+ * Only allow council clerk/admins to view unpublished agendas
+ */
+function portland_ecouncil_node_access(Node $node, $op, AccountInterface $account) {
+  if ($op === 'view' || $op === 'view all revisions') {
+    if ($node->bundle() === 'council_agenda' && !$node->isPublished()) {
+      $roles = $account->getRoles();
+      if (!in_array('council_clerk', $roles) && !in_array('administrator', $roles)) {
+        return AccessResult::forbidden();
+      }
+    }
+  }
+
+  return AccessResult::neutral();
 }
