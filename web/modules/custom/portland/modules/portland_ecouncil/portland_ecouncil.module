@@ -4,11 +4,13 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Breadcrumb\Breadcrumb;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
 use Drupal\portland_relations\Entity\Relation;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Helper function that checks if the node should have its title overwritten
@@ -294,4 +296,17 @@ function portland_glossary_relation_access(Relation $relation, $op, AccountInter
   }
 
   return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ *
+ * Modify the accordion behavior on council committee pages.
+ * - Collapse all rows by default.
+ * - Only show expand all/collapse all starting at 5 rows.
+ */
+function portland_glossary_taxonomy_term_view(array &$build, Term $term, EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode === 'full' && $term->bundle()=== 'council_committee') {
+    $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 5;
+  }
 }
