@@ -35,6 +35,7 @@ elements: |-
       '#type': portland_address_verifier
       '#title': 'Site address'
       '#description_display': before
+      '#location_verification_status__required': true
       '#location_address__title': 'Site Address'
       '#location_address__description': '<p>Please provide the address where you are requesting an Outdoor Dining space. Begin typing to see a list of possible address matches within the Portland metro area.</p>'
       '#location_address__required': true
@@ -42,8 +43,15 @@ elements: |-
       '#location_city__required': true
       '#location_state__required': true
       '#location_zip__required': true
-      '#location_verification_status__required': true
       '#require_portland_city_limits': 1
+      '#secondary_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/11/query?where=1=1&f=json&outFields=MAPLABEL&geometryType=esriGeometryPoint&returnGeometry=false'
+      '#secondary_query_capture_property': features.attributes.MAPLABEL
+      '#secondary_query_capture_field': location_capture_field
+      '#location_capture_field__readonly': true
+      '#location_capture_field__states':
+        visible:
+          ':input[name="apply_address[location_verification_status]"]':
+            value: Verified
     org_name_escaped:
       '#type': webform_computed_twig
       '#title': 'Organization name escaped'
@@ -51,6 +59,20 @@ elements: |-
       '#mode': text
       '#template': '{{ data.apply_org_name | replace({"''": "''''"}) }}'
       '#whitespace': trim
+    apply_i405_fee_waiver:
+      '#type': radios
+      '#title': 'You may be eligible for the I-405 Sidewalk Café Fee waiver. Would you like to apply?'
+      '#options': yes_no
+      '#states':
+        visible:
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Portland Downtown'
+          - or
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Pearl District'
+          - or
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Old Town'
   section_permit_details:
     '#type': webform_section
     '#title': 'Permit details'
@@ -213,6 +235,11 @@ elements: |-
         {% if data.apply_previous_ivr %}
         <br><strong>IVR number:</strong> {{ data.apply_previous_ivr }}
         {% endif %}
+        
+        {% if data.apply_site_address.location_capture_field == "Portland Downtown" or data.apply_site_address.location_capture_field == "Pearl District" or data.apply_site_address.location_capture_field == "Old Town" %}
+        <strong>Would you like to apply for the I-405 Sidewalk Café Fee waiver?</strong> {{ data.apply_i405_fee_waiver }}
+        {% endif %}
+        
         {% if data.apply_notes %}
         <br><strong>Additional notes:</strong> {{ data.apply_notes }}
         {% endif %}
@@ -400,6 +427,7 @@ handlers:
       ticket_form_id: '26628296208535'
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
