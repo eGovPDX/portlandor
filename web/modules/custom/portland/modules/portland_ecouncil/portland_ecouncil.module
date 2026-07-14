@@ -310,3 +310,25 @@ function portland_ecouncil_taxonomy_term_view(array &$build, Term $term, EntityV
     $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 5;
   }
 }
+
+/**
+ * Implements hook_preprocess_HOOK() for menu--council-committees
+ *
+ * Hides inactive committees from the taxonomy menu.
+ */
+function portland_ecouncil_preprocess_menu__council_committees(&$variables) {
+  if (isset($variables['items'])) {
+    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+    foreach ($variables['items'] as $key => &$item) {
+      if (isset($item['url']) && $item['url']->isRouted() && $item['url']->getRouteName() === 'entity.taxonomy_term.canonical') {
+        $tid = $item['url']->getRouteParameters()['taxonomy_term'] ?? null;
+        if (isset($tid)) {
+          $term = $term_storage->load($tid);
+          if (!$term->field_is_active_committee?->value) {
+            unset($variables['items'][$key]);
+          }
+        }
+      }
+    }
+  }
+}
