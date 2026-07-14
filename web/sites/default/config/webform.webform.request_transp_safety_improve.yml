@@ -245,8 +245,11 @@ elements: |-
         '#title': 'Additional details about the crash'
         '#states':
           visible:
-            ':input[name="report_crash_related"]':
-              value: 'Yes'
+            - ':input[name="report_crash_related"]':
+                value: 'Yes'
+            - or
+            - ':input[name="report_crash_related"]':
+                value: 'It was a near miss'
     report_photo_upload:
       '#type': managed_file
       '#title': 'Photo Upload'
@@ -290,6 +293,9 @@ elements: |-
       '#ajax': true
     container_proposed_solution:
       '#type': container
+      markup_02:
+        '#type': webform_markup
+        '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Some suggestions may not be possible. All changes must meet engineering standards, and some may need funding that isn''t available right away. Even if we can''t move forward with your request, your feedback helps us understand safety concerns across the city and helps us plan future improvements.</p></div>'
       report_ideal_solution:
         '#type': checkboxes
         '#title': 'Do you have a suggested improvement?'
@@ -590,6 +596,16 @@ elements: |-
             {% set pri = "M" %}
             38868731455511_m
             38008128296599_study_needs_assignment
+
+      {# if transp agency but not one of the above, always set pri B/C based on matrix #}
+      {% elseif data.report_is_transportation_agency == "Yes" %}
+          {% if matrix == "4" or matrix == "5" %}
+            {% set pri = "B" %}
+            38868731455511_b
+          {% elseif matrix == "1" or matrix == "2" or matrix == "3" %}
+            {% set pri = "C" %}
+            38868731455511_c
+          {% endif %}
             
       {% elseif data.report_crash_related == "Yes" %}
         {# Related to collision #}
@@ -618,6 +634,15 @@ elements: |-
       {% elseif (data.report_crash_related == "No" or data.report_crash_related == "It was a near miss") and (matrix == "1" or matrix == "2" or matrix == "3") %}
         {% set pri = "C" %}
         38868731455511_c
+        
+      {% elseif data.report_crash_related == "Yes" and data.report_crash_involvement_type == "Involving two or more vehicles" and (matrix == "4" or matrix == "5") %}
+        {% set pri = "B" %}
+        38868731455511_b
+
+      {% elseif data.report_crash_related == "Yes" and data.report_crash_involvement_type == "Involving two or more vehicles" and (matrix == "1" or matrix == "2" or matrix == "3") %}
+        {% set pri = "C" %}
+        38868731455511_c
+        
       {# Partner agency: PBOT MO, Data Collection, or Utility #}
       {% elseif data.report_who_are_you == "PBOT Data Collection" or data.report_who_are_you == "PBOT Maintenance" or data.report_who_are_you == "Utility" %}
         {% set pri = "M" %}
@@ -761,9 +786,9 @@ elements: |-
 
       {% if 'Traffic or crossing signal improvements' in data.report_ideal_solution %}40340737233559_traffic_or_crossing_signal_improvements {% endif %}
       {% if 'A new traffic signal (a.k.a. traffic light)' in data.report_signal_improvement %}41755046478615_a_new_traffic_signal {% endif %}
-      {% if 'Changes to traffic signal timing' in data.report_signal_improvement %}41755046478615_changes_to_traffic_signal_timing {% endif %}
+      {% if 'Changes to traffic signal timing' in data.report_signal_improvement %}41755046478615_changes_to_traffic_signal_timing traffic_safety_auto_refer_ssl {% endif %}
       {% if 'New pedestrian crossing signal' in data.report_signal_improvement %}41755046478615_new_pedestrian_crossing_signal {% endif %}
-      {% if 'Changes to pedestrian crossing timing' in data.report_signal_improvement %}41755046478615_changes_to_pedestrian_crossing_timing {% endif %}
+      {% if 'Changes to pedestrian crossing timing' in data.report_signal_improvement %}41755046478615_changes_to_pedestrian_crossing_timing traffic_safety_auto_refer_ssl {% endif %}
       {% if 'Protected turn signal' in data.report_signal_improvement %}41755046478615_protected_turn_signal {% endif %}
       {% if 'Pedestrian head start (a.k.a. Leading Pedestrian Interval)' in data.report_signal_improvement %}41755046478615_pedestrian_head_start {% endif %}
       {% if 'Other...' in data.report_signal_improvement %}41755046478615_other {% endif %}
@@ -917,7 +942,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you!'
-  confirmation_message: '<p>Your report has been submitted.</p><p>Our Traffic Safety team will review it soon. If the issue is something our bureau investigates, we will open a case in the coming weeks and an engineer will visit the site.</p><p>We appreciate your patience and your help in keeping Portland neighborhoods safe.</p>'
+  confirmation_message: '<p>Your report has been&nbsp;submitted. &nbsp;</p><p>Please know that some suggestions may not be possible for us to do. All changes must meet engineering standards, and some work may need funding that isn’t always available right away.</p><p>Here is what you can typically expect moving forward: &nbsp;&nbsp;</p><p><strong>Routine requests or past issues</strong>&nbsp;(2 weeks – 2 months):&nbsp;For requests that&nbsp;do not need an engineering study, we will respond to routine requests for information or research historical requests to see if similar issues have already been reported.</p><p><strong>Triaging new requests&nbsp;</strong>(2&nbsp;weeks&nbsp;– 2 months):&nbsp;Our Traffic Safety team will&nbsp;review your request,&nbsp;decide&nbsp;if an engineering&nbsp;study&nbsp;is needed, and&nbsp;let you know the&nbsp;expected&nbsp;timeline. &nbsp;</p><p><strong>Typical engineering study timelines</strong>&nbsp;(approximately 3-12&nbsp;months&nbsp;or more):&nbsp;</p><ul><li data-list-item-id="eb4bc34db96acb291c6fca8a180dca7fa">Requests&nbsp;related to a recent collision involving a person walking or biking, or a car that ran off the road&nbsp;are typically investigated&nbsp;within 2-3 months. &nbsp;</li><li data-list-item-id="e20e47d67f9ebf2b3b01c2f6139333abe">For all other traffic safety requests, we look at needs across the entire city and pay special attention to areas where people may be more at risk. These requests are usually reviewed within 9 to 24 months.</li></ul><p>Because of our workload&nbsp;and&nbsp;priorities, these timelines can vary widely. During an investigation, an engineer may contact you for more&nbsp;information, visit the site, or collect traffic data. &nbsp;</p><p>When the study is complete, an engineer will contact you and let you know next steps.&nbsp;</p><p><strong>Please note:&nbsp;</strong>Even if we can’t act on your request right now, it still helps us understand traffic safety across the city and plan our future work. Thank you!&nbsp;</p><p>We appreciate your patience and your help in keeping Portland neighborhoods safe.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit an additional Traffic Safety request'
