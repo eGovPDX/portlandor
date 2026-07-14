@@ -574,7 +574,6 @@ elements: |-
         - authenticated
       '#employee_notes_panel__access': false
       '#escalate_issue__access': false
-      '#test_submission__access': false
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -843,7 +842,7 @@ elements: |-
 css: ''
 javascript: ''
 settings:
-  ajax: false
+  ajax: true
   ajax_scroll_top: form
   ajax_progress_type: ''
   ajax_effect: ''
@@ -945,10 +944,10 @@ settings:
   draft_loaded_message: ''
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
-  confirmation_type: page
+  confirmation_type: inline
   confirmation_url: ''
-  confirmation_title: 'Thank you!'
-  confirmation_message: '<p>Your report has been&nbsp;submitted. &nbsp;</p><p>Please know that some suggestions may not be possible for us to do. All changes must meet engineering standards, and some work may need funding that isn’t always available right away.</p><p>Here is what you can typically expect moving forward: &nbsp;&nbsp;</p><p><strong>Routine requests or past issues</strong>&nbsp;(2 weeks – 2 months):&nbsp;For requests that&nbsp;do not need an engineering study, we will respond to routine requests for information or research historical requests to see if similar issues have already been reported.</p><p><strong>Triaging new requests&nbsp;</strong>(2&nbsp;weeks&nbsp;– 2 months):&nbsp;Our Traffic Safety team will&nbsp;review your request,&nbsp;decide&nbsp;if an engineering&nbsp;study&nbsp;is needed, and&nbsp;let you know the&nbsp;expected&nbsp;timeline. &nbsp;</p><p><strong>Typical engineering study timelines</strong>&nbsp;(approximately 3-12&nbsp;months&nbsp;or more):&nbsp;</p><ul><li data-list-item-id="eb4bc34db96acb291c6fca8a180dca7fa">Requests&nbsp;related to a recent collision involving a person walking or biking, or a car that ran off the road&nbsp;are typically investigated&nbsp;within 2-3 months. &nbsp;</li><li data-list-item-id="e20e47d67f9ebf2b3b01c2f6139333abe">For all other traffic safety requests, we look at needs across the entire city and pay special attention to areas where people may be more at risk. These requests are usually reviewed within 9 to 24 months.</li></ul><p>Because of our workload&nbsp;and&nbsp;priorities, these timelines can vary widely. During an investigation, an engineer may contact you for more&nbsp;information, visit the site, or collect traffic data. &nbsp;</p><p>When the study is complete, an engineer will contact you and let you know next steps.&nbsp;</p><p><strong>Please note:&nbsp;</strong>Even if we can’t act on your request right now, it still helps us understand traffic safety across the city and plan our future work. Thank you!&nbsp;</p><p>We appreciate your patience and your help in keeping Portland neighborhoods safe.</p>'
+  confirmation_title: ''
+  confirmation_message: '<h2>Thank You!</h2><p>Your report has been&nbsp;submitted. &nbsp;</p><p>Please know that some suggestions may not be possible for us to do. All changes must meet engineering standards, and some work may need funding that isn’t always available right away.</p><p>Here is what you can typically expect moving forward: &nbsp;&nbsp;</p><p><strong>Routine requests or past issues</strong>&nbsp;(2 weeks – 2 months):&nbsp;For requests that&nbsp;do not need an engineering study, we will respond to routine requests for information or research historical requests to see if similar issues have already been reported.</p><p><strong>Triaging new requests&nbsp;</strong>(2&nbsp;weeks&nbsp;– 2 months):&nbsp;Our Traffic Safety team will&nbsp;review your request,&nbsp;decide&nbsp;if an engineering&nbsp;study&nbsp;is needed, and&nbsp;let you know the&nbsp;expected&nbsp;timeline. &nbsp;</p><p><strong>Typical engineering study timelines</strong>&nbsp;(approximately 3-12&nbsp;months&nbsp;or more):&nbsp;</p><ul><li data-list-item-id="eb4bc34db96acb291c6fca8a180dca7fa">Requests&nbsp;related to a recent collision involving a person walking or biking, or a car that ran off the road&nbsp;are typically investigated&nbsp;within 2-3 months. &nbsp;</li><li data-list-item-id="e20e47d67f9ebf2b3b01c2f6139333abe">For all other traffic safety requests, we look at needs across the entire city and pay special attention to areas where people may be more at risk. These requests are usually reviewed within 9 to 24 months.</li></ul><p>Because of our workload&nbsp;and&nbsp;priorities, these timelines can vary widely. During an investigation, an engineer may contact you for more&nbsp;information, visit the site, or collect traffic data. &nbsp;</p><p>When the study is complete, an engineer will contact you and let you know next steps.&nbsp;</p><p><strong>Please note:&nbsp;</strong>Even if we can’t act on your request right now, it still helps us understand traffic safety across the city and plan our future work. Thank you!&nbsp;</p><p>We appreciate your patience and your help in keeping Portland neighborhoods safe.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit an additional Traffic Safety request'
@@ -1031,7 +1030,10 @@ handlers:
     label: 'Zendesk new request'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: -50
     settings:
       requester_name: contact_name
@@ -1067,7 +1069,7 @@ handlers:
     notes: ''
     status: false
     conditions: {  }
-    weight: -49
+    weight: -48
     settings:
       states:
         - completed
@@ -1098,4 +1100,42 @@ handlers:
       langcode: ''
       parameters: {  }
       debug: false
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject] - [webform_submission:values:report_describe_the_issue:html]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6353388345367: 'request_transp_safety_improve'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n37899104165271: ['[webform_submission:values:report_crash_related]', 'collision_related']\r\n37899134522903: ['[webform_submission:values:computed_crash_involvement_type]', 'computed_crash_involvement_type']\r\n40340593642775: ['[webform_submission:values:report_describe_the_issue_other]', 'report_describe_the_issue_other']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n26253458420759: [\"[webform_submission:values:contact_org_name:clear:striptags:htmldecode]\", \"contact_org_name\"]\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n37898327302039: ['[webform_submission:values:computed_requester_type]', 'computed_requester_type']"
+      ticket_id_field: report_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '37898155853719'
+      excluded_elements:
+        report_location__location_region_id: report_location__location_region_id
+        support_agent_use_only: support_agent_use_only
+        support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
+        support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
+        support_agent_use_only__test_submission: support_agent_use_only__test_submission
 variants: {  }
