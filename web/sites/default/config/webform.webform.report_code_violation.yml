@@ -16,6 +16,7 @@ description: ''
 categories:
   - Report
 elements: |-
+<<<<<<< HEAD
   page_concern_type:
     '#type': webform_wizard_page
     '#title': 'Type of concern'
@@ -109,6 +110,92 @@ elements: |-
   page_report_details:
     '#type': webform_wizard_page
     '#title': 'Report details'
+=======
+  concern_type:
+    '#type': radios
+    '#title': 'What type of concern are you trying to report?'
+    '#options':
+      maintenance: 'A concern about property maintenance or safety -- Examples: yard is overgrown, unsafe conditions, or a poorly maintained building.'
+      property_use: "A concern about how a property is being used -- Examples: short-term rentals, running a business, or someone living in a space that isn't approved for housing."
+      construction: 'A concern about building location or construction on private property -- Examples: work without permits or the size or location of buildings or fences.'
+      property_dispute: 'Property line or boundary disputes, or damage caused by a neighbor'
+      row_obstruction: 'Something blocking the street, sidewalk, or other part of the right-of-way'
+      noise: 'Noise or ongoing disturbances'
+      trash: 'Trash, debris, or illegal dumping'
+    '#required': true
+  markup_row_redirect_message:
+    '#type': webform_markup
+    '#markup': '<div class="webform-alert alert alert--info"><h2>Next Steps</h2><p><strong>This issue should be reported using a different form.</strong></p><p>Items blocking the street, sidewalk, or right-of-way should be reported using the <a href="/311/report-obstruction">Report a Right-of-Way Obstruction form</a>.</p></div>'
+    '#states':
+      visible:
+        ':input[name="concern_type"]':
+          value: row_obstruction
+  markup_noise_redirect_message:
+    '#type': webform_markup
+    '#markup': '<div class="webform-alert alert alert--info"><h2>Next Steps</h2><p><strong>This issue should be reported using a different form.</strong></p><p>Noise concerns should be reported using the <a href="/ppd/noise/noise-concerns">Report a Noise Concern form</a>.</p></div>'
+    '#states':
+      visible:
+        ':input[name="concern_type"]':
+          value: noise
+  markup_property_dispute_exit_message:
+    '#type': webform_markup
+    '#markup': '<div class="webform-alert alert alert--info"><h2>Next Steps</h2><p><strong>The City cannot assist with this issue.</strong></p><p>Property line disputes, boundary disagreements, and damage caused by neighbors are civil matters between property owners. The City of Portland does not have jurisdiction over these issues.</p><p><strong>You may want to:</strong></p><ul><li>Contact a surveyor to establish property boundaries</li><li>Consult with a real estate attorney</li><li>Consider mediation services</li></ul><p>If you believe there is a code violation separate from the property dispute, please go back and select the appropriate category above.</p></div>'
+    '#states':
+      visible:
+        ':input[name="concern_type"]':
+          value: property_dispute
+  report_location_is_private:
+    '#type': radios
+    '#title': 'Is the concern located on private property, such as a residence, school, or business?'
+    '#options': yes_no
+    '#states':
+      visible:
+        ':input[name="concern_type"]':
+          value: trash
+  report_location_owner:
+    '#type': radios
+    '#title': 'Are you the owner of the property?'
+    '#options': yes_no
+    '#states':
+      visible:
+        ':input[name="report_location_is_private"]':
+          value: 'Yes'
+  markup_trash_redirect_message:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_location_is_private"]':
+          value: 'No'
+    '#markup': '<div class="webform-alert alert alert--info"><h2>Next Steps</h2><p><strong>Another resource may be better for your concern.</strong></p><p>Trash, debris, or illegal dumping concerns that are not on private property would be better reported first through another form or resource. To help you continue to navigate to the appropriate place, please try utilizing our <a href="/311/report-trash">Report Trash navigational webtool</a>.&nbsp;<br><br>Please note that indicating that your concern in some way relates to private property, you may be redirected to this Report a Concern about a Property or Business webform. Please don''t hesitate to contact PDX 311 by calling <a href="tel:311"> 311</a> or <a href="tel:+15038234000">(503) 823-4000</a> if you have any questions or would like to report your concern through a representative.</p></div>'
+  markup_private_owner:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_location_owner"]':
+          value: 'Yes'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+      <p>Property owners are responsible for addressing concerns on their property. If you would like assistance, please call <a href="tel:311">311</a> or <a href="tel:+1-503-823-4000">(503) 823-4000</a>&nbsp;so staff can help you connect to potential resources.</p>
+      </div>
+  submission_information:
+    '#type': webform_section
+    '#title': 'Submission Information'
+    '#title_display': invisible
+    '#states':
+      visible:
+        - ':input[name="concern_type"]':
+            value: maintenance
+        - or
+        - ':input[name="concern_type"]':
+            value: property_use
+        - or
+        - ':input[name="concern_type"]':
+            value: construction
+        - or
+        - ':input[name="report_location_owner"]':
+            value: 'No'
+>>>>>>> b5b01129ed03668a382f33690e3ea46378f1368f
     report_visible_from_street:
       '#type': radios
       '#title': 'Can this issue be seen from the street or public sidewalk?'
@@ -158,8 +245,13 @@ elements: |-
       '#title': 'Location of concern'
       '#required': true
       '#location_search__title': 'Location of concern'
+      '#location_details__access': false
       '#out_of_bounds_message': "This location is outside the City of Portland's city limits. Please report your concern to the local jurisdiction. You can call 311 (503-823-4000) or email 311@portlandoregon.gov if you need help determining who to contact."
       '#require_boundary': true
+    report_concern_description:
+      '#type': textarea
+      '#title': 'Please provide more details about the concern you are reporting:'
+      '#required': true
     computed_portlandmaps_link:
       '#type': webform_computed_twig
       '#title': 'View property:'
@@ -182,9 +274,6 @@ elements: |-
       '#sanitize': true
       '#max_resolution': 1280x1280
       '#attachment_image_style': webform_report_uploaded_image
-  page_contact_information:
-    '#type': webform_wizard_page
-    '#title': 'Contact information'
     section_contact:
       '#type': webform_section
       '#title': 'Your contact information'
@@ -208,37 +297,54 @@ elements: |-
         '#title': Phone
         '#input_mask': '(999) 999-9999'
         '#required': true
-    contact_home_address:
-      '#type': portland_address_verifier
-      '#title': 'Your home address'
-      '#location_address__title': 'Your home address'
-      '#required': true
-      '#location_verification_status__required': true
-      '#location_address__required': true
-      '#location_city__required': true
-      '#location_state__required': true
-      '#location_zip__required': true
-    section_public_records_statement:
-      '#type': webform_section
-      '#title': 'Confidentiality statement'
-      confidentiality_waiver:
-        '#type': radios
-        '#title': 'Confidentiality waiver'
-        '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
-        '#description_display': before
-        '#options':
-          'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
-          'I waive confidentiality': 'I choose to waive confidentiality.'
+      contact_home_address:
+        '#type': portland_address_verifier
+        '#title': 'Your home address'
+        '#location_address__title': 'Your home address'
         '#required': true
-        '#default_value': 'I do not waive confidentiality'
-    support_agent_use_only:
-      '#type': portland_support_agent_widget
-      '#title': 'Support agent use only'
-      '#zendesk_request_number__access': false
-      '#employee_notes_panel__access': false
-      '#escalate_issue__access': false
-      '#access_create_roles':
-        - authenticated
+        '#location_verification_status__required': true
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+      section_public_records_statement:
+        '#type': webform_section
+        '#title': 'Confidentiality statement'
+        '#title_display': invisible
+        confidentiality_waiver:
+          '#type': radios
+          '#title': 'Confidentiality waiver'
+          '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+          '#description_display': before
+          '#options':
+            'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+            'I waive confidentiality': 'I choose to waive confidentiality.'
+          '#required': true
+          '#default_value': 'I do not waive confidentiality'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support agent use only'
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
+    '#access_create_roles':
+      - authenticated
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#states':
+      visible:
+        - ':input[name="concern_type"]':
+            value: maintenance
+        - or
+        - ':input[name="concern_type"]':
+            value: property_use
+        - or
+        - ':input[name="concern_type"]':
+            value: construction
+        - or
+        - ':input[name="report_location_owner"]':
+            value: 'No'
 css: ''
 javascript: ''
 settings:
