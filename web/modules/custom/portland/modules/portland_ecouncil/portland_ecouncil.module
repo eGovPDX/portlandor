@@ -1,11 +1,16 @@
 <?php
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Breadcrumb\Breadcrumb;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
+use Drupal\portland_relations\Entity\Relation;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Helper function that checks if the node should have its title overwritten
@@ -242,13 +247,88 @@ function portland_ecouncil_relation_update(EntityInterface $relation) {
  *
  * On public council document pages, add a breadcrumb link with the committee, if set.
  */
-function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context)
-{
+function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context) {
   $node = $route_match->getParameter('node');
   if (!empty($node) && $node instanceof Node && $node->bundle() === 'council_document') {
     $committee = $node->field_committee->entity;
     if ($committee && !\Drupal::service('router.admin_context')->isAdminRoute($route_match->getRouteObject())) {
       $breadcrumb->addLink($committee->toLink());
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ *
+ * Only allow council clerk/admins to view unpublished agendas
+ */
+function portland_ecouncil_node_access(Node $node, $op, AccountInterface $account) {
+  if (($op === 'view' || $op === 'view all revisions')
+      && $node->bundle() === 'council_agenda'
+      && !$node->isPublished()) {
+    $roles = $account->getRoles();
+    if (!in_array('council_clerk', $roles) && !in_array('administrator', $roles)) {
+      return AccessResult::forbidden();
+    }
+  }
+
+  return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ *
+ * Prevent users from viewing agenda items or sessions when they don't have access to view the parent agenda.
+ */
+function portland_ecouncil_relation_access(Relation $relation, $op, AccountInterface $account) {
+  if ($op !== 'view' && $op !== 'view all revisions') return;
+
+  $entity_to_check = null;
+  if ($relation->bundle() === 'council_agenda_item') {
+    $entity_to_check = $relation->field_council_session?->entity?->field_council_agenda?->entity;
+  } else if ($relation->bundle() === 'council_session') {
+    $entity_to_check = $relation->field_council_agenda?->entity;
+  }
+
+  if ($entity_to_check instanceof EntityInterface) {
+    // Inherit the parent agenda's access (3rd parameter to access() returns the AccessResult object)
+    return $entity_to_check->access('view', $account, true) ?? AccessResult::forbidden();
+  }
+
+  return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ *
+ * Modify the accordion behavior on council committee pages.
+ * - Collapse all rows by default.
+ * - Only show expand all/collapse all starting at 5 rows.
+ */
+function portland_ecouncil_taxonomy_term_view(array &$build, Term $term, EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode === 'full' && $term->bundle()=== 'council_committee') {
+    $build['#attached']['drupalSettings']['portland']['cloudyExpandAllAccordion']['minRows'] = 5;
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for menu--council-committees
+ *
+ * Hides inactive committees from the taxonomy menu.
+ */
+function portland_ecouncil_preprocess_menu__council_committees(&$variables) {
+  if (isset($variables['items'])) {
+    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+    foreach ($variables['items'] as $key => &$item) {
+      if (isset($item['url']) && $item['url']->isRouted() && $item['url']->getRouteName() === 'entity.taxonomy_term.canonical') {
+        $tid = $item['url']->getRouteParameters()['taxonomy_term'] ?? null;
+        if (isset($tid)) {
+          $term = $term_storage->load($tid);
+          if (!$term->field_is_active_committee?->value) {
+            unset($variables['items'][$key]);
+          }
+        }
+      }
     }
   }
 }
