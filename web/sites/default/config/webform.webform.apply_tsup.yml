@@ -92,7 +92,7 @@ elements: |-
     contact_phone:
       '#type': textfield
       '#title': 'Contact phone number'
-      '#autocomplete': 'tel-national'
+      '#autocomplete': tel-national
       '#input_mask': 999-999-9999
       '#required': true
       '#prepopulate': true
@@ -259,8 +259,28 @@ elements: |-
         visible:
           ':input[name="contact_applicant_type"]':
             value: sidewalk_repair
+          ':input[name="wizard_existing_permit_situation"]':
+            '!value': extend
       '#alert_markup': |-
+        <div class="webform-alert alert alert--warning">
         <p>You have selected that this request is for a <strong>sidewalk repair notification</strong>.<br>This request cannot include any street or travel lane closures. For these closures, you will have to submit a separate permit application by using the button at the top of the confirmation page after submitting this notification.</p>
+        </div>
+    markup_no_renewals_notification:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="wizard_permit_need"]':
+            value: existing_permit
+          ':input[name="wizard_existing_permit_situation"]':
+            value: extend
+          ':input[name="contact_applicant_type"]':
+            value:
+              pattern: fun|cbn|sidewalk_repair
+      '#markup': |-
+        <div class="webform-alert alert alert--info">
+        <h2>Next Steps</h2>
+
+        <p>On the previous page you indicated that you were renewing a permit. Franchise Utility, City Bureau, or Sidewalk Repair Notifications cannot be renewed. Please go back to the previous page and choose to submit a new request.</p>
         </div>
     container_fun_parking_warning:
       '#type': container
@@ -273,7 +293,9 @@ elements: |-
       markup_parking_warning:
         '#type': portland_alert
         '#alert_markup': |-
+          <div class="webform-alert alert alert--warning">
           <p>You have selected that this request is for <strong>parking only</strong>.<br>Check the box below to confirm that this request does not include any street, sidewalk, or travel lane closures and will only include parking. If this is not the case, please click the Back button below and indicate the closures you need for this location.</p>
+          </div>
       apply_confirm_parking_only:
         '#type': checkbox
         '#title': 'I confirm that this request is for parking only'
@@ -565,96 +587,6 @@ elements: |-
           <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
         '#required': true
         '#required_error': 'You must agree with the permit conditions.'
-    actions_existing_permit_prev:
-      '#type': webform_actions
-      '#title': 'Wizard prev'
-      '#attributes':
-        style: 'display: inline-block;'
-      '#submit_hide': true
-      '#reset_hide': true
-      '#update_hide': true
-      '#wizard_next_hide': true
-    actions_submit:
-      '#type': webform_actions
-      '#title': 'Submit action'
-      '#states':
-        invisible:
-          ':input[name="wizard_existing_permit_situation"]':
-            value: extend
-          ':input[name="contact_applicant_type"]':
-            '!value': ''
-      '#attributes':
-        style: 'display: inline-block;'
-      '#reset_hide': true
-      '#update_hide': true
-      '#wizard_prev_hide': true
-      '#wizard_next_hide': true
-    actions_existing_permit_reset:
-      '#type': webform_actions
-      '#title': 'Reset action'
-      '#attributes':
-        style: 'display: inline-block;'
-      '#submit_hide': true
-      '#update_hide': true
-      '#wizard_prev_hide': true
-      '#wizard_next_hide': true
-  permit_location_metered:
-    '#type': hidden
-    '#title': 'Location metered boolean (set by JS)'
-    '#default_value': 'false'
-  permit_location_parking_zone:
-    '#type': hidden
-    '#title': 'Parking zone (set by JS)'
-  permit_location_parking_zone_type:
-    '#type': hidden
-    '#title': 'Parking zone type (set by JS)'
-  page_location:
-    '#type': webform_wizard_page
-    '#title': Location
-    '#states':
-      visible:
-        - ':input[name="wizard_permit_need"]':
-            value: parking
-        - or
-        - ':input[name="wizard_permit_need"]':
-            value: traffic
-    markup_location_info:
-      '#type': webform_markup
-      '#markup': |-
-        <p>You can only close/reserve one street per application. If you will be working on more than one street, you&#39;ll need to submit a new application for each street.</p>
-
-        <p><strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">Moratorium</a>.</p>
-    report_location:
-      '#type': portland_location_picker
-      '#title': 'Permit location'
-      '#required': true
-      '#location_search__title': 'What is the address where this closure or reservation will take place?'
-      '#location_search__description': '<p>Please enter the address below. <strong>Move the pin to the exact area of your closure/reservation.</strong></p>'
-      '#location_lat__required': true
-      '#place_name__access': false
-      '#location_details__access': false
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
-      '#precision_text__access': false
-      '#waterway_instructions__access': false
-      '#require_boundary': true
-    markup_taxlot_warning:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="report_location[location_type_taxlot]"]':
-            value: 'true'
-      '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
-    markup_cityinstall_pilot_area:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="permit_location_parking_zone_type"]':
-            value: Non-Metered
-          ':input[name="wizard_permit_need"]':
-            value: parking
-      '#markup': '<div class="webform-alert alert alert--info" aria-live="polite"><h2>We''ll install your signs</h2><p>You have selected an area where city staff will install the parking reservation signs on your behalf. As October 2025, this now includes some ''non-metered'' areas as a part of a pilot project. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about the pilot.</a></p></div>'
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -747,7 +679,9 @@ elements: |-
             '!value': ''
       markup_moratorium:
         '#type': portland_alert
-        '#alert_markup': 'The location you have selected is subject to a <span class="moratorium-category"></span> moratorium affecting <strong class="moratorium-restriction-type"></strong>. The moratorium runs through <strong class="moratorium-dates"></strong>. (<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">More information on moratoriums</a>).'
+        '#alert_variation': warning
+        '#alert_markup': '<p>The location you have selected is subject to a moratorium affecting . The moratorium runs through . (<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">More information on moratoriums</a>).</p>'
+        '#variation': warning
       moratorium_choice:
         '#type': radios
         '#title': 'How would you like to handle the moratorium?'
@@ -1423,7 +1357,7 @@ elements: |-
                 value: Non-Metered
               ':input[name="complex_permit_closure_type[parking]"]':
                 checked: true
-          '#alert_markup': '<h2>We''ll install your parking signs</h2><p>Your request is in a location where city staff will install the parking reservation signs on your behalf. As October 2025, this now includes some ''non-metered'' areas as a part of a pilot project. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about the pilot.</a></p>'
+          '#alert_markup': '<h2>We''ll install your parking signs</h2><p>Your request is in a location where city staff will install the parking reservation signs on your behalf. As of July 2026, this now includes some ''non-metered'' areas. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about this change.</a></p>'
         complex_permit_lanes_affected:
           '#type': number
           '#title': 'How many lanes will you be affecting (Bicycle and travel)?'
