@@ -531,21 +531,15 @@ elements: |-
     '#title': 'Computed subject'
     '#display_on': none
     '#mode': text
-    '#template': |+
-      {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden") %}
-        Maintenance issue in community garden
-      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community center") %}
-        Maintenance issue at {{ data.report_community_center and data.report_community_center is iterable ? '' : webform_token('[webform_submission:values:report_community_center]', webform_submission) }}
-      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Golf course") %}
-        Maintenance issue at {{ data.report_golf_course }}
-      {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Art/mural/monument/sculpture") %}
-        Park maintenance issue: Art/mural/monument/sculpture
-      {% else %}
-        Park maintenance issue: {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
+    '#template': |-
+      {% if data.what_are_you_trying_to_report is not iterable %}
+        {% if data.what_are_you_trying_to_report == "Feedback about a staff encounter" %}
+          Feedback about a staff encounter
+        {% else %}
+          Park maintenance issue - {{ data.report_what_needs_attention is not iterable ? data.report_what_needs_attention : "" }}
+        {% endif %}
       {% endif %}
-
     '#whitespace': spaceless
-    '#ajax': true
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed issue description'
@@ -943,7 +937,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -49
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1020,7 +1014,7 @@ handlers:
           value: Art/Mural/Monument/Sculpture
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -48
+    weight: -47
     settings:
       states:
         - completed
@@ -1063,7 +1057,7 @@ handlers:
           value: 'Community garden'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -47
+    weight: -46
     settings:
       states:
         - completed
@@ -1144,7 +1138,7 @@ handlers:
           value: 'Feedback about a staff encounter'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -45
+    weight: -44
     settings:
       states:
         - completed
@@ -1187,7 +1181,7 @@ handlers:
           value: 'Non-urgent tree maintenance issue'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -46
+    weight: -45
     settings:
       states:
         - completed
@@ -1218,4 +1212,37 @@ handlers:
       langcode: ''
       parameters: {  }
       debug: false
+  route_to_pp_r_uf_permitting_zendesk:
+    id: zendesk
+    handler_id: route_to_pp_r_uf_permitting_zendesk
+    label: 'Route to PP&R UF Permitting (Zendesk)'
+    notes: 'Enabled if A) "Non-urgent tree maintenance issue" is selected, and B) Test Submission is NOT checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="report_what_needs_attention[radios]"]':
+          value: 'Non-urgent tree maintenance issue'
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_issue_description:html]'
+      tags: 'drupal webform parks maintenance noreply [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '22777004934807'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '15142080018711'
+      recipient: ''
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements: {  }
 variants: {  }
