@@ -1111,6 +1111,39 @@ function portland_cron()
   }
 }
 
+/**
+ * Implements hook_cron_post_run().
+ *
+ * Ultimate Cron logs each job's start/end time to its own ultimate_cron_log
+ * table, which never reaches watchdog/Loggly. This surfaces runtime and
+ * whether a job exceeded its configured lock_timeout through the normal
+ * logging channels instead.
+ *
+ * @param \Drupal\ultimate_cron\Entity\CronJob $job
+ */
+function portland_cron_post_run($job) {
+  $log_entry = $job->loadLatestLogEntry();
+  if (empty($log_entry->start_time) || empty($log_entry->end_time)) {
+    return;
+  }
+  $runtime = $log_entry->end_time - $log_entry->start_time;
+
+  $launcher_config = $job->getPlugin('launcher')->getConfiguration();
+  $timeout = $launcher_config['timeouts']['lock_timeout'] ?? NULL;
+  $exceeded = isset($timeout) && $runtime > $timeout;
+
+  \Drupal::logger('portland')->log(
+    $exceeded ? \Drupal\Core\Logger\RfcLogLevel::WARNING : \Drupal\Core\Logger\RfcLogLevel::INFO,
+    'Cron job %job ran for %runtime s (timeout: %timeout s).%exceeded',
+    [
+      '%job' => $job->id(),
+      '%runtime' => round($runtime, 2),
+      '%timeout' => $timeout ?? 'n/a',
+      '%exceeded' => $exceeded ? ' EXCEEDED TIMEOUT.' : '',
+    ]
+  );
+}
+
 
 /**
  * Helper function to send content notification email.
