@@ -22,7 +22,7 @@ class EditUrlFilter extends DataFilterBase {
   /**
    * {@inheritdoc}
    */
-  public function filter(DataDefinitionInterface $definition, $value, array $arguments, BubbleableMetadata $bubbleable_metadata = NULL) {
+  public function filter(DataDefinitionInterface $definition, $value, array $arguments, ?BubbleableMetadata $bubbleable_metadata = NULL) {
     assert($value instanceof EntityInterface);
     // @todo url() is deprecated, but toUrl() does not work for file entities,
     // thus remove url() once toUrl() works for file entities also.

@@ -1,0 +1,147 @@
+From f2b063be341e1b57855aed50559da989b32cd647 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Mon, 13 Oct 2025 17:56:09 -0700
+Subject: [PATCH] Fix progress tracker accessibility issues
+
+---
+ css/webform.progress.tracker.css             | 61 ++++++++++++++------
+ templates/webform-progress-tracker.html.twig |  4 +-
+ 2 files changed, 44 insertions(+), 21 deletions(-)
+
+diff --git a/css/webform.progress.tracker.css b/css/webform.progress.tracker.css
+index 07ddd1a..7ae920d 100644
+--- a/css/webform.progress.tracker.css
++++ b/css/webform.progress.tracker.css
+@@ -11,52 +11,73 @@
+ .webform-progress-tracker .progress-step .progress-text {
+   padding-top: 5px;
+   padding-bottom: 0;
+-  color: #777;
++  color: #555;
+ }
+
+ .webform-progress-tracker .progress-step.is-active .progress-text,
+ .webform-progress-tracker .progress-step.is-complete .progress-text {
+-  color: #333;
++  color: #222;
+ }
+
+ .webform-progress-tracker .progress-step.is-active .progress-title {
+   font-weight: bold;
+ }
+
++.webform-progress-tracker .progress-step .progress-marker::before {
++  background-color: #555;
++}
++
+ /**
+  * Disable hover state because webform wizard progress markers are not clickable.
+  */
+ .webform-progress-tracker.progress-step:not(.is-active) .progress-marker::before,
+ .webform-progress-tracker .progress-step:hover .progress-marker::before,
+ .webform-progress-tracker .progress-step .progress-marker::after {
+-  background-color: #777;
++  background-color: #555;
+ }
+
+ .webform-progress-tracker .progress-step.is-complete .progress-marker::before,
+ .webform-progress-tracker .progress-step.is-complete:hover .progress-marker::before,
+ .webform-progress-tracker .progress-step.is-complete .progress-marker::after {
+-  background-color: #333;
++  background-color: #222;
+ }
+
++.webform-progress-tracker .progress-step.is-active .progress-marker::before,
+ .webform-progress-tracker .progress-step.is-active:hover .progress-marker::before {
+-  background-color: #2196f3;
++  background-color: #0b78cf;
+ }
+
+ /**
+- * Make progress text smaller for tablets.
+- */
+-@media screen and (max-width: 800px) {
+-  .webform-progress-tracker .progress-text {
+-    font-size: smaller;
+-  }
+-}
+-
+-/**
+- * Hide progress text smaller for mobile.
++ * Make tracker vertical on small screens.
+  */
+ @media screen and (max-width: 600px) {
+-  .webform-progress-tracker .progress-text {
+-    display: none;
++  .webform-progress-tracker {
++    flex-direction: column;
++  }
++
++  .webform-progress-tracker .progress-step {
++    display: flex;
++    flex: 1 1 auto;
++  }
++
++  .webform-progress-tracker .progress-step:not(:last-of-type) .progress-marker {
++    padding-bottom: 24px;
++  }
++
++  .webform-progress-tracker .progress-step .progress-marker::after {
++    right: auto;
++    top: 12px;
++    left: 10px;
++    width: 4px;
++    height: 100%;
++  }
++
++  .webform-progress-tracker .progress-step .progress-text {
++    padding: 0 12px 24px 12px;
++  }
++
++  .webform-progress-tracker .progress-step:last-of-type .progress-text {
++    padding-bottom: 0;
+   }
+ }
+
+@@ -68,17 +89,17 @@
+ }
+
+ .webform-progress-tracker .progress-title[role="link"] {
+-  color: #1976d2;
++  color: #0b78cf;
+ }
+
+ .webform-progress-tracker .progress-title[role="link"]:hover,
+ .webform-progress-tracker .progress-title[role="link"]:focus {
+   text-decoration: underline;
+-  color: #2196f3;
++  color: #0960a6;
+ }
+
+ .webform-progress-tracker .progress-step.is-complete:hover .progress-marker[role="link"]::before {
+-  background-color: #1976f2;
++  background-color: #0b78cf;
+ }
+
+ .webform-progress-tracker .progress-marker::after {
+diff --git a/templates/webform-progress-tracker.html.twig b/templates/webform-progress-tracker.html.twig
+index 1cbbe7404..7dd675375 100644
+--- a/templates/webform-progress-tracker.html.twig
++++ b/templates/webform-progress-tracker.html.twig
+@@ -19,7 +19,7 @@
+ #}
+ {{ attach_library('webform/webform.progress.tracker') }}
+
+-<ul class="webform-progress-tracker progress-tracker progress-tracker--center" data-webform-progress-steps>
++<ol class="webform-progress-tracker progress-tracker progress-tracker--center" aria-label="{{ 'Form progress'|t }}" data-webform-progress-steps>
+   {% for index, page in progress %}
+     {% set is_completed = index < current_index %}
+     {% set is_active = index == current_index %}
+@@ -52,4 +52,4 @@
+       {% endif %}
+     </li>
+   {% endfor %}
+-</ul>
++</ol>
+--
+GitLab

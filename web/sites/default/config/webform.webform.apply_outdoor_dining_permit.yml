@@ -24,17 +24,18 @@ categories:
 elements: |-
   page_site_info:
     '#type': webform_section
-    '#title': 'Proposed Site Information'
+    '#title': 'Proposed site information'
     apply_org_name:
       '#type': textfield
-      '#title': 'Business/Organization Name'
+      '#title': 'Business/Organization name'
       '#description': '<p>Please include DBA ("doing business as") if applicable.</p>'
       '#description_display': before
       '#required': true
     apply_site_address:
       '#type': portland_address_verifier
-      '#title': 'Site Address'
+      '#title': 'Site address'
       '#description_display': before
+      '#location_verification_status__required': true
       '#location_address__title': 'Site Address'
       '#location_address__description': '<p>Please provide the address where you are requesting an Outdoor Dining space. Begin typing to see a list of possible address matches within the Portland metro area.</p>'
       '#location_address__required': true
@@ -42,18 +43,35 @@ elements: |-
       '#location_city__required': true
       '#location_state__required': true
       '#location_zip__required': true
-      '#location_verification_status__required': true
       '#require_portland_city_limits': 1
+      '#secondary_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/11/query?where=1=1&f=json&outFields=MAPLABEL&geometryType=esriGeometryPoint&returnGeometry=false'
+      '#secondary_query_capture_property': features.attributes.MAPLABEL
+      '#secondary_query_capture_field': location_capture_field
+      '#location_capture_field__readonly': true
     org_name_escaped:
       '#type': webform_computed_twig
-      '#title': 'Organization Name Escaped'
+      '#title': 'Organization name escaped'
       '#display_on': none
       '#mode': text
       '#template': '{{ data.apply_org_name | replace({"''": "''''"}) }}'
       '#whitespace': trim
+    apply_i405_fee_waiver:
+      '#type': radios
+      '#title': 'You may be eligible for the I-405 Sidewalk Café Fee waiver. Would you like to apply?'
+      '#options': yes_no
+      '#states':
+        visible:
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Portland Downtown'
+          - or
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Pearl District'
+          - or
+          - ':input[name="apply_site_address[location_capture_field]"]':
+              value: 'Old Town'
   section_permit_details:
     '#type': webform_section
-    '#title': 'Permit Details'
+    '#title': 'Permit details'
     apply_permit_type:
       '#type': checkboxes
       '#title': 'What kind of permit are you requesting?'
@@ -92,15 +110,17 @@ elements: |-
       '#template': '{% if data.apply_previous_ivr %}{{ data.apply_previous_ivr }}{% endif %}'
   section_contact:
     '#type': webform_section
-    '#title': 'Your Contact Information'
+    '#title': 'Your contact information'
     contact_name:
       '#type': textfield
       '#title': Name
+      '#autocomplete': name
       '#description_display': before
       '#required': true
     contact_email:
       '#type': webform_email_confirm
       '#title': Email
+      '#autocomplete': email
       '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
       '#description_display': before
       '#required': true
@@ -109,13 +129,14 @@ elements: |-
     contact_phone:
       '#type': textfield
       '#title': Phone
+      '#autocomplete': tel-national
       '#description': '<p>Please provide your phone number in case we need additional information.</p>'
       '#description_display': before
       '#input_mask': '(999) 999-9999'
       '#required': true
     contact_mailing_address:
       '#type': portland_address_verifier
-      '#title': 'Mailing Address'
+      '#title': 'Mailing address'
       '#location_address__title': 'Mailing Address'
       '#location_address__description': 'Please provide a full mailing address.'
       '#location_address__required': true
@@ -139,7 +160,7 @@ elements: |-
       '#address_suggest': '0'
     apply_acknowledgement_application_requirements:
       '#type': checkbox
-      '#title': 'I understand that PBOT staff will reach out to me for additional application requirements after submitting this form. I will be required to provide the following to begin the application process: application payment, a site plan or drawing, a completed property owner consent form, a completed American Rescue Plan form, and current insurance documents.'
+      '#title': 'I understand that PBOT staff will reach out to me for additional application requirements after submitting this form. I will be required to provide the following to begin the application process: application payment, a site plan or drawing, a completed property owner consent form, and current insurance documents.'
       '#required': true
     apply_acknowledgement_inspection:
       '#type': checkbox
@@ -174,24 +195,24 @@ elements: |-
     '#whitespace': trim
   report_ticket_id:
     '#type': hidden
-    '#title': 'Report Ticket Id'
+    '#title': 'Report ticket ID'
   computed_permit_type:
     '#type': webform_computed_twig
-    '#title': 'Computed Permit Type'
+    '#title': 'Computed permit type'
     '#display_on': none
     '#mode': text
     '#template': |-
       {% for type in data.apply_permit_type %}
-        26630232631319_{{ type }} 
+        26630232631319_{{ type }}
       {% endfor %}
     '#whitespace': trim
     '#store': true
   computed_description:
     '#type': webform_computed_twig
-    '#title': 'Computed Description'
+    '#title': 'Computed description'
     '#display_on': none
     '#mode': html
-    '#template': |+
+    '#template': |-
       <h2>Outdoor Dining Permit Application</h2>
 
       <h3>Proposed Site Information</h3>
@@ -199,6 +220,9 @@ elements: |-
       <p>
         <strong>Business/Organization Name:</strong> {{ data.apply_org_name }}<br>
         <strong>Site address:</strong> {{ data.apply_site_address.location_address }}, {{ data.apply_site_address.location_city }}, {{ data.apply_site_address.location_state }} {{ data.apply_site_address.location_zip }}
+        {% if data.apply_site_address.location_capture_field == "Portland Downtown" or data.apply_site_address.location_capture_field == "Pearl District" or data.apply_site_address.location_capture_field == "Old Town" %}
+        <br><em>This address is within the I-405 Sidewalk Café Fee waiver zone</em>
+        {% endif %}
       </p>
 
       <h2>Permit Details</h2>
@@ -210,6 +234,11 @@ elements: |-
         {% if data.apply_previous_ivr %}
         <br><strong>IVR number:</strong> {{ data.apply_previous_ivr }}
         {% endif %}
+        
+        {% if data.apply_site_address.location_capture_field == "Portland Downtown" or data.apply_site_address.location_capture_field == "Pearl District" or data.apply_site_address.location_capture_field == "Old Town" %}
+        <br><strong>Would you like to apply for the I-405 Sidewalk Café Fee waiver?</strong> {{ data.apply_i405_fee_waiver }}
+        {% endif %}
+        
         {% if data.apply_notes %}
         <br><strong>Additional notes:</strong> {{ data.apply_notes }}
         {% endif %}
@@ -223,15 +252,15 @@ elements: |-
         <strong>Phone:</strong> {{ data.contact_phone }}<br>
         <strong>Mailing address:</strong> {{ data.contact_mailing_address.location_address }}, {{ data.contact_mailing_address.location_city }}, {{ data.contact_mailing_address.location_state }} {{ data.contact_mailing_address.location_zip }}
       </p>
-
   support_agent_use_only:
     '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
+    '#title': 'Support agent use only'
     '#access_create_roles':
       - authenticated
-    '#zendesk_request_number__access': false
     '#employee_notes_panel__access': false
     '#escalate_issue__access': false
+    '#test_submission__access': false
+    '#zendesk_request_number__access': false
 css: ''
 javascript: ''
 settings:
@@ -391,12 +420,13 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_outdoor_dining'\r\n26253458420759: ['[webform_submission:values:org_name_escaped:htmldecode]', 'apply_org_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n1500012743961: ['[webform_submission:values:apply_site_address:location_full_address]', 'apply_site_address:location_full_address']\r\n26252965203991: '[current-date:html_date]'\r\n14639926333463: ['[webform_submission:values:computed_ivr]', 'apply_ivr_number']\r\n1500013095781: '[webform_submission:uuid]'\r\n27773229365143: ['[webform_submission:values:contact_mailing_address:location_address], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address:location_full_address']\r\n"
+      custom_fields: "6353388345367: 'apply_outdoor_dining'\r\n26253458420759: ['[webform_submission:values:org_name_escaped:htmldecode]', 'apply_org_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n1500012743961: ['[webform_submission:values:apply_site_address:location_full_address]', 'apply_site_address:location_full_address']\r\n5581480390679: ['[webform_submission:values:apply_site_address:location_lat]', 'apply_site_address:location_lat']\r\n5581490332439: ['[webform_submission:values:apply_site_address:location_lon]', 'apply_site_address:location_lon']\r\n13407901552407: ['[webform_submission:values:apply_site_address:location_x]', 'apply_site_address:location_x']\r\n13407918835095: ['[webform_submission:values:apply_site_address:location_y]', 'apply_site_address:location_y']\r\n26252965203991: '[current-date:html_date]'\r\n14639926333463: ['[webform_submission:values:computed_ivr]', 'apply_ivr_number']\r\n1500013095781: '[webform_submission:uuid]'\r\n27773229365143: ['[webform_submission:values:contact_mailing_address:location_address], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address:location_full_address']\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628296208535'
       is_child_incident: 0
       parent_ticket_id_field: ''
+      excluded_elements: {  }
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request

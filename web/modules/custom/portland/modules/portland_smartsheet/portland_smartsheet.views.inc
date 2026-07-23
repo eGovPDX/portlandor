@@ -33,6 +33,9 @@ function portland_smartsheet_views_data() {
     'sort' => [
       'id' => 'smartsheet_cell',
     ],
+    'filter' => [
+      'id' => 'smartsheet_cell',
+    ],
   ];
   $data['smartsheet']['row_id'] = [
     'title' => t('Row ID'),

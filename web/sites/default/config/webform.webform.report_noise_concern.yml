@@ -22,7 +22,7 @@ categories: {  }
 elements: |-
   computed_address:
     '#type': webform_computed_twig
-    '#title': 'Computed Address'
+    '#title': 'Computed address'
     '#wrapper_attributes':
       class:
         - d-none
@@ -31,13 +31,12 @@ elements: |-
     '#template': '{{ data.report_location.location_address }}'
   page_noise_source:
     '#type': webform_wizard_page
-    '#title': 'Noise Source'
+    '#title': 'Complaint source'
     report_live_own_operate_in_pdx:
       '#type': radios
       '#title': 'Do you live, own property, or operate a business within the City of Portland?'
-      '#options':
-        'Yes': 'Yes'
-        'No': 'No'
+      '#required': true
+      '#options': yes_no
     markup_non_portland_code:
       '#type': webform_markup
       '#states':
@@ -47,37 +46,37 @@ elements: |-
       '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The Noise Program does not accept noise concerns if the reporter does not live, own property, or operate a business within the City of Portland.&nbsp;</p></div>'
     report_location:
       '#type': portland_location_picker
-      '#title': 'Where is the noise coming from?'
+      '#title': 'Complaint location'
       '#states':
         invisible:
           ':input[name="report_live_own_operate_in_pdx"]':
             value: 'No'
-      '#location_search__title': 'Where is the noise coming from?'
+      '#location_search__title': 'What is the address or location of your complaint?'
       '#location_address__required': true
       '#location_details__access': false
       '#location_type__access': false
       '#location_park_container__access': false
       '#location_private_owner__access': false
-      '#out_of_bounds_message': 'This location is outside the City of Portland’s city limits. Please report the noise issue to the local jurisdiction. You can call 311 or email 311@portlandoregon.gov if you need help determining who to contact.'
+      '#out_of_bounds_message': "This location is outside the City of Portland's city limits. Please report the noise issue to the local jurisdiction. You can call 311 or email 311@portlandoregon.gov if you need help determining who to contact."
       '#require_boundary': true
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?f=json&geometry={{x}},{{y}}&geometryType=esriGeometryPoint&inSR=3857&outFields=DISTRICT&returnGeometry=false'
       '#click_query_property_path': features.0.attributes.DISTRICT
       '#click_query_destination_field': location_region_id
     computed_location_name:
       '#type': webform_computed_twig
-      '#title': 'Computed - Location Name'
+      '#title': 'Computed - location name'
       '#display_on': none
       '#mode': text
       '#template': '{{ data.report_location.place_name }}'
     computed_location_coordinates:
       '#type': webform_computed_twig
-      '#title': 'Computed - Location Coordinates'
+      '#title': 'Computed - location coordinates'
       '#display_on': none
       '#mode': text
       '#template': '{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}'
     computed_location_district:
       '#type': webform_computed_twig
-      '#title': 'Computed - District'
+      '#title': 'Computed - district'
       '#display_on': none
       '#mode': text
       '#template': |-
@@ -97,7 +96,7 @@ elements: |-
       '#ajax': true
     hidden_base_zone:
       '#type': hidden
-      '#title': 'Hidden Base Zone'
+      '#title': 'Hidden base zone'
       '#attributes':
         id: hidden_base_zone
     actions:
@@ -109,10 +108,10 @@ elements: |-
             value: 'No'
   page_noise_type:
     '#type': webform_wizard_page
-    '#title': 'Noise Type'
+    '#title': 'Complaint type'
     report_noise_type:
       '#type': select
-      '#title': 'What type of noise do you want to report?'
+      '#title': 'What type of activity do you want to report?'
       '#options':
         'Aircraft, including planes, helicopters, and drones': 'Aircraft, including planes, helicopters, and drones'
         Alarms: Alarms
@@ -147,7 +146,7 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: Gas-powered
-      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Effective January 1, 2026, <span class="acronym-highlight" style="background:none;border-bottom-style:solid;border-image:linear-gradient(to right, rgb(0, 101, 255), rgb(191, 99, 243), rgb(245, 230, 168)) 0 0 100%;border-width:2px;cursor:pointer;">PP&amp;D</span>’s Noise program will begin supporting the implementation of Chapter 17.101, by responding to complaints around ‘gas-powered’ leaf blowers.</p></div>'
+      '#markup': "<div class=\"alert alert--info next-steps\"><h2>Information</h2><p>Effective January 1, 2026, PP&amp;D's Noise program will begin supporting the implementation of Chapter 17.101, by responding to complaints around 'gas-powered' leaf blowers.</p></div>"
     report_leaf_blower_concern:
       '#type': select
       '#title': 'What is your main concern?'
@@ -158,17 +157,6 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: Gas-powered
-      '#required': true
-    report_leaf_blower_location:
-      '#type': select
-      '#title': 'Where is the leaf blower operated?'
-      '#options':
-        'Private property, including residences and businesses': 'Private property, including residences and businesses'
-        'Public Park, road or right of way': 'Public Park, road or right of way'
-      '#states':
-        visible:
-          ':input[name="report_leaf_blower_type"]':
-            checked: true
       '#required': true
     report_alarm_type:
       '#type': select
@@ -314,11 +302,8 @@ elements: |-
       '#other__placeholder': 'Please describe:'
       '#states':
         visible:
-          - ':input[name="report_tools_equipment_location"]':
-              value: 'Road construction or utility work in the street or right-of-way'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
+          ':input[name="report_tools_equipment_location"]':
+            value: 'Road construction or utility work in the street or right-of-way'
       '#required': true
     markup_leaf_blower_electric:
       '#type': webform_markup
@@ -326,59 +311,37 @@ elements: |-
         visible:
           ':input[name="report_leaf_blower_type"]':
             value: 'Electric/battery powered'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Only complaints meeting both of the following conditions (time + noise level) will be considered:<br>1. Operates in commercial, mixed-use, industrial, or open space zones between 9:00 p.m. and 7:00 a.m., or in residential zones between 7:00 p.m. and 7:00 a.m., and<br>2. Exceeds the decibel limits below (measured at 50 feet):<br>• Winter Period (November 1 – February 28/29): 70 dBA (Lmax)<br>• Spring to Fall period (March 1 – October 31): 65 dBA (Lmax)</p></div>'
-    markup_number_leaf_blowers:
-      '#type': webform_markup
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Only complaints meeting both of the following conditions (time + noise level) will be considered:</p><ol class="mt-2"><li data-list-item-id="e67062f3522dc03629e31caaac78e2a64">Operates in commercial, mixed-use, industrial, or open space zones between 9:00 p.m. and 7:00 a.m., or in residential zones between 7:00 p.m. and 7:00 a.m., and;</li><li data-list-item-id="e2d2f406f864ab0b210e9041bfc10a26a">Exceeds the decibel limits below (measured at 50 feet):<br><strong>Winter Period (November 1 – February 28/29):</strong><br>70 dBA (Lmax)<br><strong>Spring to Fall period (March 1 – October 31):</strong><br>65 dBA (Lmax)</li></ol></div>'
+    container_number_leaf_blowers:
+      '#type': container
       '#states':
         visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-      '#markup': '<p>Please specify the number of each type of leaf blower used:</p>'
-    report_handheld:
-      '#type': number
-      '#title': Handheld
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-    report_walk_behind:
-      '#type': number
-      '#title': 'Walk behind'
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
-    report_backpack:
-      '#type': number
-      '#title': Backpack
-      '#states':
-        visible:
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Private property, including residences and businesses'
-          - or
-          - ':input[name="report_leaf_blower_location"]':
-              value: 'Public Park, road or right of way'
-          - or
-          - ':input[name="report_leaf_blower_type"]':
-              value: 'Electric/battery powered'
+          ':input[name="report_leaf_blower_type"]':
+            value: Gas-powered
+      markup_number_leaf_blowers:
+        '#type': webform_markup
+        '#markup': '<p>Please specify the number of each type of leaf blower used:</p>'
+      report_handheld:
+        '#type': number
+        '#title': Handheld
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
+      report_walk_behind:
+        '#type': number
+        '#title': Walk-behind
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
+      report_backpack:
+        '#type': number
+        '#title': Backpack
+        '#min': 0
+        '#default_value': 0
+        '#step': 1
+        '#required': true
     report_tools_equipment_type:
       '#type': webform_select_other
       '#title': 'What type of equipment is making the noise?'
@@ -500,14 +463,15 @@ elements: |-
         visible:
           ':input[name="report_landscape_equipment_operator[select]"]':
             value: 'Landscaping company'
-    report_landscape_equipment_main_concern:
+    report_mechanical_main_concern:
       '#type': select
-      '#title': 'What is your main concern'
+      '#title': 'What is your main concern?'
       '#options':
         'Too loud': 'Too loud'
         'Too frequent': 'Too frequent'
         'Constant noise': 'Constant noise'
         'Excessive vibration': 'Excessive vibration'
+      '#required': true
       '#states':
         visible:
           ':input[name="report_noise_type"]':
@@ -716,7 +680,7 @@ elements: |-
             value: 'Delivery truck'
   page_noise_details:
     '#type': webform_wizard_page
-    '#title': 'Noise Details'
+    '#title': 'Complaint details'
     '#states':
       invisible:
         - ':input[name="report_noise_type"]':
@@ -775,6 +739,7 @@ elements: |-
       '#type': textarea
       '#title': 'Please add any additional information about the noise and what is causing it.'
       '#required': true
+      '#rows': 2
       '#counter_type': character
       '#counter_maximum': 100
     report_issue_date:
@@ -786,20 +751,22 @@ elements: |-
       '#date_date_format': ''
     report_time_start:
       '#type': webform_time
-      '#title': 'What time did the noise start?'
+      '#title': 'What time did the activity start?'
       '#required': true
       '#time_format': 'g:i A'
       '#step': ''
     report_time_end:
       '#type': webform_time
-      '#title': 'What time did the noise stop?'
+      '#title': 'What time did the activity stop?'
       '#required': true
       '#time_format': 'g:i A'
       '#step': ''
     report_other_dates_times:
       '#type': textarea
-      '#title': 'What other dates and times have you heard the noise?'
-      '#maxlength': 80
+      '#title': 'What other dates and times have you observed this issue?'
+      '#rows': 2
+      '#counter_type': character
+      '#counter_maximum': 100
     contact_address:
       '#type': portland_address_verifier
       '#title': 'Where are you hearing the noise from?'
@@ -810,7 +777,7 @@ elements: |-
       '#location_zip__required': true
     computed_complainant_address:
       '#type': webform_computed_twig
-      '#title': 'Computed Complainant Address'
+      '#title': 'Computed complainant address'
       '#display_on': none
       '#mode': text
       '#template': '{{ data.contact_address.location_address }}, {{ data.contact_address.location_city }} {{ data.contact_address.location_zip }}'
@@ -824,7 +791,7 @@ elements: |-
       '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>The noise you are trying to report appears to be coming from the same property as where you live. If you believe this is an error, please go back and check your answers to the questions about your location and the source of the noise.</p><p>A situation where someone is complaining about noise coming from the same property is considered a landlord/tenant issue and is not handled by the City''s Noise Program. We recommend reaching out to the landlord, property manager, or building association for assistance addressing this issue. It is the responsibility of the property manager or landlord to resolve issues between tenants within their property. If you feel as though your concerns are not addressed or resolved, you may want to contact <a href="http://www.oregoncat.org/">Community Alliance of Tenants</a> to learn more about your rights as a tenant.</p><p>You can also file a Police Report through the Public Safety Non-Emergency Line at <a href="tel:+15038233333">503-823-3333</a> using the term "disturbing the peace". Portland Police Bureau officers may be able to respond if the issue is occurring after 10 p.m. or before 7 a.m. and at the time of your call. Officers may not be unable to respond to daytime concerns. When you call, you can ask whether an Officer will be dispatched to your location.</p><p>If you have additional questions, please call the Noise Program at <a href="tel:+15038237350">503-823-7350</a> between 8:30 a.m. and 5:00 p.m.</p></div>'
     computed_noise_subtype:
       '#type': webform_computed_twig
-      '#title': 'Computed - Noise Subtype'
+      '#title': 'Computed - noise subtype'
       '#display_on': none
       '#mode': text
       '#template': |
@@ -842,19 +809,28 @@ elements: |-
           {{ data.report_train_type }}
         {% elseif data.report_trucks_buses_type and data.report_trucks_buses_type is not iterable %}
           {{ data.report_trucks_buses_type }}
+        {% elseif data.report_leaf_blower_type and data.report_leaf_blower_type is not iterable %}
+          {{ data.report_leaf_blower_type }}
         {% else %}
           No Subtype
         {% endif %}
+    computed_main_concern:
+      '#type': webform_computed_twig
+      '#title': 'Computed - main concern'
+      '#display_on': none
+      '#mode': text
+      '#template': |
+        {{ data.report_leaf_blower_concern ?: data.report_mechanical_main_concern }}
     hidden_same_address:
       '#type': hidden
-      '#title': 'Hidden - Same Address'
+      '#title': 'Hidden - same address'
       '#default_value': 'false'
   page_final_steps:
     '#type': webform_wizard_page
-    '#title': 'Final Steps'
+    '#title': 'Final steps'
     computed_stop_message:
       '#type': webform_computed_twig
-      '#title': 'Computed Stop Message'
+      '#title': 'Computed stop message'
       '#title_display': none
       '#display_on': form
       '#mode': html
@@ -1023,7 +999,7 @@ elements: |-
                 To submit a complaint, contact the Harbor Master at <a href="tel:+1-503-241-8283">503-241-8283</a>.
               </p>
           </div>
-          
+
         {% elseif data.report_vehicle_location == "On the street" %}
           <div class="cloudy-alert alert--info next-steps">
                 <h2>
@@ -1046,44 +1022,64 @@ elements: |-
         '#markup': '<p>The Noise Program will review your report to determine whether this specific noise is a violation of the City''s <a href="https://www.portland.gov/code/18">Noise Code</a>. If it does not, the case will be closed. If it does, the Noise Program can consider your report to be a formal Noise Complaint and will issue a warning letter to the source of the noise. If that does not resolve the issue, a Noise Control Officer will make direct contact with the source of the noise to try and resolve it and may possibly issue a citation.</p>'
       report_testify_code_hearings:
         '#type': radios
-        '#title': 'Would you like to submit a formal noise complaint if the noise you are reporting is found to be a violation of the City’s Noise Code?'
+        '#title': 'Would you like to submit a formal complaint?'
         '#options':
-          'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing.': 'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing. -- <i>You are choosing to move forward with a formal case. If the noise is ongoing, you may also be asked to complete and sign a Noise Incident Log to help track the problem. If the case leads to a hearing, you may be asked to testify</i>'
-          'Yes, I want to file a formal noise complaint but do NOT want to testify.': 'Yes, I want to file a formal noise complaint but do NOT want to testify. -- <i>You are filing a formal complaint and may be asked to complete a Noise Complaint Log. You will not be contacted to testify. Please note that without your testimony, enforcement options may be limited unless other evidence, or complaints, support the case.</i>'
-          'No, I simply want the City to be aware of this issue but do not want to submit a formal complaint.': "No, I simply want the City to be aware of this issue but do not want to submit a formal complaint. -- <i>You're submitting a general report to make the City aware of a potential issue. The City may still send a warning letter if similar reports are received from other neighbors, but no further action can be taken unless the problem continues. You will not be asked to provide additional information.</i>"
+          "Yes, I want to file a formal complaint and am willing to testify at a hearing with the City's Hearing Office.": "Yes, I want to file a formal complaint and am willing to testify at a hearing with the City's Hearing Office. -- <i>You are choosing to move forward with a formal case. If the issue is ongoing, you may also be asked to complete and sign a Complaint Log to help track the problem. If the case leads to a hearing, you may be asked to testify.</i>"
+          'Yes, I want to file a formal complaint but do NOT want to testify.': 'Yes, I want to file a formal complaint but do <strong>NOT</strong> want to testify. -- <i>You are filing a formal complaint and may be asked to complete a Complaint Log. You will not be contacted to testify. Please note that without your testimony, enforcement options may be limited unless other evidence, or complaints, support the case.</i>'
+          'No, I just want the City to be aware of the issue, but do not want to file a formal complaint.': "No, I just want the City to be aware of the issue, but do not want to file a formal complaint. -- <i>You're submitting a general report to make the City aware of a potential issue. The City may still send a warning letter if similar reports are received from other neighbors, but no further action can be taken unless the problem continues. You will not be asked to provide additional information.</i>"
         '#required': true
       section_contact:
         '#type': webform_section
-        '#title': 'Your Contact Information'
+        '#title': 'Your contact information'
         contact_name:
           '#type': textfield
-          '#title': 'Full Name'
+          '#title': 'Full name'
           '#description': '<p>In order for a case to be considered, a full name must be provided.</p>'
+          '#autocomplete': name
           '#required': true
         contact_email:
           '#type': textfield
           '#title': Email
           '#description': 'We will use your email address to respond to your report or request if needed.'
           '#required': true
+          '#autocomplete': email
           '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
           '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
         contact_phone:
           '#type': textfield
           '#title': Phone
           '#input_mask': '(999) 999-9999'
+          '#autocomplete': tel-national
           '#required': true
       section_public_records_statement:
         '#type': webform_section
-        '#title': 'Public Records Statement'
-        public_records_statement_standard:
+        '#title': 'Confidentiality statement'
+        confidentiality_waiver:
+          '#type': radios
+          '#title': 'Confidentiality waiver'
+          '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+          '#description_display': before
+          '#options':
+            'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+            'I waive confidentiality': 'I choose to waive confidentiality.'
+          '#required': true
+          '#default_value': 'I do not waive confidentiality'
+        markup_formal_complaint:
           '#type': webform_markup
-          '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+          '#states':
+            visible:
+              ':input[name="report_testify_code_hearings"]':
+                value:
+                  pattern: 'Yes'
+              ':input[name="confidentiality_waiver"]':
+                '!value': 'I waive confidentiality'
+          '#markup': '<div class="webform-alert alert alert--warning next-steps"><p>If you have chosen to file a formal complaint, you will need to <strong>choose to waive confidentiality</strong> in order for the City to investigate.</p></div>'
       actions_01:
         '#type': webform_actions
         '#title': 'Submit button(s)'
   support_agent_use_only:
     '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
+    '#title': 'Support agent use only'
     '#zendesk_request_number__access': false
     '#employee_notes_panel__access': false
     '#escalate_issue__access': false
@@ -1098,12 +1094,12 @@ elements: |-
       - administrator
   computed_employee_email:
     '#type': webform_computed_twig
-    '#title': 'Computed - Employee Email'
+    '#title': 'Computed - employee email'
     '#display_on': none
     '#mode': text
     '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
 css: ''
-javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.detectSameAddress = {\r\n    attach(context) {\r\n      once(\r\n        \"detectSameAddress\",\r\n        \"input[name='contact_address[location_zip]']\",\r\n        context\r\n      ).forEach((complainantZipEl) => {\r\n        $(complainantZipEl).on(\"change\", () => {\r\n          const noiseLocationAddress = $(\"input[name=computed_address]\").val();\r\n          const complainantAddress = `${$(\r\n            \"input[name='contact_address[location_address]']\"\r\n          ).val()}, ${$(\r\n            \"input[name='contact_address[location_city]']\"\r\n          ).val()} ${$(complainantZipEl).val()}`;\r\n          if (\r\n            complainantAddress.toUpperCase().replace(/\\s/g, \"\") ===\r\n            noiseLocationAddress.toUpperCase().replace(/\\s/g, \"\")\r\n          ) {\r\n            $(\"input[name=hidden_same_address]\").val(\"true\").trigger(\"change\");\r\n          } else {\r\n            $(\"input[name=hidden_same_address]\").val(\"false\").trigger(\"change\");\r\n          }\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.noiseFormSubmit = {\r\n    attach(context) {\r\n      once(\r\n        \"noiseFormSubmit\",\r\n        \"input[name=computed_stop_message]\",\r\n        context\r\n      ).forEach((computedStopMessage) => {\r\n        // If we load the \"Final Steps\" page, we submit the form automatically.\r\n        const form = document.querySelector(\".webform-submission-form\");\r\n\r\n        if (computedStopMessage && computedStopMessage.value !== \"\") {\r\n          const body = new URLSearchParams(new FormData(form));\r\n          body.append(\"op\", \"Submit\");\r\n          fetch(form.action, {\r\n            method: \"post\",\r\n            body: body,\r\n          });\r\n        }\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.injectExplicitRequiredIndicators = {\r\n    attach: function (context, settings) {\r\n      const fieldNames = [\r\n        'contact_address[location_address]',\r\n        'contact_address[location_city]',\r\n        'contact_address[location_state]',\r\n        'contact_address[location_zip]',\r\n      ];\r\n\r\n      fieldNames.forEach(function (fieldName) {\r\n        const $input = $(`:input[name=\"${fieldName}\"]`, context);\r\n        if ($input.length === 0) return;\r\n\r\n        // Check if already processed (prevent duplicate asterisks)\r\n        if ($input.data('required-indicator-injected')) return;\r\n\r\n        const $label = $input.closest('.js-form-item').find('label');\r\n        if ($label.length && $label.find('.form-required').length === 0) {\r\n          $label.append('<span class=\"form-required\" title=\"This field is required\"></span>');\r\n        }\r\n        $input.attr('aria-required', 'true');\r\n\r\n        // Mark as processed\r\n        $input.data('required-indicator-injected', true);\r\n      });\r\n    }\r\n  };\r\n  \r\n  Drupal.behaviors.customApiLookup = {\r\n    attach: function (context, settings) {\r\n\r\n      // Typical use case will be to use the location widget's X and Y fields\r\n      const SOURCE1_SELECTOR = '[id=\"location_x\"]';\r\n      const SOURCE2_SELECTOR = '[id=\"location_y\"]';\r\n\r\n      // Customize this to match your target field\r\n      const TARGET1_SELECTOR = '[id=\"hidden_base_zone\"]';\r\n\r\n      const API_URL = 'https://www.portlandmaps.com/api/detail/'; // <-- API base URL\r\n      const API_KEY = 'AC3208DDEFB2FD0AE5F26D573C27252F'; // <-- your API key\r\n      const POLL_INTERVAL = 500; // ms\r\n      const LOOKUP_DEBOUNCE = 300; // ms\r\n\r\n      // Look at both wizard pages and plain forms in this context.\r\n      $(context).find('.js-webform-wizard-page, form.webform-submission-form').each(function () {\r\n        const $container = $(this);\r\n\r\n        // If this is a form that contains wizard pages, skip it and let the\r\n        // page-level containers handle things. This avoids double init.\r\n        if ($container.is('form') && $container.find('.js-webform-wizard-page').length) {\r\n          return;\r\n        }\r\n\r\n        // Find the sources *inside this container*.\r\n        const $source1 = $container.find(SOURCE1_SELECTOR);\r\n        const $source2 = $container.find(SOURCE2_SELECTOR);\r\n\r\n        // If this container doesn't have BOTH, we don't care about it.\r\n        if (!$source1.length || !$source2.length) {\r\n          return;\r\n        }\r\n\r\n        // Prevent double-initializing on AJAX re-attach for the same container.\r\n        if ($container.data('customApiLookupTemplateInitialized')) {\r\n          return;\r\n        }\r\n        $container.data('customApiLookupTemplateInitialized', true);\r\n\r\n        // customize this on a per-form basis as needed\r\n        // IMPORTANT: Webforms doesn't add an id attribute by default. It must be added in the element custom attributes YAML,\r\n        const $target1 = $container.find(TARGET1_SELECTOR);\r\n\r\n        let lastSource1 = $source1.val();\r\n        let lastSource2 = $source2.val();\r\n        let lastQueryKey = null;\r\n        let lookupTimeout = null;\r\n\r\n        function runLookup() {\r\n          const value1 = $source1.val();\r\n          const value2 = $source2.val();\r\n\r\n          // REQUIRE both values before we do anything.\r\n          if (!value1 || !value2) {\r\n            return;\r\n          }\r\n\r\n          const queryKey = `${value1}|${value2}`;\r\n          if (queryKey === lastQueryKey) {\r\n            return; // No change since last lookup\r\n          }\r\n          lastQueryKey = queryKey;\r\n\r\n          const url = `${API_URL}?detail_type=zoning&geometry={\"x\":${value1},\"y\":${value2}}&api_key=${API_KEY}`;\r\n\r\n          $.ajax({\r\n            url: url,\r\n            method: 'GET', // or POST\r\n            success: function (response) {\r\n              if (!response) {\r\n                return;\r\n              }\r\n              \r\n              if (response.error) {\r\n                console.log('customApiLookup: API error - ' + response.error.message + ' or taxlot not found at selected location.');\r\n                $target1.val('').trigger('change');\r\n                return;\r\n              }\r\n              \r\n              console.log('Base zone: ' + response.zoning.base[0].code);\r\n\r\n              // Map response → target fields. Adjust keys to match your JSON.\r\n              if ($target1.length && typeof response.zoning.base !== 'undefined') {\r\n                $target1.val(response.zoning.base[0].code).trigger('change');\r\n              } else {\r\n                 console.error('customApiLookup: target field ' + TARGET1_SELECTOR + ' not found.');\r\n              }\r\n            },\r\n            error: function (xhr, status, error) {\r\n              console.error('customApiLookup: API call failed', status, error);\r\n            }\r\n          });\r\n\r\n        }\r\n\r\n        // Debounced wrapper so rapid changes don’t spam the API.\r\n        function scheduleLookup() {\r\n          if (lookupTimeout) {\r\n            clearTimeout(lookupTimeout);\r\n          }\r\n          lookupTimeout = setTimeout(runLookup, LOOKUP_DEBOUNCE);\r\n        }\r\n\r\n        // Polling, because the composite doesn't fire change events.\r\n        const intervalId = window.setInterval(function () {\r\n          // If the container has been removed (wizard step changed, form gone), stop.\r\n          if (!$.contains(document, $container[0])) {\r\n            window.clearInterval(intervalId);\r\n            return;\r\n          }\r\n\r\n          const current1 = $source1.val();\r\n          const current2 = $source2.val();\r\n\r\n          if (current1 !== lastSource1 || current2 !== lastSource2) {\r\n            lastSource1 = current1;\r\n            lastSource2 = current2;\r\n\r\n            // Only schedule lookup when both are non-empty.\r\n            if (current1 && current2) {\r\n              scheduleLookup();\r\n            }\r\n          }\r\n        }, POLL_INTERVAL);\r\n\r\n        $container.data('customApiLookupTemplateInterval', intervalId);\r\n      });\r\n    }\r\n  };\r\n\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.detectSameAddress = {\r\n    attach(context) {\r\n      once(\r\n        \"detectSameAddress\",\r\n        \"input[name='contact_address[location_zip]']\",\r\n        context\r\n      ).forEach((complainantZipEl) => {\r\n        $(complainantZipEl).on(\"change\", () => {\r\n          const noiseLocationAddress = $(\"input[name=computed_address]\").val();\r\n          const complainantAddress = `${$(\r\n            \"input[name='contact_address[location_address]']\"\r\n          ).val()}, ${$(\r\n            \"input[name='contact_address[location_city]']\"\r\n          ).val()} ${$(complainantZipEl).val()}`;\r\n          if (\r\n            complainantAddress.toUpperCase().replace(/\\s/g, \"\") ===\r\n            noiseLocationAddress.toUpperCase().replace(/\\s/g, \"\")\r\n          ) {\r\n            $(\"input[name=hidden_same_address]\").val(\"true\").trigger(\"change\");\r\n          } else {\r\n            $(\"input[name=hidden_same_address]\").val(\"false\").trigger(\"change\");\r\n          }\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.noiseFormSubmit = {\r\n    attach(context) {\r\n      once(\r\n        \"noiseFormSubmit\",\r\n        \"input[name=computed_stop_message]\",\r\n        context\r\n      ).forEach((computedStopMessage) => {\r\n        // If we load the \"Final Steps\" page, we submit the form automatically.\r\n        const form = document.querySelector(\".webform-submission-form\");\r\n\r\n        if (computedStopMessage && computedStopMessage.value !== \"\") {\r\n          const body = new URLSearchParams(new FormData(form));\r\n          body.append(\"op\", \"Submit\");\r\n          fetch(form.action, {\r\n            method: \"post\",\r\n            body: body,\r\n          });\r\n        }\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.injectExplicitRequiredIndicators = {\r\n    attach: function (context, settings) {\r\n      const fieldNames = [\r\n        'contact_address[location_address]',\r\n        'contact_address[location_city]',\r\n        'contact_address[location_state]',\r\n        'contact_address[location_zip]',\r\n      ];\r\n\r\n      fieldNames.forEach(function (fieldName) {\r\n        const $input = $(`:input[name=\"${fieldName}\"]`, context);\r\n        if ($input.length === 0) return;\r\n\r\n        // Check if already processed (prevent duplicate asterisks)\r\n        if ($input.data('required-indicator-injected')) return;\r\n\r\n        const $label = $input.closest('.js-form-item').find('label');\r\n        if ($label.length && !$label.is('.form-required') && $label.find('.form-required').length === 0) {\r\n          $label.append('<span class=\"form-required\" title=\"This field is required\"></span>');\r\n        }\r\n        $input.attr('aria-required', 'true');\r\n\r\n        // Mark as processed\r\n        $input.data('required-indicator-injected', true);\r\n      });\r\n    }\r\n  };\r\n  \r\n  Drupal.behaviors.customApiLookup = {\r\n    attach: function (context, settings) {\r\n\r\n      // Typical use case will be to use the location widget's X and Y fields\r\n      const SOURCE1_SELECTOR = '[id=\"location_x\"]';\r\n      const SOURCE2_SELECTOR = '[id=\"location_y\"]';\r\n\r\n      // Customize this to match your target field\r\n      const TARGET1_SELECTOR = '[id=\"hidden_base_zone\"]';\r\n\r\n      const API_URL = 'https://www.portlandmaps.com/api/detail/'; // <-- API base URL\r\n      const API_KEY = 'AC3208DDEFB2FD0AE5F26D573C27252F'; // <-- your API key\r\n      const POLL_INTERVAL = 500; // ms\r\n      const LOOKUP_DEBOUNCE = 300; // ms\r\n\r\n      // Look at both wizard pages and plain forms in this context.\r\n      $(context).find('.js-webform-wizard-page, form.webform-submission-form').each(function () {\r\n        const $container = $(this);\r\n\r\n        // If this is a form that contains wizard pages, skip it and let the\r\n        // page-level containers handle things. This avoids double init.\r\n        if ($container.is('form') && $container.find('.js-webform-wizard-page').length) {\r\n          return;\r\n        }\r\n\r\n        // Find the sources *inside this container*.\r\n        const $source1 = $container.find(SOURCE1_SELECTOR);\r\n        const $source2 = $container.find(SOURCE2_SELECTOR);\r\n\r\n        // If this container doesn't have BOTH, we don't care about it.\r\n        if (!$source1.length || !$source2.length) {\r\n          return;\r\n        }\r\n\r\n        // Prevent double-initializing on AJAX re-attach for the same container.\r\n        if ($container.data('customApiLookupTemplateInitialized')) {\r\n          return;\r\n        }\r\n        $container.data('customApiLookupTemplateInitialized', true);\r\n\r\n        // customize this on a per-form basis as needed\r\n        // IMPORTANT: Webforms doesn't add an id attribute by default. It must be added in the element custom attributes YAML,\r\n        const $target1 = $container.find(TARGET1_SELECTOR);\r\n\r\n        let lastSource1 = $source1.val();\r\n        let lastSource2 = $source2.val();\r\n        let lastQueryKey = null;\r\n        let lookupTimeout = null;\r\n\r\n        function runLookup() {\r\n          const value1 = $source1.val();\r\n          const value2 = $source2.val();\r\n\r\n          // REQUIRE both values before we do anything.\r\n          if (!value1 || !value2) {\r\n            return;\r\n          }\r\n\r\n          const queryKey = `${value1}|${value2}`;\r\n          if (queryKey === lastQueryKey) {\r\n            return; // No change since last lookup\r\n          }\r\n          lastQueryKey = queryKey;\r\n\r\n          const url = `${API_URL}?detail_type=zoning&geometry={\"x\":${value1},\"y\":${value2}}&api_key=${API_KEY}`;\r\n\r\n          $.ajax({\r\n            url: url,\r\n            method: 'GET', // or POST\r\n            success: function (response) {\r\n              if (!response) {\r\n                return;\r\n              }\r\n              \r\n              if (response.error) {\r\n                console.log('customApiLookup: API error - ' + response.error.message + ' or taxlot not found at selected location.');\r\n                $target1.val('').trigger('change');\r\n                return;\r\n              }\r\n              \r\n              console.log('Base zone: ' + response.zoning.base[0].code);\r\n\r\n              // Map response → target fields. Adjust keys to match your JSON.\r\n              if ($target1.length && typeof response.zoning.base !== 'undefined') {\r\n                $target1.val(response.zoning.base[0].code).trigger('change');\r\n              } else {\r\n                 console.error('customApiLookup: target field ' + TARGET1_SELECTOR + ' not found.');\r\n              }\r\n            },\r\n            error: function (xhr, status, error) {\r\n              console.error('customApiLookup: API call failed', status, error);\r\n            }\r\n          });\r\n\r\n        }\r\n\r\n        // Debounced wrapper so rapid changes don’t spam the API.\r\n        function scheduleLookup() {\r\n          if (lookupTimeout) {\r\n            clearTimeout(lookupTimeout);\r\n          }\r\n          lookupTimeout = setTimeout(runLookup, LOOKUP_DEBOUNCE);\r\n        }\r\n\r\n        // Polling, because the composite doesn't fire change events.\r\n        const intervalId = window.setInterval(function () {\r\n          // If the container has been removed (wizard step changed, form gone), stop.\r\n          if (!$.contains(document, $container[0])) {\r\n            window.clearInterval(intervalId);\r\n            return;\r\n          }\r\n\r\n          const current1 = $source1.val();\r\n          const current2 = $source2.val();\r\n\r\n          if (current1 !== lastSource1 || current2 !== lastSource2) {\r\n            lastSource1 = current1;\r\n            lastSource2 = current2;\r\n\r\n            // Only schedule lookup when both are non-empty.\r\n            if (current1 && current2) {\r\n              scheduleLookup();\r\n            }\r\n          }\r\n        }, POLL_INTERVAL);\r\n\r\n        $container.data('customApiLookupTemplateInterval', intervalId);\r\n      });\r\n    }\r\n  };\r\n\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
@@ -1298,14 +1294,14 @@ handlers:
       column_mappings:
         2797649869623172: report_noise_type
         8325170669244292: computed_noise_subtype
+        8428857727078276: report_noise_description
         6917092052782980: computed_address
-        7398410547318660: report_location__location_taxlot_id
         7528956078280580: computed_location_name
+        7398410547318660: report_location__location_taxlot_id
         8639408627732356: computed_location_coordinates
         5427273115324292: computed_location_district
         1208264298286980: hidden_base_zone
-        8428857727078276: report_noise_description
-        2723660768169860: report_landscape_equipment_main_concern
+        2723660768169860: computed_main_concern
         2966926341918596: report_issue_date
         2498940799766404: report_time_start
         4639963743211396: report_time_end
@@ -1324,13 +1320,16 @@ handlers:
         7671333215489924: report_human_voice_amplified_source
         6545433308647300: report_landscape_equipment_operator
         2041833681276804: report_landscape_equipment_company_name
-        4293633494962052: report_landscape_equipment_main_concern
         8797233122332548: report_music_amplified
         212246332657540: report_music_amplified_location
         4715845960028036: report_music_source
         2464046146342788: report_music_noise_distance
         6967645773713284: report_sports_location
         1338146239500164: report_truck_buses_loading
+        4438891032170372: report_handheld
+        8942490659540868: report_walk_behind
+        40844521066372: report_backpack
+        2861867230515076: confidentiality_waiver
         4327997693972356: computed_employee_email
       multiple_rows_enable: null
       multiple_rows_field: ''

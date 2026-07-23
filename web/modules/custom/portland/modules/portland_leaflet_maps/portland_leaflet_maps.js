@@ -1,23 +1,13 @@
 (function ($) {
   Drupal.Leaflet.prototype._create_layer_orig = Drupal.Leaflet.prototype.create_layer;
   Drupal.Leaflet.prototype.create_layer = function (layer, key) {
-    // Load ESRI feature layers
-    if (layer.esri_layer_type === 'featureLayer') {
-      var mapLayer = new L.esri.featureLayer({
-        url: layer.urlTemplate,
-      });
-      mapLayer._leaflet_id = key;
+    // Load ESRI vector layers
+    if (layer.type === 'esri_vector') {
+      var mapLayer = new L.esri.Vector.vectorTileLayer(layer.urlTemplate,  {attribution: layer.options?.attribution ?? '' });
       return mapLayer;
     }
 
-    if (layer.type === 'google' && layer.options.detectRetina && L.Browser.retina) {
-      layer.urlTemplate += '&style=high_dpi&w=512';
-      layer.options.tileSize = 512;
-      var mapLayer = new L.TileLayer(layer.urlTemplate, layer.options);
-      mapLayer._leaflet_id = key;
-      return mapLayer;
-    }
-    // Default to the original code;
+    // Default to the original code
     return Drupal.Leaflet.prototype._create_layer_orig(layer, key);
   };
 
@@ -75,7 +65,9 @@
         shp(byteArray).then(function (geojson) {
           featureLayer.addData(geojson);
           featureLayer.setStyle(map.options.path);
-          map.fitBounds(featureLayer.getBounds());
+          map.fitBounds(featureLayer.getBounds(), {animate: false});
+          map.reset_view_control.options.latlng = map.getCenter();
+          map.reset_view_control.options.zoom = map.getZoom();
           map.featureAdded = true;
         })
       };
@@ -98,7 +90,9 @@
             featureLayer.addData(xhr.response);
           }
           featureLayer.setStyle(map.options.path);
-          map.fitBounds(featureLayer.getBounds());
+          map.fitBounds(featureLayer.getBounds(), {animate: false});
+          map.reset_view_control.options.latlng = map.getCenter();
+          map.reset_view_control.options.zoom = map.getZoom();
           map.featureAdded = true;
       };
     }
@@ -140,12 +134,14 @@ jQuery(document)
       var mapIcon = jQuery(this).find('i.fas');
       if(mapIcon) {
         if(jQuery(mapIcon).hasClass('fa-globe')) {
-          lMap.addLayer(satelliteView);
+          lMap.removeLayer(baseLayer);
+          lMap.addLayer(aerialLayer);
           jQuery(mapIcon).removeClass('fa-globe');
           jQuery(mapIcon).addClass('fa-map-marked-alt');
         }
         else if(jQuery(mapIcon).hasClass('fa-map-marked-alt')) {
-          lMap.removeLayer(satelliteView);
+          lMap.addLayer(baseLayer);
+          lMap.removeLayer(aerialLayer);
           jQuery(mapIcon).removeClass('fa-map-marked-alt');
           jQuery(mapIcon).addClass('fa-globe');
         }
@@ -171,7 +167,8 @@ jQuery(document)
     }, 0);
   });
 
-  var satelliteView = L.esri.tiledMapLayer({
+  var baseLayer = Object.values(drupalSettings.map._layers)[0];
+  var aerialLayer = L.esri.tiledMapLayer({
     url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer'
   });
 
@@ -239,7 +236,9 @@ jQuery(document)
 
       // once we've looped through all the features, zoom the map to the extent of the collection
       if(bounds.isValid())
-        lMap.fitBounds(bounds);
+        lMap.fitBounds(bounds, {animate: false});
+        lMap.reset_view_control.options.latlng = lMap.getCenter();
+        lMap.reset_view_control.options.zoom = lMap.getZoom();
     });
   }
 
@@ -276,8 +275,11 @@ jQuery(document)
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      if(bounds.isValid())
-        lMap.fitBounds(bounds);
+      if(bounds.isValid()) {
+        lMap.fitBounds(bounds, {animate: false});
+        lMap.reset_view_control.options.latlng = lMap.getCenter();
+        lMap.reset_view_control.options.zoom = lMap.getZoom();
+      }
     });
   }
 });
