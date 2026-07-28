@@ -258,6 +258,53 @@ function portland_node_update($node)
   if (isset($_REQUEST['send_govdelivery_email']) && $_REQUEST['send_govdelivery_email']) {
     _add_node_to_govdelivery_queue($node);
   }
+
+  _portland_invalidate_views_for_scheduled_transition($node);
+}
+
+/**
+ * Invalidates specific views' cache (Drupal-side and Pantheon's edge, if
+ * present) whenever Lightning Scheduler applies an automated transition to
+ * a node of a bundle listed below.
+ *
+ * Detects the transition via the revision log message Lightning Scheduler's
+ * TransitionManager stamps on save (see
+ * patches/lightning_scheduler-set-revision-timestamp.patch) rather than
+ * requiring any further changes to that module.
+ *
+ * @param \Drupal\node\NodeInterface $node
+ */
+function _portland_invalidate_views_for_scheduled_transition($node) {
+  // Map content type -> views to invalidate when Lightning Scheduler
+  // transitions a node of that bundle. Add more bundles/views as needed.
+  $views_by_bundle = [
+    'council_agenda' => ['council_agendas'],
+  ];
+
+  // Only process bundles we actually have views configured for.
+  $view_ids = $views_by_bundle[$node->bundle()] ?? [];
+  if (empty($view_ids)) {
+    return;
+  }
+
+  if (!($node instanceof \Drupal\Core\Entity\RevisionLogInterface)
+    || $node->getRevisionLogMessage() !== 'Automated transition by Lightning Scheduler.') {
+    return;
+  }
+
+  $tags = array_map(fn($view_id) => "config:views.view.$view_id", $view_ids);
+
+  \Drupal\Core\Cache\Cache::invalidateTags($tags);
+  if (function_exists('pantheon_clear_edge_keys')) {
+    pantheon_clear_edge_keys($tags);
+  }
+
+  \Drupal::logger('portland')->info('Invalidated view cache (@tags) after Lightning Scheduler transitioned %type #%id "%label".', [
+    '@tags' => implode(', ', $tags),
+    '%type' => $node->bundle(),
+    '%id' => $node->id(),
+    '%label' => $node->label(),
+  ]);
 }
 
 /**
@@ -1704,7 +1751,7 @@ function portland_preprocess_media(&$variables) {
  */
 function portland_cloned_node_alter(NodeInterface $cloned_node, NodeInterface $original_node) {
   // Check if the cloned node has a published or updated field and update its value to the current date and time
-  $now = new DrupalDateTime('now', new \DateTimeZone('UTC'))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  $now = (new DrupalDateTime('now', new \DateTimeZone('UTC')))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
   if ($cloned_node->hasField('field_published_on')) {
     $cloned_node->set('field_published_on', $now);
   }
