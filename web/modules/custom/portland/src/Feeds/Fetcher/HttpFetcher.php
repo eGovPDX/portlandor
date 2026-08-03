@@ -47,7 +47,33 @@ class HttpFetcher extends FeedsFetcher {
       throw new EmptyFeedException();
     }
 
+    $this->sanitizeUtf8($sink, $feed);
+
     return new HttpFetcherResult($sink, $response->getHeaders());
+  }
+
+  /**
+   * Replaces invalid UTF-8 byte sequences in the downloaded feed.
+   *
+   * Source systems (e.g. Synergy) occasionally emit a field encoded in
+   * something other than UTF-8. A single invalid byte anywhere in the
+   * document makes json_decode() reject the whole feed, so this repairs
+   * the file in place before the parser sees it.
+   */
+  protected function sanitizeUtf8($sink, FeedInterface $feed) {
+    $contents = file_get_contents($sink);
+    if ($contents === FALSE || $contents === '') {
+      return;
+    }
+    $sanitized = mb_convert_encoding($contents, 'UTF-8', 'UTF-8');
+    if ($sanitized !== $contents) {
+      file_put_contents($sink, $sanitized);
+      \Drupal::logger('portland')->error('Feed "@feed" (@id) contained invalid UTF-8 byte sequences that were replaced with "?" before parsing. The source system likely sent a field in a non-UTF-8 encoding. Raw feed content: @contents', [
+        '@feed' => $feed->label(),
+        '@id' => $feed->id(),
+        '@contents' => $contents,
+      ]);
+    }
   }
 
   /**
