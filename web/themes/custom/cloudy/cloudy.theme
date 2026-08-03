@@ -111,6 +111,16 @@ function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form
 
   /* merge returned search class */
   $form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+  /* Also set on #wrapper_attributes so BlockViewBuilder::preRender() promotes
+   * these classes to the block's wrapper div. Its "pull up #attributes" BC
+   * path only runs when the block content has no #theme, but Drupal forms
+   * always get #theme set, so without this the classes stay stuck on the
+   * <form> itself instead of the ancestor the .cloudy-search-form CSS
+   * expects. See core/modules/block/src/BlockViewBuilder.php. 
+   * https://www.drupal.org/project/drupal/issues/2486267
+   * https://www.drupal.org/project/drupal/issues/3600644
+   * */
+  $form['#wrapper_attributes']['class'] = array_merge($form['#wrapper_attributes']['class'] ?? [], $additional_classes);
   $text = t("Search Portland.gov");
 
 	$form['keys']['#attributes'] = array(
