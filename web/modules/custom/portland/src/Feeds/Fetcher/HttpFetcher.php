@@ -68,10 +68,10 @@ class HttpFetcher extends FeedsFetcher {
     $sanitized = mb_convert_encoding($contents, 'UTF-8', 'UTF-8');
     if ($sanitized !== $contents) {
       file_put_contents($sink, $sanitized);
-      \Drupal::logger('portland')->error('Feed "@feed" (@id) contained invalid UTF-8 byte sequences that were replaced with "?" before parsing. The source system likely sent a field in a non-UTF-8 encoding. Raw feed content: @contents', [
+      \Drupal::logger('portland')->error('Feed "@feed" (@id) contained invalid UTF-8 byte sequences that were replaced with "?" before parsing. The source system likely sent a field in a non-UTF-8 encoding. Sanitized content: @sanitized', [
         '@feed' => $feed->label(),
         '@id' => $feed->id(),
-        '@contents' => $contents,
+        '@sanitized' => $sanitized,
       ]);
     }
   }
