@@ -23,10 +23,10 @@ categories: {  }
 elements: |-
   page_tier_assessment:
     '#type': webform_wizard_page
-    '#title': 'Job Assessment'
+    '#title': 'Job assessment'
     definitions_block:
       '#type': details
-      '#title': 'Definitions & Acronyms'
+      '#title': 'Definitions & acronyms'
       '#open': false
       definitions_markup:
         '#type': webform_markup
@@ -36,16 +36,16 @@ elements: |-
       '#title': 'Select all details that apply to your work'
       apply_tcp_required:
         '#type': checkbox
-        '#title': 'This work will require a temporary closure of a travel lane (vehicle, bicycle, or transit)'
+        '#title': 'Requires an OCS shutdown (occurs within 10 ft of Streetcar overhead power)'
       apply_ocs_shutdown:
         '#type': checkbox
         '#title': 'This work will require an OCS shutdown (it will occur within 10 ft of Streetcar overhead power)'
       apply_duration_gt_1:
         '#type': checkbox
-        '#title': 'This work will last longer than one (1) day'
+        '#title': 'Will last longer than one day'
       apply_near_alignment:
         '#type': checkbox
-        '#title': 'This work is near the Streetcar alignment (it will occur within 5 ft of track)'
+        '#title': 'Will occur within 5 ft of the Streetcar track alignment'
       markup_user_private_property:
         '#type': webform_markup
         '#states':
@@ -61,7 +61,7 @@ elements: |-
             - or
             - ':input[name="apply_near_alignment"]':
                 checked: true
-        '#markup': '<div class="alert alert--info next-steps"><h2>None of the above?</h2><p>Click the next page button to provide us more information about your project.</p></div>'
+        '#markup': '<div class="alert alert--warning next-steps" role="status"><h2>None of the above?</h2><p class="mb-0">If your project will take less than one day, is not intrusive, and will not impact traffic or transit, please click the next page button to give us more details and continue your application.</p></div>'
     fieldset_intrusive_activities:
       '#type': fieldset
       '#title': ' Tell us about any field activities involved in this work'
@@ -80,13 +80,13 @@ elements: |-
               checked: true
       apply_trenching:
         '#type': checkbox
-        '#title': ' This work involves trenching or digging near or under Streetcar tracks'
+        '#title': 'Trenching or digging near or under Streetcar tracks'
       apply_vault_access:
         '#type': checkbox
-        '#title': ' This work involves accessing underground utilities or vaults near tracks'
+        '#title': 'Accessing underground utilities or vaults near tracks'
       apply_boring_hdd:
         '#type': checkbox
-        '#title': 'This work involves boring or HDD near tracks (36" or deeper)'
+        '#title': 'Boring or HDD near tracks (36" or deeper)'
     fieldset_high_impact_long_term:
       '#type': fieldset
       '#title': ' Check any long-term or high-impact aspects of this project'
@@ -105,20 +105,20 @@ elements: |-
               checked: true
       apply_duration_gt_30:
         '#type': checkbox
-        '#title': ' This project will last longer than 30 days (up to 180 days).'
+        '#title': 'Will last longer than 30 days (up to 180 days)'
       apply_barricades:
         '#type': checkbox
-        '#title': ' This work will require barricades or fencing along the Streetcar route'
+        '#title': 'Requires barricades or fencing along the Streetcar route'
       apply_multiple_shutdowns:
         '#type': checkbox
-        '#title': ' This work will require multiple scheduled work windows or repeated OCS shutdowns'
+        '#title': 'Requires multiple scheduled work windows or repeated OCS shutdowns'
       apply_ongoing_tcp_review:
         '#type': checkbox
-        '#title': ' This work may require ongoing adjustments or reviews to an approved TCP'
+        '#title': 'May require ongoing adjustments or reviews to an approved TCP'
     computed_tier_assignment:
       '#type': webform_computed_twig
       '#title': 'Computed Tier Assignment'
-      '#display_on': none
+      '#display_on': form
       '#mode': text
       '#template': |
         {% set tcp = data.apply_tcp_required|default('') %}
@@ -132,7 +132,9 @@ elements: |-
         {% set barricades = data.apply_barricades|default('') %}
         {% set multi = data.apply_multiple_shutdowns|default('') %}
         {% set tcp_ongoing = data.apply_ongoing_tcp_review|default('') %}
-        {% if dur30 or barricades or multi or tcp_ongoing %}
+        {% if data.contact_city_employee == "Yes" %}
+          1
+        {% elseif dur30 or barricades or multi or tcp_ongoing %}
           4
         {% elseif ocs or trench or vault or hdd %}
           3
@@ -320,6 +322,7 @@ elements: |-
       contact_mailing_address:
         '#type': portland_address_verifier
         '#title': 'Billing address'
+        '#location_verification_status__access': false
         '#location_address__title': 'Billing address'
         '#location_address__description': 'Please provide a full mailing addresss.'
         '#location_address__required': true
@@ -336,11 +339,9 @@ elements: |-
         '#location_taxlot_id__access': false
         '#location_is_unincorporated__access': false
         '#location_address_label__access': false
-        '#location_verification_status__access': false
         '#location_capture_field__access': false
         '#location_data__access': false
-        '#suggestions_modal__access': false
-        '#address_suggest': '0'
+        '#require_portland_city_limits': 1
     section_contact_information:
       '#type': webform_section
       '#title': 'Contact Information'
@@ -377,31 +378,31 @@ elements: |-
         '#title': 'Job Ref or PO#'
   page_review_submit:
     '#type': webform_wizard_page
-    '#title': 'Review & Submit'
+    '#title': 'Review & submit'
     review_summary:
       '#type': webform_computed_twig
-      '#title': 'Review Your Application'
+      '#title': 'Review your application'
       '#mode': html
       '#template': |
         <div style="background:#f6f7f9;border:1px solid #d9dce1;border-radius:6px;padding:1rem 1.25rem;margin:1rem 0;">
-          <h2>Review Your Application</h2>
+          <h2>Review your application</h2>
           <p>Please confirm that all information below is correct before submitting.</p>
 
           <hr>
           <h3>Tier Assessment</h3>
-          <p><strong>TCP or TSUP Required:</strong> {{ data.apply_tcp_required|default('') }}</p>
-          <p><strong>OCS Shutdown Required:</strong> {{ data.apply_ocs_shutdown|default('') }}</p>
-          <p><strong>Work > 1 Day:</strong> {{ data.apply_duration_gt_1|default('') }}</p>
-          <p><strong>Near Streetcar Alignment:</strong> {{ data.apply_near_alignment|default('') }}</p>
+          {% if data.apply_tcp_required %}<p><strong>TCP or TSUP Required:</strong> {{ data.apply_tcp_required|default('') }}</p>{% endif %}
+          {% if data.apply_ocs_shutdown %}<p><strong>OCS Shutdown Required:</strong> {{ data.apply_ocs_shutdown|default('') }}</p>{% endif %}
+          {% if data.apply_duration_gt_1 %}<p><strong>Work > 1 Day:</strong> {{ data.apply_duration_gt_1|default('') }}</p>{% endif %}
+          {% if data.apply_near_alignment %}<p><strong>Near Streetcar Alignment:</strong> {{ data.apply_near_alignment|default('') }}</p>{% endif %}
 
-          <p><strong>Trenching:</strong> {{ data.apply_trenching|default('') }}</p>
-          <p><strong>Vault Access:</strong> {{ data.apply_vault_access|default('') }}</p>
-          <p><strong>Boring/HDD:</strong> {{ data.apply_boring_hdd|default('') }}</p>
+          {% if data.apply_trenching %}<p><strong>Trenching:</strong> {{ data.apply_trenching|default('') }}</p>{% endif %}
+          {% if data.apply_vault_access %}<p><strong>Vault Access:</strong> {{ data.apply_vault_access|default('') }}</p>{% endif %}
+          {% if data.apply_boring_hdd %}<p><strong>Boring/HDD:</strong> {{ data.apply_boring_hdd|default('') }}</p>{% endif %}
 
-          <p><strong>Duration > 30 Days:</strong> {{ data.apply_duration_gt_30|default('') }}</p>
-          <p><strong>Barricades:</strong> {{ data.apply_barricades|default('') }}</p>
-          <p><strong>Multiple Shutdowns:</strong> {{ data.apply_multiple_shutdowns|default('') }}</p>
-          <p><strong>Ongoing TCP Review:</strong> {{ data.apply_ongoing_tcp_review|default('') }}</p>
+          {% if data.apply_duration_gt_30 %}<p><strong>Duration > 30 Days:</strong> {{ data.apply_duration_gt_30|default('') }}</p>{% endif %}
+          {% if data.apply_barricades %}<p><strong>Barricades:</strong> {{ data.apply_barricades|default('') }}</p>{% endif %}
+          {% if data.apply_multiple_shutdowns %}<p><strong>Multiple Shutdowns:</strong> {{ data.apply_multiple_shutdowns|default('') }}</p>{% endif %}
+          {% if data.apply_ongoing_tcp_review %}<p><strong>Ongoing TCP Review:</strong> {{ data.apply_ongoing_tcp_review|default('') }}</p>{% endif %}
 
           <p><strong>Computed Tier:</strong> {{ data.computed_tier_assignment|default('') }}</p>
 
@@ -455,7 +456,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -516,7 +517,7 @@ settings:
   wizard_progress_bar: true
   wizard_progress_pages: false
   wizard_progress_percentage: false
-  wizard_progress_link: false
+  wizard_progress_link: true
   wizard_progress_states: false
   wizard_start_label: ''
   wizard_preview_link: false
