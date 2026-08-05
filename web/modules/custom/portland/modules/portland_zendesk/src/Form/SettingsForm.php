@@ -55,7 +55,7 @@ class SettingsForm extends ConfigFormBase
         $form['web_token'] = [
             '#type' => 'textfield',
             '#title' => $this->t('Zendesk API Token'),
-            '#description' => $this->t('The API Token required to connect to Zendesk'),
+            '#description' => $this->t('The API Token required to connect to Zendesk. Passed with the <code>Authorization: Bearer [token]</code> header.'),
             '#default_value' => $config->get('web_token')
         ];
 
