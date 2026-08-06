@@ -185,6 +185,9 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
   $node->addConstraint('LinkUrl', []);
+
+  $media = $entity_types['media'];
+  $media->addConstraint('ImageSliderImagesRequired', []);
 }
 
 /**
@@ -1688,6 +1691,22 @@ function portland_field_widget_single_element_form_alter(array &$element, FormSt
   if (isset($context["widget"]) && isset($context["items"]) &&
     $context['widget']->getPluginId() === 'link_default' && $context["items"]->getName() === "field_efiles_link") {
     $element['uri']['#description'] = t('Enter a valid eFiles URL in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.');
+  }
+}
+
+/**
+ * Implements hook_field_widget_complete_form_alter().
+ * Replace the default "Maximum 2 files." cardinality hint on the Image
+ * Slider's image field with a message reflecting that both images are
+ * required (see ImageSliderImagesRequiredConstraint).
+ */
+function portland_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
+  $field_definition = $context['items']->getFieldDefinition();
+  if ($field_definition->getName() === 'image' && $field_definition->getTargetBundle() === 'image_slider') {
+    if (isset($field_widget_complete_form['widget']['#file_upload_description'])) {
+      unset($field_widget_complete_form['widget']['#file_upload_description']['#cardinality']);
+      $field_widget_complete_form['widget']['#file_upload_description']['#description'] = t('2 image files required.');
+    }
   }
 }
 
