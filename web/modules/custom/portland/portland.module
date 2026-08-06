@@ -185,9 +185,6 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
   $node->addConstraint('LinkUrl', []);
-
-  $media = $entity_types['media'];
-  $media->addConstraint('ImageSliderImagesRequired', []);
 }
 
 /**
@@ -752,6 +749,10 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     $form['#validate'][] = '_validate_document';
   }
 
+  if ($form_id === "media_image_slider_add_form" || $form_id === "media_image_slider_edit_form") {
+    $form['#validate'][] = '_validate_image_slider_images';
+  }
+
   // POWR-3657 - disable HTML 5 validation for all forms
   $form['#attributes']['novalidate'] = '';
   // TOOD: remove this once something similar is included in core, or the Drupal community
@@ -1053,6 +1054,37 @@ function _validate_document(&$form, FormStateInterface $form_state, $form_id = [
           return;
         }
       }
+    }
+  }
+}
+
+/**
+ * A helper function to validate that Image Slider has both images uploaded.
+ */
+function _validate_image_slider_images(&$form, FormStateInterface $form_state)
+{
+  // DO NOT validate when the user clicks an upload/remove button within the
+  // image widget itself. ONLY validate when the entire form is submitted.
+  $triggering_element = $form_state->getTriggeringElement();
+  if ($triggering_element && in_array('image', $triggering_element['#array_parents'] ?? [], true)) {
+    return;
+  }
+
+  $image_values = $form_state->getValue('image') ?: [];
+  $missing_deltas = array_keys(array_filter($image_values, fn($item) => empty($item['fids'])));
+  if (empty($missing_deltas)) {
+    return;
+  }
+
+  // Target only the empty widget(s) so the red border doesn't also land on
+  // the alt text of an image that was already uploaded successfully.
+  $message = t('Image Slider requires 2 images. Please upload both images.');
+  foreach ($missing_deltas as $delta) {
+    if (isset($form['image']['widget'][$delta])) {
+      $form_state->setError($form['image']['widget'][$delta], $message);
+    }
+    else {
+      $form_state->setErrorByName('image', $message);
     }
   }
 }
