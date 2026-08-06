@@ -20,6 +20,7 @@ use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupRelationship;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
@@ -767,9 +768,17 @@ function portland_form_alter(&$form, &$form_state, $form_id)
   }
 
   // PGOV-488 Convert image alt text field to textarea
-  if ($form_id === "media_image_add_form" || $form_id === "media_image_edit_form") {
-    if(isset($form['image'])) {
-      $form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
+  $form_array_with_image_alt_textarea = [
+    'media_image_add_form',
+    'media_image_edit_form',
+    'media_image_slider_add_form',
+    'media_image_slider_edit_form',
+  ];
+  if (in_array($form_id, $form_array_with_image_alt_textarea)) {
+    if (isset($form['image']['widget'])) {
+      foreach (Element::children($form['image']['widget']) as $delta) {
+        $form['image']['widget'][$delta]['#process'][] = '_convert_image_alt_to_textarea';
+      }
       $form['#validate'][] = '_remove_linebreak_from_image_alt';
     }
   }
@@ -780,7 +789,12 @@ function portland_form_alter(&$form, &$form_state, $form_id)
  * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
  */
 function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
-  $form_state->getValue('image')[0]['alt'] = preg_replace('/\s+/', ' ', $form_state->getValue('image')[0]['alt']);
+  $image_values = &$form_state->getValue('image');
+  foreach ($image_values as &$item) {
+    if (isset($item['alt'])) {
+      $item['alt'] = preg_replace('/\s+/', ' ', $item['alt']);
+    }
+  }
 }
 
 /**
