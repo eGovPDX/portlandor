@@ -127,7 +127,7 @@ ParseShp.prototype.parseMultiPoint = function(data) {
     maxs[0],
     maxs[1]
   ];
-  var num = data.readInt32LE(32, true);
+  var num = data.readInt32LE(32);
   var offset = 36;
   if (num === 1) {
     out.type = 'Point';
