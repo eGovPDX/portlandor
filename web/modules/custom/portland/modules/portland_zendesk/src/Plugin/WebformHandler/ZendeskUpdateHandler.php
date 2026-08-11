@@ -13,6 +13,8 @@ use Drupal\portland_zendesk\Client\ZendeskClient;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
 
@@ -43,6 +45,22 @@ use Drupal\portland_zendesk\Utils\Utility;
  */
 class ZendeskUpdateHandler extends WebformHandlerBase
 {
+  private const ZENDESK_SEND_ERROR_MESSAGE = 'There was a problem communicating with our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.';
+
+  /**
+   * Prevent duplicate postSave sends for the same handler/submission in one request.
+   *
+   * @var array<string, bool>
+   */
+  protected static $post_save_processed = [];
+
+  /**
+   * Per-request shared flag for whether Zendesk update failed for a submission.
+   *
+   * @var array<string, bool>
+   */
+  protected static $zendesk_send_failed = [];
+
 
   /**
    * The webform element plugin manager.
@@ -439,67 +457,20 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    // the file upload button triggers the validation handler, which is undesired.
-    // in order to prevent that, we need to determine the triggering element for the submission.
-    // call our validation function only if it's not an upload button. be extra careful about
-    // null references here, since we're not sure when/if these elements will be populated.
-    // Candiates for checking whether this is an upload submit:
-    //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
-    //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
-    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#parents'][0] === "submit") {
-
-      // // does it help to put the report_ticket_id in the user input? will that get it to
-      // // be used in token replacement in the 2nd handler? if not, we may need to do some
-      // // manual kerjiggering.
-      // $user_input = $form_state->getUserInput();
-      // if (array_key_exists('report_ticket_id', $user_input)) {
-      //   $user_input['report_ticket_id'] = $form_state->getValue('report_ticket_id');
-      //   $form_state->setUserInput($user_input);
-      // }
-
-      $this->sendToZendeskAndValidateNoError($form_state);
-    }
+    // Intentionally no-op.
+    //
+    // Zendesk API updates are performed in postSave so form submission and
+    // managed file handling complete first.
   }
 
-   /**
-   * Submit ticket update to Zendesk API and validate there were no errors. If an error occurs,
-   * fail the webform validation and don't allow the form to be submitted.
-   *
-   * By submitting to the API during the validate phase, we can interrupt the form submission,
-   * prevent the email handlers from firing, and display an error message to the user. Validation
-   * in a custom handler is performed after all the built-in webform validation, so this is a
-   * safe approach.
-   */
-  private function sendToZendeskAndValidateNoError(FormStateInterface $form_state) {
-    if (!$form_state->hasAnyErrors()) {
-      // comment out the line below to test the error handling
-      $success = $this->sendToZendesk($form_state);
-      if (!$success) {
-        // throw error and don't let form submit
-        \Drupal::messenger()->addError(t('There was a problem communicating with our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.'));
-        $form_state->setErrorByName('');
-      }
-    }
-  }
-
-  public function sendToZendesk(FormStateInterface $form_state)
+  public function sendToZendesk(WebformSubmissionInterface $webform_submission)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
     // be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
     // on every submit of the form.
 
-    // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
-    // a webform_submission object from form_state and pull form values from that for the API submission.
-
     // declare working variables
     $request = [];
-    $webform_submission = $form_state->getFormObject()->getEntity();
-
-    // manually put the report_ticket_id value in the webform submission object, so that it
-    // gets used in token replacement and in custom field if needed.
-    // NOTE: This will always occur when the ZendeskUpdateHandler is called after ZendeskHandler; the
-    // assumption is that if we're updating a ticket right after creating one, they're related.
-    $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
 
     $submission_fields = $webform_submission->toArray(TRUE);
     // email=true uses nicer template for webform_submission:values HTML
@@ -737,7 +708,52 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
   {
+    $key = $this->getFailureStateKey($webform_submission);
 
+    // Avoid duplicate updates in the same request (e.g. another handler resaves).
+    if (!empty(static::$post_save_processed[$key])) {
+      return;
+    }
+
+    $success = $this->sendToZendesk($webform_submission);
+    static::$zendesk_send_failed[$key] = !$success;
+    static::$post_save_processed[$key] = TRUE;
+  }
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public function confirmForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+    $key = $this->getFailureStateKey($webform_submission);
+    if (empty(static::$zendesk_send_failed[$key])) {
+      return;
+    }
+
+    \Drupal::messenger()->deleteByType('status');
+    \Drupal::messenger()->addError(t(self::ZENDESK_SEND_ERROR_MESSAGE));
+
+    $redirect_url = $webform_submission->getTokenUrl('update');
+    if (\Drupal::request()->isXmlHttpRequest()) {
+      $response = new AjaxResponse();
+      $response->addCommand(new RedirectCommand($redirect_url->toString()));
+      $form_state->setResponse($response);
+    }
+    else {
+      $form_state->setRedirectUrl($redirect_url);
+    }
+
+    unset(static::$zendesk_send_failed[$key]);
+  }
+
+  /**
+   * Build a per-handler failure state key for the current submission.
+   */
+  private function getFailureStateKey(WebformSubmissionInterface $webform_submission): string
+  {
+    $sid = (string) $webform_submission->id();
+    $handler_id = (string) ($this->getHandlerId() ?: $this->getPluginId());
+    return $sid . ':' . $handler_id;
   }
 
   /**
