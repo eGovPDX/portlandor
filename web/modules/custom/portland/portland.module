@@ -681,6 +681,12 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
     $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
     $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
   }
+
+  // PGOV-2070 Validate that both images are uploaded when an Image Slider is
+  // added via the Entity Browser's "Add image slider" tab. 
+  if ($entity_form['#entity_type'] == 'media' && $entity_form['#bundle'] == 'image_slider') {
+    $entity_form['#element_validate'][] = '_validate_image_slider_images';
+  }
 }
 
 /**
@@ -1084,7 +1090,8 @@ function _validate_image_slider_images(&$form, FormStateInterface $form_state)
     return;
   }
 
-  $image_values = $form_state->getValue('image') ?: [];
+  $is_embedded = $form_state->hasValue('inline_entity_form') && array_key_exists('image', $form_state->getValue('inline_entity_form') ?: []);
+  $image_values = $is_embedded ? $form_state->getValue('inline_entity_form')['image'] : ($form_state->getValue('image') ?: []);
   $missing_deltas = array_keys(array_filter($image_values, fn($item) => empty($item['fids'])));
   if (empty($missing_deltas)) {
     return;
