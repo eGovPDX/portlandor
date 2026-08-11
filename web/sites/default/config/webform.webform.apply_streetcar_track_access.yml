@@ -221,7 +221,7 @@ elements: |-
       apply_begin_work_date:
         '#type': date
         '#title': 'Begin work date'
-      end_work_date:
+      apply_end_work_date:
         '#type': date
         '#title': 'End work date'
       apply_start_time:
@@ -249,48 +249,48 @@ elements: |-
         '#type': radios
         '#title': 'What side of the Willamette River will your work be on?'
         '#options':
-          East: East
-          West: West
+          42636373346839_east: East
+          42636373346839_west: West
       apply_west_side_access:
         '#type': radios
         '#title': 'West side access area'
         '#options':
-          '10th Ave': '10th Ave'
-          'Northrup St': 'Northrup St'
-          '23rd Ave': '23rd Ave'
-          'Lovejoy St': 'Lovejoy St'
-          '11th Ave': '11th Ave'
-          'Market St': 'Market St'
-          '5th Ave': '5th Ave'
-          'Montgomery St & 4th Ave': 'Montgomery St & 4th Ave'
-          'Harrison St': 'Harrison St'
-          'River Parkway & Moody': 'River Parkway & Moody'
-          'Moody & Gibbs': 'Moody & Gibbs'
-          'Mill St': 'Mill St'
-          'SW Moody St': 'SW Moody St'
-          'SW Lowell St': 'SW Lowell St'
-          'SW Bond St': 'SW Bond St'
+          42636368604567_10th_ave: '10th Ave'
+          42636368604567_northrup_st: 'Northrup St'
+          42636368604567_23rd_ave: '23rd Ave'
+          42636368604567_lovejoy_st: 'Lovejoy St'
+          42636368604567_11th_ave: '11th Ave'
+          42636368604567_market_st: 'Market St'
+          42636368604567_5th_ave: '5th Ave'
+          42636368604567_montgomery_st_4th_ave: 'Montgomery St & 4th Ave'
+          42636368604567_harrison_st: 'Harrison St'
+          42636368604567_river_parkway_moody: 'River Parkway & Moody'
+          42636368604567_moody_gibbs: 'Moody & Gibbs'
+          42636368604567_mill_st: 'Mill St'
+          42636368604567_sw_moody_st: 'SW Moody St'
+          42636368604567_sw_lowell_st: 'SW Lowell St'
+          42636368604567_sw_bond_st: 'SW Bond St'
         '#states':
           visible:
             ':input[name="apply_east_or_west_side"]':
-              value: West
+              value: 42636373346839_west
       apply_east_side_access:
         '#type': radios
         '#title': 'East side access area'
         '#options':
-          'Broadway Bridge': 'Broadway Bridge'
-          'Weidler St': 'Weidler St'
-          '7th Ave': '7th Ave'
-          'Oregon St': 'Oregon St'
-          'MLK Blvd': 'MLK Blvd'
-          'OMSI Bridge': 'OMSI Bridge'
-          'Stephens St': 'Stephens St'
-          'Grand Ave': 'Grand Ave'
-          'Broadway St': 'Broadway St'
+          42636368604567_broadway_bridge: 'Broadway Bridge'
+          42636368604567_weidler_st: 'Weidler St'
+          42636368604567_7th_ave: '7th Ave'
+          42636368604567_oregon_st: 'Oregon St'
+          42636368604567_mlk_blvd: 'MLK Blvd'
+          42636368604567_omsi_bridge: 'OMSI Bridge'
+          42636368604567_stephens_st: 'Stephens St'
+          42636368604567_grand_ave: 'Grand Ave'
+          42636368604567_broadway_st: 'Broadway St'
         '#states':
           visible:
             ':input[name="apply_east_or_west_side"]':
-              value: East
+              value: 42636373346839_east
       apply_cross_street_1:
         '#type': textfield
         '#title': 'Cross street 1'
@@ -407,7 +407,7 @@ elements: |-
           <hr>
           <h3>Work description</h3>
           <p><strong>Begin work date:</strong> {{ data.apply_begin_work_date|default('') }}</p>
-          <p><strong>End work date:</strong> {{ data.end_work_date|default('') }}</p>
+          <p><strong>End work date:</strong> {{ data.apply_end_work_date|default('') }}</p>
           <p><strong>Start time:</strong> {{ data.apply_start_time|default('') }}</p>
           <p><strong>End time:</strong> {{ data.end_time|default('') }}</p>
           <p><strong>Description of Work:</strong><br>{{ data.apply_description_of_work|default('') }}</p>
@@ -415,12 +415,11 @@ elements: |-
 
           <hr>
           <h3>Track access location</h3>
-          <p><strong>Side of river:</strong> {{ data.apply_east_or_west_side|default('') }}</p>
-          <p><strong>West side access area:</strong> {{ data.apply_west_side_access|default('') }}</p>
-          <p><strong>East side access area:</strong> {{ data.apply_east_side_access|default('') }}</p>
+          <p><strong>Side of river:</strong> {{ data.apply_east_or_west_side ? elements_flattened.apply_east_or_west_side['#options'][data.apply_east_or_west_side] : '' }}</p>
+          {% if data.apply_east_or_west_side == "42636373346839_west" %}<p><strong>West side access area:</strong> {{ data.apply_west_side_access ? elements_flattened.apply_west_side_access['#options'][data.apply_west_side_access] : '' }}</p>{% endif %}
+          {% if data.apply_east_or_west_side == "42636373346839_east" %}<p><strong>East side access area:</strong> {{ data.apply_east_side_access ? elements_flattened.apply_east_side_access['#options'][data.apply_east_side_access] : '' }}</p>{% endif %}
           <p><strong>Cross street 1:</strong> {{ data.apply_cross_street_1|default('') }}</p>
           <p><strong>Cross street 2:</strong> {{ data.cross_street_2|default('') }}</p>
-          <p><strong>Access area location:</strong> {{ data.apply_access_area_location|default('') }}</p>
 
           <hr>
           <h3>Contact information</h3>
@@ -442,6 +441,16 @@ elements: |-
       '#type': webform_actions
       '#title': Submit
       '#submit__label': 'Submit application'
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed tags'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {{ data.apply_east_or_west_side }}
+      {{ data.apply_east_side_access }}
+      {{ data.apply_west_side_access }}
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -675,7 +684,7 @@ handlers:
       requester_email: contact_primary_email
       subject: 'Track Access Permit Application'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -684,7 +693,7 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_streetcar_track_access_2'\r\n42303976757527: ['[webform_submission:values:contact_site_supervisor_name]', 'contact_site_supervisor_name']\r\n42303937554071: ['[webform_submission:values:contact_site_supervisor_phone]', 'contact_site_supervisor_phone']\r\n42303968861207: ['[webform_submission:values:contact_site_supervisor_email]', 'contact_site_supervisor_email']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n32905012809879: ['[webform_submission:values:contact_job_ref]', 'contact_job_ref']\r\n39194802217879: ['[webform_submission:values:contact_permit_holder_name]', 'contact_permit_holder_name']\r\n42303995053079: ['[webform_submission:values:contact_mailing_address:location_address] [webform_submission:values:contact_mailing_address:unit_number], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address']\r\n\r\n"
+      custom_fields: "6353388345367: 'apply_streetcar_track_access_2'\r\n42303976757527: ['[webform_submission:values:contact_site_supervisor_name]', 'contact_site_supervisor_name']\r\n42303937554071: ['[webform_submission:values:contact_site_supervisor_phone]', 'contact_site_supervisor_phone']\r\n42303968861207: ['[webform_submission:values:contact_site_supervisor_email]', 'contact_site_supervisor_email']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n32905012809879: ['[webform_submission:values:contact_job_ref]', 'contact_job_ref']\r\n39194802217879: ['[webform_submission:values:contact_permit_holder_name]', 'contact_permit_holder_name']\r\n42303995053079: ['[webform_submission:values:contact_mailing_address:location_address] [webform_submission:values:contact_mailing_address:unit_number], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address']\r\n12280733221015: ['[webform_submission:values:apply_begin_work_date]', 'apply_begin_work_date']\r\n12280737894935: ['[webform_submission:values:apply_end_work_date]', 'apply_end_work_date']\r\n"
       ticket_id_field: ''
       parent_ticket_id_field: ''
       ticket_fork_field: ''
