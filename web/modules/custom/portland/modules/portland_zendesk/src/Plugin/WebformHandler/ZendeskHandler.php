@@ -659,6 +659,7 @@ class ZendeskHandler extends WebformHandlerBase
     // NOTE: Only do this if $prev_ticket_id isn't already set
     if (!$prev_ticket_id && $zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
       $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
+      $webform_submission->setElementData($zendesk_ticket_id_field_name, $new_ticket_id);
       $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
     }
@@ -666,6 +667,7 @@ class ZendeskHandler extends WebformHandlerBase
     // if this is a Problem ticket and parent ticket ID field is present, add new ticket ID there too
     if (!$parent_ticket_id && $zendesk_parent_ticket_id_field_name && array_key_exists( $zendesk_parent_ticket_id_field_name, $data ) && $new_ticket_id && !$is_child){
       $data[$zendesk_parent_ticket_id_field_name] = $new_ticket_id;
+      $webform_submission->setElementData($zendesk_parent_ticket_id_field_name, $new_ticket_id);
       $form_state->setValue($zendesk_parent_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_parent_ticket_id_field_name] = $new_ticket_id;
     }
