@@ -258,6 +258,61 @@ function portland_node_update($node)
   if (isset($_REQUEST['send_govdelivery_email']) && $_REQUEST['send_govdelivery_email']) {
     _add_node_to_govdelivery_queue($node);
   }
+
+  _portland_invalidate_views_for_published_node($node);
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function portland_node_insert($node) {
+  _portland_invalidate_views_for_published_node($node);
+}
+
+/**
+ * Invalidates specific views' cache (Drupal-side and Pantheon's edge, if
+ * present) whenever a node of a bundle listed below is published, whether
+ * that's Lightning Scheduler applying an automated transition or an editor
+ * publishing/creating it manually. So newly published content shows up in
+ * these listings as soon as possible either way.
+ *
+ * @param \Drupal\node\NodeInterface $node
+ */
+function _portland_invalidate_views_for_published_node($node) {
+  // Map content type -> views to invalidate when a node of that bundle is
+  // published. Add more bundles/views as needed.
+  $views_by_bundle = [
+    'council_agenda' => ['council_agendas'],
+  ];
+
+  // Only process bundles we actually have views configured for.
+  $view_ids = $views_by_bundle[$node->bundle()] ?? [];
+  if (empty($view_ids)) {
+    return;
+  }
+
+  if (!$node->hasField('moderation_state') || $node->moderation_state->value !== 'published') {
+    return;
+  }
+
+  $tags = array_map(fn($view_id) => "config:views.view.$view_id", $view_ids);
+
+  \Drupal\Core\Cache\Cache::invalidateTags($tags);
+  if (function_exists('pantheon_clear_edge_keys')) {
+    pantheon_clear_edge_keys($tags);
+  }
+
+  $via = ($node instanceof \Drupal\Core\Entity\RevisionLogInterface && $node->getRevisionLogMessage() === 'Automated transition by Lightning Scheduler.')
+    ? 'Lightning Scheduler'
+    : 'a manual save';
+
+  \Drupal::logger('portland')->info('Invalidated view cache (@tags) after %type #%id "%label" was published via @via.', [
+    '@tags' => implode(', ', $tags),
+    '%type' => $node->bundle(),
+    '%id' => $node->id(),
+    '%label' => $node->label(),
+    '@via' => $via,
+  ]);
 }
 
 /**
@@ -1704,7 +1759,7 @@ function portland_preprocess_media(&$variables) {
  */
 function portland_cloned_node_alter(NodeInterface $cloned_node, NodeInterface $original_node) {
   // Check if the cloned node has a published or updated field and update its value to the current date and time
-  $now = new DrupalDateTime('now', new \DateTimeZone('UTC'))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  $now = (new DrupalDateTime('now', new \DateTimeZone('UTC')))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
   if ($cloned_node->hasField('field_published_on')) {
     $cloned_node->set('field_published_on', $now);
   }
