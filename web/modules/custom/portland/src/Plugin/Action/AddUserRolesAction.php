@@ -153,12 +153,13 @@ class AddUserRolesAction extends ViewsBulkOperationsActionBase implements Plugin
    * {@inheritdoc}
    */
   public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE) {
+    $result = AccessResult::forbidden();
     if ($object instanceof UserInterface) {
       /** @var \Drupal\user\UserInterface $object */
       // Don't allow non-admins to edit admin users.
-      return (!$account->hasRole('administrator') && !$object->hasRole('administrator')) ? AccessResult::forbidden() : AccessResult::allowed();
+      $result = ($object->hasRole('administrator') && !$account->hasRole('administrator')) ? AccessResult::forbidden() : AccessResult::allowed();
     }
 
-    return $return_as_object ? AccessResult::forbidden() : FALSE;
+    return $return_as_object ? $result : $result->isAllowed();
   }
 }
