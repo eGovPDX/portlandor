@@ -36,7 +36,7 @@ class RelationForm extends ContentEntityForm {
    * @param \Drupal\Core\Session\AccountProxyInterface $account
    *   The current user account.
    */
-  public function __construct(EntityRepositoryInterface $entity_repository, EntityTypeBundleInfoInterface $entity_type_bundle_info = NULL, TimeInterface $time = NULL, AccountProxyInterface $account) {
+  public function __construct(EntityRepositoryInterface $entity_repository, ?EntityTypeBundleInfoInterface $entity_type_bundle_info = NULL, ?TimeInterface $time = NULL, AccountProxyInterface $account) {
     parent::__construct($entity_repository, $entity_type_bundle_info, $time);
 
     $this->account = $account;

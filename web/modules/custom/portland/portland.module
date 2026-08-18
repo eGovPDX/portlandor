@@ -30,6 +30,9 @@ use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
 use Drupal\node\Entity\Node;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -255,6 +258,61 @@ function portland_node_update($node)
   if (isset($_REQUEST['send_govdelivery_email']) && $_REQUEST['send_govdelivery_email']) {
     _add_node_to_govdelivery_queue($node);
   }
+
+  _portland_invalidate_views_for_published_node($node);
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function portland_node_insert($node) {
+  _portland_invalidate_views_for_published_node($node);
+}
+
+/**
+ * Invalidates specific views' cache (Drupal-side and Pantheon's edge, if
+ * present) whenever a node of a bundle listed below is published, whether
+ * that's Lightning Scheduler applying an automated transition or an editor
+ * publishing/creating it manually. So newly published content shows up in
+ * these listings as soon as possible either way.
+ *
+ * @param \Drupal\node\NodeInterface $node
+ */
+function _portland_invalidate_views_for_published_node($node) {
+  // Map content type -> views to invalidate when a node of that bundle is
+  // published. Add more bundles/views as needed.
+  $views_by_bundle = [
+    'council_agenda' => ['council_agendas'],
+  ];
+
+  // Only process bundles we actually have views configured for.
+  $view_ids = $views_by_bundle[$node->bundle()] ?? [];
+  if (empty($view_ids)) {
+    return;
+  }
+
+  if (!$node->hasField('moderation_state') || $node->moderation_state->value !== 'published') {
+    return;
+  }
+
+  $tags = array_map(fn($view_id) => "config:views.view.$view_id", $view_ids);
+
+  \Drupal\Core\Cache\Cache::invalidateTags($tags);
+  if (function_exists('pantheon_clear_edge_keys')) {
+    pantheon_clear_edge_keys($tags);
+  }
+
+  $via = ($node instanceof \Drupal\Core\Entity\RevisionLogInterface && $node->getRevisionLogMessage() === 'Automated transition by Lightning Scheduler.')
+    ? 'Lightning Scheduler'
+    : 'a manual save';
+
+  \Drupal::logger('portland')->info('Invalidated view cache (@tags) after %type #%id "%label" was published via @via.', [
+    '@tags' => implode(', ', $tags),
+    '%type' => $node->bundle(),
+    '%id' => $node->id(),
+    '%label' => $node->label(),
+    '@via' => $via,
+  ]);
 }
 
 /**
@@ -304,7 +362,7 @@ function _add_node_to_govdelivery_queue($node)
       if ($topic_code == null && !$use_custom_newsletter) {
         throw new \Exception("GovDelivery email not sent. There is no GovDelivery topic code assigned to the $associated_taxonomy_name associated with this entity's group or parent group(s).");
       }
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
       if (!$use_custom_newsletter) {
         \Drupal::messenger()->addMessage($e->getMessage(), 'warning');
         return;
@@ -1370,7 +1428,7 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
   if(
     isset($_ENV['PANTHEON_ENVIRONMENT']) &&
     in_array($_ENV['PANTHEON_ENVIRONMENT'], [
-      'cddev', 'pgov-1166', 'sandbox', 'demo', 'dev', 'test', 'live'])
+      'saml-test', 'sandbox', 'demo', 'dev', 'test', 'live'])
   ) {
     $destination = \Drupal::request()->get('destination');
 
@@ -1566,7 +1624,7 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
 
   $form['third_party_settings']['portland']['disable_demographic_form_prompt'] = [
     '#type' => 'checkbox',
-    '#title' => t('Disable demographic form prompt on confirmation page'),
+    '#title' => t('Disable webform survey prompt on confirmation page'),
     '#default_value' => $webform->getThirdPartySetting('portland', 'disable_demographic_form_prompt'),
   ];
   $form['third_party_settings']['portland']['exclude_from_json'] = [
@@ -1693,5 +1751,19 @@ function portland_preprocess_media(&$variables) {
     }
 
     unset($variables["content"]["media_eva_banner_image_info"]);
+  }
+}
+
+/**
+ * Implements hook_cloned_node_alter().
+ */
+function portland_cloned_node_alter(NodeInterface $cloned_node, NodeInterface $original_node) {
+  // Check if the cloned node has a published or updated field and update its value to the current date and time
+  $now = (new DrupalDateTime('now', new \DateTimeZone('UTC')))->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  if ($cloned_node->hasField('field_published_on')) {
+    $cloned_node->set('field_published_on', $now);
+  }
+  if ($cloned_node->hasField('field_updated_on')) {
+    $cloned_node->set('field_updated_on', $now);
   }
 }
