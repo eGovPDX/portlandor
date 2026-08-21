@@ -1,4 +1,4 @@
-uuid: 6b756615-4e65-4bf9-847e-a1b8eac18055
+uuid: 7994945c-6ac7-40c2-a8b0-a8967f14ebab
 langcode: en
 status: open
 dependencies:
@@ -10,15 +10,15 @@ close: null
 uid: 151
 template: false
 archive: false
-id: apply_for_an_encroachment_permit
+id: apply_encroachment_permit
 title: 'Apply for an Encroachment Permit'
 description: ''
 categories: {  }
 elements: |-
   section_applicant_information:
     '#type': webform_section
-    '#title': 'Applicant Information'
-    apply_applicant_name:
+    '#title': 'Applicant information'
+    contact_name:
       '#type': textfield
       '#title': 'Applicant name'
       '#required': true
@@ -35,19 +35,22 @@ elements: |-
       '#type': textfield
       '#title': Phone
       '#description': 'Please provide your phone number in case we need additional information.'
+      '#description_display': before
       '#input_mask': '(999) 999-9999'
       '#autocomplete': tel-national
       '#required': true
   section_encroachment_information:
     '#type': webform_section
-    '#title': 'Encroachment Information'
+    '#title': 'Encroachment information'
     site_address:
       '#type': portland_address_verifier
       '#title': 'Site Address'
-      '#description': '<p>Please enter the address of where the encroachment will be located. Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.</p>'
+      '#location_address__description': '<p>Please enter the address of where the encroachment will be located. Begin typing to see a list of possible address matches in the Portland metro area, then select one. If there is a unit number, enter it separately in the Unit Number field.</p>'
       '#location_city__access': false
       '#location_state__access': false
       '#location_zip__access': false
+      '#location_verification_status__required': true
+      '#require_portland_city_limits': 1
     apply_property_owner_name:
       '#type': textfield
       '#title': 'Property owner name'
@@ -56,11 +59,12 @@ elements: |-
     apply_encroachment_type:
       '#type': textfield
       '#title': 'What type of encroachment?'
+      '#required': true
       '#description': '<p>i.e. Fence, Retaining Wall, Non-conforming sewer, Bench etc.</p>'
       '#description_display': before
     apply_building_permit_number:
       '#type': textfield
-      '#title': 'Active Parent Permit Number'
+      '#title': 'Active parent permit number'
       '#description': '<p>If this encroachment associated with any active building permit, public works permit, or land use case, please enter the identifying permit number.</p>'
       '#description_display': before
     apply_select_options:
@@ -77,22 +81,30 @@ elements: |-
     apply_exists:
       '#type': radios
       '#title': 'Which of the following best describes the encroachment?'
+      '#required': true
       '#options':
         'Does not currently exist': 'Does not currently exist'
         'Already exists': 'Already exists'
     apply_encroachment_duration:
       '#type': radios
       '#title': 'How long is the encroachment intended to last?'
+      '#required': true
       '#options':
         Temporary: 'Temporary -- Intended to be removed.'
         Long-term: 'Long-term -- Not intended to be removed in the future.'
-  encroachment_details_and_site_plans:
+  apply_site_plan:
     '#type': managed_file
     '#title': 'Encroachment details and site plans'
     '#multiple': 3
     '#required': true
-    '#file_placeholder': '<p>Please attach your site plan and detailed plans or notes for this request. Including as much necessary detail such as dimensions and material will expedite processing times. Please attach as a PDF file.</p>'
-    '#file_extensions': 'gif jpg png bmp tif psd txt pdf doc docx ppt pptx xls xlsx xml svg'
+    '#description_display': before
+    '#description': '<p>Please attach your site plan and detailed plans or notes for this request. Including as much necessary detail such as dimensions and material will expedite processing times. Please attach as a PDF file.</p>'
+    '#max_filesize': '30'
+    '#file_extensions': 'pdf'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Request ticket ID'
+    '#prepopulate': true
 css: ''
 javascript: ''
 settings:
@@ -200,10 +212,10 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Application received'
+  confirmation_message: '<p><strong>Application number:</strong> [webform_submission:values:report_ticket_id]</p><p>Thank you for applying. You will receive a confirmation email shortly with more details.</p>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -221,8 +233,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
@@ -278,44 +290,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  email:
-    id: email
-    handler_id: email
-    label: Email
-    notes: ''
-    status: true
-    conditions: {  }
-    weight: 0
-    settings:
-      states:
-        - completed
-      to_mail: '[webform_submission:values:contact_email:raw]'
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: 'City of Portland'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[webform_submission:values:apply_encroachment_type] at [webform_submission:values:site_address:location_address]'
-      body: '<p>Hello, &nbsp;</p><p>Thank you for submitting an application for an Encroachment Permit. &nbsp;</p><p>We will make an initial review and if we have any questions, we will reach out shortly. Our fees and more permit information can be found <a href="https://www.portland.gov/transportation/permitting/encroachment-permits">on our website</a>. &nbsp;</p><p>Your request may require additional reviews and application processing may take up to 6 weeks. &nbsp;</p><p>If you have any questions, please let us know. &nbsp;</p><p>Thank you, &nbsp;</p><p>Encroachment Program<br>Utility Management, Permitting and Compliance &nbsp;<br>Portland Bureau of Transportation &nbsp;<br>503-823-5411<br>Encroachments@portlandoregon.gov&nbsp;</p><p>&nbsp;</p><p>Submitted on [webform_submission:created]</p><p>Submitted by: [webform_submission:user]</p><p>Submitted values are:</p><p>[webform_submission:values:html]</p>'
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
@@ -325,10 +299,10 @@ handlers:
     conditions: {  }
     weight: 0
     settings:
-      requester_name: apply_applicant_name
+      requester_name: contact_name
       requester_email: contact_email
       subject: 'Encroachment Permit Application'
-      comment: '[webform_submission:values]'
+      comment: '[webform_submission:values:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -338,10 +312,12 @@ handlers:
       type: question
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_for_an_encroachment_permit'\r\n1500012743961: ['[webform_submission:values:site_address:location_address], [webform_submission:values:site_address:location_city], [webform_submission:values:site_address:location_state] [webform_submission:values:site_address:location_zip]', 'site_address:location_full_address']\r\n30430800267287: ['[webform_submission:values:apply_applicant_name]', 'apply_applicant_name']\r\n22029205617175: ['[webform_submission:values:apply_property_owner_name]', 'apply_property_owner_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n42035213550103: ['[webform_submission:values:apply_encroachment_type]', 'apply_encroachment_type']\r\n42035231000599: ['[webform_submission:values:apply_building_permit_type]', 'apply_building_permit_type']"
-      ticket_id_field: ''
+      custom_fields: "6353388345367: 'apply_encroachment_permit'\r\n1500012743961: ['[webform_submission:values:site_address:location_full_address]', 'site_address:location_full_address']\r\n30430800267287: ['[webform_submission:values:contact_name]', 'contact_name']\r\n22029205617175: ['[webform_submission:values:apply_property_owner_name]', 'apply_property_owner_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n42035213550103: ['[webform_submission:values:apply_encroachment_type]', 'apply_encroachment_type']"
+      ticket_id_field: report_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '41988533844119'
-      excluded_elements: {  }
+      excluded_elements:
+        apply_site_plan: apply_site_plan
+        report_ticket_id: report_ticket_id
 variants: {  }
