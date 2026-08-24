@@ -56,6 +56,8 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     foreach (_portland_media_embed_helper_image_slider_label_presets() as $key => $labels) {
       $preset_options[$key] = implode(' / ', $labels);
     }
+    $preset_options['custom'] = t('Custom text');
+
     $form['attributes']['data-label-preset'] = [
       '#type' => 'select',
       '#title' => t('Image labels'),
@@ -63,6 +65,35 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       '#options' => $preset_options,
       '#default_value' => $entity_element['data-label-preset'] ?? 'before_after',
       '#description' => t('Choose the label shown on each of the two images.'),
+    ];
+
+    $custom_label_states = [
+      'visible' => [
+        ':input[name="attributes[data-label-preset]"]' => ['value' => 'custom'],
+      ],
+      // Only marks the field visually required and adds the HTML5 required
+      // attribute via core/drupal.states; the actual required validation is
+      // enforced server-side in
+      // portland_media_embed_helper_entity_embed_dialog_validate().
+      'required' => [
+        ':input[name="attributes[data-label-preset]"]' => ['value' => 'custom'],
+      ],
+    ];
+    $form['attributes']['data-label-custom-1'] = [
+      '#type' => 'textfield',
+      '#title' => t('Label for image 1'),
+      '#weight' => 3,
+      '#maxlength' => 64,
+      '#default_value' => $entity_element['data-label-custom-1'] ?? '',
+      '#states' => $custom_label_states,
+    ];
+    $form['attributes']['data-label-custom-2'] = [
+      '#type' => 'textfield',
+      '#title' => t('Label for image 2'),
+      '#weight' => 3,
+      '#maxlength' => 64,
+      '#default_value' => $entity_element['data-label-custom-2'] ?? '',
+      '#states' => $custom_label_states,
     ];
   }
 
@@ -197,8 +228,33 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     ];
   }
 
+  $form['#validate'][] = 'portland_media_embed_helper_entity_embed_dialog_validate';
   $form['#submit'][] = 'portland_media_embed_helper_entity_embed_dialog_submit';
   $form['#after_build'][] = 'portland_media_embed_helper_after_build';
+}
+
+/**
+ * Requires the custom labels when the "Custom text" preset is selected.
+ *
+ * The #states 'required' key (set in
+ * portland_media_embed_helper_form_entity_embed_dialog_alter()) only
+ * enforces this client-side, so it's re-checked here on the server.
+ */
+function portland_media_embed_helper_entity_embed_dialog_validate(array &$form, FormStateInterface $form_state) {
+  if ($form_state->getValue(['attributes', 'data-label-preset']) !== 'custom') {
+    return;
+  }
+
+  $labels = [
+    1 => t('Label for image 1'),
+    2 => t('Label for image 2'),
+  ];
+  foreach ($labels as $n => $label_title) {
+    $key = "data-label-custom-$n";
+    if (trim((string) $form_state->getValue(['attributes', $key])) === '') {
+      $form_state->setError($form['attributes'][$key], t('@label is required when "Custom text" is selected.', ['@label' => $label_title]));
+    }
+  }
 }
 
 /**
@@ -227,7 +283,9 @@ function _portland_media_embed_helper_image_slider_label_presets() {
  * Injects the per-embed label preset chosen in the entity_embed dialog into
  * the rendered images, by setting the "caption" value the
  * image_compare formatter/template expects for each image (not to be
- * confused with the whole-slider data-caption attribute).
+ * confused with the whole-slider data-caption attribute). If the editor
+ * chose the "custom" preset, the editor-supplied text in the
+ * data-label-custom-1/2 attributes is used instead of a fixed pair.
  *
  * The images aren't built yet when this hook fires (the referenced media
  * entity's fields are populated later, by its own #pre_render callback), so
@@ -239,13 +297,23 @@ function portland_media_embed_helper_media_embed_alter(array &$build, EntityInte
     return;
   }
 
-  $presets = _portland_media_embed_helper_image_slider_label_presets();
   $preset = $context['data-label-preset'] ?? 'before_after';
-  $labels = $presets[$preset] ?? $presets['before_after'];
+
+  if ($preset === 'custom') {
+    // Enforce the same 64-character limit as the dialog's #maxlength, in
+    // case the embed's HTML was edited directly (e.g. via source editing).
+    $labels = [
+      mb_substr((string) ($context['data-label-custom-1'] ?? ''), 0, 32),
+      mb_substr((string) ($context['data-label-custom-2'] ?? ''), 0, 32),
+    ];
+  } else {
+    $presets = _portland_media_embed_helper_image_slider_label_presets();
+    $labels = $presets[$preset] ?? $presets['before_after'];
+  }
 
   $build['entity']['#pre_render'][] = function (array $element) use ($labels) {
     foreach (array_values($labels) as $delta => $label) {
-      if (isset($element['image']['#images'][$delta])) {
+      if ($label !== '' && isset($element['image']['#images'][$delta])) {
         $element['image']['#images'][$delta]['caption'] = $label;
       }
     }
