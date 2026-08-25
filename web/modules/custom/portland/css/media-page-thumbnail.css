@@ -12,17 +12,57 @@ td.views-field-thumbnail__target-id.views-field-image-1 {
   gap: 2px;
 }
 
-td.views-field-thumbnail__target-id.views-field-image-1 img {
+td.views-field-thumbnail__target-id.views-field-image-1 > a {
   display: block;
   width: 50%;
   max-width: 104px;
+}
+
+td.views-field-thumbnail__target-id.views-field-image-1 img {
+  display: block;
+  width: 100%;
   height: auto;
 }
 
-/* Every other media type only has one image in this cell (image_1 is empty
- * and hidden) - let it keep its original size instead of stretching to
- * fill the full (now fixed, wider) column. */
-td.views-field-thumbnail__target-id.views-field-image-1 img:only-child {
+/* All media types except Image Slider only has one image. Display it at full width. */
+td.views-field-thumbnail__target-id.views-field-image-1 > a:only-child {
   width: auto;
   max-width: 100%;
+}
+
+/* Mark the two-image cell as a slider (not two unrelated images) with a
+ * small "<->" badge over the seam, matching the icon shown on the real
+ * image-compare slider (see cloudy's _image-compare.scss). Only shown when
+ * there are actually two images/links. */
+td.views-field-thumbnail__target-id.views-field-image-1 {
+  position: relative;
+}
+
+td.views-field-thumbnail__target-id.views-field-image-1:has(> a + a)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: hsla(0, 0%, 100%, 0.9);
+  border: 1px solid hsla(0, 0%, 0%, 0.9);
+  background-image: url('data:image/svg+xml;utf8,<svg viewbox="0 0 60 60" width="60" height="60" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M20 20 L10 30 L20 40"/><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M40 20 L50 30 L40 40"/><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M10 30 L50 30"/></svg>');
+  background-size: 65%;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* Claro applies a global blue focus ring (.page-wrapper *:focus) to every
+ * focusable element, including these thumbnail links - on a two-image
+ * slider tile that ring reads as "you selected the wrong image", not as a
+ * normal link state. Suppress it on this specific link only (this is scoped
+ * narrowly and doesn't touch Claro's focus styling anywhere else). */
+td.views-field-thumbnail__target-id.views-field-image-1 a:hover,
+td.views-field-thumbnail__target-id.views-field-image-1 a:focus {
+  outline: none;
+  box-shadow: none;
 }
