@@ -89,17 +89,22 @@ class Smartsheet extends QueryPluginBase {
     $client = new SmartsheetClient($this->options['sheet_id']);
     $current_page = $view->pager?->getCurrentPage() ?? 0;
     $items_per_page = $view->pager?->getItemsPerPage() ?? 0;
-
-    return $client->getSheet([
+    $query = [
       'exclude' => 'filteredOutRows',
       'filterId' => $this->options['filter_id'],
       'include' => 'attachments',
-      // smartsheet pages are 1-indexed
-      'page' => $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY ? 1 : $current_page + 1,
-      // if in-mem, load API max of 10,000 rows
-      'pageSize' => ($items_per_page === 0 || $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) ? 10000 : $items_per_page,
       'rowIds' => join(',', $this->whereRowId),
-    ]);
+    ];
+    // If we're not filtering for specific row ID(s), then add paging parameters.
+    // If filtering by row ID, adding paging parameters can cause the API to return an empty result set.
+    if (empty($this->whereRowId)) {
+      // smartsheet pages are 1-indexed
+      $query['page'] = $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY ? 1 : $current_page + 1;
+      // if in-mem, load API max of 10,000 rows
+      $query['pageSize'] = ($items_per_page === 0 || $paging_strategy === SmartsheetPagingStrategy::IN_MEMORY) ? 10000 : $items_per_page;
+    }
+
+    return $client->getSheet($query);
   }
 
   /**
