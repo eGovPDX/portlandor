@@ -57,6 +57,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       $preset_options[$key] = implode(' / ', $labels);
     }
     $preset_options['custom'] = t('Custom text');
+    $preset_options['no_label'] = t('No label');
 
     $form['attributes']['data-label-preset'] = [
       '#type' => 'select',
@@ -285,7 +286,9 @@ function _portland_media_embed_helper_image_slider_label_presets() {
  * image_compare formatter/template expects for each image (not to be
  * confused with the whole-slider data-caption attribute). If the editor
  * chose the "custom" preset, the editor-supplied text in the
- * data-label-custom-1/2 attributes is used instead of a fixed pair.
+ * data-label-custom-1/2 attributes is used instead of a fixed pair. If the
+ * editor chose "no_label", no caption is set at all, so the image_compare
+ * template doesn't render the <figcaption> pill badge.
  *
  * The images aren't built yet when this hook fires (the referenced media
  * entity's fields are populated later, by its own #pre_render callback), so
@@ -299,7 +302,9 @@ function portland_media_embed_helper_media_embed_alter(array &$build, EntityInte
 
   $preset = $context['data-label-preset'] ?? 'before_after';
 
-  if ($preset === 'custom') {
+  if ($preset === 'no_label') {
+    $labels = ['', ''];
+  } elseif ($preset === 'custom') {
     // Enforce the same 64-character limit as the dialog's #maxlength, in
     // case the embed's HTML was edited directly (e.g. via source editing).
     $labels = [
