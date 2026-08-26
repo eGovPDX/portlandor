@@ -169,7 +169,18 @@
         var serverErrorSoft = false;
 
         // instantiate base layer and aerial layer, and set up error handling
-        var baseLayer = L.esri.Vector.vectorTileLayer("https://tiles.arcgis.com/tiles/quVN97tn06YNGj9s/arcgis/rest/services/Portland_Basemap_Complete/VectorTileServer", { attribution: "PortlandMaps ESRI" });
+        var baseLayer = L.esri.Vector.vectorTileLayer("https://tiles.arcgis.com/tiles/quVN97tn06YNGj9s/arcgis/rest/services/Portland_Basemap_Complete/VectorTileServer", {
+          attribution: 'PortlandMaps ESRI',
+          // PGOV-2148 fix address label spacing
+          style: (style) => {
+            style.layers.forEach((layer) => {
+              if (typeof layer.layout !== 'undefined' && layer.layout['symbol-spacing'] === 1000) {
+                layer.layout['symbol-spacing'] = 400;
+              }
+            });
+            return style;
+          },
+        });
         baseLayer.on('tileerror', function (event) {
           throwHardServerError(event);
         });
