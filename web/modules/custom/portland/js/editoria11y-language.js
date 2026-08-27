@@ -1,5 +1,23 @@
 // Our language overrides for Editoria11y
 const PORTLAND_STRINGS = {
+  panelHelp: `
+      <p>
+        Editoria11y checks for common accessibility needs, such as image alternative text, meaningful heading outlines, and well-named links. It doesn't check proofreading, accessibility, or usability.
+      </p>
+      <p>
+        Some issues are flagged with a red exclamation point and will require a fix. Other issues are flagged with a yellow question mark and need your interpretation. For these yellow issues, use the "Mark as OK" button only after you verify an issue's accessibility. This will hide the alert for all editors.
+      </p>
+      <p>
+        For embedded content, like a document or video, use its <a href="https://employees.portland.gov/web-support/portlandgov-editor-resources/accessibility-checker#toc-meets-accessibility-requirements-checkbox" target="_blank" title="Opens in new tab">meets accessibility checkbox</a> so it passes Editoria11y review whenever it's embedded on the site.
+      </p>
+      <p>
+        For an overview of accessibility issues relevant to Portland.gov, see our <a href="https://employees.portland.gov/digital-accessibility/accessibility-checklist" target="_blank" title="Opens in new tab">accessibility checklist for web editors</a>.
+      </p>
+      <p>
+        You can report bugs and request support by emailing <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.
+      </p>
+    `,
+
   headingLevelSkipped: {
     title: "Missing heading level.",
     tip: (prevLevel, level) =>
