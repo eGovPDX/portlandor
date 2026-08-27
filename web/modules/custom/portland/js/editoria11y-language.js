@@ -63,7 +63,7 @@ const PORTLAND_STRINGS = {
   // Tooltips for image tests =========================
 
   altMissing: {
-    title: "This image has no alt text.",
+    title: "This image has no alt text attribute.",
     tip: () =>
       `<p>To fix: Add alt text that describes the meaning of the image as you would to someone over the phone. If this image is purely for decoration, <a href="https://employees.portland.gov/web-support/portlandgov-editor-resources/media-types-overview/images#toc-decorative-images" target="_blank" title="Opens in new tab">mark it as decorative</a> so screen readers will skip it.</p>
           <p>See the City Web Editors documentation for <a href="https://employees.portland.gov/web-support/best-practices-accessibility/writing-effective-alt-text" target="_blank" title="Opens in new tab">more resources on effective alt text</a>.</p>
@@ -71,7 +71,7 @@ const PORTLAND_STRINGS = {
   },
 
   altNull: {
-    title: "This image has no alt text.",
+    title: "This image has empty alt text.",
     tip: () =>
       `<p>To fix: Add alt text that describes the meaning of the image as you would to someone over the phone. If this image is purely for decoration, <a href="https://employees.portland.gov/web-support/portlandgov-editor-resources/media-types-overview/images#toc-decorative-images" target="_blank" title="Opens in new tab">mark it as decorative</a> so screen readers will skip it.</p>
           <p>See the City Web Editors documentation for <a href="https://employees.portland.gov/web-support/best-practices-accessibility/writing-effective-alt-text" target="_blank" title="Opens in new tab">more resources on effective alt text</a>.</p>
