@@ -125,14 +125,6 @@ const PORTLAND_STRINGS = {
     tip: (alt) => Ed11y.M.altLinkedExample(alt),
   },
 
-  altDeadspace: {
-    title: "Image's text alternative is unpronounceable",
-    tip: (alt) =>
-      `<p>This image's alt text is "${alt}," which only contains unpronounceable symbols and/or spaces. Screen readers will announce that an image is present, and then pause awkwardly: "image: ____."</p>
-      <p><strong>To fix:</strong> add a descriptive alt, or provide a <em>completely</em> empty alt (alt="") if this is just an icon or spacer, and screen readers should ignore it.</p>
-          ${Ed11y.M.altAttributeExample}`,
-  },
-
   altEmptyLinked: {
     title: "Linked image has no alt text.",
     tip: (alt) => Ed11y.M.altLinkedExample(alt),
