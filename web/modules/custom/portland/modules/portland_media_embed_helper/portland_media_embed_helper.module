@@ -1,7 +1,20 @@
 <?php
 
 use Drupal\editor\Entity\Editor;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_library_info_alter().
+ *
+ * Load image_compare's JS when entity_embed's own CKEditor5 plugin is
+ * loaded so the slider is usable in CKEditor.
+ */
+function portland_media_embed_helper_library_info_alter(array &$libraries, $extension) {
+  if ($extension === 'entity_embed' && isset($libraries['entity_embed'])) {
+    $libraries['entity_embed']['dependencies'][] = 'image_compare/image_compare';
+  }
+}
 
 /**
  * Implements hook_form_alter().
@@ -20,6 +33,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     'document' => ['data-alt-link-text'],
     'iframe_embed' => ['data-align', 'data-aspect-ratio'],
     'image' => ['data-align', 'data-caption', 'data-alt-override'],
+    'image_slider' => ['data-caption', 'data-label-preset'],
     'map' => ['data-align', 'data-caption'],
     'video' => ['data-align', 'data-caption', 'data-start-cue'],
     'content_fragment' => [],
@@ -35,6 +49,23 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $form['attributes']['data-caption']['#weight'] = 2;
   } else {
     $form['attributes']['data-caption']['#access'] = false;
+  }
+
+  if (in_array('data-label-preset', $attributes_enabled)) {
+    $preset_options = [];
+    foreach (_portland_media_embed_helper_image_slider_label_presets() as $key => $labels) {
+      $preset_options[$key] = implode(' / ', $labels);
+    }
+    $preset_options['no_label'] = t('No label');
+
+    $form['attributes']['data-label-preset'] = [
+      '#type' => 'select',
+      '#title' => t('Image labels'),
+      '#weight' => 2,
+      '#options' => $preset_options,
+      '#default_value' => $entity_element['data-label-preset'] ?? 'before_after',
+      '#description' => t('Choose the label shown on each of the two images.'),
+    ];
   }
 
   if (in_array('data-align', $attributes_enabled)) {
@@ -82,6 +113,8 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       $form['attributes']['data-align']['#options'][$alignment['id']]
         = "{$alignment['name']}<br><img src=\"/themes/custom/cloudy/images/icons/embed-alignment/{$alignment['icon']}\" />";
     }
+  } else {
+    $form['attributes']['data-align']['#access'] = false;
   }
 
   if (in_array('data-alt-override', $attributes_enabled)) {
@@ -168,6 +201,65 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
 
   $form['#submit'][] = 'portland_media_embed_helper_entity_embed_dialog_submit';
   $form['#after_build'][] = 'portland_media_embed_helper_after_build';
+}
+
+/**
+ * Defines the selectable Image Slider label presets.
+ *
+ * Keyed by machine name so the editor's choice can be stored as a data
+ * attribute on the embed (see
+ * portland_media_embed_helper_form_entity_embed_dialog_alter()) and the
+ * actual label text resolved as a translatable interface string at render
+ * time (see portland_media_embed_helper_media_embed_alter()).
+ *
+ * @return array
+ *   An array of [image_1_label, image_2_label] pairs, keyed by preset id.
+ */
+function _portland_media_embed_helper_image_slider_label_presets() {
+  return [
+    'before_after' => [t('Before'), t('After')],
+    'option_1_2' => [t('Image A'), t('Image B')],
+    'existing_proposed' => [t('Existing'), t('Proposed')],
+  ];
+}
+
+/**
+ * Implements hook_media_embed_alter().
+ *
+ * Injects the per-embed label preset chosen in the entity_embed dialog into
+ * the rendered images, by setting the "caption" value the
+ * image_compare formatter/template expects for each image (not to be
+ * confused with the whole-slider data-caption attribute). If the editor
+ * chose "no_label", no caption is set at all, so the image_compare
+ * template doesn't render the <figcaption> pill badge.
+ *
+ * The images aren't built yet when this hook fires (the referenced media
+ * entity's fields are populated later, by its own #pre_render callback), so
+ * the labels are applied via an additional #pre_render callback appended
+ * after it.
+ */
+function portland_media_embed_helper_media_embed_alter(array &$build, EntityInterface $entity, array $context) {
+  if ($entity->bundle() !== 'image_slider' || empty($build['entity'])) {
+    return;
+  }
+
+  $preset = $context['data-label-preset'] ?? 'before_after';
+
+  if ($preset === 'no_label') {
+    $labels = ['', ''];
+  } else {
+    $presets = _portland_media_embed_helper_image_slider_label_presets();
+    $labels = $presets[$preset] ?? $presets['before_after'];
+  }
+
+  $build['entity']['#pre_render'][] = function (array $element) use ($labels) {
+    foreach (array_values($labels) as $delta => $label) {
+      if ($label !== '' && isset($element['image']['#images'][$delta])) {
+        $element['image']['#images'][$delta]['caption'] = $label;
+      }
+    }
+    return $element;
+  };
 }
 
 /**
