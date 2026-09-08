@@ -5,6 +5,7 @@ namespace Drupal\portland\Drush\Commands;
 use Drush\Attributes as CLI;
 use Drush\Commands\DrushCommands;
 use Drupal\group\Entity\GroupRelationship;
+use Drupal\group\Entity\GroupInterface;
 
 class PortlandCommands extends DrushCommands {
   /**
@@ -151,5 +152,39 @@ class PortlandCommands extends DrushCommands {
     } while (TRUE);
 
     echo "Done updating $updated usernames. Processed $processed users." . PHP_EOL;
+  }
+
+  /**
+   * Set field_only_member_can_add_conten to FALSE on base_group groups that don't have a value yet.
+   * @command portland:set_only_member_can_add_content_default
+   * @aliases pgov-set-only-member-default
+   * @description Backfills field_only_member_can_add_conten to FALSE on existing base_group groups, without recording it as a user-driven change.
+   */
+  public function set_only_member_can_add_content_default() {
+    $group_storage = \Drupal::entityTypeManager()->getStorage('group');
+
+    $gids = $group_storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('type', 'base_group')
+      ->execute();
+
+    /** @var GroupInterface[] $groups */
+    $groups = $group_storage->loadMultiple($gids);
+    $processed = 0;
+    $updated = 0;
+
+    foreach ($groups as $group) {
+      if ($group->get('field_only_member_can_add_conten')->isEmpty()) {
+        // Skip our own "changed by" tracking; this is a system backfill, not a user-driven change.
+        $group->_skip_only_member_updated_tracking = TRUE;
+        $group->setNewRevision(FALSE);
+        $group->set('field_only_member_can_add_conten', 0);
+        $group->save();
+        $updated++;
+      }
+      $processed++;
+    }
+
+    echo "Done setting default value. Processed $processed groups, updated $updated." . PHP_EOL;
   }
 }
