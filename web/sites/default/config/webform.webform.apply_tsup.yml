@@ -420,6 +420,15 @@ elements: |-
           ':input[name="wizard_permit_need"]':
             value: parking
       '#markup': '<div class="webform-alert alert alert--info" aria-live="polite"><h2>We''ll install your signs</h2><p>You have selected an area where city staff will install the parking reservation signs on your behalf. As of July 2026, this now includes some ''non-metered'' areas. <a target="_blank" href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">Learn more about this change.</a></p></div>'
+    markup_parking_info:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_location[location_address]"]':
+            '!value': ''
+          ':input[name="wizard_permit_need"]':
+            value: parking
+      '#markup': '<div class="webform-alert alert alert--info" aria-live="polite"><h2>Parking requirements</h2><p>On streets less than 28ft wide, you may be required to reserve additional parking across the street to maintain clearance for vehicle traffic. If this is required, we''ll alert you during our review of your application.</p><p>No vehicles, containers, or equipment taller than six feet may be parked within 50ft of a non-signalized intersection.</p></div>'
   page_existing_permit:
     '#type': webform_wizard_page
     '#title': 'Request details'
@@ -877,6 +886,14 @@ elements: |-
             value: ''
       '#markup': |
         <p><strong>There is an additional $80 service fee if you opt to have your parking reservation sign placement verified, which is required if you would like the option of towing vehicles out of your reserved area. <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-instructions-for-using-parking-permits">See our website</a> for additional info about this process. Additional parking fees may also apply if you are working on a construction project covered by a building permit. <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Visit our fee guide</a> for more information about applicable fee rates.</p>
+    markup_parking_verification_info_metered_or_install:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="permit_location_parking_zone_type"]':
+            '!value': ''
+      '#markup': |
+        <p>This fee estimate applies to the standard parking reservation rate. If you are working on a construction project, the fees may be different. Please see our <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">fee guide</a> for a more comprehensive list of applicable fee rates.</p>
   page_7day_permit:
     '#type': webform_wizard_page
     '#title': 'Request details'
@@ -905,6 +922,8 @@ elements: |-
     7day_permit_reason:
       '#type': select
       '#title': 'What will the space(s) be used for?'
+      '#description': '<p>Not to be used for vending, passenger vehicles, or SUVs.</p>'
+      '#description_display': before
       '#options':
         construction: Construction
         event: 'Event loading/unloading'
@@ -940,6 +959,15 @@ elements: |-
         visible:
           ':input[name="7day_permit_acknowledge_width"]':
             checked: true
+    7day_permit_acknowledge_non_signalized:
+      '#type': checkbox
+      '#title': 'I understand that no vehicles, containers, or equipment taller than six feet may be parked within 50ft of a non-signalized intersection.'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_acknowledge_scope"]':
+            checked: true
     7day_permit_acknowledge_conditions:
       '#type': checkbox
       '#title': 'I understand that obtaining this permit does not automatically reserve a specific parking space, nor guarantee availability of a space to reserve.'
@@ -948,7 +976,7 @@ elements: |-
       '#required_error': 'You must acknowledge this.'
       '#states':
         visible:
-          ':input[name="7day_permit_acknowledge_scope"]':
+          ':input[name="7day_permit_acknowledge_non_signalized"]':
             checked: true
   page_simple_permit:
     '#type': webform_wizard_page
@@ -1107,6 +1135,16 @@ elements: |-
         '#max_filesize': '30'
         '#file_help': help
         '#file_extensions': 'pdf jpg jpeg png'
+      simple_permit_acknowledge_non_signalized:
+        '#type': checkbox
+        '#title': 'I understand that no vehicles, containers, or equipment taller than six feet may be parked within 50ft of a non-signalized intersection.'
+        '#required': true
+        '#required_error': 'You must acknowledge this.'
+      simple_permit_acknowledge_less_28ft:
+        '#type': checkbox
+        '#title': 'I understand that if the street is less than 28ft wide, I may be required to reserve additional parking across the street to maintain clearance for vehicle traffic.'
+        '#required': true
+        '#required_error': 'You must acknowledge this.'
       container_simple_tocs_nonmetered_noinstall:
         '#type': container
         '#states':
@@ -1385,8 +1423,11 @@ elements: |-
           '#type': webform_markup
           '#states':
             visible:
-              ':input[name="complex_permit_closure_type[sidewalk]"]':
-                checked: true
+              - ':input[name="complex_permit_closure_type[sidewalk]"]':
+                  checked: true
+              - or
+              - ':input[name="permit_type"]':
+                  value: sidewalk_repair
           '#markup': |-
             <strong>For sidewalk closures:</strong><br />
             <br />
