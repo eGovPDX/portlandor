@@ -9,7 +9,7 @@ use Drupal\user\UserInterface;
 /**
  * Decorates the authmap service to match SAML authnames case-insensitively.
  *
- * Handles the email claim from Entra ID in similar fashion to Drupal core's user_email module, which allows users to log in with a case-insensitive email address.
+ * Handles the email claim from Entra ID in similar fashion to Drupal core, which allows users to log in with a case-insensitive email address.
  */
 class CaseInsensitiveSamlAuthmap implements AuthmapInterface {
 
