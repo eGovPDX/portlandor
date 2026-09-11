@@ -8,17 +8,15 @@ const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = process.env.CIRCLECI
   ? `https://${SITE_NAME}-portlandor.pantheonsite.io`
   : 'https://portlandor.lndo.site';
-const ARTIFACTS_FOLDER = process.env.CIRCLECI
-  ? `/home/circleci/artifacts/`
-  : `./`;
+const ARTIFACTS_FOLDER = process.env.CIRCLECI ? `/home/circleci/artifacts/` : `./`;
 const TEST_GROUP_PATH = 'full-regression-test-group';
 const TEST_GROUP_NAME = 'Full Regression Test Group';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox", '--ignore-certificate-errors'],
+  args: ['--no-sandbox', '--ignore-certificate-errors'],
   defaultViewport: null,
-  headless: "new",
+  headless: 'new',
   // To watch tests locally on MacOS:
   // 1. Uncomment these two settings below
   // 2. In CLI, go into folder "tests/percy"
@@ -30,7 +28,8 @@ var BROWSER_OPTION = {
 };
 
 describe('Full regression test suite for Admin', () => {
-  var browser, page, login_url, link;
+  var browser, page, login_url, ck5, editor, bot_token;
+
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
     page = await browser.newPage();
@@ -40,6 +39,10 @@ describe('Full regression test suite for Admin', () => {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.SUPERADMIN_LOGIN;
       login_url = login_url.replace('http://', 'https://');
+      bot_token = process.env.BOT_TOKEN;
+      await page.setExtraHTTPHeaders({
+        'x-pantheon-bot-bypass': bot_token,
+      });
       await page.goto(login_url);
     } else {
       var drush_uli_result = fs.readFileSync('superAdmin_uli.log').toString();
@@ -59,54 +62,40 @@ describe('Full regression test suite for Admin', () => {
 
       // If a previous test failed without deleting the test group, delete it first
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/delete`);
-      text_content = await page.evaluate(
-        () => document.querySelector('.page-title').textContent
-      );
+      text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
       if (text_content.indexOf(TEST_GROUP_NAME) > 0) {
         selector = 'input#edit-submit';
         await page.focus(selector);
-        await page.evaluate(
-          (selector) => document.querySelector(selector).click(),
-          selector
-        );
+        await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         await page.waitForNavigation();
       }
 
       // Create a new group
       await page.goto(`${HOME_PAGE}/group/add/base_group`);
-      text_content = await page.evaluate(
-        () => document.querySelector('.page-title').textContent
-      );
-      expect(text_content).toEqual(
-        expect.stringContaining('Add Base group')
-      );
+      text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
+      expect(text_content).toEqual(expect.stringContaining('Add Base group'));
       await page.type('#edit-label-0-value', TEST_GROUP_NAME);
-      await page.select("#edit-field-group-subtype", "850");
+      await page.select('#edit-field-group-subtype', '850');
       await page.type(
         '#edit-field-official-organization-name-0-value',
-        `Official name of ${TEST_GROUP_NAME}`
+        `Official name of ${TEST_GROUP_NAME}`,
       );
       await page.type(
         '#edit-field-summary-0-value',
-        `This is a test summary for the ${TEST_GROUP_PATH}`
+        `This is a test summary for the ${TEST_GROUP_PATH}`,
       );
       // Must expand the admin fields group in order to input Group Path
       await page.click('details#edit-group-path-and-redirects');
       await page.type('#edit-field-group-path-0-value', TEST_GROUP_PATH);
 
       // Group needs to be published to be added to content in following test
-      await page.select("#edit-moderation-state-0-state", "published");
+      await page.select('#edit-moderation-state-0-state', 'published');
 
       selector = '#edit-submit';
-      await page.evaluate(
-        (selector) => document.querySelector(selector).click(),
-        selector
-      );
+      await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
 
-      text_content = await page.evaluate(
-        () => document.querySelector('h1.h1').textContent
-      );
+      text_content = await page.evaluate(() => document.querySelector('h1.h1').textContent);
       expect(text_content).toEqual(expect.stringContaining(TEST_GROUP_NAME));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
@@ -136,21 +125,17 @@ describe('Full regression test suite for Admin', () => {
       // Alert is site-wide content. No a group content. Override the function that goes to the content creation page
       alertTester.gotoContentCreatePage = async function () {
         //Add content
-        await this.page.goto(
-          `${this.homepageUrl}/node/add/${this.contentType}`,
-          { waitUntil: 'networkidle2' }
-        );
+        await this.page.goto(`${this.homepageUrl}/node/add/${this.contentType}`, {
+          waitUntil: 'networkidle2',
+        });
       };
 
       // Override the function that inputs test values into form
       alertTester.inputFieldValues = async function () {
         // Title
-        await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test alert"
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test alert');
         //Severity
-        await this.page.select("#edit-field-severity", "20");
+        await this.page.select('#edit-field-severity', '20');
         //Alert Text
         await this.page.evaluate(() => {
           ck5 = Drupal.CKEditor5Instances.keys().next().value;
@@ -158,11 +143,8 @@ describe('Full regression test suite for Admin', () => {
           editor.setData('Full regression test alert text');
         });
         //Revision text
-        await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
-        );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await alertTester.runTest();
@@ -186,28 +168,19 @@ describe('Full regression test suite for Admin', () => {
 
       // Add Ally to the new group as the group admin
       await page.goto(
-        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/add/group_membership?destination=/${TEST_GROUP_PATH}/members`
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/add/group_membership?destination=/${TEST_GROUP_PATH}/members`,
       );
-      text_content = await page.evaluate(
-        () => document.querySelector('.page-title').textContent
-      );
-      expect(text_content).toEqual(
-        expect.stringContaining('Add Group membership')
-      );
+      text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
+      expect(text_content).toEqual(expect.stringContaining('Add Group membership'));
       await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
       selector = '#edit-group-roles-base-group-admin';
-      await page.evaluate(
-        (selector) => document.querySelector(selector).click(),
-        selector
-      );
+      await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       // Submit form
       await page.keyboard.press('Enter');
 
       await page.waitForNavigation();
       text_content = await page.evaluate(
-        () =>
-          document.querySelector("td.views-field-name a[href='/ally-admin']")
-            .textContent
+        () => document.querySelector("td.views-field-name a[href='/ally-admin']").textContent,
       );
 
       expect(text_content).toEqual(expect.stringContaining('Ally Admin'));
@@ -215,7 +188,7 @@ describe('Full regression test suite for Admin', () => {
       // Masquerade as Ally to create content
       await util.masqueradeAs('ally.admin@portlandoregon.gov', page, HOME_PAGE);
       text_content = await page.evaluate(
-        () => document.querySelector('#toolbar-item-user').textContent
+        () => document.querySelector('#toolbar-item-user').textContent,
       );
       expect(text_content).toEqual(expect.stringMatching('Ally Admin'));
     } catch (e) {
@@ -237,37 +210,19 @@ describe('Full regression test suite for Admin', () => {
         entityType: 'node',
         contentType: 'page',
         page: page,
-        fieldLabelArray: [
-          'Title',
-          'Page type',
-          'Summary',
-          'Body content',
-          'URL redirects',
-        ],
+        fieldLabelArray: ['Title', 'Page type', 'Summary', 'Body content', 'URL redirects'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
       // Override the function that inputs test values into form
       pageTester.inputFieldValues = async function () {
         // Title
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test page'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test page');
         // Short title
-        await this.page.type(
-          '#edit-field-menu-link-text-0-value',
-          'Full regression test page'
-        );
+        await this.page.type('#edit-field-menu-link-text-0-value', 'Full regression test page');
 
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test page'
-        );
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test page');
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
@@ -301,27 +256,21 @@ describe('Full regression test suite for Admin', () => {
       cityServiceTester.inputFieldValues = async function () {
         let text_content, selector;
         // Title
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test city service'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test city service');
         // Short title
         await this.page.type(
           '#edit-field-menu-link-text-0-value',
-          'Full regression test city Service'
+          'Full regression test city Service',
         );
 
         // Select "Apply or File" in "Service Type"
         selector = '#edit-field-community-actions';
         await this.page.evaluate(
-          (selector) => document.querySelector(selector).value = "11",
-          selector
+          (selector) => (document.querySelector(selector).value = '11'),
+          selector,
         );
 
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test service'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test service');
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
@@ -329,10 +278,7 @@ describe('Full regression test suite for Admin', () => {
           editor = Drupal.CKEditor5Instances.get(ck5);
           editor.setData('Body content for the test city service');
         });
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
@@ -357,35 +303,21 @@ describe('Full regression test suite for Admin', () => {
         entityType: 'node',
         contentType: 'construction_project',
         page: page,
-        fieldLabelArray: [
-          'Title',
-          'Construction type',
-          'Summary',
-          'Body content',
-        ],
+        fieldLabelArray: ['Title', 'Construction type', 'Summary', 'Body content'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
       // Override the function that inputs test values into form
       constructionTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test construction project'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test construction project');
         // Select "Water" as type
         await this.page.select('#edit-field-construction-type', '342');
         // Select "Active" as status
         await this.page.select('#edit-field-project-status', '52');
 
-        await this.page.type(
-          'input#edit-field-start-date-0-value-date',
-          '06042021'
-        );
+        await this.page.type('input#edit-field-start-date-0-value-date', '06042021');
 
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test construction'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test construction');
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
@@ -394,10 +326,7 @@ describe('Full regression test suite for Admin', () => {
           editor.setData('Body content for the test construction');
         });
 
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
@@ -430,13 +359,10 @@ describe('Full regression test suite for Admin', () => {
 
       // Override the function that inputs test values into form
       contactTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test contact'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test contact');
         await this.page.type(
           '#edit-field-contact-title-0-value',
-          'Full regression test contact title'
+          'Full regression test contact title',
         );
         // "Chair"
         await this.page.select('#edit-field-contact-type', '620');
@@ -471,18 +397,12 @@ describe('Full regression test suite for Admin', () => {
 
       // Override the function that inputs test values into form
       eventTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test event'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test event');
         // Select "Meeting" as type
         await this.page.select('#edit-field-event-type', '332');
         // Select "Rescheduled" as status
         await this.page.select('#edit-field-event-status', 'Rescheduled');
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test event'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test event');
 
         await this.page.type('input#edit-field-start-time-0-value', '02:30pm');
         await this.page.type('input#edit-field-end-time-0-value', '04:00pm');
@@ -492,10 +412,7 @@ describe('Full regression test suite for Admin', () => {
           editor = Drupal.CKEditor5Instances.get(ck5);
           editor.setData('Body content for the test event');
         });
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
@@ -530,30 +447,15 @@ describe('Full regression test suite for Admin', () => {
 
       // Override the function that inputs test values into form
       resourceTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test resource'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test resource');
 
         // Menu Link title
-        await this.page.type(
-          '#edit-field-menu-link-text-0-value',
-          'Full regression test resource'
-        );
+        await this.page.type('#edit-field-menu-link-text-0-value', 'Full regression test resource');
 
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test resource'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test resource');
 
-        await this.page.type(
-          '#edit-field-destination-url-0-uri',
-          'https://www.oregon.gov'
-        );
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-field-destination-url-0-uri', 'https://www.oregon.gov');
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
@@ -585,24 +487,15 @@ describe('Full regression test suite for Admin', () => {
       // Override the function that inputs test values into form
       newsTester.inputFieldValues = async function () {
         await this.page.waitForSelector('iframe');
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test news'
-        );
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test news'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test news');
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test news');
 
         await this.page.evaluate(() => {
           ck5 = Drupal.CKEditor5Instances.keys().next().value;
           editor = Drupal.CKEditor5Instances.get(ck5);
           editor.setData('Body content for the test news');
         });
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await newsTester.runTest();
@@ -633,10 +526,7 @@ describe('Full regression test suite for Admin', () => {
 
       // Override the function that inputs test values into form
       notificationTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-title-0-value',
-          'Full regression test notification'
-        );
+        await this.page.type('#edit-title-0-value', 'Full regression test notification');
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
@@ -645,10 +535,7 @@ describe('Full regression test suite for Admin', () => {
           editor.setData('Body content for the test notification');
         });
 
-        await this.page.type(
-          '#edit-revision-log-0-value',
-          'Full regression test revision message'
-        );
+        await this.page.type('#edit-revision-log-0-value', 'Full regression test revision message');
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await notificationTester.runTest();
@@ -678,30 +565,17 @@ describe('Full regression test suite for Admin', () => {
       });
       // Override the function that inputs test values into form
       documentTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-name-0-value',
-          'Full regression test document'
-        );
+        await this.page.type('#edit-name-0-value', 'Full regression test document');
         // "Meeting materials" as document type
         await this.page.select('#edit-field-document-type', '335');
 
-        await this.page.type(
-          '#edit-field-summary-0-value',
-          'Summary for the test document'
-        );
+        await this.page.type('#edit-field-summary-0-value', 'Summary for the test document');
 
         // Upload a file
-        const fileElement = await this.page.$(
-          'div.form-managed-file__main input[type="file"]'
-        );
-        const filePath = path.relative(
-          process.cwd(),
-          __dirname + '/assets/upload_test.txt'
-        );
+        const fileElement = await this.page.$('div.form-managed-file__main input[type="file"]');
+        const filePath = path.relative(process.cwd(), __dirname + '/assets/upload_test.txt');
         await fileElement.uploadFile(filePath);
-        await this.page.waitForSelector(
-          'div.form-managed-file__main span.file'
-        );
+        await this.page.waitForSelector('div.form-managed-file__main span.file');
 
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
@@ -731,26 +605,16 @@ describe('Full regression test suite for Admin', () => {
       });
       // Override the function that inputs test values into form
       imageTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-name-0-value',
-          'Full regression test image'
-        );
+        await this.page.type('#edit-name-0-value', 'Full regression test image');
         // Upload a file
-        const fileElement = await this.page.$(
-          'div.form-managed-file__main input[type="file"]'
-        );
-        const filePath = path.relative(
-          process.cwd(),
-          __dirname + '/assets/upload_test.jpg'
-        );
+        const fileElement = await this.page.$('div.form-managed-file__main input[type="file"]');
+        const filePath = path.relative(process.cwd(), __dirname + '/assets/upload_test.jpg');
         await fileElement.uploadFile(filePath);
         // await this.page.waitForSelector('div.form-managed-file__main span.file');
-        await this.page.waitForSelector(
-          'div.form-item--image-0-alt textarea'
-        );
+        await this.page.waitForSelector('div.form-item--image-0-alt textarea');
         await this.page.type(
           'div.form-item--image-0-alt textarea',
-          'Alternative text for the test image'
+          'Alternative text for the test image',
         );
 
         await this.page.select('#edit-moderation-state-0-state', 'published');
@@ -778,50 +642,36 @@ describe('Full regression test suite for Admin', () => {
         entityType: 'media',
         contentType: 'video',
         page: page,
-        fieldLabelArray: [
-          'Name',
-          'Video URL',
-          'Transcript',
-          'Attribution',
-        ],
+        fieldLabelArray: ['Name', 'Video URL', 'Transcript', 'Attribution'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
       videoTester.inputFieldValues = async function () {
-        await this.page.type(
-          '#edit-name-0-value',
-          'Full regression test video'
-        );
-        await this.page.type(
-          '#edit-field-media-video-embed-field-0-value',
-          video_url
-        );
+        await this.page.type('#edit-name-0-value', 'Full regression test video');
+        await this.page.type('#edit-field-media-video-embed-field-0-value', video_url);
         await this.page.evaluate(() => {
           ck5 = Drupal.CKEditor5Instances.keys().next().value;
           editor = Drupal.CKEditor5Instances.get(ck5);
           editor.setData('Transcript content for the test video');
         });
         selector = 'details#edit-group-attribution';
-        await this.page.evaluate(
-          (selector) => document.querySelector(selector).click(),
-          selector
-        );
+        await this.page.evaluate((selector) => document.querySelector(selector).click(), selector);
         await this.page.type(
           'details#edit-group-attribution #edit-field-title-0-value',
-          'Some title'
+          'Some title',
         );
         await this.page.type(
           'details#edit-group-attribution #edit-field-creator-0-value',
-          'Some creator'
+          'Some creator',
         );
         await this.page.type(
           'details#edit-group-attribution #edit-field-source-0-value',
-          'Some source'
+          'Some source',
         );
         await this.page.select('#edit-field-license', '57');
         await this.page.type(
           '#edit-revision-log-message-0-value',
-          'Full regression test revision message'
+          'Full regression test revision message',
         );
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
@@ -843,22 +693,20 @@ describe('Full regression test suite for Admin', () => {
         selector = '';
       await util.unmasquerade(page, HOME_PAGE);
       text_content = await page.evaluate(
-        () => document.querySelector('#toolbar-item-user').textContent
+        () => document.querySelector('#toolbar-item-user').textContent,
       );
       expect(text_content).toEqual(expect.stringMatching('superAdmin'));
 
       // Must delete all content nodes before deleting the group
       await page.goto(
-        `${HOME_PAGE}/admin/content?title=&body_content=&moderation_state=All&status=All&is_locked=All&revision_uid=&uid=&has_reviewer=All&group_op=contains&group=full+regression+test`
+        `${HOME_PAGE}/admin/content?title=&body_content=&moderation_state=All&status=All&is_locked=All&revision_uid=&uid=&has_reviewer=All&group_op=contains&group=full+regression+test`,
       );
       await page.waitForSelector('#view-title-table-column');
 
       let tableIsEmpty = await page.evaluate(() => {
         if (document.querySelector('td.views-empty') == null) return false;
         if (
-          document
-            .querySelector('td.views-empty')
-            .textContent.indexOf('No content available') >= 0
+          document.querySelector('td.views-empty').textContent.indexOf('No content available') >= 0
         )
           return true;
         return false;
@@ -866,9 +714,7 @@ describe('Full regression test suite for Admin', () => {
 
       if (!tableIsEmpty) {
         await page.evaluate(() => {
-          document
-            .querySelector('input[title="Select all rows in this table"]')
-            .click();
+          document.querySelector('input[title="Select all rows in this table"]').click();
         });
         await page.select('#edit-action', '16');
         // Apply to selected items
@@ -883,25 +729,21 @@ describe('Full regression test suite for Admin', () => {
         // Wait for and verify the batch processing result
         await page.waitForSelector('div.messages__content', { timeout: 60000 });
         text_content = await page.evaluate(
-          () => document.querySelector('div.messages__content').textContent
+          () => document.querySelector('div.messages__content').textContent,
         );
-        expect(text_content).toEqual(
-          expect.stringContaining('Action processing results: Delete')
-        );
+        expect(text_content).toEqual(expect.stringContaining('Action processing results: Delete'));
       }
 
       // Must delete all media nodes before deleting the group
       await page.goto(
-        `${HOME_PAGE}/admin/content/media?keyword=&type=All&status=All&langcode=All&label=full+regression+test&field_efiles_link_uri=All`
+        `${HOME_PAGE}/admin/content/media?keyword=&type=All&status=All&langcode=All&label=full+regression+test&field_efiles_link_uri=All`,
       );
       await page.waitForSelector('#view-name-table-column');
 
       tableIsEmpty = await page.evaluate(() => {
         if (document.querySelector('td.views-empty') == null) return false;
         if (
-          document
-            .querySelector('td.views-empty')
-            .textContent.indexOf('No content available') >= 0
+          document.querySelector('td.views-empty').textContent.indexOf('No content available') >= 0
         )
           return true;
         return false;
@@ -909,9 +751,7 @@ describe('Full regression test suite for Admin', () => {
 
       if (!tableIsEmpty) {
         await page.evaluate(() => {
-          document
-            .querySelector('input[title="Select all rows in this table"]')
-            .click();
+          document.querySelector('input[title="Select all rows in this table"]').click();
         });
         await page.select('#edit-action', '7');
         // Apply to selected items
@@ -926,24 +766,19 @@ describe('Full regression test suite for Admin', () => {
         // Wait for and verify the batch processing result
         await page.waitForSelector('div.messages__content', { timeout: 60000 });
         text_content = await page.evaluate(
-          () => document.querySelector('div.messages__content').textContent
+          () => document.querySelector('div.messages__content').textContent,
         );
-        expect(text_content).toEqual(
-          expect.stringContaining('Action processing results: Delete')
-        );
+        expect(text_content).toEqual(expect.stringContaining('Action processing results: Delete'));
       }
 
       // Delete the new group
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/delete`);
       selector = 'input#edit-submit';
-      await page.evaluate(
-        (selector) => document.querySelector(selector).click(),
-        selector
-      );
+      await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
 
       text_content = await page.evaluate(
-        () => document.querySelector('div.messages--status').textContent
+        () => document.querySelector('div.messages--status').textContent,
       );
       expect(text_content).toEqual(expect.stringContaining('has been deleted'));
     } catch (e) {
