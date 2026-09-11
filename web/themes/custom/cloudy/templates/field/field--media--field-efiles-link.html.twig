@@ -40,7 +40,9 @@
         {% set file_display_name = element['#object'].name.value %}
         {% set mime_type = element['#object'].field_mime_type.value %}
         {% set file_size = element['#object'].field_file_size.value %}
-        {% set text = file_display_name|default(link['#title'])|spaceless %}
+        {% set file_type_id = 'file-desc'|clean_unique_id %}
+        {% set file_size_id = 'file-size'|clean_unique_id %}
+
         {% if mime_type is empty %}
           {% set icon_name = 'archives' %}
           {% set file_desc = 'Download file'|t %}
@@ -49,19 +51,23 @@
           {% set file_desc = icon_map[mime_type].desc ?? 'Download file' %}
         {% endif %}
           {% apply spaceless %}
-          <a href="{{ file_url }}">
+          <span id="{{ file_type_id }}">
             <span class="visually-hidden">{{- file_desc -}}</span>
-            {%- if icon_name == "archives" %}
+            {%- if icon_name == "archives" -%}
               {%- include '@components/icon/icon.twig' with {
                 name: 'archives',
               } only -%}
             {% else %}
               <i class="fas {{ icon_name }}"></i>
             {% endif -%}
-            {{- text|spaceless -}}
+          </span>
+
+          <a href="{{ file_url }}" aria-describedby="{{ file_type_id }} {{ file_size_id }}">
+            {{- file_display_name|striptags|trim -}}
           </a>
+
           {% if file_size and file_size > 0 %}
-          <span class="ms-2 text-nowrap" dir="auto">{{ file_size|render|striptags|format_size }}</span>
+          <span class="ms-2 text-nowrap" dir="auto" id="{{ file_size_id }}">{{ file_size|render|striptags|format_size }}</span>
           {% endif %}
           {% endapply %}
       </div>
