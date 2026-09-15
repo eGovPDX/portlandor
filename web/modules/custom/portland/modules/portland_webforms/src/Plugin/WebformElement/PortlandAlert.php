@@ -95,6 +95,7 @@ class PortlandAlert extends WebformMarkup {
     $role = $this->getAlertRole($variation);
 
     $element['#markup'] = '<div class="alert alert--' . $variation . ' next-steps form-alert" role="' . $role . '">' . $body_markup . '</div>';
+    $element['#attached']['library'][] = 'portland_webforms/portland_webform_alerts';
   }
 
   /**

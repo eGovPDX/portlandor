@@ -1,4 +1,4 @@
-Drupal.behaviors.liveRegion = {
+Drupal.behaviors.portlandWebformAlertsLiveRegion = {
   attach(context) {
     const forms = [];
     if (context instanceof HTMLFormElement) {
