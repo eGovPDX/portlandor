@@ -141,6 +141,25 @@ function portland_groups_entity_update($entity)
 
 
 /**
+ * Implements hook_ENTITY_TYPE_presave().
+ * Track who last changed the "Only member can add content" setting and when.
+ */
+function portland_groups_group_presave(GroupInterface $group)
+{
+  if ($group->isNew() || !$group->hasField('field_only_member_can_add_conten') || !empty($group->_skip_only_member_updated_tracking)) {
+    return;
+  }
+
+  $current_value = $group->get('field_only_member_can_add_conten')->value;
+  $original_value = $group->original->get('field_only_member_can_add_conten')->value;
+
+  if ($current_value != $original_value) {
+    $group->set('field_only_member_updated_by', \Drupal::currentUser()->id());
+    $group->set('field_only_member_updated_on', \Drupal::time()->getRequestTime());
+  }
+}
+
+/**
  * Implements hook_ENTITY_TYPE_update().
  * Add and update content and media aliases when a group is updated.
  */
