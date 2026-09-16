@@ -18,7 +18,7 @@
 #}
 {% set url = file_url(file.uri.value) %}
 
-{% set text = file_display_name|default(link['#title'])|default(file.filename.value)|trim %}
+{% set text = link['#title']|default(file.filename.value) %}
 
 {% set icon_map = {
   'application/pdf': {
@@ -70,7 +70,11 @@
     <a class="document--download" href="{{ (document_link is empty) ? url : document_link }}" aria-describedby="{{ file_type_id }} {{ file_size_id }}">
   {%- endif -%}
 	
-  {{- text -}}
+  {%- if file_display_name %}
+    {{- file_display_name|striptags|trim -}}
+  {% else %}
+    {{- text|striptags|trim|raw -}}
+  {% endif -%}
 	
   {% if url starts with '/system/files/webform' %}
     </span>
