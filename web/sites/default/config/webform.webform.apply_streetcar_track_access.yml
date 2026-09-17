@@ -118,6 +118,40 @@ elements: |-
       apply_ongoing_tcp_review:
         '#type': checkbox
         '#title': 'May require ongoing adjustments or reviews to an approved TCP'
+    computed_tier_assignment:
+      '#type': webform_computed_twig
+      '#title': 'Computed tier assignment'
+      '#display_on': form
+      '#mode': text
+      '#template': |
+        {% set tcp = data.apply_tcp_required|default('') %}
+        {% set ocs = data.apply_ocs_shutdown|default('') %}
+        {% set dur1 = data.apply_duration_gt_1|default('') %}
+        {% set near = data.apply_near_alignment|default('') %}
+        {% set trench = data.apply_trenching|default('') %}
+        {% set vault = data.apply_vault_access|default('') %}
+        {% set hdd = data.apply_boring_hdd|default('') %}
+        {% set dur30 = data.apply_duration_gt_30|default('') %}
+        {% set barricades = data.apply_barricades|default('') %}
+        {% set multi = data.apply_multiple_shutdowns|default('') %}
+        {% set tcp_ongoing = data.apply_ongoing_tcp_review|default('') %}
+        {% if data.contact_city_employee == "Yes" %}
+          1
+        {% elseif dur30 or multi %}
+          4
+        {% elseif tcp_ongoing %}
+          4
+        {% elseif ocs or trench or vault or hdd %}
+          3
+        {% elseif tcp %}
+          2
+        {% elseif not tcp and not ocs and not dur1 %}
+          1
+        {% else %}
+          2
+        {% endif %}
+      '#whitespace': spaceless
+      '#ajax': true
   page_work_details_and_documentation:
     '#type': webform_wizard_page
     '#title': 'Work details and documentation'
@@ -430,42 +464,10 @@ elements: |-
       '#type': webform_actions
       '#title': Submit
       '#submit__label': 'Submit application'
-  computed_tier_assignment:
-    '#type': webform_computed_twig
-    '#title': 'Computed tier assignment'
-    '#display_on': none
-    '#mode': text
-    '#template': |
-      {% set tcp = data.apply_tcp_required|default('') %}
-      {% set ocs = data.apply_ocs_shutdown|default('') %}
-      {% set dur1 = data.apply_duration_gt_1|default('') %}
-      {% set near = data.apply_near_alignment|default('') %}
-      {% set trench = data.apply_trenching|default('') %}
-      {% set vault = data.apply_vault_access|default('') %}
-      {% set hdd = data.apply_boring_hdd|default('') %}
-      {% set dur30 = data.apply_duration_gt_30|default('') %}
-      {% set barricades = data.apply_barricades|default('') %}
-      {% set multi = data.apply_multiple_shutdowns|default('') %}
-      {% set tcp_ongoing = data.apply_ongoing_tcp_review|default('') %}
-      {% if data.contact_city_employee == "Yes" %}
-        1
-      {% elseif dur30 or multi %}
-        4
-      {% elseif tcp_ongoing %}
-        4
-      {% elseif ocs or trench or vault or hdd %}
-        3
-      {% elseif tcp %}
-        2
-      {% elseif not tcp and not ocs and not dur1 %}
-        1
-      {% else %}
-        2
-      {% endif %}
-    '#whitespace': spaceless
   debug_tier_assignment:
     '#type': webform_computed_twig
     '#title': 'Debug — tier assignment'
+    '#display_on': none
     '#mode': html
     '#template': |
       <div style="background:#f6f7f9;border:1px solid #d9dce1;border-left:4px solid #6b7280;border-radius:6px;padding:1rem 1.25rem;margin:1rem 0;">
@@ -529,73 +531,6 @@ elements: |-
       {{ data.apply_east_side_access }}
       {{ data.apply_west_side_access }}
     '#whitespace': trim
-  computed_description:
-    '#type': webform_computed_twig
-    '#title': 'Computed description'
-    '#display_on': none
-    '#mode': html
-    '#template': |-
-      <h3>Project details</h3>
-      <h4>Tier {{ data.computed_tier_assignment }}</h4>
-
-      {% if data.apply_tcp_required or data.apply_ocs_shutdown or data.apply_duration_gt_1 or data.apply_near_alignment or data.apply_trenching or data.apply_vault_access or data.apply_boring_hdd %}
-      <ul>
-        {% if data.apply_tcp_required %}<li> Requires temporary closure of a travel lane</li>{% endif %}
-        {% if data.apply_ocs_shutdown %}<li> Requires OCS shutdown</li>{% endif %}
-        {% if data.apply_duration_gt_1 %}<li> Lasts longer than one day</li>{% endif %}
-        {% if data.apply_near_alignment %}<li> Occurs within 5 ft of the track alignment</li>{% endif %}
-        {% if data.apply_trenching %}<li> Trenching or digging near or under tracks</li>{% endif %}
-        {% if data.apply_vault_access %}<li> Accessing underground utilities near tracks</li>{% endif %}
-        {% if data.apply_boring_hdd %}<li> Boring or HDD near tracks</li>{% endif %}
-      </ul>
-      {% else %}
-        <p><em>No project details provided.</em></p>
-      {% endif %}
-
-      <h3>Impacts</h3>
-      {% if data.apply_duration_gt_30 or data.apply_barricades or data.apply_multiple_shutdowns or data.apply_ongoing_tcp_review %}
-      <ul>
-        {% if data.apply_duration_gt_30 %}<li> Will last longer than 30 days</li>{% endif %}
-        {% if data.apply_barricades %}<li> Requires barricades or fencing along Streetcar route</li>{% endif %}
-        {% if data.apply_multiple_shutdowns %}<li> Requires multiple work windows or repeated OCS shutdowns</li>{% endif %}
-        {% if data.apply_ongoing_tcp_review %}<li> May require ongoing adjustments or reviews to approved TCP</li>{% endif %}
-      </ul>
-      {% else %}
-        <p><em>No impacts indicated.</em></p>
-      {% endif %}
-
-      <h3>Work details</h3>
-      <p><strong>Start date:</strong> {{ data.apply_begin_work_date }}{% if data.apply_start_time %}<br><strong>Start time:</strong> {{ data.apply_start_time }}{% endif %}</p>
-      <p><strong>End date:</strong> {{ data.apply_end_work_date }}{% if data.apply_end_time %}<br><strong>End time:</strong> {{ data.apply_end_time }}{% endif %}</p>
-      <p><strong>Description of work:</strong> {{ data.apply_description_of_work }}</p>
-      <p><strong>Equipment:</strong> {{ data.apply_equipment }}</p>
-
-      <h3>Track access area</h3>
-      <p>
-        {% if data.apply_west_side_access is not empty %}
-          <strong>West side access area:</strong> {{ data.apply_west_side_access ? elements_flattened.apply_west_side_access['#options'][data.apply_west_side_access] : '' }}<br>
-        {% elseif data.apply_east_side_access is not empty %}
-          <strong>East side access area:</strong> {{ data.apply_east_side_access ? elements_flattened.apply_east_side_access['#options'][data.apply_east_side_access] : '' }}<br>    
-        {% endif %}
-        {% if data.apply_cross_street_1 %}<strong>Cross street 1:</strong> {{ data.apply_cross_street_1 }}<br>{% endif %}
-        {% if data.apply_cross_street_2 %}<strong>Cross street 2:</strong> {{ data.apply_cross_street_2 }}<br>{% endif %}
-      </p>
-
-      <h3>Contact information</h3>
-      <p><strong>Permit holder name:</strong> {{ data.contact_permit_holder_name }}<br>
-      {% if data.contact_mailing_address.location_address %}<strong>Billing mailing address:</strong> {{ data.contact_mailing_address.location_full_address }}<br>{% endif %}
-      <strong>Billing contact name:</strong> {{ data.contact_billing_name }}
-      {% if data.contact_city_employee == "Yes" %}<br><em>Work is being conducted by City employees for a city/bureau project</em>{% endif %}</p>
-
-      <p>{% if data.contact_primary_name %}<strong>Primary contact name:</strong> {{ data.contact_primary_name }}<br>{% endif %}
-      {% if data.contact_primary_email %}<strong>Primary contact email:</strong> {{ data.contact_primary_email }}<br>{% endif %}
-      <strong>Primary contact phone:</strong> {{ data.contact_primary_phone }}</p>
-
-      <p>{% if data.contact_site_supervisor_name %}<strong>Site supervisor name:</strong> {{ data.contact_site_supervisor_name }}<br>{% endif %}
-      {% if data.contact_site_supervisor_email %}<strong>Site supervisor email:</strong> {{ data.contact_site_supervisor_email }}<br>{% endif %}
-      <strong>Site supervisor phone:</strong> {{ data.contact_site_supervisor_phone }}</p>
-
-      {% if data.contact_job_ref %}<p><strong>Job ref or PO#:</strong> {{ data.contact_job_ref }}</p>{% endif %}
   request_ticket_id:
     '#type': hidden
     '#title': 'Request ticket ID'
@@ -831,7 +766,7 @@ handlers:
       requester_name: contact_primary_name
       requester_email: contact_primary_email
       subject: 'Track Access Permit Application'
-      comment: '[webform_submission:values:computed_description]'
+      comment: '[webform_submission:values:review_summary]'
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
@@ -841,64 +776,45 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: |
-        6353388345367: 'apply_streetcar_track_access_2'
-        42303976757527: ['[webform_submission:values:contact_site_supervisor_name]', 'contact_site_supervisor_name']
-        42303937554071: ['[webform_submission:values:contact_site_supervisor_phone]', 'contact_site_supervisor_phone']
-        42303968861207: ['[webform_submission:values:contact_site_supervisor_email]', 'contact_site_supervisor_email']
-        25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']
-        32905012809879: ['[webform_submission:values:contact_job_ref]', 'contact_job_ref']
-        39194802217879: ['[webform_submission:values:contact_permit_holder_name]', 'contact_permit_holder_name']
-        42303995053079: ['[webform_submission:values:contact_mailing_address:location_address] [webform_submission:values:contact_mailing_address:unit_number], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address']
-        12280733221015: ['[webform_submission:values:apply_begin_work_date]', 'apply_begin_work_date']
-        12280737894935: ['[webform_submission:values:apply_end_work_date]', 'apply_end_work_date']
+      custom_fields: "6353388345367: 'apply_streetcar_track_access_2'\r\n42303976757527: ['[webform_submission:values:contact_site_supervisor_name]', 'contact_site_supervisor_name']\r\n42303937554071: ['[webform_submission:values:contact_site_supervisor_phone]', 'contact_site_supervisor_phone']\r\n42303968861207: ['[webform_submission:values:contact_site_supervisor_email]', 'contact_site_supervisor_email']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n32905012809879: ['[webform_submission:values:contact_job_ref]', 'contact_job_ref']\r\n39194802217879: ['[webform_submission:values:contact_permit_holder_name]', 'contact_permit_holder_name']\r\n42303995053079: ['[webform_submission:values:contact_mailing_address:location_address] [webform_submission:values:contact_mailing_address:unit_number], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address']\r\n12280733221015: ['[webform_submission:values:apply_begin_work_date]', 'apply_begin_work_date']\r\n12280737894935: ['[webform_submission:values:apply_end_work_date]', 'apply_end_work_date']\r\n"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '42303967522839'
       excluded_elements:
+        review_summary: review_summary
         computed_tier_assignment: computed_tier_assignment
         debug_tier_assignment: debug_tier_assignment
-        review_summary: review_summary
         request_ticket_id: request_ticket_id
-  email:
-    id: email
-    handler_id: email
-    label: 'Confirmation email'
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Add "ongoing TCP" note to ticket'
     notes: ''
     status: true
-    conditions: {  }
-    weight: -48
+    conditions:
+      enabled:
+        ':input[name="apply_duration_gt_30"]':
+          unchecked: true
+        ':input[name="apply_barricades"]':
+          unchecked: true
+        ':input[name="apply_multiple_shutdowns"]':
+          unchecked: true
+        ':input[name="apply_ongoing_tcp_review"]':
+          checked: true
+    weight: 0
     settings:
-      states:
-        - completed
-      to_mail: '[webform_submission:values:contact_primary_email:raw]'
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: _default
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'Your Streetcar Track Access Permit application has been received'
-      body: '<p>Thank you for submitting your track access permit. Please allow 7-10 business days for processing.</p><p>Our Operations and Maintenance staff will review your application. If approved, we''ll send a payment link by email. If there are issues, we’ll contact you first.</p><p>For additional information, please read the <span style="background-color:yellow;display:inline-block;">Portland Streetcar Track Access Permit Frequently Asked Questions.</span></p><hr><p>[webform_submission:values:review_summary]</p>'
-      excluded_elements:
-        markup_review: markup_review
-        markup_needs_change: markup_needs_change
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
+      comment: 'The applicant selected ongoing TCP review(s) as their only high‑impact aspect. Please confirm that the project truly qualifies for Tier 4 costs before approval and payment. If it does not appear to be a Tier 4 project, please update the tier field on the Zendesk form accordingly and leave an internal note explaining the change.'
+      comment_private: 1
+      skip_attachments: 0
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      ticket_form_id: ''
 variants: {  }
