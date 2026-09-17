@@ -382,9 +382,15 @@ elements: |-
       {% if 'support_agent' in webform_token('[current-user:roles]', webform_submission) %}
       submitted_by_dispatcher
       {% endif %}
-      {% if data.report_issue_type_sewer %}
-      23923247765911_{{ data.report_issue_type }}__{{ data.report_issue_type_sewer }}
-      {% endif %}
+
+      {# build the array for the maintenance issue field #}
+      {% set issue_categories = [
+        # root issue type
+        data.report_issue_type,
+        # sub-issue type
+        data['report_issue_type_' ~ data.report_issue_type],
+      ] %}
+      23923247765911_{{ issue_categories|filter(v => v is not empty)|join('__') }}
 css: ''
 javascript: ''
 settings:
