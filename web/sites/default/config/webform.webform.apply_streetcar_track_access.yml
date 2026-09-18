@@ -1,0 +1,743 @@
+uuid: d0d45c6f-b26c-45cc-834b-b35d45aa0835
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: apply_streetcar_track_access
+title: 'Apply Streetcar Track Access Permit'
+description: ''
+categories: {  }
+elements: |-
+  page_tier_assessment:
+    '#type': webform_wizard_page
+    '#title': 'Job assessment'
+    '#format': container
+    '#prev_button_label': Back
+    '#next_button_label': Continue
+    definitions_block:
+      '#type': details
+      '#title': 'Definitions & acronyms'
+      '#open': false
+      definitions_markup:
+        '#type': webform_markup
+        '#markup': '<p><strong>TCP — Traffic Control Plan</strong><br>A City-required plan for managing pedestrian, bicycle, and vehicle movement around a work zone. Required for lane closures, sidewalk closures, or any work that obstructs a travel lane. Must comply with MUTCD standards.<br><a href="https://www.portland.gov/policies/transportation/rights-way-use-permits/trn-1003-parking-lane-sidewalk-and-street-closure" target="_blank">View TCP Policy</a></p><p><strong>TSUP — Temporary Street Use Permit</strong><br>Allows temporary closure or occupation of parking lanes, sidewalks, travel lanes, or streets for construction, utility work, staging, or moving. Must remain valid for the entire duration of the work.<br><a href="https://www.portland.gov/transportation/documents/trn-1003-parking-lane-sidewalk-and-street-closure-permits-full-text-2/download" target="_blank">View TSUP Policy</a></p><p><strong>OCS — Overhead Catenary System</strong><br>The electrified overhead wire system that powers Portland Streetcar. Work within 10 feet of OCS may require coordinated power shutdowns for safety.</p><p><strong>Streetcar alignment</strong><br>The physical path where the Portland Streetcar operates. This includes the trackway itself, the concrete track bed, and the immediate area alongside it (usually within 5 feet). If work occurs close to this path, Streetcar operations may be affected and coordination is required.</p><p><strong>HDD — Horizontal Directional Drilling</strong><br>A trenchless construction method used to install underground pipes or conduits. A drill head is steered underground along a planned path, typically at least 36 inches below Streetcar tracks to avoid interference or damage.</p>'
+    fieldset_administrative_conditions:
+      '#type': webform_section
+      '#title': 'Select all details that apply to your work'
+      apply_tcp_required:
+        '#type': checkbox
+        '#title': ' Requires a temporary closure of a travel lane (vehicle, bicycle, or transit)'
+      apply_ocs_shutdown:
+        '#type': checkbox
+        '#title': "This work will require an OCS shutdown (it will occur within 10\_ft of Streetcar overhead power)"
+      apply_duration_gt_1:
+        '#type': checkbox
+        '#title': 'Will last longer than one day'
+      apply_near_alignment:
+        '#type': checkbox
+        '#title': 'Will occur within 5 ft of the Streetcar track alignment'
+      markup_user_private_property:
+        '#type': webform_markup
+        '#states':
+          invisible:
+            - ':input[name="apply_tcp_required"]':
+                checked: true
+            - or
+            - ':input[name="apply_ocs_shutdown"]':
+                checked: true
+            - or
+            - ':input[name="apply_duration_gt_1"]':
+                checked: true
+            - or
+            - ':input[name="apply_near_alignment"]':
+                checked: true
+        '#markup': '<div class="alert alert--warning next-steps" role="status"><h2>None of the above?</h2><p class="mb-0">If your project will take less than one day, is not intrusive, and will not impact traffic or transit, please click the next page button to give us more details and continue your application.</p></div>'
+    fieldset_intrusive_activities:
+      '#type': fieldset
+      '#title': ' Tell us about any field activities involved in this work'
+      '#states':
+        visible:
+          - ':input[name="apply_tcp_required"]':
+              checked: true
+          - or
+          - ':input[name="apply_ocs_shutdown"]':
+              checked: true
+          - or
+          - ':input[name="apply_duration_gt_1"]':
+              checked: true
+          - or
+          - ':input[name="apply_near_alignment"]':
+              checked: true
+      apply_trenching:
+        '#type': checkbox
+        '#title': 'Trenching or digging near or under Streetcar tracks'
+      apply_vault_access:
+        '#type': checkbox
+        '#title': 'Accessing underground utilities or vaults near tracks'
+      apply_boring_hdd:
+        '#type': checkbox
+        '#title': 'Boring or HDD near tracks (36" or deeper)'
+    fieldset_high_impact_long_term:
+      '#type': fieldset
+      '#title': ' Check any long-term or high-impact aspects of this project'
+      '#states':
+        visible:
+          - ':input[name="apply_tcp_required"]':
+              checked: true
+          - or
+          - ':input[name="apply_ocs_shutdown"]':
+              checked: true
+          - or
+          - ':input[name="apply_duration_gt_1"]':
+              checked: true
+          - or
+          - ':input[name="apply_near_alignment"]':
+              checked: true
+      apply_duration_gt_30:
+        '#type': checkbox
+        '#title': 'Will last longer than 30 days (up to 180 days)'
+      apply_barricades:
+        '#type': checkbox
+        '#title': 'Requires barricades or fencing along the Streetcar route'
+      apply_multiple_shutdowns:
+        '#type': checkbox
+        '#title': 'Requires multiple scheduled work windows or repeated OCS shutdowns'
+      apply_ongoing_tcp_review:
+        '#type': checkbox
+        '#title': 'May require ongoing adjustments or reviews to an approved TCP'
+    computed_tier_assignment:
+      '#type': webform_computed_twig
+      '#title': 'Computed tier assignment'
+      '#display_on': view
+      '#mode': text
+      '#template': |
+        {% set tcp = data.apply_tcp_required|default('') %}
+        {% set ocs = data.apply_ocs_shutdown|default('') %}
+        {% set dur1 = data.apply_duration_gt_1|default('') %}
+        {% set near = data.apply_near_alignment|default('') %}
+        {% set trench = data.apply_trenching|default('') %}
+        {% set vault = data.apply_vault_access|default('') %}
+        {% set hdd = data.apply_boring_hdd|default('') %}
+        {% set dur30 = data.apply_duration_gt_30|default('') %}
+        {% set barricades = data.apply_barricades|default('') %}
+        {% set multi = data.apply_multiple_shutdowns|default('') %}
+        {% set tcp_ongoing = data.apply_ongoing_tcp_review|default('') %}
+        {% if data.contact_city_employee == "Yes" %}
+          1
+        {% elseif dur30 or multi %}
+          4
+        {% elseif tcp_ongoing %}
+          4
+        {% elseif ocs or trench or vault or hdd %}
+          3
+        {% elseif tcp %}
+          2
+        {% elseif not tcp and not ocs and not dur1 %}
+          1
+        {% else %}
+          2
+        {% endif %}
+      '#whitespace': spaceless
+      '#ajax': true
+  page_work_details_and_documentation:
+    '#type': webform_wizard_page
+    '#title': 'Work details and documentation'
+    '#format': container
+    '#prev_button_label': Back
+    '#next_button_label': Continue
+    section_work_description_and_location:
+      '#type': webform_section
+      '#title': 'Work details and documentation'
+      file_upload:
+        '#type': managed_file
+        '#title': 'File upload'
+        '#multiple': 3
+        '#description': '<p>Traffic Control Plan (TCP), Temporary Street Use Permit (TSUP), or work site diagram.</p>'
+        '#description_display': before
+        '#max_filesize': '100'
+        '#file_extensions': 'jpg png bmp txt pdf doc docx ppt pptx xls xlsx'
+      apply_begin_work_date:
+        '#type': date
+        '#title': 'Begin work date'
+        '#description': '<p>Permits must be submitted at least 7 days in advance. Power shutdowns need to be at least 14 days in advance for scheduling.</p>'
+        '#description_display': before
+        '#required': true
+        '#date_date_min': '+7 days'
+      apply_end_work_date:
+        '#type': date
+        '#title': 'End work date'
+        '#required': true
+        '#date_date_min': '+7 days'
+      apply_start_time:
+        '#type': webform_time
+        '#title': 'Start time'
+        '#time_format': 'g:i A'
+      apply_end_time:
+        '#type': webform_time
+        '#title': 'End time'
+        '#time_format': 'g:i A'
+      apply_description_of_work:
+        '#type': textarea
+        '#title': 'Description of work'
+        '#required': true
+      apply_equipment:
+        '#type': textarea
+        '#title': Equipment
+        '#required': true
+  page_track_access_area:
+    '#type': webform_wizard_page
+    '#title': 'Track access area'
+    '#format': container
+    '#prev_button_label': Back
+    '#next_button_label': Continue
+    apply_track_access_area:
+      '#type': webform_section
+      '#title': 'Track access area'
+      apply_east_or_west_side:
+        '#type': radios
+        '#title': 'What side of the Willamette River will your work be on?'
+        '#options':
+          42636373346839_east: East
+          42636373346839_west: West
+        '#required': true
+      apply_west_side_access:
+        '#type': radios
+        '#title': 'West side access area'
+        '#options':
+          42636368604567_10th_ave: '10th Ave'
+          42636368604567_northrup_st: 'Northrup St'
+          42636368604567_23rd_ave: '23rd Ave'
+          42636368604567_lovejoy_st: 'Lovejoy St'
+          42636368604567_11th_ave: '11th Ave'
+          42636368604567_market_st: 'Market St'
+          42636368604567_5th_ave: '5th Ave'
+          42636368604567_montgomery_st_4th_ave: 'Montgomery St & 4th Ave'
+          42636368604567_harrison_st: 'Harrison St'
+          42636368604567_river_parkway_moody: 'River Parkway & Moody'
+          42636368604567_moody_gibbs: 'Moody & Gibbs'
+          42636368604567_mill_st: 'Mill St'
+          42636368604567_sw_moody_st: 'SW Moody St'
+          42636368604567_sw_lowell_st: 'SW Lowell St'
+          42636368604567_sw_bond_st: 'SW Bond St'
+        '#states':
+          visible:
+            ':input[name="apply_east_or_west_side"]':
+              value: 42636373346839_west
+      apply_east_side_access:
+        '#type': radios
+        '#title': 'East side access area'
+        '#options':
+          42636368604567_broadway_bridge: 'Broadway Bridge'
+          42636368604567_weidler_st: 'Weidler St'
+          42636368604567_7th_ave: '7th Ave'
+          42636368604567_oregon_st: 'Oregon St'
+          42636368604567_mlk_blvd: 'MLK Blvd'
+          42636368604567_omsi_bridge: 'OMSI Bridge'
+          42636368604567_stephens_st: 'Stephens St'
+          42636368604567_grand_ave: 'Grand Ave'
+          42636368604567_broadway_st: 'Broadway St'
+        '#states':
+          visible:
+            ':input[name="apply_east_or_west_side"]':
+              value: 42636373346839_east
+      apply_cross_street_1:
+        '#type': textfield
+        '#title': 'Cross street 1'
+      apply_cross_street_2:
+        '#type': textfield
+        '#title': 'Cross street 2'
+      apply_access_area_location:
+        '#type': webform_computed_twig
+        '#title': 'Access area location'
+        '#display_on': none
+        '#template': '{{ data.apply_west_side_access ?: data.apply_east_side_access }}'
+        '#ajax': true
+  page_contact_information:
+    '#type': webform_wizard_page
+    '#title': 'Contact information'
+    '#format': container
+    '#prev_button_label': Back
+    '#next_button_label': Continue
+    contact_permit_billing_information:
+      '#type': webform_section
+      '#title': 'Permit and billing information'
+      contact_permit_holder_name:
+        '#type': textfield
+        '#title': 'Permit holder name'
+        '#description': '<p>Enter the name of the business or individual who will be responsible for this permit.</p>'
+        '#description_display': before
+        '#required': true
+      contact_city_employee:
+        '#type': radios
+        '#title': 'Is the work being conducted by City of Portland employees for a city bureau/project?'
+        '#options': yes_no
+        '#required': true
+      contact_mailing_address:
+        '#type': portland_address_verifier
+        '#title': 'Billing mailing address'
+        '#description_display': before
+        '#states':
+          invisible:
+            ':input[name="contact_city_employee"]':
+              value: 'Yes'
+        '#location_address__title': 'Billing address'
+        '#location_address__description': 'This address is used for any mailed invoices related to your permit. Even when no invoice is expected, we still require a billing mailing address for our records.'
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+        '#location_jurisdiction__access': false
+        '#location_taxlot_id__access': false
+        '#location_is_unincorporated__access': false
+        '#location_address_label__access': false
+        '#location_capture_field__access': false
+        '#location_data__access': false
+        '#require_portland_city_limits': 0
+        '#address_suggest': 0
+        '#not_verfied_reason': '<br>This sometimes happens with new addresses, PO boxes, multi-family buildings, and addresses outside the Portland area.'
+      contact_billing_name:
+        '#type': textfield
+        '#title': 'Billing contact name'
+        '#description': '<p>Enter the name of the person who should receive and manage any mailed invoices related to this permit.&nbsp;</p>'
+        '#description_display': before
+        '#required': true
+        '#states':
+          invisible:
+            ':input[name="contact_city_employee"]':
+              value: 'Yes'
+    section_contact_information:
+      '#type': webform_section
+      '#title': 'Contact information'
+      contact_primary_name:
+        '#type': textfield
+        '#title': 'Primary contact name'
+        '#description': '<p>Streetcar staff will send all application updates, online payment instructions, and permit approval notices to this person to the email below.</p>'
+        '#description_display': before
+        '#autocomplete': name
+        '#required': true
+      contact_primary_email:
+        '#type': textfield
+        '#title': 'Primary contact email'
+        '#description': '<p>Please enter the email that should serve as the point of contact for this project.</p>'
+        '#description_display': before
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#required': true
+      contact_primary_phone:
+        '#type': textfield
+        '#title': 'Primary contact phone'
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+    section_job_site_info:
+      '#type': webform_section
+      '#title': 'Job site information'
+      contact_site_supervisor_name:
+        '#type': textfield
+        '#title': 'Site supervisor name'
+        '#description': '<p>Enter the name of the person who will oversee the work at the job site and serve as the on-site point of contact during construction activities.</p>'
+        '#description_display': before
+      contact_site_supervisor_email:
+        '#type': textfield
+        '#title': 'Site supervisor email'
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_site_supervisor_phone:
+        '#type': textfield
+        '#title': 'Site supervisor phone'
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+      contact_job_ref:
+        '#type': textfield
+        '#title': 'Job ref or PO#'
+  page_review_submit:
+    '#type': webform_wizard_page
+    '#title': 'Review & submit'
+    '#format': container
+    '#prev_button_label': Back
+    '#next_button_label': Finish
+    markup_review:
+      '#type': webform_markup
+      '#markup': '<h2>Review your application</h2>'
+    review_summary:
+      '#type': webform_computed_twig
+      '#title': 'Application summary'
+      '#title_display': none
+      '#wrapper_attributes':
+        class:
+          - p-5
+          - bg-light-subtle
+          - rounded
+          - border
+          - border-secondary-subtle
+      '#display_on': form
+      '#mode': html
+      '#template': |
+        {% if data.computed_tier_assignment == "1" %}
+          <h3>Your preliminary permit tier: Tier 1</h3>
+          <p>Permit fee: Free</p>
+          <p>Tier 1 permits are for small landscaping or decorative activities lasting less than one day. These activities are non-invasive, do not require a power shutdown, and do not impact Streetcar operations or require a Traffic Control Plan (TCP).</p>
+
+        {% elseif data.computed_tier_assignment == "2" %}
+          <h3>Your preliminary permit tier: Tier 2</h3>
+          <p>Permit fee: $212</p>
+          <p>Tier 2 permits are for projects that require an approved Traffic Control Plan (TCP) and review by the Streetcar team. These projects typically last up to 30 days.</p>
+
+        {% elseif data.computed_tier_assignment == "3" %}
+          <h3>Your preliminary permit tier: Tier 3</h3>
+          <p>Permit fee: $425</p>
+          <p>Tier 3 permits apply to more complex work that requires an approved TCP and may involve power shutdowns, trenching, or digging near or under Streetcar tracks. These projects generally last up to 30 days.</p>
+
+        {% else %}
+          <h3>Your preliminary permit tier: Tier 4</h3>
+          <p>Permit fee: $1,062</p>
+          <p>Tier 4 permits are for long-term projects (up to 180 days) and work that may require barricades or fencing along the Streetcar route. These projects involve ongoing review and adjustments of an approved TCP.</p>
+
+        {% endif %}
+
+        <p>View the <a href="/transportation/permitting/streetcar-track-access-permit#toc-7-0-how-much-does-a-portland-streetcar-track-access-permit-cost" target="_blank">full Streetcar Permit Tier Schedule (opens in new tab or window)</a>.</p>
+
+        <h3>Project details</h3>
+        {% if data.apply_tcp_required or data.apply_ocs_shutdown or data.apply_duration_gt_1 or data.apply_near_alignment or data.apply_trenching or data.apply_vault_access or data.apply_boring_hdd %}
+        <ul>
+          {% if data.apply_tcp_required %}<li> Requires temporary closure of a travel lane</li>{% endif %}
+          {% if data.apply_ocs_shutdown %}<li> Requires OCS shutdown</li>{% endif %}
+          {% if data.apply_duration_gt_1 %}<li> Lasts longer than one day</li>{% endif %}
+          {% if data.apply_near_alignment %}<li> Occurs within 5 ft of the track alignment</li>{% endif %}
+          {% if data.apply_trenching %}<li> Trenching or digging near or under tracks</li>{% endif %}
+          {% if data.apply_vault_access %}<li> Accessing underground utilities near tracks</li>{% endif %}
+          {% if data.apply_boring_hdd %}<li> Boring or HDD near tracks</li>{% endif %}
+        </ul>
+        {% else %}
+          <p><em>No project details provided.</em></p>
+        {% endif %}
+
+        <h3>Impacts</h3>
+        {% if data.apply_duration_gt_30 or data.apply_barricades or data.apply_multiple_shutdowns or data.apply_ongoing_tcp_review %}
+        <ul>
+          {% if data.apply_duration_gt_30 %}<li> Will last longer than 30 days</li>{% endif %}
+          {% if data.apply_barricades %}<li> Requires barricades or fencing along Streetcar route</li>{% endif %}
+          {% if data.apply_multiple_shutdowns %}<li> Requires multiple work windows or repeated OCS shutdowns</li>{% endif %}
+          {% if data.apply_ongoing_tcp_review %}<li> May require ongoing adjustments or reviews to approved TCP</li>{% endif %}
+        </ul>
+        {% else %}
+          <p><em>No impacts indicated.</em></p>
+        {% endif %}
+
+        <h3>Work details</h3>
+        <p><strong>Start date:</strong> {{ data.apply_begin_work_date }}{% if data.apply_start_time %}<br><strong>Start time:</strong> {{ data.apply_start_time }}{% endif %}</p>
+        <p><strong>End date:</strong> {{ data.apply_end_work_date }}{% if data.apply_end_time %}<br><strong>End time:</strong> {{ data.apply_end_time }}{% endif %}</p>
+        <p><strong>Description of work:</strong> {{ data.apply_description_of_work }}</p>
+        <p><strong>Equipment:</strong> {{ data.apply_equipment }}</p>
+
+        <h3>Track access area</h3>
+        <p>
+          <strong>Which side of the Willamette River will the work be on?</strong> 
+          {{ data.apply_east_or_west_side ? elements_flattened.apply_east_or_west_side['#options'][data.apply_east_or_west_side] : '' }}
+          
+          {% if data.apply_west_side_access is not empty %}
+            <br><strong>West side access area:</strong> {{ data.apply_west_side_access ? elements_flattened.apply_west_side_access['#options'][data.apply_west_side_access] : '' }}
+          {% elseif data.apply_east_side_access is not empty %}
+            <br><strong>East side access area:</strong> {{ data.apply_east_side_access ? elements_flattened.apply_east_side_access['#options'][data.apply_east_side_access] : '' }}  
+          {% endif %}
+          {% if data.apply_cross_street_1 %}<br><strong>Cross street 1:</strong> {{ data.apply_cross_street_1 }}{% endif %}
+          {% if data.apply_cross_street_2 %}<br><strong>Cross street 2:</strong> {{ data.apply_cross_street_2 }}{% endif %}
+        </p>
+
+        <h3>Contact information</h3>
+        <p><strong>Permit holder name:</strong> {{ data.contact_permit_holder_name }}
+        {% if data.contact_city_employee == "Yes" %}<br><em>Work is being conducted by City employees for a city/bureau project</em>{% endif %}
+        {% if data.contact_mailing_address.location_address %}<br><strong>Billing mailing address:</strong> {{ data.contact_mailing_address.location_full_address }}{% endif %}
+        {% if data.contact_billing_name %}<br><strong>Billing contact name:</strong> {{ data.contact_billing_name }}{% endif %}</p>
+
+        <p>{% if data.contact_primary_name %}<strong>Primary contact name:</strong> {{ data.contact_primary_name }}<br>{% endif %}
+        {% if data.contact_primary_email %}<strong>Primary contact email:</strong> {{ data.contact_primary_email }}<br>{% endif %}
+        <strong>Primary contact phone:</strong> {{ data.contact_primary_phone }}</p>
+
+        <p>{% if data.contact_site_supervisor_name %}<strong>Site supervisor name:</strong> {{ data.contact_site_supervisor_name }}<br>{% endif %}
+        {% if data.contact_site_supervisor_email %}<strong>Site supervisor email:</strong> {{ data.contact_site_supervisor_email }}<br>{% endif %}
+        <strong>Site supervisor phone:</strong> {{ data.contact_site_supervisor_phone }}</p>
+
+        {% if data.contact_job_ref %}<p><strong>Job ref or PO#:</strong> {{ data.contact_job_ref }}</p>{% endif %}
+      '#whitespace': spaceless
+      '#ajax': true
+    markup_01:
+      '#type': webform_markup
+      '#markup': '<p>If anything needs to be changed, use the <strong>Back </strong>button, or navigate using the links at the top of the form. Otherwise, click <strong>Submit application</strong>.</p>'
+    actions:
+      '#type': webform_actions
+      '#title': Submit
+      '#submit__label': 'Submit application'
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed tags'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {{ data.apply_east_or_west_side }}
+      {{ data.apply_east_side_access }}
+      {{ data.apply_west_side_access }}
+    '#whitespace': trim
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request ticket ID'
+css: 'div.form-item-contact-mailing-address-location-address input.btn-verify { display: none; }'
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_file_limit_message: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: true
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: '<p>Thank you for submitting your track access permit. Please allow 7-10 business days for processing.</p><p>Our Operations and Maintenance staff will review your application. If approved, we''ll email you a payment link. If there are issues, we’ll contact you before sending a payment request.</p><p>For additional information, please read the <span style="background-color:yellow;display:inline-block;">Portland Streetcar Track Access Permit Frequently Asked Questions</span>.</p>'
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      requester_name: contact_primary_name
+      requester_email: contact_primary_email
+      subject: 'Track Access Permit Application'
+      comment: '[webform_submission:values:review_summary]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '41676747263383'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_streetcar_track_access_2'\r\n42303976757527: ['[webform_submission:values:contact_site_supervisor_name]', 'contact_site_supervisor_name']\r\n42303937554071: ['[webform_submission:values:contact_site_supervisor_phone]', 'contact_site_supervisor_phone']\r\n42303968861207: ['[webform_submission:values:contact_site_supervisor_email]', 'contact_site_supervisor_email']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n32905012809879: ['[webform_submission:values:contact_job_ref]', 'contact_job_ref']\r\n39194802217879: ['[webform_submission:values:contact_permit_holder_name]', 'contact_permit_holder_name']\r\n42303995053079: ['[webform_submission:values:contact_mailing_address:location_address] [webform_submission:values:contact_mailing_address:unit_number], [webform_submission:values:contact_mailing_address:location_city], [webform_submission:values:contact_mailing_address:location_state] [webform_submission:values:contact_mailing_address:location_zip]', 'contact_mailing_address']\r\n12280733221015: ['[webform_submission:values:apply_begin_work_date]', 'apply_begin_work_date']\r\n12280737894935: ['[webform_submission:values:apply_end_work_date]', 'apply_end_work_date']\r\n"
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '42303967522839'
+      excluded_elements:
+        review_summary: review_summary
+        computed_tier_assignment: computed_tier_assignment
+        debug_tier_assignment: debug_tier_assignment
+        request_ticket_id: request_ticket_id
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Add "ongoing TCP" note to ticket'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_duration_gt_30"]':
+          unchecked: true
+        ':input[name="apply_barricades"]':
+          unchecked: true
+        ':input[name="apply_multiple_shutdowns"]':
+          unchecked: true
+        ':input[name="apply_ongoing_tcp_review"]':
+          checked: true
+    weight: 0
+    settings:
+      comment: 'The applicant selected ongoing TCP review(s) as their only high‑impact aspect. Please confirm that the project truly qualifies for Tier 4 costs before approval and payment. If it does not appear to be a Tier 4 project, please update the tier field on the Zendesk form accordingly and leave an internal note explaining the change.'
+      comment_private: 1
+      skip_attachments: 0
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      ticket_form_id: ''
+variants: {  }
