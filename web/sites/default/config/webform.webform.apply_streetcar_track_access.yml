@@ -121,7 +121,7 @@ elements: |-
     computed_tier_assignment:
       '#type': webform_computed_twig
       '#title': 'Computed tier assignment'
-      '#display_on': form
+      '#display_on': view
       '#mode': text
       '#template': |
         {% set tcp = data.apply_tcp_required|default('') %}
@@ -172,11 +172,15 @@ elements: |-
       apply_begin_work_date:
         '#type': date
         '#title': 'Begin work date'
+        '#description': '<p>Permits must be submitted at least 7 days in advance. Power shutdowns need to be at least 14 days in advance for scheduling.</p>'
+        '#description_display': before
         '#required': true
+        '#date_date_min': '+7 days'
       apply_end_work_date:
         '#type': date
         '#title': 'End work date'
         '#required': true
+        '#date_date_min': '+7 days'
       apply_start_time:
         '#type': webform_time
         '#title': 'Start time'
@@ -208,6 +212,7 @@ elements: |-
         '#options':
           42636373346839_east: East
           42636373346839_west: West
+        '#required': true
       apply_west_side_access:
         '#type': radios
         '#title': 'West side access area'
@@ -284,6 +289,10 @@ elements: |-
         '#type': portland_address_verifier
         '#title': 'Billing mailing address'
         '#description_display': before
+        '#states':
+          invisible:
+            ':input[name="contact_city_employee"]':
+              value: 'Yes'
         '#location_address__title': 'Billing address'
         '#location_address__description': 'This address is used for any mailed invoices related to your permit. Even when no invoice is expected, we still require a billing mailing address for our records.'
         '#location_address__required': true
@@ -305,6 +314,10 @@ elements: |-
         '#description': '<p>Enter the name of the person who should receive and manage any mailed invoices related to this permit.&nbsp;</p>'
         '#description_display': before
         '#required': true
+        '#states':
+          invisible:
+            ':input[name="contact_city_employee"]':
+              value: 'Yes'
     section_contact_information:
       '#type': webform_section
       '#title': 'Contact information'
@@ -431,20 +444,23 @@ elements: |-
 
         <h3>Track access area</h3>
         <p>
+          <strong>Which side of the Willamette River will the work be on?</strong> 
+          {{ data.apply_east_or_west_side ? elements_flattened.apply_east_or_west_side['#options'][data.apply_east_or_west_side] : '' }}
+          
           {% if data.apply_west_side_access is not empty %}
-            <strong>West side access area:</strong> {{ data.apply_west_side_access ? elements_flattened.apply_west_side_access['#options'][data.apply_west_side_access] : '' }}<br>
+            <br><strong>West side access area:</strong> {{ data.apply_west_side_access ? elements_flattened.apply_west_side_access['#options'][data.apply_west_side_access] : '' }}
           {% elseif data.apply_east_side_access is not empty %}
-            <strong>East side access area:</strong> {{ data.apply_east_side_access ? elements_flattened.apply_east_side_access['#options'][data.apply_east_side_access] : '' }}<br>    
+            <br><strong>East side access area:</strong> {{ data.apply_east_side_access ? elements_flattened.apply_east_side_access['#options'][data.apply_east_side_access] : '' }}  
           {% endif %}
-          {% if data.apply_cross_street_1 %}<strong>Cross street 1:</strong> {{ data.apply_cross_street_1 }}<br>{% endif %}
-          {% if data.apply_cross_street_2 %}<strong>Cross street 2:</strong> {{ data.apply_cross_street_2 }}<br>{% endif %}
+          {% if data.apply_cross_street_1 %}<br><strong>Cross street 1:</strong> {{ data.apply_cross_street_1 }}{% endif %}
+          {% if data.apply_cross_street_2 %}<br><strong>Cross street 2:</strong> {{ data.apply_cross_street_2 }}{% endif %}
         </p>
 
         <h3>Contact information</h3>
-        <p><strong>Permit holder name:</strong> {{ data.contact_permit_holder_name }}<br>
-        {% if data.contact_city_employee == "Yes" %}<em>Work is being conducted by City employees for a city/bureau project</em><br>{% endif %}
-        {% if data.contact_mailing_address.location_address %}<strong>Billing mailing address:</strong> {{ data.contact_mailing_address.location_full_address }}<br>{% endif %}
-        <strong>Billing contact name:</strong> {{ data.contact_billing_name }}</p>
+        <p><strong>Permit holder name:</strong> {{ data.contact_permit_holder_name }}
+        {% if data.contact_city_employee == "Yes" %}<br><em>Work is being conducted by City employees for a city/bureau project</em>{% endif %}
+        {% if data.contact_mailing_address.location_address %}<br><strong>Billing mailing address:</strong> {{ data.contact_mailing_address.location_full_address }}{% endif %}
+        {% if data.contact_billing_name %}<br><strong>Billing contact name:</strong> {{ data.contact_billing_name }}{% endif %}</p>
 
         <p>{% if data.contact_primary_name %}<strong>Primary contact name:</strong> {{ data.contact_primary_name }}<br>{% endif %}
         {% if data.contact_primary_email %}<strong>Primary contact email:</strong> {{ data.contact_primary_email }}<br>{% endif %}
@@ -464,63 +480,6 @@ elements: |-
       '#type': webform_actions
       '#title': Submit
       '#submit__label': 'Submit application'
-  debug_tier_assignment:
-    '#type': webform_computed_twig
-    '#title': 'Debug — tier assignment'
-    '#display_on': none
-    '#mode': html
-    '#template': |
-      <div style="background:#f6f7f9;border:1px solid #d9dce1;border-left:4px solid #6b7280;border-radius:6px;padding:1rem 1.25rem;margin:1rem 0;">
-        <h3 style="margin:0 0 .5rem;font-size:1.1rem;">Tier Debug</h3>
-        <em>(Debug block active — remove or hide before launch)</em><br><br>
-        {% set tcp = data.apply_tcp_required|default('') %}
-        {% set ocs = data.apply_ocs_shutdown|default('') %}
-        {% set dur1 = data.apply_duration_gt_1|default('') %}
-        {% set near = data.apply_near_alignment|default('') %}
-        {% set trench = data.apply_trenching|default('') %}
-        {% set vault = data.apply_vault_access|default('') %}
-        {% set hdd = data.apply_boring_hdd|default('') %}
-        {% set dur30 = data.apply_duration_gt_30|default('') %}
-        {% set barricades = data.apply_barricades|default('') %}
-        {% set multi = data.apply_multiple_shutdowns|default('') %}
-        {% set tcp_ongoing = data.apply_ongoing_tcp_review|default('') %}
-        <strong>Administrative Flags</strong><br>
-        TCP Required: {{ tcp|json_encode }}<br>
-        OCS Shutdown: {{ ocs|json_encode }}<br>
-        Duration > 1 Day: {{ dur1|json_encode }}<br>
-        Near Alignment: {{ near|json_encode }}<br>
-        <hr>
-        <strong>Intrusive Activity Flags</strong><br>
-        Trenching: {{ trench|json_encode }}<br>
-        Vault Access: {{ vault|json_encode }}<br>
-        Boring/HDD: {{ hdd|json_encode }}<br>
-        <hr>
-        <strong>High-Impact / Long-Term Flags</strong><br>
-        Duration > 30 Days: {{ dur30|json_encode }}<br>
-        Barricades/Fencing: {{ barricades|json_encode }}<br>
-        Multiple Shutdowns: {{ multi|json_encode }}<br>
-        Ongoing TCP Review: {{ tcp_ongoing|json_encode }}<br>
-        <hr>
-        <h4 style="margin:.75rem 0 .25rem;font-size:1rem;color:#374151;">Tier Logic Explanation</h4>
-        {% if dur30 or multi or tcp_ongoing %}
-          <strong>Rule Triggered:</strong> Tier 4 — Long-term/high-impact condition detected.<br>
-        {% elseif ocs or trench or vault or hdd %}
-          <strong>Rule Triggered:</strong> Tier 3 — Intrusive / high-risk work detected.<br>
-        {% elseif tcp %}
-          <strong>Rule Triggered:</strong> Tier 2 — TCP required with no intrusive/high-impact work.<br>
-        {% elseif not tcp and not ocs and not dur1 %}
-          <strong>Rule Triggered:</strong> Tier 1 — Simple non-invasive, less than 1 day.<br>
-        {% else %}
-          <strong>Rule Triggered:</strong> Default Tier 2 — Not Tier 1 and no higher-tier flags.<br>
-        {% endif %}
-        <hr>
-        <h3 style="margin:1rem 0 .25rem;font-size:1.2rem;color:#374151;">Final Computed Tier</h3>
-        <div style="font-size:1.4rem;font-weight:bold;">
-          {{ data.computed_tier_assignment|default('N/A') }}
-        </div>
-      </div>
-    '#whitespace': spaceless
-    '#ajax': true
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed tags'
