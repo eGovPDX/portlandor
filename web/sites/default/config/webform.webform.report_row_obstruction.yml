@@ -445,18 +445,9 @@ elements: |-
             - ':input[name="report_temporary_item"]':
                 value: 'Mulch pile'
             - or
-            - ':input[name="report_temporary_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_outdoor_dining_item"]':
-                value: 'A-board sign'
-            - or
-            - ':input[name="report_signage_type"]':
-                value: 'A-board sign'
-            - or
             - ':input[name="report_vegetation_source"]':
                 value: 'Private property or parking strip'
-        '#markup': '<div class="alert alert--warning next-steps"><h2>Warning</h2><p>Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without valid information.</p></div>'
+        '#markup': '<div class="alert alert--warning next-steps"><h2>Warning</h2><p><strong>Due to the type of obstruction you are reporting, this report will go to Portland Permitting & Development''s Property Compliance division.</strong></p><p>Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without valid information.</p></div>'
       contact_name:
         '#type': textfield
         '#title': Name
@@ -562,9 +553,36 @@ elements: |-
         '#required': true
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    section_confidentiality:
+      '#type': webform_section
+      '#title': Confidentiality
+      '#states':
+        visible:
+          - ':input[name="report_temporary_item"]':
+              value: 'Mulch pile'
+          - or
+          - ':input[name="report_vegetation_source"]':
+              value: 'Private property or parking strip'
+      confidentiality_waiver:
+        '#type': radios
+        '#title': 'Confidentiality waiver'
+        '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+        '#description_display': before
+        '#options':
+          'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+          'I waive confidentiality': 'I choose to waive confidentiality.'
+        '#required': true
+        '#default_value': 'I do not waive confidentiality'
     section_public_records_statement:
       '#type': webform_section
       '#title': 'Public records statement'
+      '#states':
+        invisible:
+          - ':input[name="report_temporary_item"]':
+              value: 'Mulch pile'
+          - or
+          - ':input[name="report_vegetation_source"]':
+              value: 'Private property or parking strip'
       markup_public_records_statement:
         '#type': webform_markup
         '#markup': '<p>Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.</p>'
@@ -802,7 +820,8 @@ elements: |-
       {% if data.contact_phone %}<strong>Phone:</strong> {{ data.contact_phone }}<br>{% endif %}
       </p>
       {% endif %}
-
+      {# Add confidentiality output to PP&D report types #}
+      {% if data.report_temporary_item == 'Mulch pile' or data.report_vegetation_source == 'Private property or parking strip' %}<strong>Confidentiality:</strong> {{ data.confidentiality_waiver }}{% endif %}
     '#ajax': true
   computed_compliance_subtype:
     '#type': webform_computed_twig
