@@ -16,4 +16,3 @@ import "./behaviors/notification";
 import "./behaviors/persist-collapse";
 import "./behaviors/search-autocomplete";
 import "./behaviors/leaflet-pancontrol";
-import "./behaviors/live-region";

@@ -1,4 +1,4 @@
-Drupal.behaviors.liveRegion = {
+Drupal.behaviors.portlandWebformAlertsLiveRegion = {
   attach(context) {
     const forms = [];
     if (context instanceof HTMLFormElement) {
@@ -58,7 +58,7 @@ Drupal.behaviors.liveRegion = {
       function announceNewestVisibleAlert() {
         let latestMessage = "";
 
-        [...form.querySelectorAll(".form-alert")].forEach((alert) => {
+        [...form.querySelectorAll(".webform-alert")].forEach((alert) => {
           const nowVisible = isVisible(alert);
           const wasVisible = visibleState.get(alert) === true;
 
