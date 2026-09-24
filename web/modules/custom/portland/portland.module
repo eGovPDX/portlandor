@@ -736,6 +736,11 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
     $entity_form["image"]["widget"][0]["#process"][] = '_convert_image_alt_to_textarea';
     $entity_form['#validate'][] = '_remove_linebreak_from_image_alt';
   }
+  if (isset($entity_form['field_image_pair']['widget'])) {
+    foreach (Element::children($entity_form['field_image_pair']['widget']) as $delta) {
+      $entity_form['field_image_pair']['widget'][$delta]['#process'][] = '_convert_image_alt_to_textarea';
+    }
+  }
 
   // PGOV-2070 Validate that both images are uploaded when an Image Slider is
   // added via the Entity Browser's "Add image slider" tab. 
@@ -829,16 +834,17 @@ function portland_form_alter(&$form, &$form_state, $form_id)
   }
 
   // PGOV-488 Convert image alt text field to textarea
-  $form_array_with_image_alt_textarea = [
-    'media_image_add_form',
-    'media_image_edit_form',
-    'media_image_slider_add_form',
-    'media_image_slider_edit_form',
+  $image_field_by_form = [
+    'media_image_add_form' => 'image',
+    'media_image_edit_form' => 'image',
+    'media_image_slider_add_form' => 'field_image_pair',
+    'media_image_slider_edit_form' => 'field_image_pair',
   ];
-  if (in_array($form_id, $form_array_with_image_alt_textarea)) {
-    if (isset($form['image']['widget'])) {
-      foreach (Element::children($form['image']['widget']) as $delta) {
-        $form['image']['widget'][$delta]['#process'][] = '_convert_image_alt_to_textarea';
+  if (isset($image_field_by_form[$form_id])) {
+    $image_field = $image_field_by_form[$form_id];
+    if (isset($form[$image_field]['widget'])) {
+      foreach (Element::children($form[$image_field]['widget']) as $delta) {
+        $form[$image_field]['widget'][$delta]['#process'][] = '_convert_image_alt_to_textarea';
       }
       $form['#validate'][] = '_remove_linebreak_from_image_alt';
     }
@@ -850,11 +856,17 @@ function portland_form_alter(&$form, &$form_state, $form_id)
  * @see portland_form_alter() and portland_inline_entity_form_entity_form_alter()
  */
 function _remove_linebreak_from_image_alt(array &$form, FormStateInterface $form_state) {
-  $image_values = &$form_state->getValue('image');
-  foreach ($image_values as &$item) {
-    if (isset($item['alt'])) {
-      $item['alt'] = preg_replace('/\s+/', ' ', $item['alt']);
+  foreach (['image', 'field_image_pair'] as $image_field) {
+    if (!is_array($form_state->getValue($image_field))) {
+      continue;
     }
+    $image_values = &$form_state->getValue($image_field);
+    foreach ($image_values as &$item) {
+      if (isset($item['alt'])) {
+        $item['alt'] = preg_replace('/\s+/', ' ', $item['alt']);
+      }
+    }
+    unset($item, $image_values);
   }
 }
 
@@ -1141,12 +1153,12 @@ function _validate_image_slider_images(&$form, FormStateInterface $form_state)
   // DO NOT validate when the user clicks an upload/remove button within the
   // image widget itself. ONLY validate when the entire form is submitted.
   $triggering_element = $form_state->getTriggeringElement();
-  if ($triggering_element && in_array('image', $triggering_element['#array_parents'] ?? [], true)) {
+  if ($triggering_element && in_array('field_image_pair', $triggering_element['#array_parents'] ?? [], true)) {
     return;
   }
 
-  $is_embedded = $form_state->hasValue('inline_entity_form') && array_key_exists('image', $form_state->getValue('inline_entity_form') ?: []);
-  $image_values = $is_embedded ? $form_state->getValue('inline_entity_form')['image'] : ($form_state->getValue('image') ?: []);
+  $is_embedded = $form_state->hasValue('inline_entity_form') && array_key_exists('field_image_pair', $form_state->getValue('inline_entity_form') ?: []);
+  $image_values = $is_embedded ? $form_state->getValue('inline_entity_form')['field_image_pair'] : ($form_state->getValue('field_image_pair') ?: []);
   $missing_deltas = array_keys(array_filter($image_values, fn($item) => empty($item['fids'])));
   if (empty($missing_deltas)) {
     return;
@@ -1156,11 +1168,11 @@ function _validate_image_slider_images(&$form, FormStateInterface $form_state)
   // the alt text of an image that was already uploaded successfully.
   $message = t('Image Slider requires 2 images. Please upload both images.');
   foreach ($missing_deltas as $delta) {
-    if (isset($form['image']['widget'][$delta])) {
-      $form_state->setError($form['image']['widget'][$delta], $message);
+    if (isset($form['field_image_pair']['widget'][$delta])) {
+      $form_state->setError($form['field_image_pair']['widget'][$delta], $message);
     }
     else {
-      $form_state->setErrorByName('image', $message);
+      $form_state->setErrorByName('field_image_pair', $message);
     }
   }
 }
@@ -1593,12 +1605,6 @@ function portland_views_query_alter($view, $query)
     // Force sorting on revision ID
     $query->addOrderBy('media_field_revision', 'vid', 'DESC');
   }
-
-  // The group media view's Media display renders each Image Slider twice. 
-  // Constrain the join to the first image only
-  if ($view->id() === 'group_media' && isset($query->tables['media_field_data']['media__image'])) {
-    $query->addWhereExpression(0, 'media__image.delta = :portland_thumbnail_delta OR media__image.delta IS NULL', [':portland_thumbnail_delta' => 0]);
-  }
 }
 
 /**
@@ -1821,12 +1827,12 @@ function portland_field_widget_single_element_form_alter(array &$element, FormSt
 /**
  * Implements hook_field_widget_complete_form_alter().
  * Replace the default "Maximum 2 files." cardinality hint on the Image
- * Slider's image field with a message reflecting that both images are
- * required (see ImageSliderImagesRequiredConstraint).
+ * Slider's Image pair field with a message reflecting that both images are
+ * required (see _validate_image_slider_images()).
  */
 function portland_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
   $field_definition = $context['items']->getFieldDefinition();
-  if ($field_definition->getName() === 'image' && $field_definition->getTargetBundle() === 'image_slider') {
+  if ($field_definition->getName() === 'field_image_pair') {
     if (isset($field_widget_complete_form['widget']['#file_upload_description'])) {
       unset($field_widget_complete_form['widget']['#file_upload_description']['#cardinality']);
       $field_widget_complete_form['widget']['#file_upload_description']['#description'] = t('2 image files required.');
