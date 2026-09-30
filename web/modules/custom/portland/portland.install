@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * Implements hook_update_N().
+ *
+ * PGOV-1896
+ * Update editoria11y result and dismissal tables to use the new names from our custom language overrides.
+ */
+function portland_update_110301() {
+  $resultNameMapping = [
+    "Manual check: was a heading level skipped?" => "Missing heading level.",
+    "Heading tag without any text" => "Heading tags with no text.",
+    "Manual check: long heading" => "This heading might be too long.",
+    "Manual check: is this a blockquote?" => "Is this really a blockquote?",
+    "Image has no alternative text attribute" => "This image has no alt text attribute.",
+    "Manual check: image has no alt text" => "This image has empty alt text.",
+    "Image's text alternative is a URL" => "The image alt text is a URL.",
+    "Alt text is meaningless" => "This image has no meaningful alt text.",
+    "Linked alt text is meaningless" => "This linked image has no meaningful alt text.",
+    "Linked image's text alternative is a URL" => "Linked image has a URL in the alt text.",
+    "Manual check: possibly redundant text in alt" => "Redundant description in alt text.",
+    "Manual check: possibly redundant text in linked image" => "Redundant description in linked image.",
+    "Linked Image has no alt text" => "Linked image has no alt text.",
+    "Manual check: very long alternative text" => "This image's alt text is too long.",
+    "Manual check: very long alternative text in linked image" => "The alt text on this linked image is too long.",
+    "Manual check: link contains both text and an image" => "This link contains both text and an image.",
+    "Link with no accessible text" => "This link has no accessible text.",
+    "Manual check: is this link text a URL?" => "Is this link text a URL?",
+    "Manual check: is this link meaningful and concise?" => "Is this link meaningful and concise?",
+    "Manual check: is the linked document accessible?" => "Check this document for accessibility.",
+    "Manual check: is opening a new window expected?" => "Check if this should open in a new window or tab.",
+    "Table has no header cells" => "This table needs header cells so that screen readers can understand it.",
+    "Content heading inside a table" => "This table contains a heading tag.",
+    "Empty table header cell" => "This table has an empty header cell.",
+    "Manual check: should this have list formatting?" => "Is this part of a list?",
+    "Manual check: should this be a heading?" => "Should this text be a heading?",
+    "Manual check: is this uppercase text needed?" => "This text is all uppercase.",
+    "Manual check: is this video accurately captioned?" => "Does this video have accurate captions?",
+    "Manual check: is an accurate transcript provided?" => "Does this audio have an accurate transcript?",
+    "Manual check: is this visualization accessible?" => "Is this visualization accessible?",
+    "Manual check: is this embedded content accessible?" => "Is this embedded content accessible?",
+  ];
+
+  $connection = \Drupal::database();
+  foreach ($resultNameMapping as $from => $to) {
+    foreach (['editoria11y_results', 'editoria11y_dismissals'] as $table) {
+      $num_updated = $connection->update($table)
+        ->fields([
+          'result_name' => $to,
+        ])
+        ->condition('result_name', $from)
+        ->execute();
+
+      \Drupal::logger('portland')->notice("Updated @count @table rows from '@from' to '@to'.", [
+        '@count' => $num_updated,
+        '@table' => $table,
+        '@from' => $from,
+        '@to' => $to,
+      ]);
+    }
+  }
+}
