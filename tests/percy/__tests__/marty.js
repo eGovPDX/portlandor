@@ -3,19 +3,23 @@ const puppeteer = require('puppeteer');
 var fs = require('fs');
 
 const SITE_NAME = process.env.SITE_NAME;
-const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
-const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
-let text_content = '', selector = '';
+const HOME_PAGE = SITE_NAME
+  ? `https://${SITE_NAME}-portlandor.pantheonsite.io`
+  : 'https://portlandor.lndo.site';
+const ARTIFACTS_FOLDER = SITE_NAME ? `/home/circleci/artifacts/` : `./`;
+let text_content = '',
+  selector = '';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox", "--disabled-setupid-sandbox", '--ignore-certificate-errors'],
+  args: ['--no-sandbox', '--disabled-setupid-sandbox', '--ignore-certificate-errors'],
   defaultViewport: null,
-  headless: "new",
+  headless: 'new',
 };
 
 describe('Marty Member user test', () => {
-  var browser, page, login_url;
+  var browser, page, login_url, bot_token;
+
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
     page = await browser.newPage();
@@ -26,20 +30,23 @@ describe('Marty Member user test', () => {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.MARTY_LOGIN;
       login_url = login_url.replace('http://', 'https://');
+      bot_token = process.env.BOT_TOKEN;
+      await page.setExtraHTTPHeaders({
+        'x-pantheon-bot-bypass': bot_token,
+      });
       await page.goto(login_url);
-    }
-    else {
-      var drush_uli_result = fs.readFileSync("marty_uli.log").toString();
+    } else {
+      drush_uli_result = fs.readFileSync('marty_uli.log').toString();
       // expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
       login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
       // Log in once for all tests to save time
       await page.goto(login_url);
     }
-  })
+  });
 
   afterAll(async () => {
-    await browser.close()
-  })
+    await browser.close();
+  });
 
   it('Marty can view Topic page', async function () {
     try {
@@ -54,18 +61,16 @@ describe('Marty Member user test', () => {
       await page.waitForSelector('.page-title');
       text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
       expect(text_content).toEqual(expect.stringContaining('Page not found'));
-
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}marty-view-topic-page-error.jpg`,
-        type: "jpeg",
-        fullPage: true
+        type: 'jpeg',
+        fullPage: true,
       });
       throw e;
     }
   });
-
 
   it('Marty can create and edit a page', async function () {
     try {
@@ -75,11 +80,17 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('+ Add Content'));
       expect(text_content).toEqual(expect.stringContaining('+ Add Media'));
       await page.goto(`${HOME_PAGE}/powr/node/create`);
-      text_content = await page.evaluate(() => document.querySelector('div.region-content dl').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.region-content dl').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('Add Page'));
 
-      await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
-      text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
+      await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, {
+        waitUntil: 'networkidle2',
+      });
+      text_content = await page.evaluate(
+        () => document.querySelector('#node-page-form').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
       expect(text_content).toEqual(expect.stringContaining('Summary'));
@@ -96,17 +107,23 @@ describe('Marty Member user test', () => {
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
-      text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.messages--status').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('has been created'));
 
       // Edit the newly created page
       await page.goto(`${HOME_PAGE}/powr/test-page/edit`);
-      text_content = await page.evaluate(() => document.querySelector('div.form-item--title-0-value').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.form-item--title-0-value').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('Title'));
 
       // Delete the page
       await page.goto(`${HOME_PAGE}/powr/test-page/delete`);
-      text_content = await page.evaluate(() => document.querySelector('form.node-page-delete-form').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('form.node-page-delete-form').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('This action cannot be undone'));
 
       selector = 'input#edit-submit';
@@ -114,15 +131,16 @@ describe('Marty Member user test', () => {
       await page.waitForNavigation();
 
       // Verify deletion message
-      text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.messages--status').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('has been deleted'));
-
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}marty-edit-page-error.jpg`,
-        type: "jpeg",
-        fullPage: true
+        type: 'jpeg',
+        fullPage: true,
       });
       throw e;
     }
@@ -132,23 +150,32 @@ describe('Marty Member user test', () => {
     try {
       // Add media
       await page.goto(`${HOME_PAGE}/powr/media/create`);
-      text_content = await page.evaluate(() => document.querySelector('div.region-content dl').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.region-content dl').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('Add Video'));
       await page.goto(`${HOME_PAGE}/powr/content/create/group_media%3Avideo`);
 
-      text_content = await page.evaluate(() => document.querySelector('#media-video-add-form').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('#media-video-add-form').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('Name'));
       expect(text_content).toEqual(expect.stringContaining('Video URL'));
 
       await page.type('#edit-name-0-value', 'A test video');
-      await page.type('#edit-field-media-video-embed-field-0-value', 'https://www.youtube.com/watch?v=Deguep26G7M');
+      await page.type(
+        '#edit-field-media-video-embed-field-0-value',
+        'https://www.youtube.com/watch?v=Deguep26G7M',
+      );
 
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
 
       // Verify creation message
-      text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.messages--status').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('has been created'));
 
       // Delete the video
@@ -159,22 +186,24 @@ describe('Marty Member user test', () => {
       selector = 'ul.dropbutton li.delete a';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       // Wait for the deletion confirmation dialog
-      await page.waitForSelector('div.ui-dialog', {visible: true})
+      await page.waitForSelector('div.ui-dialog', { visible: true });
 
       selector = 'div.ui-dialog  button.button--primary';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       // Wait for the result message title
-      await page.waitForSelector('#message-status-title', {visible: true})
+      await page.waitForSelector('#message-status-title', { visible: true });
 
       // Verify deletion message
-      text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
+      text_content = await page.evaluate(
+        () => document.querySelector('div.messages--status').textContent,
+      );
       expect(text_content).toEqual(expect.stringContaining('has been deleted'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}marty-edit-media-error.jpg`,
-        type: "jpeg",
-        fullPage: true
+        type: 'jpeg',
+        fullPage: true,
       });
       throw e;
     }
