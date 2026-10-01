@@ -19,7 +19,7 @@ uid: 221
 template: false
 archive: false
 id: request_public_record_exemption
-title: 'Request a Public Record Exemption'
+title: 'Request public record exemption'
 description: ''
 categories: {  }
 elements: |-
@@ -192,7 +192,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="contact_city_employee"]':
-            value: No
+            value: 'No'
           ':input[name="request_record_types[checkboxes][hr_employment_applications_resumes]"]':
             checked: true
     request_birth_dates:
@@ -271,17 +271,20 @@ elements: |-
       '#type': textfield
       '#title': 'Bar number'
       '#required': true
-  request_document_upload:
-    '#type': webform_document_file
-    '#title': 'Attach documentary evidence:'
+  section_evidence:
+    '#type': webform_section
+    '#title': Evidence
     '#states':
       invisible:
         ':input[name="request_exemption_type"]':
           unchecked: true
-    '#multiple': 12
-    '#file_help': help
-    '#max_filesize': '30'
-    '#file_extensions': 'txt pdf jpg jpeg png'
+    request_document_upload:
+      '#type': webform_document_file
+      '#title': 'Attach documentary evidence:'
+      '#multiple': 12
+      '#file_help': help
+      '#max_filesize': '30'
+      '#file_extensions': 'txt pdf jpg jpeg png'
   computed_contact_full_name:
     '#type': webform_computed_token
     '#title': 'Computed - Requester full name'
@@ -297,7 +300,9 @@ elements: |-
     '#template': |-
       {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
       {% for key in data.request_record_types %}
-        {% if key in element_option_keys %}
+        {% if key is iterable %}
+          {# skip raw/nested values that can appear during partial ajax rebuilds (e.g. document upload) #}
+        {% elseif key in element_option_keys %}
           {# add a tag for each option that's not Other #}
           38644290069143_{{ key }}
         {% else %}
@@ -315,7 +320,9 @@ elements: |-
       {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
       {# we want only the data for the Other field (whatever is not in the element options) #}
       {% for key in data.request_record_types %}
-        {% if key not in element_option_keys %}
+        {% if key is iterable %}
+          {# skip raw/nested values that can appear during partial ajax rebuilds (e.g. document upload) #}
+        {% elseif key not in element_option_keys %}
           {{ key }}
         {% endif %}
       {% endfor %}
