@@ -1,0 +1,81 @@
+/**
+ * On the admin media page and the manage group media page, show the
+ * Image Slider's two images side by side (50/50) within the "Thumbnail" * column.
+ */
+td.views-field-thumbnail__target-id.views-field-field-image-pair:has(> img + img, > a + a) {
+  width: 210px;
+}
+
+td.views-field-thumbnail__target-id.views-field-field-image-pair {
+  white-space: nowrap;
+  font-size: 0; /* Remove whitespace gaps between the inline-block images. */
+}
+
+/* Case 1: the image formatter's "Link image to" is set (group_media,
+ * my_media), so each image is wrapped in its own <a>, sized 50/50, with the
+ * image filling it. */
+td.views-field-thumbnail__target-id.views-field-field-image-pair:has(> a + a) > a {
+  display: inline-block;
+  vertical-align: middle;
+  width: calc(50% - 1px);
+  max-width: 104px;
+}
+
+td.views-field-thumbnail__target-id.views-field-field-image-pair > a + a,
+td.views-field-thumbnail__target-id.views-field-field-image-pair > img + img {
+  margin-left: 2px;
+}
+
+td.views-field-thumbnail__target-id.views-field-field-image-pair:has(> img + img, > a + a) > a img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Case 2: no link (media_page_list) - the <img> tags themselves are laid out
+ * side by side. */
+td.views-field-thumbnail__target-id.views-field-field-image-pair:has(> img + img) > img {
+  display: inline-block;
+  vertical-align: middle;
+  width: calc(50% - 1px);
+  max-width: 104px;
+  height: auto;
+}
+
+/* Mark the two-image cell as a slider (not two unrelated images) with a
+ * small "<->" badge over the seam, matching the icon shown on the real
+ * image-compare slider (see cloudy's _image-compare.scss). Only shown when
+ * there are actually two images/links (covers both the linked and
+ * unlinked cases above). */
+td.views-field-thumbnail__target-id.views-field-field-image-pair {
+  position: relative;
+}
+
+td.views-field-thumbnail__target-id.views-field-field-image-pair:has(> a + a, > img + img)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: hsla(0, 0%, 100%, 0.9);
+  border: 1px solid hsla(0, 0%, 0%, 0.9);
+  background-image: url('data:image/svg+xml;utf8,<svg viewbox="0 0 60 60" width="60" height="60" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M20 20 L10 30 L20 40"/><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M40 20 L50 30 L40 40"/><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M10 30 L50 30"/></svg>');
+  background-size: 65%;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* Claro applies a global blue focus ring (.page-wrapper *:focus) to every
+ * focusable element, including these thumbnail links - on a two-image
+ * slider tile that ring reads as "you selected the wrong image", not as a
+ * normal link state. Suppress it on this specific link only (this is scoped
+ * narrowly and doesn't touch Claro's focus styling anywhere else). */
+td.views-field-thumbnail__target-id.views-field-field-image-pair a:hover,
+td.views-field-thumbnail__target-id.views-field-field-image-pair a:focus {
+  outline: none;
+  box-shadow: none;
+}
