@@ -28,7 +28,7 @@ elements: |-
     permit_insured_name:
       '#type': textfield
       '#title': 'Name of Insured on Certificate of Liability Insurance'
-      '#description': '(Should have something that states that name on insurance must match the name of the production company.)'
+      '#description': 'The name on the insurance certificate must match the name of the production company.'
       '#description_display': before
   section_contact_information:
     '#type': webform_section
@@ -94,7 +94,7 @@ elements: |-
     '#title': 'Do you have a production packet?'
     '#options': yes_no
     '#required': true
-    '#description': '(A production packet should include all the information and map required on the completed application – this can be a single page.)'
+    '#description': 'A production packet should include all the information and maps required on the completed application – this can be a single page.'
     '#description_display': before
   container_has_production_packet:
     '#type': container
@@ -139,7 +139,7 @@ elements: |-
         '#title': 'Production description and/or PO#'
         '#required': true
       permit_locations:
-        '#type': webform_custom_composite
+        '#type': portland_custom_composite
         '#title': 'Requested location(s)'
         '#multiple__header': false
         '#multiple__item_label': location
@@ -150,10 +150,16 @@ elements: |-
         '#multiple__add_more_button_label': 'Add another location'
         '#multiple__add_more_input_label': 'more locations'
         '#element':
-          dates:
-            '#type': textfield
+          date_start:
+            '#type': date
+            '#title': 'Start date'
             '#required': true
-            '#title': Dates
+            '#date_date_min': today
+          date_end:
+            '#type': date
+            '#title': 'End date'
+            '#required': true
+            '#date_date_min': today
           hours:
             '#type': textfield
             '#required': true
@@ -180,6 +186,49 @@ elements: |-
             '#type': textfield
             '#required': true
             '#title': 'Names of other adjacent cross streets'
+          requested_use:
+            '#type': radios
+            '#required': true
+            '#title': 'Requested use'
+            '#options_display': side_by_side
+            '#options':
+              b_roll: 'B-Roll'
+              row: 'Right of way'
+          requested_area:
+            '#type': checkboxes
+            '#title': 'Requested area'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
+                  value: row
+            '#options':
+              sidewalk_closure: 'Sidewalk closure'
+              sidewalk_use: 'Sidewalk use'
+              lane: 'Lane'
+              street: 'Street'
+              parking: 'Parking'
+          closure_type:
+            '#type': radios
+            '#title': 'Closure type'
+            '#states':
+              visible:
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][sidewalk_closure]"]':
+                    checked: true
+                - or
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][sidewalk_use]"]':
+                    checked: true
+                - or
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][lane]"]':
+                    checked: true
+                - or
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][street]"]':
+                    checked: true
+            '#options':
+              itc: 'ITC (1-5 min max)'
+              full: FULL
+              none: 'None (shared use)'
+            '#required': true
+            '#options_display': side_by_side
           space_type:
             '#type': select
             '#options':
@@ -187,43 +236,31 @@ elements: |-
               non_metered: Non-Metered
               app: 'Area Parking Permit'
             '#required': true
-            '#title': 'Type of space'
+            '#title': 'Type of parking space'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
+                  checked: true
           num_spaces:
             '#type': textfield
             '#required': true
             '#title': 'Number of spaces or feet'
             '#description': '(1 space = 20 feet)'
             '#description_display': before
-          b_roll:
-            '#type': radios
-            '#options': yes_no
-            '#required': true
-            '#title': 'B-Roll?'
-            '#options_display': side_by_side
-          closure_type:
-            '#type': radios
-            '#options':
-              itc: 'ITC (1-5 min max)'
-              full: FULL
-              none: 'None (shared use)'
-            '#required': true
-            '#title': 'Type of closure'
-            '#options_display': side_by_side
-          location_type:
-            '#type': radios
-            '#options':
-              sidewalk: Sidewalk
-              lane: Lane
-              street: Street
-            '#required': true
-            '#title': 'Location of requested closure'
-            '#options_display': side_by_side
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
+                  checked: true
           needs_enforcement:
             '#type': radios
             '#options': yes_no
             '#required': true
             '#title': 'Parking Enforcement for towing? (Non-Metered only)'
             '#options_display': side_by_side
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][space_type]"]':
+                  value: non_metered
           attachment:
             '#type': webform_document_file
             '#title': 'Upload attachment'
@@ -358,8 +395,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
