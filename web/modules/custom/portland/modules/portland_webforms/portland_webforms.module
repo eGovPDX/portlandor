@@ -2,6 +2,7 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Render\Markup;
 use Drupal\webform\WebformInterface;
 
@@ -277,4 +278,36 @@ function portland_webforms_webform_third_party_settings_form_alter(&$form, FormS
     '#default_value' => $webform->getThirdPartySetting('portland', 'exclude_from_json'),
     '#webform_id' => $webform->id(),
   ];
+}
+
+/**
+ * Implements hook_webform_submission_form_alter()
+ *
+ * Preprocesses webform actions to add public records statement above submit button.
+ */
+function portland_webforms_webform_submission_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  $form_object = $form_state->getFormObject();
+  // Only trigger if the submit button is visible.
+  if ($form_object instanceof Drupal\webform\WebformSubmissionForm
+      && isset($form['actions'])
+      && isset($form['actions']['submit'])
+      && Element::isVisibleElement($form['actions']['submit'])) {
+    $webform = $form_object->getWebform();
+    if ($webform instanceof WebformInterface && !$webform->getThirdPartySetting('portland', 'disable_public_records_statement')) {
+      $title = t('Public records statement');
+      $public_records_statement = t('Information you provide to the City is a public record and may be subject to release under <a href=":law_url">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a href=":privacy_url">privacy statement</a> for more information.', [
+        ':law_url' => '/attorney/oregon-public-records-law',
+        ':privacy_url' => '/help/about/privacy',
+      ]);
+      // add public records statement before the action buttons
+      $form['actions']['public_records_statement'] = [
+        '#weight' => -99,
+        '#prefix' => '<div class="portland-public-records-statement">',
+        '#markup' => "<h2>{$title}</h2><p>{$public_records_statement}</p>",
+        '#suffix' => '</div>',
+      ];
+      // trigger a re-sort with new weights
+      $form['actions']['#sorted'] = false;
+    }
+  }
 }
