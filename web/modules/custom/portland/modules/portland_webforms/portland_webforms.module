@@ -241,3 +241,40 @@ function _portland_webforms_sync_node_fetcher_usages(WebformInterface $webform):
   }
 }
 
+/**
+ * Implements hook_webform_third_party_settings_form_alter().
+ *
+ * Adds our custom third-party settings to webform config form.
+ */
+function portland_webforms_webform_third_party_settings_form_alter(&$form, FormStateInterface $form_state) {
+  /** @var Drupal\Core\Entity\ContentEntityFormInterface $form_object */
+  $form_object = $form_state->getFormObject();
+  /** @var Drupal\webform\WebformInterface $webform */
+  $webform = $form_object->getEntity();
+  if (!isset($webform)) return;
+
+  $form['third_party_settings']['portland'] = [
+    '#type' => 'details',
+    '#title' => t('Portland'),
+    '#open' => TRUE,
+  ];
+
+  $form['third_party_settings']['portland']['disable_demographic_form_prompt'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Disable webform survey prompt on confirmation page'),
+    '#default_value' => $webform->getThirdPartySetting('portland', 'disable_demographic_form_prompt'),
+  ];
+  $form['third_party_settings']['portland']['disable_public_records_statement'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Disable public records statement'),
+    '#description' => t('Check if the webform requires a specialized public record statement or confidentiality question.'),
+    '#default_value' => $webform->getThirdPartySetting('portland', 'disable_public_records_statement'),
+  ];
+  $form['third_party_settings']['portland']['exclude_from_json'] = [
+    '#type' => 'webform_excluded_elements',
+    '#title' => t('Elements included in JSON form data'),
+    '#description' => t('Any elements unchecked here will be omitted from the JSON form data field in any Zendesk handlers. All elements are included by default.'),
+    '#default_value' => $webform->getThirdPartySetting('portland', 'exclude_from_json'),
+    '#webform_id' => $webform->id(),
+  ];
+}
