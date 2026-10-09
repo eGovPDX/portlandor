@@ -3,7 +3,18 @@
   Drupal.Leaflet.prototype.create_layer = function (layer, key) {
     // Load ESRI vector layers
     if (layer.type === 'esri_vector') {
-      var mapLayer = new L.esri.Vector.vectorTileLayer(layer.urlTemplate,  {attribution: layer.options?.attribution ?? '' });
+      var mapLayer = new L.esri.Vector.vectorTileLayer(layer.urlTemplate, {
+        attribution: layer.options?.attribution ?? '',
+        // PGOV-2148 fix address label spacing
+        style: (style) => {
+          style.layers.forEach((layer) => {
+            if (typeof layer.layout !== 'undefined' && layer.layout['symbol-spacing'] === 1000) {
+              layer.layout['symbol-spacing'] = 400;
+            }
+          });
+          return style;
+        },
+      });
       return mapLayer;
     }
 
