@@ -225,9 +225,6 @@ elements: |-
             value: 'Tree grates interfering with street roots'
         - or
         - ':input[name="report_issue"]':
-            value: 'Sidewalk lifting or cracking because of tree roots'
-        - or
-        - ':input[name="report_issue"]':
             value: 'Something else'
         - or
         - ':input[name="report_issue"]':
@@ -331,13 +328,21 @@ elements: |-
       '#type': webform_section
       '#title': 'Your Contact Information'
       '#description': '<p>In case we have questions about your report.</p>'
-      markup_02:
-        '#type': webform_markup
+      warning_contact_info_needed:
+        '#type': portland_alert
         '#states':
           visible:
-            - ':input[name="report_tree_source"]':
+            - ':input[name="report_branches_blocking"]':
+                value: 'Growing into the sidewalk, public pathway, or other travel lane'
+              ':input[name="report_tree_source"]':
                 value: 'Private property or parking strip'
-        '#markup': '<div class="alert alert--warning next-steps"><h2 class="mb-0">Warning</h2><p><span data-testid="comment-base-item-41360">Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without complete and valid information.</span></p></div>'
+            - or
+            - ':input[name="report_branches_blocking"]':
+                value: 'Growing into a bike lane'
+              ':input[name="report_tree_source"]':
+                value: 'Private property or parking strip'
+        '#alert_variation': warning
+        '#alert_markup': "<h2>Warning</h2><p><strong>Due to the type of obstruction you are reporting, this report will go to Portland Permitting &amp; Development's Property Compliance division.</strong></p><p>Contact information is required for this type of report. Staff will not be able to open a case or follow up on this report without valid information.</p>"
       contact_name:
         '#type': textfield
         '#title': Name
@@ -390,6 +395,30 @@ elements: |-
             ':input[name="report_location_private_permission"]':
               value: 'Yes'
         '#location_address_label__access': false
+      section_confidentiality:
+        '#type': webform_section
+        '#title': Confidentiality
+        '#states':
+          visible:
+            - ':input[name="report_branches_blocking"]':
+                value: 'Growing into the sidewalk, public pathway, or other travel lane'
+              ':input[name="report_tree_source"]':
+                value: 'Private property or parking strip'
+            - or
+            - ':input[name="report_branches_blocking"]':
+                value: 'Growing into a bike lane'
+              ':input[name="report_tree_source"]':
+                value: 'Private property or parking strip'
+        confidentiality_waiver:
+          '#type': radios
+          '#title': 'Confidentiality waiver'
+          '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+          '#description_display': before
+          '#options':
+            'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
+            'I waive confidentiality': 'I choose to waive confidentiality.'
+          '#required': true
+          '#default_value': 'I do not waive confidentiality'
     section_public_records_statement:
       '#type': webform_section
       '#title': 'Public Records Statement'
@@ -413,24 +442,24 @@ elements: |-
     '#display_on': form
     '#mode': text
     '#template': |
-      {% if data.reported_issue is not iterable %}
+      {% if data.report_issue is not iterable %}
 
         {# code enforcement ------------------ #}
         {% if (
                (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                 and data.report_branches_blocking == "Growing into the sidewalk, public pathway, or other travel lane"
-                and data.report_row_tree_source == "Private property or parking strip")
+                and data.report_tree_source == "Private property or parking strip")
                   or
                (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                 and data.report_branches_blocking == "Growing into a bike lane"
-                and data.report_bike_lane_tree_source == "Private property or parking strip")
+                and data.report_tree_source == "Private property or parking strip")
            ) %}
           codec@portlandoregon.gov
           
         {# bike lane maintenance ------------------ #}
         {% elseif (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                     and data.report_branches_blocking == "Growing into a bike lane"
-                    and data.report_bike_lane_tree_source == "Median, traffic island, or other parts of the street or right-of-way") %}
+                    and data.report_tree_source == "Median, traffic island, or other parts of the street or right-of-way") %}
           PBOT MO: Bike Lane Maintenance
 
         {# sidewalks ------------------ #}
@@ -440,12 +469,13 @@ elements: |-
         {# route to 311 for triage ----------------- #}
         {% elseif ((data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                and data.report_branches_blocking == "Growing into the sidewalk, public pathway, or other travel lane"
-               and (data.report_row_tree_source == "Median, traffic island, or other parts of the street or right-of-way"
-                    or data.report_row_tree_source == "Park or natural area"
-                    or data.report_row_tree_source == "Something else")) or (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+               and (data.report_tree_source == "Median, traffic island, or other parts of the street or right-of-way"
+                    or data.report_tree_source == "Park or natural area"
+                    or data.report_tree_source == "Something else")) or (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                and data.report_branches_blocking == "Growing into a bike lane"
-               and (data.report_bike_lane_tree_source == "Park or natural area"
-                    or data.report_bike_lane_tree_source == "Something else"))) %}
+               and (data.report_tree_source == "Park or natural area"
+                    or data.report_tree_source == "Something else"))
+               or data.report_branches_blocking == "Blocking view of a traffic signal, traffic or street sign, or an intersection") %}
           311
 
         {# default ------------------ #}
@@ -725,49 +755,6 @@ handlers:
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
         computed_tags: computed_tags
-  email:
-    id: email
-    handler_id: email
-    label: 'Email to codec@portlandoregon.gov'
-    notes: 'Enabled if Computed Routing is codec@portlandoregon.gov'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="computed_routing"]':
-          value: codec@portlandoregon.gov
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -46
-    settings:
-      states:
-        - completed
-      to_mail: codec@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: _default
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[webform_submission:values:computed_subject]'
-      body: '<p>[webform_submission:values:html]</p>'
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
   update_ticket_for_triage:
     id: zendesk_update_ticket
     handler_id: update_ticket_for_triage
@@ -778,7 +765,7 @@ handlers:
       enabled:
         ':input[name="computed_routing"]':
           value: '311'
-    weight: -45
+    weight: -44
     settings:
       comment: "<h3>This ticket requires additional triage</h3>\r\n<p><strong>Attention:</strong> This ticket came from the Report a Tree Code Violation form. It may need to be forwarded to Tom Jensen but requires additional triage first.</p>\r\n"
       comment_private: 1
@@ -803,7 +790,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -47
+    weight: -46
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1015,4 +1002,78 @@ handlers:
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
         computed_tags: computed_tags
+  create_ticket_in_pp_d_code_compliance_group:
+    id: zendesk
+    handler_id: create_ticket_in_pp_d_code_compliance_group
+    label: 'Create ticket in PP&D: Code Compliance group'
+    notes: 'Enabled if routing is "codec@portlandoregon.gov"'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_routing"]':
+          value: codec@portlandoregon.gov
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '39016235027223'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '39016409898519'
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+      excluded_elements:
+        report_location__precision_text: report_location__precision_text
+        report_location__location_map: report_location__location_map
+        report_location__suggestions_modal: report_location__suggestions_modal
+        report_location__status_modal: report_location__status_modal
+        report_location__location_types: report_location__location_types
+        report_location__location_type_taxlot: report_location__location_type_taxlot
+        report_location__location_type_park: report_location__location_type_park
+        report_location__location_type_waterbody: report_location__location_type_waterbody
+        report_location__location_type_trail: report_location__location_type_trail
+        report_location__location_type_stream: report_location__location_type_stream
+        report_location__location_type_street: report_location__location_type_street
+        report_location__location_type_row: report_location__location_type_row
+        report_location__location_x: report_location__location_x
+        report_location__location_y: report_location__location_y
+        report_location__location_asset_id: report_location__location_asset_id
+        report_location__location_region_id: report_location__location_region_id
+        report_location__location_municipality_name: report_location__location_municipality_name
+        report_location__location_zipcode: report_location__location_zipcode
+        contact_address__location_full_address: contact_address__location_full_address
+        contact_address__location_address_street_number: contact_address__location_address_street_number
+        contact_address__location_address_street_quadrant: contact_address__location_address_street_quadrant
+        contact_address__location_address_street_name: contact_address__location_address_street_name
+        contact_address__location_address_street_type: contact_address__location_address_street_type
+        contact_address__unit_number: contact_address__unit_number
+        contact_address__location_jurisdiction: contact_address__location_jurisdiction
+        contact_address__av_suggestions_modal: contact_address__av_suggestions_modal
+        contact_address__status_modal: contact_address__status_modal
+        contact_address__not_found_modal: contact_address__not_found_modal
+        contact_address__location_lat: contact_address__location_lat
+        contact_address__location_lon: contact_address__location_lon
+        contact_address__location_x: contact_address__location_x
+        contact_address__location_y: contact_address__location_y
+        contact_address__location_taxlot_id: contact_address__location_taxlot_id
+        contact_address__location_is_unincorporated: contact_address__location_is_unincorporated
+        contact_address__location_address_label: contact_address__location_address_label
+        contact_address__location_capture_field: contact_address__location_capture_field
+        contact_address__location_data: contact_address__location_data
+        support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
+        support_agent_use_only__test_submission: support_agent_use_only__test_submission
+        computed_routing: computed_routing
 variants: {  }
