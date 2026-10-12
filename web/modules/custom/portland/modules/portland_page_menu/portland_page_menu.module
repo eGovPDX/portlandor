@@ -2,10 +2,33 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 
 include "portland_page_menu.tokens.inc";
+
+/**
+ * Path segments used by fixed group routes (entity operations and Views
+ * listing pages such as group/%group/nodes, group/%group/media).
+ */
+const PORTLAND_PAGE_MENU_RESERVED_LINK_TEXT = [
+  'add', 'edit', 'delete', 'join', 'leave', 'revisions',
+  'nodes', 'media', 'members', 'votes', 'events', 'notifications',
+  'subgroups', 'news', 'policies', 'permits', 'services', 'construction',
+  'advisory-groups', 'projects', 'offices', 'programs', 'documents',
+];
+
+/**
+ * Reject field_menu_link_text values thatcollide with a reserved group route segment.
+ */
+function _portland_page_menu_validate_link_text_reserved(&$element, FormStateInterface $form_state) {
+  $value = $element['#value'];
+  $cleaned = \Drupal::service('pathauto.alias_cleaner')->cleanString($value);
+  if (in_array($cleaned, PORTLAND_PAGE_MENU_RESERVED_LINK_TEXT, TRUE)) {
+    $form_state->setError($element, t('"%value" is a reserved word and cannot be used as the short title. Please choose a different value.', ['%value' => $value]));
+  }
+}
 
 /**
  * Implements hook_theme().
@@ -149,4 +172,8 @@ function _hide_menu_if_parent(&$form, Node $node) {
 function portland_page_menu_form_node_form_alter(&$form, &$form_state) {
   $node = $form_state->getFormObject()->getEntity();
   _hide_menu_if_parent($form, $node);
+
+  if (isset($form['field_menu_link_text']['widget'][0]['value'])) {
+    $form['field_menu_link_text']['widget'][0]['value']['#element_validate'][] = '_portland_page_menu_validate_link_text_reserved';
+  }
 }

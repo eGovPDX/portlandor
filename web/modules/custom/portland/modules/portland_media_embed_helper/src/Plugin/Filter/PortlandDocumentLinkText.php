@@ -40,7 +40,7 @@ class PortlandDocumentLinkText extends FilterBase {
           foreach ($anchor->childNodes as $child_node) {
             if(! empty($anchor->getAttribute('lang'))) continue; // Only set Link Text for English version
             if ($child_node->nodeType === XML_TEXT_NODE) {
-              $child_node->nodeValue = trim($alt_link_text);
+              $child_node->nodeValue = trim(htmlspecialchars_decode(strip_tags($alt_link_text)));
             }
           }
         }
