@@ -63,6 +63,11 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
 
+    // address verification is disabled entirely; skip auto-verification/suggestion lookups on postback
+    if (!this.settings || !this.settings.address_suggest) {
+        return;
+    }
+
     // if address fields are populated on postback, automatically activate verification action
     const $locationAddress = this.$element.find('[name$="[location_address]"]');
     const $locationCity = this.$element.find('[name$="[location_city]"]');
