@@ -1,7 +1,7 @@
 import tailwind from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
-export default defineConfig((configEnv) => {
+export default defineConfig(({ mode }) => {
   const entry = {
     index: "src/css/index.css",
   };
@@ -16,6 +16,7 @@ export default defineConfig((configEnv) => {
         formats: ["es"],
       },
       cssCodeSplit: true,
+      watch: mode === "development" ? {} : undefined,
     },
     css: {
       transformer: "lightningcss",
