@@ -7,7 +7,7 @@ dependencies:
     - portland_zendesk
 third_party_settings:
   portland:
-    disable_demographic_form_prompt: 0
+    disable_demographic_form_prompt: false
     exclude_from_json: {  }
 weight: 0
 open: null
@@ -41,11 +41,11 @@ elements: |-
     '#required': true
   report_driver_name:
     '#type': textfield
-    '#title': 'What was the driver’s name, if known?'
+    '#title': "What was the driver's name, if known?"
     '#description_display': before
   report_vehicle_license_plate:
     '#type': textfield
-    '#title': 'What is the vehicle’s license plate?'
+    '#title': "What is the vehicle's license plate?"
   report_complaint_detail:
     '#type': textarea
     '#title': 'Describe the incident'
@@ -53,11 +53,12 @@ elements: |-
     '#required': true
   report_file_upload:
     '#type': managed_file
-    '#title': "Add any pictures, documents, or other relevant material to support your case\_"
+    '#title': "Add any pictures, documents, or other relevant material to support your case"
     '#multiple': 3
-    '#description': '<p data-local-id="a5b19d0947a0" data-prosemirror-content-type="node" data-prosemirror-node-name="paragraph" data-prosemirror-node-block="true" data-pm-slice="1 1 [&quot;bulletList&quot;,{&quot;localId&quot;:&quot;baec0df5a925&quot;},&quot;listItem&quot;,{&quot;localId&quot;:&quot;61da68637837&quot;}]">If you want to share a video or additional photos, please reply to the confirmation email you will receive after submitting this form.</p>'
+    '#description': '<p>If you want to share a video or additional photos, please reply to the confirmation email you will receive after submitting this form.</p>'
     '#description_display': before
-    '#file_extensions': 'jpg jpeg png txt pdf doc docx'
+    '#file_extensions': 'pdf jpg jpeg png
+    '#max_filesize': '30'
   contact_name:
     '#type': textfield
     '#title': 'Your name'
@@ -84,72 +85,6 @@ elements: |-
     '#location_address__title': 'Mailing address'
     '#location_address__description': 'Please provide a full mailing address'
     '#address_suggest': 0
-  computed_crash_company:
-    '#type': webform_computed_twig
-    '#title': 'Company (normalized)'
-    '#display_on': none
-    '#mode': text
-    '#template': |
-      {% if data.report_type == 'Operating a tow truck' %}
-        {{ data.report_towing_company }}
-      {% elseif data.report_type == 'Operating a taxi, transportation network company (TNC), or other for-hire vehicle' %}
-        {{ data.report_pfht_company }}
-      {% endif %}
-    '#whitespace': trim
-    '#ajax': true
-  computed_ticket_description:
-    '#type': webform_computed_twig
-    '#title': 'Computed ticket description'
-    '#display_on': none
-    '#mode': html
-    '#template': |-
-      <h2>Initial Details</h2>
-      <p><strong>Driver was:</strong> {{ webform_token('[webform_submission:values:report_type]', webform_submission) }}</p>
-      {% if data.report_towing_company %}
-      <p><strong>Towing Company:</strong> {{ webform_token('[webform_submission:values:report_towing_company]', webform_submission) }}</p>
-      {% endif %}
-      {% if data.report_towing_vehicle %}
-      <p><strong>Towing a vehicle at time of crash:</strong> {{ webform_token('[webform_submission:values:report_towing_vehicle]', webform_submission) }}</p>
-      {% endif %}
-      {% if data.report_pfht_company %}
-      <p><strong>For-hire company:</strong> {{ webform_token('[webform_submission:values:report_pfht_company]', webform_submission) }}</p>
-      {% endif %}
-      {% if data.report_customers_passengers %}
-      <p><strong>Passengers/customers present:</strong> {{ webform_token('[webform_submission:values:report_customers_passengers]', webform_submission) }}</p>
-      {% endif %}
-      {% if data.contact_tnc_permit_number %}
-      <p><strong>PFHT permit number:</strong> {{ webform_token('[webform_submission:values:contact_tnc_permit_number]', webform_submission) }}</p>
-      {% endif %}
-      <p><strong>Vehicle License Plate:</strong> {{ webform_token('[webform_submission:values:report_vehicle_license_plate]', webform_submission) }}</p>
-      <p><strong>State Plate Issued:</strong> {{ webform_token('[webform_submission:values:report_state_plate_issued]', webform_submission) }}</p>
-      <hr>
-      <h2>Crash Details</h2>
-      <p><strong>Location of incident:</strong> {{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</p>
-      {% if data.report_location.location_lat and data.report_location.location_lon %}
-        <p>Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a></p>
-      {% endif %}
-      <p><strong>Date and time of incident:</strong> {{ webform_token('[webform_submission:values:report_date_and_time_of_incident]', webform_submission) }}</p>
-      <p><strong>Crash description:</strong><br> {{ webform_token('[webform_submission:values:report_complaint_detail]', webform_submission) }}</p>
-      <p><strong>Report filed with State of Oregon:</strong> {{ webform_token('[webform_submission:values:report_filed_with_state]', webform_submission) }}</p>
-      <p><strong>Police citation issued:</strong> {{ webform_token('[webform_submission:values:report_police_citation]', webform_submission) }}</p>
-      {% if data.report_violation %}
-      <p><strong>Listed violations:</strong><br> {{ webform_token('[webform_submission:values:report_violation]', webform_submission) }}</p>
-      {% endif %}
-      <p><strong>Claim status:</strong> {{ webform_token('[webform_submission:values:report_claim_status]', webform_submission) }}</p>
-      <hr>
-      <h2>Contact Information</h2>
-      <p><strong>Name:</strong> {{ webform_token('[webform_submission:values:contact_name]', webform_submission) }}</p>
-      <p><strong>Email:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
-      {% if data.contact_phone %}
-      <p><strong>Phone:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-      {% endif %}
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#states':
-      invisible:
-        ':input[name="report_willing_testimony"]':
-          value: 'No'
 css: ''
 javascript: ''
 settings:
@@ -278,8 +213,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
