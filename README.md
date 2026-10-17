@@ -8,13 +8,13 @@
 
 ## Installing Lando
 
-Follow the steps at https://docs.devwithlando.io/installation/installing.html
+Follow the steps at https://docs.lando.dev/getting-started/
 
 If developing on Windows, using Docker Desktop + WSL2 is strongly recommended.
 
 ## Uninstalling Lando
 
-Follow the steps at https://docs.devwithlando.io/installation/uninstalling.html
+Follow the steps at https://docs.lando.dev/guides/uninstalling.html
 To completely remove all traces of Lando, follow the "removing lingering Lando configuration" steps
 
 ## Using Lando
@@ -43,7 +43,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 8. You should now be able to visit https://portlandor.lndo.site in your browser.
 9. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
 
-See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
+See other Lando with Pantheon commands at https://docs.lando.dev/plugins/pantheon/tooling.html.
 
 ## Debugging and profiling
 
