@@ -7,7 +7,7 @@ dependencies:
     - portland_zendesk
 third_party_settings:
   portland:
-    disable_demographic_form_prompt: 0
+    disable_demographic_form_prompt: false
     exclude_from_json: {  }
 weight: 0
 open: null
@@ -43,7 +43,7 @@ elements: |-
       visible:
         ':input[name="report_issue"]':
           value: 'Sidewalk lifting or cracking because of tree roots'
-    '#alert_markup': '<h2 class="mt-0">Next Steps</h2><p>Use the <a href="https://www.portlandoregon.gov/transportation/index.cfm?&amp;category_id=176&amp;c=81511&amp;action=UpdateItem">Sidewalk Trip Hazard Reporting Form</a> to report a sidewalk hazard. Be sure to include a photo with your report.</p><p>You will need to sign in to your City of Portland account to submit the form. If you don’t have an account, you can create one during the process. Call <a href="tel:311">3-1-1</a> if you would like assistance making a report.</p>'
+    '#alert_markup': '<h2 class="mt-0">Next Steps</h2><p>Use the <a href="/transportation/permitting/report-sidewalk-hazard">Report a Sidewalk Hazard service</a> to submit a report. Be sure to include a photo with your report.</p><p>You will need to sign in to your City of Portland account to submit the form. If you don’t have an account, you can create one during the process. Call <a href="tel:311">3-1-1</a> if you would like assistance making a report.</p>'
   markup_continue:
     '#type': webform_markup
     '#states':
@@ -106,7 +106,7 @@ elements: |-
       visible:
         ':input[name="report_branches_blocking"]':
           value: 'Blocking a streetlight'
-    '#alert_markup': '<h2 class="mt-0">Next Steps</h2><p>Report any problem with a streetlight, like a light that is out, blinking, on during the day, damaged, or blocked by vegetation through the <a href="/transportation/traffic-operations/report-streetlight-problem">street light reporting form</a> or by calling <a href="tel:+1-503-865-5267">503-865-5267</a>.&nbsp;You will need the closest address or cross streets</p>'
+    '#alert_markup': '<h2 class="mt-0">Next Steps</h2><p>Report any problem with a streetlight, like a light that is out, blinking, on during the day, damaged, or blocked by vegetation through the <a href="/transportation/traffic-operations/report-streetlight-problem">street light reporting form</a> or by calling <a href="tel:+1-503-865-5267">503-865-5267</a>.&nbsp;You will need the closest address or cross streets.</p>'
   container_planting_pruning_or_removal_issue:
     '#type': container
     report_planting_issue_type:
@@ -439,7 +439,7 @@ elements: |-
       '#title': 'Submit button(s)'
   computed_routing:
     '#type': webform_computed_twig
-    '#title': 'Computed Routing'
+    '#title': 'Computed routing'
     '#access_create_roles':
       - authenticated
     '#display_on': form
@@ -468,12 +468,17 @@ elements: |-
         {# sidewalks ------------------ #}
         {% elseif (data.report_issue == "Sidewalk lifting or cracking because of tree roots") %}
           PBOT sidewalks team TBD
-          
+        
+        {# route to 311: Service Dispatch --------------- #}
+        {% elseif (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
+               and data.report_branches_blocking == "Growing into the sidewalk, public pathway, or other travel lane"
+               and data.report_tree_source == "Median, traffic island, or other parts of the street or right-of-way") %}
+          311: Service Dispatch
+        
         {# route to 311 for triage ----------------- #}
         {% elseif ((data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                and data.report_branches_blocking == "Growing into the sidewalk, public pathway, or other travel lane"
-               and (data.report_tree_source == "Median, traffic island, or other parts of the street or right-of-way"
-                    or data.report_tree_source == "Park or natural area"
+               and (data.report_tree_source == "Park or natural area"
                     or data.report_tree_source == "Something else")) or (data.report_issue == "Tree branches hanging too low or blocking part of the street or sidewalk"
                and data.report_branches_blocking == "Growing into a bike lane"
                and (data.report_tree_source == "Park or natural area"
@@ -491,7 +496,7 @@ elements: |-
     '#ajax': true
   computed_subject:
     '#type': webform_computed_twig
-    '#title': 'Computed Subject'
+    '#title': 'Computed subject'
     '#display_on': none
     '#mode': text
     '#template': 'Tree issue reported: {{ data.report_issue is not iterable ? data.report_issue : "" }}'
@@ -701,7 +706,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform uf_tree_code_violation'
       priority: normal
       status: new
       recipient: ''
