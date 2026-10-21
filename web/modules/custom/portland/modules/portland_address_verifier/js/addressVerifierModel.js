@@ -3,10 +3,8 @@ function stringOrEmpty(value) {
 }
 
 AddressVerifierModel.locationItem = function (data, $element = null, isSingleton = false) {
-  data.attributes.jurisdiction = null;
   const attributes = data.attributes || {};
   const address = stringOrEmpty(data.address);
-
 
   // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
   // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
