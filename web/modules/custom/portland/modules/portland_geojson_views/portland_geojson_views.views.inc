@@ -77,6 +77,14 @@ function portland_geojson_views_views_data() {
     ],
     'type' => 'standard'
   ];
+  $data['geojson_feature']['station_address'] = [
+    'title' => t('Fire station address'),
+    'help' => t('The fire station street address (property "ADDRESS" from geoJSON feed).'),
+    'field' => [
+      'id' => 'standard',
+    ],
+    'type' => 'standard'
+  ];
 
   return $data;
 }
