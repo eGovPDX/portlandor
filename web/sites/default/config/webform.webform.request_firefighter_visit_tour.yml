@@ -60,6 +60,19 @@ elements: |-
               value: 'Fire fighter visit request'
         '#location_search__title': 'Location of the station or visit'
         '#location_details__access': false
+        '#primary_layer_source': /api/features/firestations
+        '#primary_layer_type': asset
+        '#primary_layer_behavior': selection
+        '#feature_layer_visible_zoom': 11
+      station_email:
+        '#type': webform_computed_twig
+        '#title': 'Station email'
+        '#display_on': none
+        '#mode': text
+        '#template': '{% if data.request_location.location_asset_id %}station{{ data.request_location.location_asset_id }}@portlandoregon.gov{% endif %}'
+        '#whitespace': trim
+        '#ajax': true
+        '#store': true
       request_date:
         '#type': date
         '#title': 'Preferred date'
@@ -396,6 +409,48 @@ handlers:
       row_location: toTop
       sheet_id: '280936521355140'
       upload_attachments: '1'
+  email_station:
+    id: email
+    handler_id: email_station
+    label: 'Email: selected fire station'
+    notes: 'Sends to the station_email computed element (station[id]@portlandoregon.gov) set from the station pin selected in the location picker.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="request_visit_or_tour"]':
+          value: 'Fire fighter visit request'
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:station_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'Portland Fire & Rescue'
+      reply_to: '[webform_submission:values:contact_email:raw]'
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Fire Station [webform_submission:values:request_location:location_asset_id:raw]: [webform_submission:values:request_visit_or_tour]'
+      body: '[webform_submission:values]'
+      excluded_elements:
+        support_agent_use_only: support_agent_use_only
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      langcode: ''
+      parameters: {  }
+      debug: false
   email:
     id: email
     handler_id: email
