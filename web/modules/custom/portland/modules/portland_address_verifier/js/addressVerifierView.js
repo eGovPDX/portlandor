@@ -305,6 +305,12 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     // Additional logic can be built into the form using conditional fields or computed twig,
     // and individual city/state/zip fields can be required in the element configuration.
 
+    if ((self.settings.require_portland_city_limits || !self.settings.find_unincorporated) && !item.jurisdiction) {
+        self._showStatusModal('<p>We couldn’t verify the jurisdiction for this address. Please choose another suggestion or try again.</p><p>If this error persists, please <a href="/feedback">submit an error report</a>.</p>');
+        self._resetVerified(self.$checkmark, self.$button);
+        return;
+    }
+    
     if ((self.settings.require_portland_city_limits && self.settings.verification_required) || !self.settings.find_unincorporated) {
         // USE CASE 1: only allow verified addresses within Portland city limits.
         // use jurisdiction value as city, then verify jurisdiction/city is PORTLAND in _setVerified.
