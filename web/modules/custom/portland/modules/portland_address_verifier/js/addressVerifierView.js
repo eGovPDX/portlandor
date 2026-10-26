@@ -63,6 +63,11 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 AddressVerifierView.prototype._handlePostback = function () {
     var self = this;
 
+    // address verification is disabled entirely; skip auto-verification/suggestion lookups on postback
+    if (!this.settings || !this.settings.address_suggest) {
+        return;
+    }
+
     // if address fields are populated on postback, automatically activate verification action
     const $locationAddress = this.$element.find('[name$="[location_address]"]');
     const $locationCity = this.$element.find('[name$="[location_city]"]');
@@ -208,7 +213,6 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
             item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode, unit);
             item.displayAddress = item.street + (unit ? ", " + unit : "") + ", " + item.city;
             $locationData.val(JSON.stringify(item));
-            self.$element.find('[name$="[location_full_address]"]').val(item.fullAddress);
         }
     });
 }
@@ -222,7 +226,7 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         if (e.keyCode == 13) {
             // only trigger on enter if an element in the autocomplete menu isn't active/focused, otherwise it will happen twice
             if (self.$input.autocomplete('widget') && self.$input.autocomplete('widget').has('.ui-state-active').length) return;
-            
+
             e.preventDefault();
             self.$button.click();
         }
@@ -298,25 +302,31 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     // 3. Verification is required, but address can be anywhere that's in the PortlandMaps database, including unincorporated areas.
 
     // Use case 1 is the only one that sets the item.city with the value from item.jurisdiction.
-    // Additional logic can be built into the form using conditional fields or computed twig, 
+    // Additional logic can be built into the form using conditional fields or computed twig,
     // and individual city/state/zip fields can be required in the element configuration.
 
+    if ((self.settings.require_portland_city_limits || !self.settings.find_unincorporated) && !item.jurisdiction) {
+        self._showStatusModal('<p>We couldn’t verify the jurisdiction for this address. Please choose another suggestion or try again.</p><p>If this error persists, please <a href="/feedback">submit an error report</a>.</p>');
+        self._resetVerified(self.$checkmark, self.$button);
+        return;
+    }
+    
     if ((self.settings.require_portland_city_limits && self.settings.verification_required) || !self.settings.find_unincorporated) {
         // USE CASE 1: only allow verified addresses within Portland city limits.
         // use jurisdiction value as city, then verify jurisdiction/city is PORTLAND in _setVerified.
         item.city = item.jurisdiction.toUpperCase();
     }
-    
-    // USE CASE 2: allow any address anywhere, including unincorporated areas. 
+
+    // USE CASE 2: allow any address anywhere, including unincorporated areas.
     // if (self.settings.find_unincorporated && !self.settings.require_portland_city_limits && !self.settings.verification_required)
     // do nothing here--item.city is already set to postal city by Suggest API.
     // city/state/zip can be required in the element configuration.
 
-    // USE CASE 3: verification is required, but address can be anywhere that's 
+    // USE CASE 3: verification is required, but address can be anywhere that's
     // if (self.settings.verification_required)
     // in the PortlandMaps database, including unincorporated areas.
     // do nothing here--item.city is already set to postal city by Suggest API.
-    
+
     // need to get taxlot? requires call to intersects API.
     if (self.settings.lookup_taxlot) {
         // _setVerified is the callback; need to pass self/view reference with it
@@ -394,7 +404,6 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     });
 
     // hidden data fields
-    view.$element.find('[name$="[location_full_address]"]').val(item.fullAddress.toUpperCase());
     view.$element.find('[name$="[location_address_street_number]"]').val(item.streetNumber);
     view.$element.find('[name$="[location_address_street_quadrant]"]').val(item.streetQuadrant.toUpperCase());
     view.$element.find('[name$="[location_address_street_name]"]').val(item.streetName.toUpperCase());

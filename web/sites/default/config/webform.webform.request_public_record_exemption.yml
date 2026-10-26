@@ -7,11 +7,12 @@ dependencies:
     - portland_zendesk
 third_party_settings:
   portland:
-    disable_demographic_form_prompt: 1
+    disable_demographic_form_prompt: true
+    disable_public_records_statement: true
     exclude_from_json:
-      request_document_upload: request_document_upload
       computed_contact_full_name: computed_contact_full_name
       computed_record_types: computed_record_types
+      request_document_upload: request_document_upload
 weight: 0
 open: null
 close: null
@@ -19,7 +20,7 @@ uid: 221
 template: false
 archive: false
 id: request_public_record_exemption
-title: 'Request a Public Record Exemption'
+title: 'Request public record exemption'
 description: ''
 categories: {  }
 elements: |-
@@ -92,6 +93,10 @@ elements: |-
     contact_city_personnel_number:
       '#type': textfield
       '#title': 'Personnel number (PERNR):'
+      '#description': '<p>You can find this in the upper right corner of your City paystub. Enter numbers only.</p>'
+      '#description_display': before
+      '#pattern': '^[0-9]+$'
+      '#pattern_error': 'Please enter a correctly formatted personnel number, numbers only.'
       '#states':
         visible:
           ':input[name="contact_city_employee"]':
@@ -101,6 +106,10 @@ elements: |-
       '#title': 'Names of family members whose safety is at risk'
       '#description': '<p>Only include family members who currently reside with you.</p>'
       '#description_display': before
+      '#states':
+        visible:
+          ':input[name="request_exemption_type"]':
+            value: personal_safety
     contact_email:
       '#type': textfield
       '#title': 'Contact email'
@@ -169,6 +178,24 @@ elements: |-
       '#other__description_display': before
       '#other__description': 'In order to be granted, the law requires you to describe the records needing redaction with specificity.'
       '#required': true
+    request_election_info:
+      '#type': textarea
+      '#title': 'Identify the City of Portland office(s) sought and election year(s).'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="request_record_types[checkboxes][elections_candidate_filing]"]':
+            checked: true
+    request_city_employment_info:
+      '#type': textarea
+      '#title': 'Identify the City of Portland position(s) applied for or held, and the approximate year(s).'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="contact_city_employee"]':
+            value: 'No'
+          ':input[name="request_record_types[checkboxes][hr_employment_applications_resumes]"]':
+            checked: true
     request_birth_dates:
       '#type': textarea
       '#title': 'Date(s) of birth'
@@ -184,12 +211,12 @@ elements: |-
           - ':input[name="request_record_types[checkboxes][police_records]"]':
               checked: true
     markup_property_ownership:
-      '#type': webform_markup
+      '#type': portland_alert
       '#states':
         visible:
           ':input[name="request_record_types[checkboxes][portlandmaps]"]':
             checked: true
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">PortlandMaps property ownership is County data</h2><p class="mb-0">The City of Portland''s PortlandMaps site relies on data owned and maintained by Multnomah County. The City can replace the data on PortlandMaps, but it may still be available elsewhere or be unexpectedly replaced during an update. To complete the exemption of your ownership information at its source you must contact Julia Liberman at <a href="mailto:julia.liberman@multco.us">julia.liberman@multco.us</a></p></div>'
+      '#alert_markup': '<h2 class="mt-0">PortlandMaps property ownership is County data</h2><p class="mb-0">The City of Portland''s PortlandMaps site relies on data owned and maintained by Multnomah County. The City can replace the data on PortlandMaps, but it may still be available elsewhere or be unexpectedly replaced during an update. To complete the exemption of your ownership information at its source you must contact Julia Liberman at <a href="mailto:julia.liberman@multco.us">julia.liberman@multco.us</a></p>'
     report_property_id:
       '#type': textfield
       '#title': 'Property ID in PortlandMaps'
@@ -245,17 +272,20 @@ elements: |-
       '#type': textfield
       '#title': 'Bar number'
       '#required': true
-  request_document_upload:
-    '#type': webform_document_file
-    '#title': 'Attach documentary evidence:'
+  section_evidence:
+    '#type': webform_section
+    '#title': Evidence
     '#states':
       invisible:
         ':input[name="request_exemption_type"]':
           unchecked: true
-    '#multiple': 12
-    '#file_help': help
-    '#max_filesize': '30'
-    '#file_extensions': 'txt pdf jpg jpeg png'
+    request_document_upload:
+      '#type': webform_document_file
+      '#title': 'Attach documentary evidence:'
+      '#multiple': 12
+      '#file_help': help
+      '#max_filesize': '30'
+      '#file_extensions': 'txt pdf jpg jpeg png'
   computed_contact_full_name:
     '#type': webform_computed_token
     '#title': 'Computed - Requester full name'
@@ -271,7 +301,9 @@ elements: |-
     '#template': |-
       {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
       {% for key in data.request_record_types %}
-        {% if key in element_option_keys %}
+        {% if key is iterable %}
+          {# skip raw/nested values that can appear during partial ajax rebuilds (e.g. document upload) #}
+        {% elseif key in element_option_keys %}
           {# add a tag for each option that's not Other #}
           38644290069143_{{ key }}
         {% else %}
@@ -289,7 +321,9 @@ elements: |-
       {% set element_option_keys = elements.section_records_info.request_record_types['#options']|keys %}
       {# we want only the data for the Other field (whatever is not in the element options) #}
       {% for key in data.request_record_types %}
-        {% if key not in element_option_keys %}
+        {% if key is iterable %}
+          {# skip raw/nested values that can appear during partial ajax rebuilds (e.g. document upload) #}
+        {% elseif key not in element_option_keys %}
           {{ key }}
         {% endif %}
       {% endfor %}
@@ -496,7 +530,7 @@ handlers:
     settings:
       requester_name: computed_contact_full_name
       requester_email: contact_email
-      subject: 'Public Record Exemption'
+      subject: 'City of Portland Response for Exemption Request'
       comment: '[webform_submission:values:html]'
       tags: 'drupal webform [webform_submission:values:computed_record_types]'
       priority: normal

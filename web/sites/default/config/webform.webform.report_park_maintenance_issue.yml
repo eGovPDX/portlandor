@@ -8,13 +8,13 @@ dependencies:
     - portland
     - portland_zendesk
 third_party_settings:
-  antibot:
-    antibot: true
   honeypot:
     honeypot: true
   portland:
-    disable_demographic_form_prompt: 0
+    disable_demographic_form_prompt: false
     exclude_from_json: {  }
+  antibot:
+    antibot: true
 weight: 0
 open: null
 close: null
@@ -22,7 +22,7 @@ uid: 60
 template: false
 archive: false
 id: report_park_maintenance_issue
-title: 'Report Park Maintenance Issue'
+title: 'Report park maintenance issue'
 description: ''
 categories:
   - Report
@@ -42,19 +42,19 @@ elements: |-
         'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
         'Feedback about a staff encounter': 'Feedback about a staff encounter'
     markup_safety_issue:
-      '#type': webform_markup
+      '#type': portland_alert
       '#states':
         visible:
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Safety issue involving park users'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please contact the Portland Park rangers at <a href="tel:+1-503-823-1637">503-823-1637</a> or email <a href="mailto:rangercallcenter@portlandoregon.gov">rangercallcenter@portlandoregon.gov</a>.</p><p class="mb-0">If this is an emergency, <a href="tel:911">call 911</a> immediately.</p></div>'
+      '#alert_markup': '<h2>Next Steps</h2><p>Please contact the Portland Park rangers at <a href="tel:+1-503-823-1637">503-823-1637</a> or email <a href="mailto:rangercallcenter@portlandoregon.gov">rangercallcenter@portlandoregon.gov</a>.</p><p class="mb-0">If this is an emergency, <a href="tel:911">call 911</a> immediately.</p>'
     markup_tree_issue:
-      '#type': webform_markup
+      '#type': portland_alert
       '#states':
         visible:
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Tree hazard'
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>To report a tree issue, please contact us at <a href="tel:+15038238733">503-823-8733 (TREE)</a>.</p></div>'
+      '#alert_markup': '<h2>Next Steps</h2><p>To report a tree issue, please contact us at <a href="tel:+15038238733">503-823-8733 (TREE)</a>.</p>'
     markup_graffiti_jump:
       '#type': webform_markup
       '#states':
@@ -442,12 +442,6 @@ elements: |-
               required:
                 ':input[name="contact_email"]':
                   empty: true
-      section_public_records_statement:
-        '#type': webform_section
-        '#title': 'Public records statement'
-        public_records_statement_standard:
-          '#type': webform_markup
-          '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
       support_agent_use_only:
         '#type': portland_support_agent_widget
         '#title': 'Customer service use only'
@@ -531,21 +525,15 @@ elements: |-
     '#title': 'Computed subject'
     '#display_on': none
     '#mode': text
-    '#template': |+
-      {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden") %}
-        Maintenance issue in community garden
-      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community center") %}
-        Maintenance issue at {{ data.report_community_center and data.report_community_center is iterable ? '' : webform_token('[webform_submission:values:report_community_center]', webform_submission) }}
-      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Golf course") %}
-        Maintenance issue at {{ data.report_golf_course }}
-      {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Art/mural/monument/sculpture") %}
-        Park maintenance issue: Art/mural/monument/sculpture
-      {% else %}
-        Park maintenance issue: {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
+    '#template': |-
+      {% if data.what_are_you_trying_to_report is not iterable %}
+        {% if data.what_are_you_trying_to_report == "Feedback about a staff encounter" %}
+          Feedback about a staff encounter
+        {% else %}
+          Park maintenance issue - {{ data.report_what_needs_attention is not iterable ? data.report_what_needs_attention : "" }}
+        {% endif %}
       {% endif %}
-
     '#whitespace': spaceless
-    '#ajax': true
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed issue description'
@@ -840,7 +828,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you'
-  confirmation_message: '<p>Thank you</p><p>Your report has been received by Portland Parks &amp; Recreation (PP&amp;R) Maintenance Staff. Reported issues will be forwarded to the appropriate workgroup, and action will be taken as needed.</p><p>PP&amp;R staff work every day to:</p><ul><li>Collect litter and debris</li><li>Repair and clean restrooms</li><li>Care for irrigation systems</li><li>Check the condition of and maintain our playgrounds, picnic areas, green infrastructure, drinking fountains and other park assets</li><li>Maintain community centers, pools, and other facilities to allow robust programming</li></ul><p>If your report involves a significant repair or requires a specialist, we will create a work order and add it to our repair queue. Some repairs may take longer to complete because of staffing levels, funding limits, supply chain challenges, environmental factors, and other work that must be prioritized based on safety, security, and equity concerns.</p><p>Thank you for your support of Portland Parks!</p>'
+  confirmation_message: '<p>Your report has been received by Portland Parks &amp; Recreation (PP&amp;R) Maintenance Staff. Reported issues will be forwarded to the appropriate workgroup, and action will be taken as needed.</p><p>PP&amp;R staff work every day to:</p><ul><li data-list-item-id="ee3086ae6817af32447248954dcf2197d">Collect litter and debris</li><li data-list-item-id="e7872302c45748b2e9d8d512ea0f1cb27">Repair and clean restrooms</li><li data-list-item-id="eb3f6f1ae97fe8aa732c467fe3e25f15e">Care for irrigation systems</li><li data-list-item-id="e3a75d00ac83fa105e50af4bbc488ec59">Check the condition of and maintain our playgrounds, picnic areas, green infrastructure, drinking fountains and other park assets</li><li data-list-item-id="ea8ce11fc5c486b8ae5b7fc84712c6974">Maintain community centers, pools, and other facilities to allow robust programming</li></ul><p>If your report involves a significant repair or requires a specialist, we will create a work order and add it to our repair queue. Some repairs may take longer to complete because of staffing levels, funding limits, supply chain challenges, environmental factors, and other work that must be prioritized based on safety, security, and equity concerns.</p><p>Thank you for your support of Portland Parks!</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit another report'
@@ -943,7 +931,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -49
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1020,7 +1008,7 @@ handlers:
           value: Art/Mural/Monument/Sculpture
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -48
+    weight: -47
     settings:
       states:
         - completed
@@ -1063,7 +1051,7 @@ handlers:
           value: 'Community garden'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -47
+    weight: -46
     settings:
       states:
         - completed
@@ -1144,7 +1132,7 @@ handlers:
           value: 'Feedback about a staff encounter'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -45
+    weight: -44
     settings:
       states:
         - completed
@@ -1175,47 +1163,37 @@ handlers:
       langcode: ''
       parameters: {  }
       debug: false
-  non_urgent_tree_issue_email:
-    id: email
-    handler_id: non_urgent_tree_issue_email
-    label: 'Non-Urgent Tree Issue (Email)'
-    notes: 'Sends an email to trees@portlandoregon.gov. Enabled if A) "Non-urgent tree maintenance issue" is selected, and B) Test Submission is NOT checked.'
+  route_to_pp_r_uf_permitting_zendesk:
+    id: zendesk
+    handler_id: route_to_pp_r_uf_permitting_zendesk
+    label: 'Route to PP&R UF Permitting (Zendesk)'
+    notes: 'Enabled if A) "Non-urgent tree maintenance issue" is selected, and B) Test Submission is NOT checked.'
     status: true
     conditions:
       enabled:
-        ':input[name="report_what_needs_attention[radios]"]':
-          value: 'Non-urgent tree maintenance issue'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -46
+        ':input[name="report_what_needs_attention[radios]"]':
+          value: 'Non-urgent tree maintenance issue'
+    weight: -49
     settings:
-      states:
-        - completed
-      to_mail: trees@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_issue_description:html]'
+      tags: 'drupal webform parks maintenance non_urgent_tree_issue [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '22777004934807'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '15142080018711'
+      recipient: ''
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
       excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      langcode: ''
-      parameters: {  }
-      debug: false
 variants: {  }

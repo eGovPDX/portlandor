@@ -23,7 +23,7 @@
         const DEFAULT_LONGITUDE = -122.65;
         const DEFAULT_ZOOM = 11;
         const MAX_ZOOM_LIMIT = 21; // base layer can go to 23, but aerial layer only goes to 21.
-        const DEFAULT_MAX_ZOOM = 18;
+        const DEFAULT_MAX_ZOOM = 19;
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
         const FEATURE_LAYER_VISIBLE_ZOOM = 16;
@@ -169,12 +169,23 @@
         var serverErrorSoft = false;
 
         // instantiate base layer and aerial layer, and set up error handling
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
+        var baseLayer = L.esri.Vector.vectorTileLayer("https://tiles.arcgis.com/tiles/quVN97tn06YNGj9s/arcgis/rest/services/Portland_Basemap_Complete/VectorTileServer", {
+          attribution: 'PortlandMaps ESRI',
+          // PGOV-2148 fix address label spacing
+          style: (style) => {
+            style.layers.forEach((layer) => {
+              if (typeof layer.layout !== 'undefined' && layer.layout['symbol-spacing'] === 1000) {
+                layer.layout['symbol-spacing'] = 400;
+              }
+            });
+            return style;
+          },
+        });
         baseLayer.on('tileerror', function (event) {
           throwHardServerError(event);
         });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI", maxZoom: maxZoom });
-        baseLayer.on('tileerror', function (event) {
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        aerialLayer.on('tileerror', function (event) {
           throwHardServerError(event);
         });
 
@@ -241,6 +252,7 @@
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
             zoom: DEFAULT_ZOOM,
+            minZoom: 10,
             maxZoom: maxZoom,
             gestureHandling: true,
             keyboard: false
@@ -2436,12 +2448,12 @@
 
         function showPrecisionText() {
           if (!addressVerify) {
-            $('#precision_text').removeClass('visually-hidden');
+            $('#precision_text').removeClass('visually-hidden').attr('aria-hidden', 'false');
           }
         }
 
         function hidePrecisionText() {
-          $('#precision_text').addClass('visually-hidden');
+          $('#precision_text').addClass('visually-hidden').attr('aria-hidden', 'true');
         }
 
         function captureSelectedAssetMarkerData(marker) {

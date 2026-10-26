@@ -37,11 +37,10 @@ class ZendeskClient extends HttpClient
         parent::__construct($subdomain, $username, $scheme, $hostname, $port, $guzzle);
 
         $this->setAuth(
-            'basic',
+            'oauth',
             [
-                'username' => $username,
-                'token' => $token
-            ]
+                'token' => $token,
+            ],
         );
     }
     

@@ -1,32 +1,49 @@
+function stringOrEmpty(value) {
+  return typeof value === 'string' ? value : '';
+}
+
 AddressVerifierModel.locationItem = function (data, $element = null, isSingleton = false) {
+  const attributes = data.attributes || {};
+  const address = stringOrEmpty(data.address);
 
   // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
   // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
-  if (isSingleton) {
-    var arrAddress = data.address.split(', ');
-    data.address = arrAddress[0];
+  if (isSingleton && address) {
+    data.address = address.split(', ')[0];
   }
-  this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.attributes.city, data.attributes.state, data.attributes.zip_code, data.unit).toUpperCase();
-  this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
-  this.street = data.address.toUpperCase();
-  this.streetNumber = data.attributes.address_number;
-  this.streetQuadrant = data.attributes.street_direction;
-  this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
-  this.streetName = data.attributes.street_name;
-  this.streetType = data.attributes.street_type;
+
+  this.fullAddress = AddressVerifierModel
+    .buildFullAddress(
+      data.address,
+      attributes.city,
+      attributes.state,
+      attributes.zip_code,
+      data.unit
+    )
+    .toUpperCase();
+
+  this.displayAddress = stringOrEmpty(data.address).toUpperCase();
+  this.street = stringOrEmpty(data.address).toUpperCase();
+  this.streetNumber = attributes.address_number;
+  this.streetQuadrant = stringOrEmpty(attributes.street_direction);
+  this.streetDirectionSuffix = stringOrEmpty(attributes.street_direction_suffix).trim();
+  this.streetName = stringOrEmpty(attributes.street_name);
+  this.streetType = stringOrEmpty(attributes.street_type);
+
   if (this.streetDirectionSuffix) {
-    this.streetType += " " + this.streetDirectionSuffix;
+    this.streetType += ' ' + this.streetDirectionSuffix;
   }
-  this.city = data.attributes.city;
-  this.jurisdiction = data.attributes.jurisdiction;
-  this.state = data.attributes.state ? data.attributes.state.toUpperCase() : "";
-  this.zipCode = data.attributes.zip_code;
-  this.lat = data.attributes.lat;
-  this.lon = data.attributes.lon;
+
+  this.city = stringOrEmpty(attributes.city);
+  this.jurisdiction = stringOrEmpty(attributes.jurisdiction);
+  this.state = stringOrEmpty(attributes.state).toUpperCase();
+  this.zipCode = stringOrEmpty(attributes.zip_code);
+  this.lat = attributes.lat;
+  this.lon = attributes.lon;
   this.x = data.location.x;
   this.y = data.location.y;
-  this.unit = "";
-}
+  this.unit = '';
+};
 
 const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
 
