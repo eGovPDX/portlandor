@@ -3,6 +3,7 @@ langcode: en
 status: open
 dependencies:
   module:
+    - honeypot
     - portland
     - portland_zendesk
 third_party_settings:
@@ -10,6 +11,8 @@ third_party_settings:
     disable_demographic_form_prompt: false
     disable_public_records_statement: false
     exclude_from_json: {  }
+  honeypot:
+    honeypot: true
 weight: 0
 open: null
 close: null
@@ -53,7 +56,6 @@ elements: |-
       apply_home_address:
         '#type': portland_address_verifier
         '#title': 'What is your home address?'
-        '#required': true
         '#location_verification_status__title': 'Address verification'
         '#location_verification_status__required': true
         '#location_address__title': 'Street address'
@@ -158,7 +160,9 @@ elements: |-
           '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
         section_optional_survey:
           '#type': webform_section
-          '#title': 'A few more questions'
+          '#title': 'Help us improve'
+          '#description': '<p>Please share a bit about your travel habits and background so PBOT can keep making our transportation programs better and more equitable.</p>'
+          '#description_display': before
           '#attributes':
             class:
               - mt-10
@@ -220,37 +224,60 @@ elements: |-
           apply_travel_experience_text:
             '#type': textarea
             '#title': 'Anything else you want to tell us about your experience traveling in Portland?'
-          formatted_survey_output:
-            '#type': webform_computed_twig
-            '#title': 'Formatted survey output'
-            '#title_display': none
-            '#display_on': none
-            '#template': |
-              <h2>Survey</h2>
-
-              <p><strong>How often do you or members of your household use the following transportation modes?</strong><br>
-                {% if data.apply_transit_frequency is iterable %}
-                  {% for category, rating in data.apply_transit_frequency %}
-                    {{ category|capitalize }}: {{ rating|capitalize }}<br>
-                  {% endfor %}
-                  {% else %}
-                    Feedback not provided
-                {% endif %}
-              </p>
-
-              <p><strong>My household struggles to afford the cost of transportation:</strong> {{ data.apply_how_affordable_scale }}</p>
-
-              <p><strong>TriMet services (bus, MAX, etc.) go to the places where I need to go:</strong> {{ data.apply_travel_services }}</p>
-
-              <p><strong>In the past 30 days, how often did you skip going somewhere because of a problem with transportation?</strong>: {{ data.apply_how_often_skip }}</p>
-
-              <p><strong>Additional feedback</strong><br>
-              {% if data.apply_travel_experience_text %}
-                {{ data.apply_travel_experience_text }}
-              {% else %}
-                Additional feedback not provided
-              {% endif %}
-              </p>
+          demographic_zipcode:
+            '#type': textfield
+            '#title': 'What is the zipcode where you live?'
+          demographic_employment_school:
+            '#type': checkboxes
+            '#title': 'What is your employment/school status?'
+            '#description': '<p>Select all that apply.</p>'
+            '#description_display': before
+            '#options':
+              'I work outside the home': 'I work outside the home'
+              'I work from home': 'I work from home'
+              'Not employed, looking for work': 'Not employed, looking for work'
+              'Not employed, NOT looking': 'Not employed, NOT looking'
+              'I go to school outside the home': 'I go to school outside the home'
+              Retired: Retired
+              'Not able to work': 'Not able to work'
+              'Prefer not to answer': 'Prefer not to answer'
+          demographic_adults:
+            '#type': number
+            '#title': 'How many adults live in your household, including yourself?'
+          demographic_children:
+            '#type': number
+            '#title': 'How many children under 18 live in your household?'
+          demographic_ethnicity:
+            '#type': webform_checkboxes_other
+            '#title': 'Which of the following describes your racial or ethnic identity?'
+            '#description': '<p>Select all that apply</p>'
+            '#description_display': before
+            '#options': ethnicity
+            '#other__option_label': 'Something else...'
+            '#other__placeholder': 'Please describe'
+          demographic_languages:
+            '#type': webform_checkboxes_other
+            '#title': 'Which languages are spoken in your home?'
+            '#description': '<p>Select all that apply.</p>'
+            '#description_display': before
+            '#options': languages_ppr
+            '#other__option_label': 'Something else...'
+            '#other__placeholder': 'Please describe'
+          demographic_disability:
+            '#type': radios
+            '#title': 'Do you identify with having or living with a disability?'
+            '#options':
+              'Yes': 'Yes'
+              'No': 'No'
+              'I prefer not to answer': 'I prefer not to answer'
+          demogrpahic_disability_type:
+            '#type': webform_checkboxes_other
+            '#title': 'Please describe the nature of your disability'
+            '#description': '<p>Select all that apply.</p>'
+            '#description_display': before
+            '#options': disability_details
+            '#other__option_label': 'Something else…'
+            '#other__placeholder': 'Please describe'
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
@@ -480,5 +507,22 @@ handlers:
         apply_this_year: apply_this_year
         computed_primary_full_name: computed_primary_full_name
         computed_dob_primary: computed_dob_primary
+        apply_transit_frequency: apply_transit_frequency
+        apply_how_affordable_scale: apply_how_affordable_scale
+        apply_travel_services: apply_travel_services
+        apply_how_often_skip: apply_how_often_skip
+        apply_travel_experience_text: apply_travel_experience_text
+        demographic_zipcode: demographic_zipcode
+        demographic_employment_school: demographic_employment_school
+        demographic_adults: demographic_adults
+        demographic_children: demographic_children
+        demographic_ethnicity: demographic_ethnicity
+        demographic_languages: demographic_languages
+        demographic_disability: demographic_disability
+        demogrpahic_disability_type: demogrpahic_disability_type
+        support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
+        support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
+        support_agent_use_only__test_submission: support_agent_use_only__test_submission
         request_ticket_id: request_ticket_id
 variants: {  }
