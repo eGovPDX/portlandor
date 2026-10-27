@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: false
@@ -46,24 +47,24 @@ elements: |-
           checked: true
         ':input[name="apply_this_year"]':
           value: 'No, I have not received a Wallet and will finish filling out the form'
-    apply_home_address:
-      '#type': portland_address_verifier
-      '#title': 'What is your home address?'
-      '#required': true
-      '#location_verification_status__title': 'Address verification'
-      '#location_verification_status__required': true
-      '#location_address__title': 'Street address'
-      '#location_address__required': true
-      '#location_full_address__title': 'Full address'
-      '#unit_number__title': 'Unit number'
-      '#location_city__required': true
-      '#location_state__required': true
-      '#location_zip__title': 'ZIP code'
-      '#location_zip__required': true
-      '#require_portland_city_limits': true
     section_applicant_information:
       '#type': webform_section
       '#title': 'Applicant Information'
+      apply_home_address:
+        '#type': portland_address_verifier
+        '#title': 'What is your home address?'
+        '#required': true
+        '#location_verification_status__title': 'Address verification'
+        '#location_verification_status__required': true
+        '#location_address__title': 'Street address'
+        '#location_address__required': true
+        '#location_full_address__title': 'Full address'
+        '#unit_number__title': 'Unit number'
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__title': 'ZIP code'
+        '#location_zip__required': true
+        '#require_portland_city_limits': true
       apply_first_name:
         '#type': textfield
         '#title': 'Applicant first name'
@@ -72,6 +73,13 @@ elements: |-
         '#type': textfield
         '#title': 'Applicant last name'
         '#required': true
+      computed_primary_full_name:
+        '#type': webform_computed_twig
+        '#title': 'Computed primary full name'
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.apply_first_name | replace({"''": "''''"}) }} {{ data.apply_last_name | replace({"''": "''''"}) }}'
+        '#whitespace': trim
       apply_has_hop_card:
         '#type': radios
         '#title': 'Does this person have a TriMet Hop card?'
@@ -84,8 +92,8 @@ elements: |-
         '#maxlength': 16
         '#input_mask': '9{0,16}'
         '#required': true
-        '#pattern': '^[0-9]{16}$'
-        '#pattern_error': 'Hop card number must be 16 digits.'
+        '#pattern': '^3105\d{12}$'
+        '#pattern_error': 'Hop card number must be 16 digits and start with 3105.'
         '#counter_type': character
         '#counter_minimum': 16
         '#counter_maximum': 16
@@ -93,48 +101,169 @@ elements: |-
           visible:
             ':input[name="apply_has_hop_card"]':
               value: 'Yes, they already have a Hop card'
-      apply_lift_user:
-        '#type': checkbox
-        '#title': 'This person is a TriMet LIFT paratransit user'
-        '#label_attributes':
-          class:
-            - fw-semibold
-      apply_date_of_birth:
-        '#type': date
-        '#title': "What is this person's date of birth? (MM/DD/YYYY)"
-        '#description': '<p>Must be 18 years or older. Please make sure to set the correct birth date year.</p>'
-        '#description_display': before
-        '#required': true
-        '#required_error': "What is this person's date of birth? (MM/DD/YYYY) must be a valid date 18 or more years in the past."
+      alert_virtual_card:
+        '#type': portland_alert
         '#states':
-          invisible:
+          visible:
             ':input[name="apply_hop_card_number"]':
               value:
                 pattern: '^[^3].*'
-        '#date_date_min': '120 years ago'
-        '#date_date_max': '18 years ago'
-        '#date_date_format': m/d/Y
-      contact_email:
-        '#type': textfield
-        '#title': Email
-        '#description': '<p>If you do not have an email address, please provide the email of the community-based organization helping you. We will use this email if we have questions or to send important updates about your application.</p>'
-        '#autocomplete': email
-        '#required': true
-        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-      contact_phone:
-        '#type': textfield
-        '#title': Phone
-        '#description': '<p>Please provide your phone number in case we need additional information.</p>'
-        '#autocomplete': tel-national
-        '#input_mask': '(999) 999-9999'
-      apply_final_questions_text:
-        '#type': textarea
-        '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
-css: ''
+        '#alert_markup': '<h2>Next Steps</h2><p>The numbered you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical Hop card, use that number instead. If you do not have a physical Hop card, please select "No, they need a Hop card" above and continue filling out the form.</p>'
+      container_valid_card:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="apply_hop_card_number"]':
+              value:
+                '!pattern': '^[^3].*'
+        apply_lift_user:
+          '#type': checkbox
+          '#title': 'This person is a TriMet LIFT paratransit user'
+          '#label_attributes':
+            class:
+              - fw-semibold
+        apply_date_of_birth:
+          '#type': date
+          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
+          '#description': '<p>Must be 18 years or older. Please make sure to set the correct birth date year.</p>'
+          '#description_display': before
+          '#required': true
+          '#required_error': "What is this person's date of birth? (MM/DD/YYYY) must be a valid date 18 or more years in the past."
+          '#date_date_min': '120 years ago'
+          '#date_date_max': '18 years ago'
+          '#date_date_format': m/d/Y
+        computed_dob_primary:
+          '#type': webform_computed_twig
+          '#title': 'Computed DOB primary'
+          '#display_on': none
+          '#mode': text
+          '#template': "{{ data.apply_date_of_birth|date('Y-m-d') }}"
+          '#whitespace': trim
+        contact_email:
+          '#type': textfield
+          '#title': Email
+          '#description': '<p>If you do not have an email address, please provide the email of the community-based organization helping you. We will use this email if we have questions or to send important updates about your application.</p>'
+          '#autocomplete': email
+          '#required': true
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        contact_phone:
+          '#type': textfield
+          '#title': Phone
+          '#description': '<p>Please provide your phone number in case we need additional information.</p>'
+          '#autocomplete': tel-national
+          '#input_mask': '(999) 999-9999'
+        apply_final_questions_text:
+          '#type': textarea
+          '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
+        section_optional_survey:
+          '#type': webform_section
+          '#title': 'A few more questions'
+          '#attributes':
+            class:
+              - mt-10
+              - mb-10
+          apply_transit_frequency:
+            '#type': webform_likert
+            '#title': 'How often do you or members of your household use the following transportation modes?'
+            '#questions':
+              'Transit - Bus, MAX, Streetcar': 'Transit - Bus, MAX, Streetcar'
+              Biking: Biking
+              'BIKETOWN for All (bike-share)': 'BIKETOWN for All (bike-share)'
+              E-Scooter: E-Scooter
+              Walking: Walking
+              'Motorcycle or moped': 'Motorcycle or moped'
+              'Drive my own car, truck, or SUV': 'Drive my own car, truck, or SUV'
+              'Borrow car, truck, or SUV of a friend, family member, neighbor, coworker, or acquaintance': 'Borrow car, truck, or SUV of a friend, family member, neighbor, coworker, or acquaintance'
+              'Get a ride from a friend, family member, neighbor, coworker, or acquaintance (including carpooling)': 'Get a ride from a friend, family member, neighbor, coworker, or acquaintance (including carpooling)'
+              'Car-sharing service (Zipcar, GoForth, rental)': 'Car-sharing service (Zipcar, GoForth, rental)'
+              'Taxi, Uber, or Lyft': 'Taxi, Uber, or Lyft'
+            '#answers':
+              Never: Never
+              Monthly: Monthly
+              Daily: Daily
+              Weekly: Weekly
+            '#sticky': false
+            '#table__attributes':
+              class:
+                - 'table table-bordered'
+            '#required': true
+          apply_how_affordable_scale:
+            '#type': radios
+            '#title': 'My household struggles to afford the cost of transportation'
+            '#options':
+              'Strongly disagree': 'Strongly disagree'
+              'Somewhat disagree': 'Somewhat disagree'
+              'Neither agree nor disagree': 'Neither agree nor disagree'
+              'Somewhat agree': 'Somewhat agree'
+              'Strongly agree': 'Strongly agree'
+            '#required': true
+          apply_travel_services:
+            '#type': radios
+            '#title': 'TriMet services (bus, MAX, etc.) go to the places where I need to go'
+            '#options':
+              'Strongly disagree': 'Strongly disagree'
+              'Somewhat disagree': 'Somewhat disagree'
+              'Neither agree nor disagree': 'Neither agree nor disagree'
+              'Somewhat agree': 'Somewhat agree'
+              'Strongly agree': 'Strongly agree'
+            '#required': true
+          apply_how_often_skip:
+            '#type': radios
+            '#title': 'In the past 30 days, how often did you skip going somewhere because of a problem with transportation?'
+            '#options':
+              Often: Often
+              Sometimes: Sometimes
+              Never: Never
+            '#options_display': side_by_side
+            '#required': true
+          apply_travel_experience_text:
+            '#type': textarea
+            '#title': 'Anything else you want to tell us about your experience traveling in Portland?'
+          formatted_survey_output:
+            '#type': webform_computed_twig
+            '#title': 'Formatted survey output'
+            '#title_display': none
+            '#display_on': none
+            '#template': |
+              <h2>Survey</h2>
+
+              <p><strong>How often do you or members of your household use the following transportation modes?</strong><br>
+                {% if data.apply_transit_frequency is iterable %}
+                  {% for category, rating in data.apply_transit_frequency %}
+                    {{ category|capitalize }}: {{ rating|capitalize }}<br>
+                  {% endfor %}
+                  {% else %}
+                    Feedback not provided
+                {% endif %}
+              </p>
+
+              <p><strong>My household struggles to afford the cost of transportation:</strong> {{ data.apply_how_affordable_scale }}</p>
+
+              <p><strong>TriMet services (bus, MAX, etc.) go to the places where I need to go:</strong> {{ data.apply_travel_services }}</p>
+
+              <p><strong>In the past 30 days, how often did you skip going somewhere because of a problem with transportation?</strong>: {{ data.apply_how_often_skip }}</p>
+
+              <p><strong>Additional feedback</strong><br>
+              {% if data.apply_travel_experience_text %}
+                {{ data.apply_travel_experience_text }}
+              {% else %}
+                Additional feedback not provided
+              {% endif %}
+              </p>
+        actions:
+          '#type': webform_actions
+          '#title': 'Submit button(s)'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support agent use only'
+      '#access_create_roles':
+        - authenticated
+      '#escalate_issue__access': false
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request ticket id'
+css: ".webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}"
 javascript: ''
 settings:
   ajax: false
@@ -242,7 +371,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: ''
+  confirmation_message: '<p>Thank you for submitting a <em>Transportation Wallet: Access for All</em> registration form. We will review your application, verify your eligibility and work to fulfill your Wallet within 10 business days of receiving all information needed to process your application. Once fulfilled, your Wallet will be handed off to community-based organization staff, who are responsible for making sure you receive it.</p><p><strong>Please note that missing or incorrect information in your application can result in delaying your Wallet’s fulfillment.</strong></p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -318,5 +447,38 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - [webform_submission:values:computed_primary_full_name:htmldecode]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'transportation_wallet'\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name:htmldecode]'"
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      excluded_elements:
+        apply_cbo_related: apply_cbo_related
+        apply_this_year: apply_this_year
+        computed_primary_full_name: computed_primary_full_name
+        computed_dob_primary: computed_dob_primary
+        request_ticket_id: request_ticket_id
 variants: {  }
