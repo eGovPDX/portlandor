@@ -8,6 +8,7 @@ dependencies:
 third_party_settings:
   portland:
     disable_demographic_form_prompt: false
+    disable_public_records_statement: false
     exclude_from_json: {  }
 weight: 0
 open: null
@@ -17,7 +18,7 @@ template: false
 archive: false
 id: report_tree_code_violation
 title: 'Report Tree Issue'
-description: ''
+description: '<p>Thank you for submitting a tree code violation report. Your concern will be investigated.&nbsp;</p><p>To check the status of the investigation, visit <a href="https://portlandmaps.com">portlandmaps.com</a> and search for the property by address, then select the <strong>Permits &amp; Zoning</strong> tab.</p>'
 categories:
   - Report
 elements: |-
@@ -493,11 +494,23 @@ elements: |-
     '#title': 'Computed subject'
     '#display_on': none
     '#mode': text
-    '#template': 'Tree issue reported: {{ data.report_issue is not iterable ? data.report_issue : "" }}'
+    '#template': 'Tree code violation reported: {{ data.report_issue is not iterable ? data.report_issue : "" }}'
     '#whitespace': trim
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed tags'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_construction_happening == "Yes" %}
+        44419734751127_yes
+      {% elseif data.report_construction_happening == "No" %}
+        44419734751127_no
+      {% endif %}
+    '#whitespace': trim
 css: "#report_tree_details_table table {\r\n  border-collapse: separate;\r\n  border-spacing: 0 5px;\r\n  width: auto;\r\n}\r\n#report_tree_details_table td { padding: 0 20px 0 0; }\r\n#report_tree_details_table table tr { margin-bottom: 5px; }\r\n#report_tree_details_table table th {\r\n  background-color: none;\r\n}\r\n"
 javascript: ''
 settings:
@@ -539,6 +552,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -700,7 +714,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform uf_tree_code_violation'
+      tags: 'drupal webform uf_tree_code_violation [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -708,7 +722,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '29567427098391'
@@ -752,10 +766,16 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -772,7 +792,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -780,7 +800,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '29567427098391'
@@ -824,10 +844,16 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
   create_ticket_in_311_group_for_additional_triage:
     id: zendesk
     handler_id: create_ticket_in_311_group_for_additional_triage
@@ -846,7 +872,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform 311_row_triage'
+      tags: 'drupal webform 311_row_triage [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -854,7 +880,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '29567427098391'
@@ -898,10 +924,16 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
   create_ticket_in_pbot_mo_bike_lane_maintenance_group:
     id: zendesk
     handler_id: create_ticket_in_pbot_mo_bike_lane_maintenance_group
@@ -920,7 +952,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -928,7 +960,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '34520294472599'
@@ -972,10 +1004,16 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
   create_ticket_in_pp_d_code_compliance_group:
     id: zendesk
     handler_id: create_ticket_in_pp_d_code_compliance_group
@@ -994,7 +1032,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -1002,7 +1040,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '39016409898519'
@@ -1046,10 +1084,16 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
   create_ticket_in_311_service_dispatch_group:
     id: zendesk
     handler_id: create_ticket_in_311_service_dispatch_group
@@ -1068,7 +1112,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
@@ -1076,7 +1120,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n36578609768343: '[current-user:display-name] <[current-user:mail]>'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '29567427098391'
@@ -1120,8 +1164,14 @@ handlers:
         contact_address__location_address_label: contact_address__location_address_label
         contact_address__location_capture_field: contact_address__location_capture_field
         contact_address__location_data: contact_address__location_data
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
+        support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
         computed_routing: computed_routing
+        computed_subject: computed_subject
+        report_ticket_id: report_ticket_id
+        computed_tags: computed_tags
 variants: {  }
