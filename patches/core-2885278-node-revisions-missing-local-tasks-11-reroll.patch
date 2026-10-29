@@ -1,0 +1,35 @@
+diff --git a/core/modules/node/node.links.task.yml b/core/modules/node/node.links.task.yml
+index 7da46bf..bc0c14c 100644
+--- a/core/modules/node/node.links.task.yml
++++ b/core/modules/node/node.links.task.yml
+@@ -16,6 +16,11 @@ entity.node.version_history:
+   base_route: entity.node.canonical
+   title: 'Revisions'
+   weight: 20
++entity.node.revision:
++  route_name: entity.node.revision
++  base_route: entity.node.canonical
++  title: 'View Revision'
++  weight: 0
+ entity.node_type.edit_form:
+   title: 'Edit'
+   route_name: entity.node_type.edit_form
+diff --git a/core/modules/node/node.module b/core/modules/node/node.module
+index 5023707..28f598b 100644
+--- a/core/modules/node/node.module
++++ b/core/modules/node/node.module
+@@ -441,3 +441,14 @@ function node_reindex_node_search($nid): void {
+     \Drupal::service('search.index')->markForReindex('node_search', $nid);
+   }
+ }
++
++/**
++ * Implements hook_menu_local_tasks_alter().
++ */
++function node_menu_local_tasks_alter(&$data, $route_name) {
++  if (!empty($data['tabs'][0]['entity.node.revision'])) {
++    if ($route_name != 'entity.node.revision') {
++      unset($data['tabs'][0]['entity.node.revision']);
++    }
++  }
++}

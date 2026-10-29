@@ -1,0 +1,88 @@
+diff --git a/bulk_user_registration.info.yml b/bulk_user_registration.info.yml
+index f1e0ca9..b5edfab 100644
+--- a/bulk_user_registration.info.yml
++++ b/bulk_user_registration.info.yml
+@@ -4,7 +4,7 @@ description: 'To import user from CSV file'
+ package: import
+ configure: bulk_user_registration.settings
+ core: '8.x'
+-core_version_requirement: ^8 || ^9 || ^10
++core_version_requirement: ^10 || ^11
+ 
+ # Information added by Drupal.org packaging script on 2023-03-02
+ version: '2.0.0'
+diff --git a/src/BulkUserRegistration.php b/src/BulkUserRegistration.php
+index 5400e69..ed69668 100644
+--- a/src/BulkUserRegistration.php
++++ b/src/BulkUserRegistration.php
+@@ -5,6 +5,7 @@ namespace Drupal\bulk_user_registration;
+ use Drupal\Core\Extension\ModuleHandlerInterface;
+ use Drupal\Core\Language\LanguageManagerInterface;
+ use Drupal\user\Entity\User;
++use Drupal\user\Entity\Role;
+ use Drupal\user\RoleInterface;
+ use Drupal\user\UserInterface;
+ 
+@@ -158,8 +159,10 @@ class BulkUserRegistration implements BulkUserRegistrationInterface {
+    */
+   protected function getAllowedRoles() {
+ 
++    $roles = Role::loadMultiple();
++    $role_names = array_map(function($role) { return $role->label(); }, $roles);
+     $allowedRoles = \Drupal::config('bulk_user_registration.settings')->get('allowed_roles');
+-    return array_intersect_key(user_role_names(TRUE), array_flip(array_filter($allowedRoles)));
++    return array_intersect_key($role_names, array_flip(array_filter($allowedRoles)));
+   }
+ 
+   /**
+diff --git a/src/Form/BulkUserImport.php b/src/Form/BulkUserImport.php
+index 8d56289..6501e44 100644
+--- a/src/Form/BulkUserImport.php
++++ b/src/Form/BulkUserImport.php
+@@ -7,6 +7,7 @@ use Drupal\bulk_user_registration\BulkUserRegistrationInterface;
+ use Drupal\Core\Form\FormBase;
+ use Drupal\Core\Form\FormStateInterface;
+ use Drupal\Core\Url;
++use Drupal\user\Entity\Role;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
+ use Symfony\Component\HttpFoundation\RequestStack;
+ use Symfony\Component\HttpFoundation\FileBag;
+@@ -266,7 +267,9 @@ class BulkUserImport extends FormBase {
+    */
+   protected function getAllowedRoles() {
+     $allowedRoles = \Drupal::config('bulk_user_registration.settings')->get('allowed_roles');
+-    return array_intersect_key(user_role_names(TRUE), array_flip(array_filter($allowedRoles)));
++    $roles = Role::loadMultiple();
++    $role_names = array_map(function($role) { return $role->label(); }, $roles);
++    return array_intersect_key($role_names, array_flip(array_filter($allowedRoles)));
+   }
+ 
+ }
+diff --git a/src/Form/SettingsForm.php b/src/Form/SettingsForm.php
+index 098463e..c266c79 100644
+--- a/src/Form/SettingsForm.php
++++ b/src/Form/SettingsForm.php
+@@ -4,6 +4,7 @@ namespace Drupal\bulk_user_registration\Form;
+ 
+ use Drupal\Core\Form\ConfigFormBase;
+ use Drupal\Core\Form\FormStateInterface;
++use Drupal\user\Entity\Role;
+ use Drupal\user\UserInterface;
+ 
+ /**
+@@ -33,11 +34,14 @@ class SettingsForm extends ConfigFormBase {
+   public function buildForm(array $form, FormStateInterface $form_state) {
+     $config = $this->config('bulk_user_registration.settings');
+ 
++    $roles = Role::loadMultiple();
++    $role_names = array_map(function($role) { return $role->label(); }, $roles);
++
+     $form['allowed_roles'] = [
+       '#type' => 'checkboxes',
+       '#title' => $this->t('Roles for import'),
+       '#default_value' => $config->get('allowed_roles'),
+-      '#options' => user_role_names(TRUE),
++      '#options' => $role_names,
+       '#description' => $this->t('These roles can be assigned with Bulk user registration. The authenticated role will always be set.'),
+     ];
+ 
