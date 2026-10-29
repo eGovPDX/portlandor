@@ -28,6 +28,19 @@ elements: |-
     '#type': checkbox
     '#title': 'I was referred by and/or given a registration link from a community-based organization (CBO)'
     '#required': true
+    '#states':
+      checked:
+        ':input[name="organization_name"]':
+          filled: true
+  organization_name:
+    '#type': textfield
+    '#title': 'Organization name'
+    '#prepopulate': true
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="apply_cbo_related"]':
+          checked: true
   apply_this_year:
     '#type': radios
     '#title': 'Have you already received a Wallet this year?'
@@ -82,6 +95,12 @@ elements: |-
         '#mode': text
         '#template': '{{ data.apply_first_name | replace({"''": "''''"}) }} {{ data.apply_last_name | replace({"''": "''''"}) }}'
         '#whitespace': trim
+      apply_lift_user:
+        '#type': checkbox
+        '#title': 'This person is a TriMet LIFT paratransit user'
+        '#label_attributes':
+          class:
+            - fw-semibold
       apply_has_hop_card:
         '#type': radios
         '#title': 'Does this person have a TriMet Hop card?'
@@ -103,13 +122,44 @@ elements: |-
           visible:
             ':input[name="apply_has_hop_card"]':
               value: 'Yes, they already have a Hop card'
+            ':input[name="apply_lift_user"]':
+              unchecked: true
+      apply_hop_card_number_lift:
+        '#type': textfield
+        '#title': 'Please enter the 16-digit Hop card number'
+        '#maxlength': 16
+        '#input_mask': '9{0,16}'
+        '#required': true
+        '#counter_type': character
+        '#counter_minimum': 16
+        '#counter_maximum': 16
+        '#states':
+          visible:
+            ':input[name="apply_has_hop_card"]':
+              value: 'Yes, they already have a Hop card'
+            ':input[name="apply_lift_user"]':
+              checked: true
+      computed_hop_card_number:
+        '#type': webform_computed_twig
+        '#title': 'Computed Hop card number'
+        '#display_on': none
+        '#template': |-
+          {% if data.apply_lift_user == "1" %}
+            {{ data.apply_hop_card_number_lift }}
+          {% else %}
+            {{ data.apply_hop_card_number }}
+          {% endif %}
       alert_virtual_card:
         '#type': portland_alert
         '#states':
           visible:
-            ':input[name="apply_hop_card_number"]':
-              value:
-                pattern: '^[^3].*'
+            - ':input[name="apply_hop_card_number"]':
+                value:
+                  pattern: '^[^3]\d*$'
+            - or
+            - ':input[name="apply_hop_card_number_lift"]':
+                value:
+                  pattern: '^[^3]\d*$'
         '#alert_markup': '<h2>Next Steps</h2><p>The numbered you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical Hop card, use that number instead. If you do not have a physical Hop card, please select "No, they need a Hop card" above and continue filling out the form.</p>'
       container_valid_card:
         '#type': container
@@ -117,13 +167,10 @@ elements: |-
           visible:
             ':input[name="apply_hop_card_number"]':
               value:
-                '!pattern': '^[^3].*'
-        apply_lift_user:
-          '#type': checkbox
-          '#title': 'This person is a TriMet LIFT paratransit user'
-          '#label_attributes':
-            class:
-              - fw-semibold
+                '!pattern': '^[^3]\d*$'
+            ':input[name="apply_hop_card_number_lift"]':
+              value:
+                '!pattern': '^[^3]\d*$'
         apply_date_of_birth:
           '#type': date
           '#title': "What is this person's date of birth? (MM/DD/YYYY)"
@@ -504,11 +551,11 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet'\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name:htmldecode]'"
+      custom_fields: "6353388345367: 'transportation_wallet_v2'\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'computed_hop_card_number']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name:htmldecode]'"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
-      ticket_form_id: '26628122071575'
+      ticket_form_id: '44630605922583'
       excluded_elements:
         apply_cbo_related: apply_cbo_related
         apply_this_year: apply_this_year
