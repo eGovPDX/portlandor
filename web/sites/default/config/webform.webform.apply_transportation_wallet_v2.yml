@@ -24,23 +24,24 @@ title: 'Access for All Transportation Wallet 2027 Registration'
 description: ''
 categories: {  }
 elements: |-
-  apply_cbo_related:
-    '#type': checkbox
-    '#title': 'I was referred by and/or given a registration link from a community-based organization (CBO)'
-    '#required': true
-    '#states':
-      checked:
-        ':input[name="organization_name"]':
-          filled: true
-  organization_name:
-    '#type': textfield
-    '#title': 'Organization name'
-    '#prepopulate': true
-    '#required': true
+  alert_link_required:
+    '#type': portland_alert
     '#states':
       visible:
-        ':input[name="apply_cbo_related"]':
-          checked: true
+        ':input[name="organization_name"]':
+          empty: true
+    '#alert_markup': '<h2>Next steps</h2><p>This form must be used with the special link provided by a community based organization (CBO). Please contact your CBO for the link.</p>'
+  organization_name:
+    '#type': textfield
+    '#title': 'Community based organization (CBO) name'
+    '#readonly': true
+    '#prepopulate': true
+    '#required': true
+  apply_cbo_staff_name:
+    '#type': textfield
+    '#title': 'Staff member name'
+    '#description': "<p>If you're a community-based organization staff member assisting a client, please provide your name.</p>"
+    '#description_display': before
   apply_this_year:
     '#type': radios
     '#title': 'Have you already received a Wallet this year?'
@@ -59,8 +60,6 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        ':input[name="apply_cbo_related"]':
-          checked: true
         ':input[name="apply_this_year"]':
           value: 'No, I have not received a Wallet and will finish filling out the form'
     section_applicant_information:
@@ -188,6 +187,47 @@ elements: |-
           '#mode': text
           '#template': "{{ data.apply_date_of_birth|date('Y-m-d') }}"
           '#whitespace': trim
+        computed_applicant_age:
+          '#type': webform_computed_twig
+          '#title': 'Computed applicant age'
+          '#display_on': none
+          '#template': |-
+            {% set dob = data.apply_date_of_birth %}
+            {% if dob %}
+              {% set birth = dob|date('U') %}
+              {% set now = "now"|date('U') %}
+              {% set age = (now - birth) // 31557600 %}
+              {{ age }}
+            {% endif %}
+        computed_hop_card_type:
+          '#type': webform_computed_twig
+          '#title': 'Computed Hop card type'
+          '#display_on': none
+          '#template': |-
+            {# only provide hop card type if "card needed" #}
+
+            {% if data.apply_has_hop_card == "No, they need a Hop card" %}
+
+              {% set dob = data.apply_date_of_birth %}
+              {% if dob %}
+                {% set birth = dob|date('U') %}
+                {% set now = "now"|date('U') %}
+                {% set age = (now - birth) // 31557600 %}
+              {% endif %}
+
+              {% if data.apply_lift_user == "1" %}
+                27985321767319_trimet_lift_hop_card
+              {% elseif age < 7 %}
+                27985321767319_hop_card_not_needed
+              {% elseif age < 18 %}
+                27985321767319_youth_hop_card
+              {% elseif age < 65 %}
+                27985321767319_adult_hop_card
+              {% else %}
+                27985321767319_honored_citizen_hop_card
+              {% endif %}
+
+            {% endif %}
         contact_email:
           '#type': textfield
           '#title': Email
@@ -542,7 +582,7 @@ handlers:
       requester_email: contact_email
       subject: 'Wallet Application - [webform_submission:values:computed_primary_full_name:htmldecode]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_hop_card_type]'
       priority: normal
       status: new
       recipient: ''
@@ -551,13 +591,12 @@ handlers:
       type: incident
       is_child_incident: 0
       collaborators: ''
-      custom_fields: "6353388345367: 'transportation_wallet_v2'\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'computed_hop_card_number']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name:htmldecode]'"
+      custom_fields: "6353388345367: 'transportation_wallet_v2'\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29832196080919: ['[webform_submission:values:apply_cbo_staff_name]', 'apply_cbo_staff_name']\r\n27773229365143: ['[webform_submission:values:apply_home_address:location_address] [webform_submission:values:apply_home_address:unit_number], [webform_submission:values:apply_home_address:location_city], [webform_submission:values:apply_home_address:location_state] [webform_submission:values:apply_home_address:location_zip]', 'apply_home_address']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:computed_dob_primary]', 'apply_date_of_birth']\r\n26768595577879: ['[webform_submission:values:contact_email]', 'contact_email']\r\n30430800267287: '[webform_submission:values:computed_primary_full_name:htmldecode]'\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'computed_hop_card_number']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']"
       ticket_id_field: request_ticket_id
       parent_ticket_id_field: ''
       ticket_fork_field: ''
       ticket_form_id: '44630605922583'
       excluded_elements:
-        apply_cbo_related: apply_cbo_related
         apply_this_year: apply_this_year
         computed_primary_full_name: computed_primary_full_name
         computed_dob_primary: computed_dob_primary
@@ -574,7 +613,9 @@ handlers:
         demographic_languages: demographic_languages
         demographic_disability: demographic_disability
         demogrpahic_disability_type: demogrpahic_disability_type
+        support_agent_use_only: support_agent_use_only
         support_agent_use_only__support_agent_widget_title: support_agent_use_only__support_agent_widget_title
+        support_agent_use_only__employee_email: support_agent_use_only__employee_email
         support_agent_use_only__employee_notes_panel: support_agent_use_only__employee_notes_panel
         support_agent_use_only__escalate_issue: support_agent_use_only__escalate_issue
         support_agent_use_only__test_submission: support_agent_use_only__test_submission
