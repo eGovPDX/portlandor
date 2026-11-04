@@ -10,6 +10,12 @@ use Symfony\Component\Validator\ConstraintValidator;
  * Validates the SingleAccordionBodyContent constraint.
  */
 class SingleAccordionBodyContentConstraintValidator extends ConstraintValidator {
+  private function addViolation(int $delta, Constraint $constraint): void {
+    $this->context->buildViolation($constraint->message)
+      ->atPath((string) $delta)
+      ->addViolation();
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -17,26 +23,26 @@ class SingleAccordionBodyContentConstraintValidator extends ConstraintValidator 
     if (!isset($field)) return;
 
     /** @var \Drupal\Core\Field\FieldItemListInterface $field */
-    $text = $field->value;
-    if (empty($text)) return;
+    foreach ($field as $delta => $item) {
+      /** @var \Drupal\Core\Field\FieldItemInterface $item */
+      $text = $item->value;
+      if (empty($text)) continue;
 
-    $dom = HTMLDocument::createFromString($text, LIBXML_NOERROR);
-    // check for any non-dl tags at the root level
-    foreach ($dom->body->childNodes as $child) {
-      /** @var \Dom\HTMLElement $child */
-      // skip empty p tags from CKEditor
-      if ($child->tagName === "P" && mb_trim(str_replace('&nbsp;', '', $child->innerHTML)) === "") {
-        continue;
+      $dom = HTMLDocument::createFromString($text, LIBXML_NOERROR);
+      // check for more than one dl tag at the root level
+      if ($dom->body->getElementsByTagName('dl')->length > 1) {
+        $this->addViolation($delta, $constraint);
+        return;
       }
 
-      if ($child->tagName !== 'DL') {
-        $this->context->addViolation($constraint->message);
+      // check for any non-dl tags at the root level
+      foreach ($dom->body->childNodes as $child) {
+        /** @var \Dom\HTMLElement $child */
+        if ($child->tagName !== 'DL') {
+          $this->addViolation($delta, $constraint);
+          return;
+        }
       }
-    }
-
-    // check for more than one dl tag at the root level
-    if ($dom->body->getElementsByTagName('dl')->length > 1) {
-      $this->context->addViolation($constraint->message);
     }
   }
 }
