@@ -1,0 +1,615 @@
+diff --git a/core/.phpstan-baseline.php b/core/.phpstan-baseline.php
+index c02521d..cb4da35 100644
+--- a/core/.phpstan-baseline.php
++++ b/core/.phpstan-baseline.php
+@@ -10063,12 +10063,6 @@ $ignoreErrors[] = [
+ 	'count' => 1,
+ 	'path' => __DIR__ . '/lib/Drupal/Core/StringTranslation/TranslationManager.php',
+ ];
+-$ignoreErrors[] = [
+-	'message' => '#^Method Drupal\\\\Core\\\\StringTranslation\\\\TranslationManager\\:\\:setDefaultLangcode\\(\\) has no return type specified\\.$#',
+-	'identifier' => 'missingType.return',
+-	'count' => 1,
+-	'path' => __DIR__ . '/lib/Drupal/Core/StringTranslation/TranslationManager.php',
+-];
+ $ignoreErrors[] = [
+ 	'message' => '#^Method Drupal\\\\Core\\\\StringTranslation\\\\Translator\\\\StaticTranslation\\:\\:reset\\(\\) has no return type specified\\.$#',
+ 	'identifier' => 'missingType.return',
+diff --git a/core/core.services.yml b/core/core.services.yml
+index dff854d..90a337b 100644
+--- a/core/core.services.yml
++++ b/core/core.services.yml
+@@ -911,7 +911,7 @@ services:
+   Drupal\Core\Menu\LocalActionManagerInterface: '@plugin.manager.menu.local_action'
+   plugin.manager.menu.local_task:
+     class: Drupal\Core\Menu\LocalTaskManager
+-    arguments: ['@http_kernel.controller.argument_resolver', '@request_stack', '@current_route_match', '@router.route_provider', '@module_handler', '@cache.discovery', '@language_manager', '@access_manager', '@current_user']
++    arguments: ['@http_kernel.controller.argument_resolver', '@request_stack', '@current_route_match', '@router.route_provider', '@module_handler', '@cache.discovery', '@language_manager', '@access_manager', '@current_user', '@string_translation']
+   Drupal\Core\Menu\LocalTaskManagerInterface: '@plugin.manager.menu.local_task'
+   plugin.manager.menu.contextual_link:
+     class: Drupal\Core\Menu\ContextualLinkManager
+diff --git a/core/includes/theme.inc b/core/includes/theme.inc
+index deb5ff9..3bafa8d 100644
+--- a/core/includes/theme.inc
++++ b/core/includes/theme.inc
+@@ -930,6 +930,21 @@ function template_preprocess_menu_local_task(&$variables): void {
+   \Drupal::service(MenuPreprocess::class)->preprocessMenuLocalTask($variables);
+ }
+ 
++/**
++ * Prepares variables for local tasks templates.
++ *
++ * Default template: menu-local-tasks.html.twig.
++ *
++ * @param array $variables
++ *   An associative array containing:
++ *   - primary: HTML list items representing primary tasks.
++ *   - secondary: HTML list items representing secondary tasks.
++ */
++function template_preprocess_menu_local_tasks(&$variables): void {
++  @trigger_error(__FUNCTION__ . '() is deprecated in drupal:11.3.0 and is removed from drupal:12.0.0. Initial template_preprocess functions are registered directly in hook_theme(). See https://www.drupal.org/node/3504125', E_USER_DEPRECATED);
++  \Drupal::service(MenuPreprocess::class)->preprocessMenuLocalTasks($variables);
++}
++
+ /**
+  * Prepares variables for single local action link templates.
+  *
+diff --git a/core/lib/Drupal/Core/Menu/LocalTaskManager.php b/core/lib/Drupal/Core/Menu/LocalTaskManager.php
+index 132e6fd..e7e7492 100644
+--- a/core/lib/Drupal/Core/Menu/LocalTaskManager.php
++++ b/core/lib/Drupal/Core/Menu/LocalTaskManager.php
+@@ -5,10 +5,11 @@ namespace Drupal\Core\Menu;
+ use Drupal\Component\Plugin\Exception\PluginException;
+ use Drupal\Core\Access\AccessManagerInterface;
+ use Drupal\Core\Cache\Cache;
+-use Drupal\Core\Cache\CacheableMetadata;
+ use Drupal\Core\Cache\CacheBackendInterface;
++use Drupal\Core\Cache\CacheableMetadata;
+ use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+ use Drupal\Core\Extension\ModuleHandlerInterface;
++use Drupal\Core\Language\LanguageInterface;
+ use Drupal\Core\Language\LanguageManagerInterface;
+ use Drupal\Core\Plugin\DefaultPluginManager;
+ use Drupal\Core\Plugin\Discovery\ContainerDerivativeDiscoveryDecorator;
+@@ -17,6 +18,8 @@ use Drupal\Core\Plugin\Factory\ContainerFactory;
+ use Drupal\Core\Routing\RouteMatchInterface;
+ use Drupal\Core\Routing\RouteProviderInterface;
+ use Drupal\Core\Session\AccountInterface;
++use Drupal\Core\StringTranslation\StringTranslationTrait;
++use Drupal\Core\StringTranslation\TranslationInterface;
+ use Drupal\Core\Url;
+ use Symfony\Component\HttpFoundation\RequestStack;
+ use Symfony\Component\HttpKernel\Controller\ArgumentResolverInterface;
+@@ -26,6 +29,8 @@ use Symfony\Component\HttpKernel\Controller\ArgumentResolverInterface;
+  */
+ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerInterface {
+ 
++  use StringTranslationTrait;
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -106,6 +111,13 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+    */
+   protected $account;
+ 
++  /**
++   * Indicates wether the user-admin-language negotiation method is enabled.
++   *
++   * @var bool
++   */
++  protected $adminLanguageLanguageNegotiationEnabled;
++
+   /**
+    * Flag that indicates if local tasks are currently being loaded.
+    */
+@@ -133,8 +145,10 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+    *   The access manager.
+    * @param \Drupal\Core\Session\AccountInterface $account
+    *   The current user.
++   * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
++   *   The string translation service.
+    */
+-  public function __construct(ArgumentResolverInterface $argument_resolver, RequestStack $request_stack, RouteMatchInterface $route_match, RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, AccessManagerInterface $access_manager, AccountInterface $account) {
++  public function __construct(ArgumentResolverInterface $argument_resolver, RequestStack $request_stack, RouteMatchInterface $route_match, RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, AccessManagerInterface $access_manager, AccountInterface $account, ?TranslationInterface $string_translation = NULL) {
+     $this->factory = new ContainerFactory($this, '\Drupal\Core\Menu\LocalTaskInterface');
+     $this->argumentResolver = $argument_resolver;
+     $this->requestStack = $request_stack;
+@@ -143,6 +157,18 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+     $this->accessManager = $access_manager;
+     $this->account = $account;
+     $this->moduleHandler = $module_handler;
++    $this->stringTranslation = $string_translation;
++
++    if ($string_translation === NULL) {
++      @trigger_error('Calling ' . __METHOD__ . '() without the $string_translation argument is deprecated in drupal:11.2.0 and will be required in drupal:12.0.0. See https://www.drupal.org/node/0000', E_USER_DEPRECATED);
++      $string_translation = \Drupal::service('string_translation');
++    }
++
++    if ($module_handler->moduleExists('language')) {
++      $this->adminLanguageLanguageNegotiationEnabled = \Drupal::service('language_negotiator')->isNegotiationMethodEnabled('language-user-admin');
++    }
++
++    $this->stringTranslation = $string_translation;
+     $this->alterInfo('local_tasks');
+     $this->setCacheBackend($cache, 'local_task_plugins:' . $language_manager->getCurrentLanguage()->getId(), ['local_task']);
+   }
+@@ -177,7 +203,18 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+     $controller = [$local_task, 'getTitle'];
+     $request = $this->requestStack->getCurrentRequest();
+     $arguments = $this->argumentResolver->getArguments($request, $controller);
+-    return call_user_func_array($controller, $arguments);
++
++    $userAdminLangcode = $this->account->getPreferredAdminLangcode(FALSE);
++    if ($this->adminLanguageLanguageNegotiationEnabled && !empty($userAdminLangcode)) {
++      $originalLangcode = $this->stringTranslation->setDefaultLangcode($userAdminLangcode);
++      $title = call_user_func_array($controller, $arguments);
++      $this->stringTranslation->setDefaultLangcode($originalLangcode);
++    }
++    else {
++      $title = call_user_func_array($controller, $arguments);
++    }
++
++    return $title;
+   }
+ 
+   /**
+@@ -324,7 +361,6 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+         // one of its child tabs is the active tab.
+         $active = $active || $child->getActive();
+         // @todo It might make sense to use link render elements instead.
+-
+         $link = [
+           'title' => $this->getTitle($child),
+           'url' => Url::fromRoute($route_name, $route_parameters),
+@@ -338,7 +374,9 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
+           '#weight' => $child->getWeight(),
+           '#access' => $access,
+         ];
+-        $cacheability->addCacheableDependency($access)->addCacheableDependency($child);
++        $cacheability->addCacheableDependency($access)
++          ->addCacheableDependency($child)
++          ->addCacheContexts(['languages:' . LanguageInterface::TYPE_INTERFACE]);
+       }
+     }
+ 
+diff --git a/core/lib/Drupal/Core/Menu/MenuPreprocess.php b/core/lib/Drupal/Core/Menu/MenuPreprocess.php
+index a083470..74f4923 100644
+--- a/core/lib/Drupal/Core/Menu/MenuPreprocess.php
++++ b/core/lib/Drupal/Core/Menu/MenuPreprocess.php
+@@ -2,6 +2,8 @@
+ 
+ namespace Drupal\Core\Menu;
+ 
++use Drupal\Core\Template\Attribute;
++
+ /**
+  * Menu theme preprocess.
+  *
+@@ -42,6 +44,25 @@ class MenuPreprocess {
+     ];
+   }
+ 
++  /**
++   * Prepares variables for local tasks templates.
++   *
++   * Default template: menu-local-tasks.html.twig.
++   *
++   * @param array $variables
++   *   An associative array containing:
++   *   - primary: HTML list items representing primary tasks.
++   *   - secondary: HTML list items representing secondary tasks.
++   */
++  public function preprocessMenuLocalTasks(array &$variables): void {
++    if (is_array($variables['primary_attributes'])) {
++      $variables['primary_attributes'] = new Attribute($variables['primary_attributes']);
++    }
++    if (is_array($variables['secondary_attributes'])) {
++      $variables['secondary_attributes'] = new Attribute($variables['secondary_attributes']);
++    }
++  }
++
+   /**
+    * Prepares variables for single local action link templates.
+    *
+diff --git a/core/lib/Drupal/Core/Menu/Plugin/Block/LocalTasksBlock.php b/core/lib/Drupal/Core/Menu/Plugin/Block/LocalTasksBlock.php
+index 334c7c7..effedbf 100644
+--- a/core/lib/Drupal/Core/Menu/Plugin/Block/LocalTasksBlock.php
++++ b/core/lib/Drupal/Core/Menu/Plugin/Block/LocalTasksBlock.php
+@@ -93,6 +93,17 @@ class LocalTasksBlock extends BlockBase implements ContainerFactoryPluginInterfa
+       $originalLangcode = \Drupal::service(AdminLanguageRender::class)->switchToAdminLanguage();
+     }
+ 
++    $userAdminLangcode = \Drupal::currentUser()->getPreferredAdminLangcode(FALSE);
++    $negotiation_method_enabled = \Drupal::moduleHandler()->moduleExists('language') && \Drupal::service('language_negotiator')->isNegotiationMethodEnabled('language-user-admin');
++
++    $primary_attributes = [];
++    $secondary_attributes = [];
++    if ($negotiation_method_enabled && !empty($userAdminLangcode)) {
++      $language = \Drupal::languageManager()->getLanguage($userAdminLangcode);
++      $primary_attributes = ['dir' => $language->getDirection(), 'lang' => $language->getId()];
++      $secondary_attributes = $primary_attributes;
++    }
++
+     $tabs = [
+       '#theme' => 'menu_local_tasks',
+     ];
+@@ -104,6 +115,7 @@ class LocalTasksBlock extends BlockBase implements ContainerFactoryPluginInterfa
+       // Do not display single tabs.
+       $tabs += [
+         '#primary' => count(Element::getVisibleChildren($links['tabs'])) > 1 ? $links['tabs'] : [],
++        '#primary_attributes' => $primary_attributes,
+       ];
+     }
+     if ($config['secondary']) {
+@@ -112,6 +124,7 @@ class LocalTasksBlock extends BlockBase implements ContainerFactoryPluginInterfa
+       // Do not display single tabs.
+       $tabs += [
+         '#secondary' => count(Element::getVisibleChildren($links['tabs'])) > 1 ? $links['tabs'] : [],
++        '#secondary_attributes' => $secondary_attributes,
+       ];
+     }
+ 
+diff --git a/core/lib/Drupal/Core/StringTranslation/TranslationManager.php b/core/lib/Drupal/Core/StringTranslation/TranslationManager.php
+index e9ce803..423f806 100644
+--- a/core/lib/Drupal/Core/StringTranslation/TranslationManager.php
++++ b/core/lib/Drupal/Core/StringTranslation/TranslationManager.php
+@@ -154,9 +154,14 @@ class TranslationManager implements TranslationInterface, TranslatorInterface {
+    *
+    * @param string $langcode
+    *   A language code.
++   *
++   * @return string
++   *   The overridden langcode.
+    */
+-  public function setDefaultLangcode($langcode) {
++  public function setDefaultLangcode(string $langcode) {
++    $overridden_langcode = $this->defaultLangcode;
+     $this->defaultLangcode = $langcode;
++    return $overridden_langcode;
+   }
+ 
+   /**
+diff --git a/core/lib/Drupal/Core/Theme/ThemeCommonElements.php b/core/lib/Drupal/Core/Theme/ThemeCommonElements.php
+index 1f8d8f7..8ad6ee2 100644
+--- a/core/lib/Drupal/Core/Theme/ThemeCommonElements.php
++++ b/core/lib/Drupal/Core/Theme/ThemeCommonElements.php
+@@ -210,9 +210,12 @@ class ThemeCommonElements {
+         'initial preprocess' => MenuPreprocess::class . ':preprocessMenuLocalAction',
+       ],
+       'menu_local_tasks' => [
++        'initial preprocess' => MenuPreprocess::class . ':preprocessMenuLocalTasks',
+         'variables' => [
+           'primary' => [],
++          'primary_attributes' => [],
+           'secondary' => [],
++          'secondary_attributes' => [],
+         ],
+       ],
+       // From form system.
+diff --git a/core/modules/system/templates/menu-local-tasks.html.twig b/core/modules/system/templates/menu-local-tasks.html.twig
+index 1f6f9eb..d1eb6b0 100644
+--- a/core/modules/system/templates/menu-local-tasks.html.twig
++++ b/core/modules/system/templates/menu-local-tasks.html.twig
+@@ -15,9 +15,9 @@
+ #}
+ {% if primary %}
+   <h2 class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+-  <ul>{{ primary }}</ul>
++  <ul{{ primary_attributes }}>{{ primary }}</ul>
+ {% endif %}
+ {% if secondary %}
+   <h2 class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+-  <ul>{{ secondary }}</ul>
++  <ul{{ secondary_attributes }}>{{ secondary }}</ul>
+ {% endif %}
+diff --git a/core/modules/system/tests/src/Functional/Menu/LocalTasksTest.php b/core/modules/system/tests/src/Functional/Menu/LocalTasksTest.php
+index 030f8ff..490be37 100644
+--- a/core/modules/system/tests/src/Functional/Menu/LocalTasksTest.php
++++ b/core/modules/system/tests/src/Functional/Menu/LocalTasksTest.php
+@@ -6,7 +6,9 @@ namespace Drupal\Tests\system\Functional\Menu;
+ 
+ use Drupal\Component\Utility\Html;
+ use Drupal\Core\Url;
++use Drupal\language\Entity\ConfigurableLanguage;
+ use Drupal\Tests\BrowserTestBase;
++use Drupal\user\Entity\User;
+ use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
+ use PHPUnit\Framework\Attributes\Group;
+ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+@@ -305,67 +307,77 @@ class LocalTasksTest extends BrowserTestBase {
+   }
+ 
+   /**
+-   * Tests local task block URLs for entities with path aliases.
++   * Test local tasks translation when the user has a preferred admin langcode.
+    */
+-  public function testLocalTaskBlockUrl(): void {
+-    // Install the necessary modules for the test.
+-    \Drupal::service('module_installer')->install(['path', 'taxonomy']);
+-    $this->drupalCreateContentType(['type' => 'article']);
+-    $vocab = $this->createVocabulary(['vid' => 'tags']);
+-
+-    $web_user = $this->drupalCreateUser([
+-      'create article content',
+-      'edit own article content',
+-      'create url aliases',
+-      'create terms in tags',
+-      'edit terms in tags',
+-    ]);
++  public function testLocalTaskPreferredAdminLanguage(): void {
++    // Enable locale to make the local tasks translatable.
++    \Drupal::service('module_installer')->install(['locale']);
++    // Clear all caches so the config schema for language.negotiation is
++    // available.
++    $this->resetAll();
++
++    // Add another language.
++    $xx_language = ConfigurableLanguage::create(['id' => 'xx', 'label' => 'xx']);
++    $xx_language->save();
++
++    $this->config('language.negotiation')
++      ->set('url.prefixes.en', 'en')
++      ->set('url.prefixes.xx', 'xx')
++      ->save();
++
++    /** @var \Drupal\locale\StringDatabaseStorage $locale_storage */
++    $locale_storage = \Drupal::service('locale.storage');
++
++    // Add a translation for the 'Edit' local task.
++    $edit_translated_string = $this->randomString();
++    $source = $locale_storage->createString([
++      'source' => 'Edit',
++      'context' => '',
++    ])->save();
++    $locale_storage->createTranslation([
++      'lid' => $source->getId(),
++      'language' => 'xx',
++      'translation' => $edit_translated_string,
++    ])->save();
++    // Clear all caches so the newly added translation is used.
++    $this->resetAll();
++
++    $this->drupalLogin($this->rootUser);
++
++    // Local tasks are shown in the current language.
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings'));
++    $this->assertSession()->elementTextContains('css', '.tabs', 'Edit');
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings', [], ['language' => $xx_language]));
++    $this->assertSession()->elementTextContains('css', '.tabs', $edit_translated_string);
+ 
+-    // Create node and taxonomy term entities with path aliases.
+-    $entities = [
+-      'node' => $this->drupalCreateNode([
+-        'type' => 'article',
+-        'path' => [
+-          'alias' => '/original-node-alias',
+-        ],
+-        'uid' => $web_user->id(),
+-      ]),
+-      'term' => $this->createTerm($vocab, [
+-        'path' => [
+-          'alias' => '/original-term-alias',
+-        ],
+-        'uid' => $web_user->id(),
+-      ]),
+-    ];
++    // Set a preferred admin language for the current user.
++    $user = User::load($this->rootUser->id());
++    $user->set('preferred_admin_langcode', 'en')->save();
+ 
+-    $this->drupalLogin($web_user);
+-    // Test the local task block URLs for both node and term entities.
+-    foreach ($entities as $entity_type => $entity) {
+-      $this->drupalGet($entity->toUrl());
+-      $this->assertSameLocalTaskUrl('/original-' . $entity_type . '-alias');
++    // Clear all caches so the local tasks block is built again.
++    $this->resetAll();
+ 
+-      $this->drupalGet($entity->toUrl('edit-form'));
+-      $new_alias = '/original-' . $entity_type . '-alias-updated';
+-      $edit = ['path[0][alias]' => $new_alias];
+-      $this->submitForm($edit, 'Save');
++    // Local tasks are still shown in the current language since the
++    // language-user-admin language negotiation is not enabled.
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings'));
++    $this->assertSession()->elementTextContains('css', '.tabs', 'Edit');
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings', [], ['language' => $xx_language]));
++    $this->assertSession()->elementTextContains('css', '.tabs', $edit_translated_string);
+ 
+-      $this->assertSameLocalTaskUrl($new_alias);
+-      $this->drupalGet($entity->toUrl('edit-form'));
+-      $this->assertSameLocalTaskUrl($new_alias);
+-    }
+-  }
++    // Enable the language-user-admin language negotiation.
++    $this->config('language.types')
++      ->set('negotiation.language_interface.enabled.language-user-admin', -20)
++      ->set('negotiation.language_interface.method_weights.language-user-admin', -20)
++      ->save();
+ 
+-  /**
+-   * Asserts that the local task URL matches the expected alias.
+-   *
+-   * @param string $alias
+-   *   The expected path alias.
+-   */
+-  protected function assertSameLocalTaskUrl(string $alias): void {
+-    // Assert that the href attribute of the 'View' link contains the expected
+-    // alias.
+-    $link = $this->assertSession()->elementExists('xpath', '//a[text()="View"]');
+-    $this->assertStringContainsString($alias, $link->getAttribute('href'));
++    // Clear all caches so the local tasks block is built again.
++    $this->resetAll();
++
++    // Local tasks are shown in the user's preferred admin langcode.
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings'));
++    $this->assertSession()->elementTextContains('css', '.tabs', 'Edit');
++    $this->drupalGet(Url::fromRoute('menu_test.local_task_test_tasks_settings', [], ['language' => $xx_language]));
++    $this->assertSession()->elementTextContains('css', '.tabs', 'Edit');
+   }
+ 
+ }
+diff --git a/core/profiles/demo_umami/themes/umami/templates/components/navigation/menu-local-tasks.html.twig b/core/profiles/demo_umami/themes/umami/templates/components/navigation/menu-local-tasks.html.twig
+index 8eb20ab..51c5fed 100644
+--- a/core/profiles/demo_umami/themes/umami/templates/components/navigation/menu-local-tasks.html.twig
++++ b/core/profiles/demo_umami/themes/umami/templates/components/navigation/menu-local-tasks.html.twig
+@@ -13,9 +13,9 @@
+ #}
+ {% if primary %}
+   <h2 class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+-  <ul class="tabs primary">{{ primary }}</ul>
++  <ul{{ primary_attributes.addClass('tabs', 'primary') }}>{{ primary }}</ul>
+ {% endif %}
+ {% if secondary %}
+   <h2 class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+-  <ul class="tabs secondary">{{ secondary }}</ul>
++  <ul{{ secondary_attributes.addClass('tabs', 'secondary') }}>{{ secondary }}</ul>
+ {% endif %}
+diff --git a/core/tests/Drupal/Tests/Core/Menu/LocalTaskManagerTest.php b/core/tests/Drupal/Tests/Core/Menu/LocalTaskManagerTest.php
+index b8c778c..07acb17 100644
+--- a/core/tests/Drupal/Tests/Core/Menu/LocalTaskManagerTest.php
++++ b/core/tests/Drupal/Tests/Core/Menu/LocalTaskManagerTest.php
+@@ -73,7 +73,7 @@ class LocalTaskManagerTest extends UnitTestCase {
+   /**
+    * The cache backend used in the test.
+    *
+-   * @var \Drupal\Core\Cache\CacheBackendInterface|\Prophecy\Prophecy\ObjectProphecy
++   * @var \Drupal\Core\Cache\CacheBackendInterface|\PHPUnit\Framework\MockObject\MockObject
+    */
+   protected $cacheBackend;
+ 
+@@ -103,7 +103,7 @@ class LocalTaskManagerTest extends UnitTestCase {
+     $this->routeProvider = $this->createMock('Drupal\Core\Routing\RouteProviderInterface');
+     $this->pluginDiscovery = $this->createMock('Drupal\Component\Plugin\Discovery\DiscoveryInterface');
+     $this->factory = $this->createMock('Drupal\Component\Plugin\Factory\FactoryInterface');
+-    $this->cacheBackend = $this->prophesize('Drupal\Core\Cache\CacheBackendInterface');
++    $this->cacheBackend = $this->createMock('Drupal\Core\Cache\CacheBackendInterface');
+     $this->accessManager = $this->createMock('Drupal\Core\Access\AccessManagerInterface');
+     $this->routeMatch = $this->createMock('Drupal\Core\Routing\RouteMatchInterface');
+     $this->account = $this->createMock('Drupal\Core\Session\AccountInterface');
+@@ -249,7 +249,16 @@ class LocalTaskManagerTest extends UnitTestCase {
+       ->method('getCurrentLanguage')
+       ->willReturn(new Language(['id' => 'en']));
+ 
+-    $this->manager = new LocalTaskManager($this->argumentResolver, $request_stack, $this->routeMatch, $this->routeProvider, $module_handler, $this->cacheBackend->reveal(), $language_manager, $this->accessManager, $this->account);
++    $this->account->expects($this->any())
++      ->method('getPreferredAdminLangcode')
++      ->willReturn('en');
++
++    $translation = $this->createMock('Drupal\Core\StringTranslation\TranslationManager');
++    $translation->expects($this->any())
++      ->method('setDefaultLangcode')
++      ->willReturn('en');
++
++    $this->manager = new LocalTaskManager($this->argumentResolver, $request_stack, $this->routeMatch, $this->routeProvider, $module_handler, $this->cacheBackend, $language_manager, $this->accessManager, $this->account, $translation);
+ 
+     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'discovery');
+     $property->setValue($this->manager, $this->pluginDiscovery);
+@@ -428,7 +437,7 @@ class LocalTaskManagerTest extends UnitTestCase {
+ 
+     // Ensure that all cacheability metadata is merged together.
+     $this->assertEqualsCanonicalizing(['tag.example1', 'tag.example2'], $cacheability->getCacheTags());
+-    $this->assertEqualsCanonicalizing(['context.example1', 'context.example2', 'route', 'user.permissions'], $cacheability->getCacheContexts());
++    $this->assertEqualsCanonicalizing(['context.example1', 'context.example2', 'languages:language_interface', 'route', 'user.permissions'], $cacheability->getCacheContexts());
+   }
+ 
+   /**
+@@ -561,10 +570,10 @@ class LocalTaskManagerTest extends UnitTestCase {
+       ['user.permissions'],
+       ['route'],
+       ['route', 'context.example1'],
+-      ['context.example1', 'route'],
+-      ['route', 'context.example1', 'context.example2'],
+-      ['context.example1', 'context.example2', 'route'],
+-      ['route', 'context.example1', 'context.example2', 'user.permissions'],
++      ['context.example1', 'route', 'languages:language_interface'],
++      ['route', 'context.example1', 'languages:language_interface', 'context.example2'],
++      ['context.example1', 'languages:language_interface', 'context.example2', 'route'],
++      ['route', 'context.example1', 'languages:language_interface', 'context.example2', 'user.permissions'],
+     ] as $argument) {
+       $cache_context_manager->assertValidTokens($argument)->willReturn(TRUE);
+     }
+diff --git a/core/themes/claro/templates/menu-local-tasks.html.twig b/core/themes/claro/templates/menu-local-tasks.html.twig
+index fea7684..2068e3c 100644
+--- a/core/themes/claro/templates/menu-local-tasks.html.twig
++++ b/core/themes/claro/templates/menu-local-tasks.html.twig
+@@ -16,12 +16,12 @@
+ {% if primary %}
+   <h2 id="primary-tabs-title" class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+   <nav class="tabs-wrapper is-horizontal is-collapsible" aria-labelledby="primary-tabs-title" data-drupal-nav-tabs>
+-    <ul class="tabs tabs--primary clearfix" data-drupal-nav-tabs-target>{{ primary }}</ul>
++    <ul{{ primary_attributes.addClass('tabs', 'tabs--primary', 'clearfix').setAttribute('data-drupal-nav-tabs-target', true) }}>{{ primary }}</ul>
+   </nav>
+ {% endif %}
+ {% if secondary %}
+   <h2 id="secondary-tabs-title" class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+   <nav class="tabs-wrapper tabs-wrapper--secondary is-horizontal is-collapsible" aria-labelledby="secondary-tabs-title" data-drupal-nav-tabs>
+-    <ul class="tabs tabs--secondary clearfix" data-drupal-nav-tabs-target>{{ secondary }}</ul>
++    <ul{{ secondary_attributes.addClass('tabs', 'tabs--secondary', 'clearfix').setAttribute('data-drupal-nav-tabs-target', true) }}>{{ secondary }}</ul>
+   </nav>
+ {% endif %}
+diff --git a/core/themes/olivero/templates/navigation/menu-local-tasks.html.twig b/core/themes/olivero/templates/navigation/menu-local-tasks.html.twig
+index a900e7c..6bdcf98 100644
+--- a/core/themes/olivero/templates/navigation/menu-local-tasks.html.twig
++++ b/core/themes/olivero/templates/navigation/menu-local-tasks.html.twig
+@@ -19,12 +19,12 @@
+ {% if primary %}
+   <h2 id="primary-tabs-title" class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+   <nav class="tabs-wrapper" aria-labelledby="primary-tabs-title" data-drupal-nav-primary-tabs>
+-    <ul class="tabs tabs--primary">{{ primary }}</ul>
++    <ul{{ primary_attributes.addClass('tabs', 'tabs--primary') }}>{{ primary }}</ul>
+   </nav>
+ {% endif %}
+ {% if secondary %}
+   <h2 id="secondary-tabs-title" class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+   <nav class="tabs-wrapper" aria-labelledby="secondary-tabs-title">
+-    <ul class="tabs tabs--secondary">{{ secondary }}</ul>
++    <ul{{ secondary_attributes.addClass('tabs', 'tabs--secondary') }}>{{ secondary }}</ul>
+   </nav>
+ {% endif %}
+diff --git a/core/themes/stable9/templates/navigation/menu-local-tasks.html.twig b/core/themes/stable9/templates/navigation/menu-local-tasks.html.twig
+index 8aded43..b0fbe6b 100644
+--- a/core/themes/stable9/templates/navigation/menu-local-tasks.html.twig
++++ b/core/themes/stable9/templates/navigation/menu-local-tasks.html.twig
+@@ -13,9 +13,9 @@
+ #}
+ {% if primary %}
+   <h2 class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+-  <ul>{{ primary }}</ul>
++  <ul{{ primary_attributes }}>{{ primary }}</ul>
+ {% endif %}
+ {% if secondary %}
+   <h2 class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+-  <ul>{{ secondary }}</ul>
++  <ul{{ secondary_attributes }}>{{ secondary }}</ul>
+ {% endif %}
+diff --git a/core/themes/starterkit_theme/css/components/tabs.css b/core/themes/starterkit_theme/css/components/tabs.css
+index 16fb122..a640bac 100644
+--- a/core/themes/starterkit_theme/css/components/tabs.css
++++ b/core/themes/starterkit_theme/css/components/tabs.css
+@@ -15,7 +15,7 @@ ul.tabs {
+   display: inline-block;
+   margin-right: 0.3em; /* LTR */
+ }
+-[dir="rtl"] .tabs > li {
++[dir="rtl"].tabs > li {
+   margin-right: 0;
+   margin-left: 0.3em;
+ }
+diff --git a/core/themes/starterkit_theme/templates/navigation/menu-local-tasks.html.twig b/core/themes/starterkit_theme/templates/navigation/menu-local-tasks.html.twig
+index 8eb20ab..51c5fed 100644
+--- a/core/themes/starterkit_theme/templates/navigation/menu-local-tasks.html.twig
++++ b/core/themes/starterkit_theme/templates/navigation/menu-local-tasks.html.twig
+@@ -13,9 +13,9 @@
+ #}
+ {% if primary %}
+   <h2 class="visually-hidden">{{ 'Primary tabs'|t }}</h2>
+-  <ul class="tabs primary">{{ primary }}</ul>
++  <ul{{ primary_attributes.addClass('tabs', 'primary') }}>{{ primary }}</ul>
+ {% endif %}
+ {% if secondary %}
+   <h2 class="visually-hidden">{{ 'Secondary tabs'|t }}</h2>
+-  <ul class="tabs secondary">{{ secondary }}</ul>
++  <ul{{ secondary_attributes.addClass('tabs', 'secondary') }}>{{ secondary }}</ul>
+ {% endif %}
