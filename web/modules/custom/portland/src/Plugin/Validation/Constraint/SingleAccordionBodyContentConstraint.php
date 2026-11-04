@@ -19,5 +19,5 @@ class SingleAccordionBodyContentConstraint extends SymfonyConstraint {
   /**
    * The default violation message.
    */
-  public string $message = 'All content must be within the rows of a single accordion.';
+  public string $message = 'All content must be within the rows of a single accordion. Make sure there are no empty lines, embeds, or text outside of the accordion.';
 }
