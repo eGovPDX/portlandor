@@ -3,6 +3,9 @@
 use \Drupal\group\Entity\GroupRelationship;
 use \Drupal\group\Entity\Group;
 use \Drupal\group\Entity\GroupInterface;
+use \Drupal\Core\Cache\Cache;
+use \Drupal\node\NodeInterface;
+use \Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_form_alter().
@@ -310,5 +313,92 @@ function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id)
   $current_node = $group->getRelationshipsByEntity($entity, $plugin_id);
   if (!$current_node || count($current_node) < 1) {
     $group->addRelationship($entity, $plugin_id);
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ * Adds a "group_notifications:{gid}" cache tag to the notification views.
+ * pantheon_advanced_page_cache renames *_list tags to *_emit_list in the
+ * Surrogate-Key header, so saving a notification (which invalidates node_list)
+ * never purges these pages from Pantheon's edge cache. This tag lets us purge
+ * only the pages that show notifications for the affected groups.
+ */
+function portland_groups_views_pre_render(ViewExecutable $view)
+{
+  $gids = [];
+  switch ($view->id()) {
+    case 'group_notifications':
+      // The argument is the group ID.
+      if (!empty($view->args[0]) && is_numeric($view->args[0])) {
+        $gids[] = $view->args[0];
+      }
+      break;
+
+    case 'group_notifications_on_entity':
+      // The argument is the node or media ID; tag with the groups it belongs to.
+      $entity_type = $view->current_display === 'block_media' ? 'media' : 'node';
+      if (!empty($view->args[0]) && is_numeric($view->args[0])) {
+        $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($view->args[0]);
+        if ($entity) {
+          foreach (GroupRelationship::loadByEntity($entity) as $relationship) {
+            $gids[] = $relationship->getGroupId();
+          }
+        }
+      }
+      break;
+
+    default:
+      return;
+  }
+
+  foreach (array_unique($gids) as $gid) {
+    $view->element['#cache']['tags'][] = "group_notifications:$gid";
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for node entities.
+ */
+function portland_groups_node_insert(NodeInterface $node)
+{
+  _portland_groups_invalidate_notification_cache_tags($node);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update() for node entities.
+ */
+function portland_groups_node_update(NodeInterface $node)
+{
+  _portland_groups_invalidate_notification_cache_tags($node);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_delete() for node entities.
+ */
+function portland_groups_node_delete(NodeInterface $node)
+{
+  _portland_groups_invalidate_notification_cache_tags($node);
+}
+
+/**
+ * Invalidates the "group_notifications:{gid}" cache tags for a notification.
+ */
+function _portland_groups_invalidate_notification_cache_tags(NodeInterface $node)
+{
+  if ($node->bundle() !== 'notification' || !$node->hasField('field_display_groups')) {
+    return;
+  }
+
+  $gids = array_column($node->get('field_display_groups')->getValue(), 'target_id');
+  // Also purge groups that were removed from the notification in this save.
+  if (isset($node->original) && $node->original->hasField('field_display_groups')) {
+    $gids = array_merge($gids, array_column($node->original->get('field_display_groups')->getValue(), 'target_id'));
+  }
+
+  $tags = array_map(fn($gid) => "group_notifications:$gid", array_unique($gids));
+  if (!empty($tags)) {
+    Cache::invalidateTags($tags);
   }
 }
