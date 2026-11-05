@@ -1,0 +1,144 @@
+From a1c7ad1c2155bdcffca551650a42893911527202 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Wed, 4 Nov 2026 16:13:53 -0800
+Subject: [PATCH] fix: #3635418 Inline form error summary link is broken on
+ textarea/textfield widgets
+
+---
+ .../Field/FieldWidget/TextareaWidget.php      |  2 +-
+ .../Field/FieldWidget/TextfieldWidget.php     |  2 +-
+ .../tests/src/Functional/TextFieldTest.php    | 77 ++++++++++++++++++-
+ 3 files changed, 78 insertions(+), 3 deletions(-)
+
+diff --git a/core/modules/text/src/Plugin/Field/FieldWidget/TextareaWidget.php b/core/modules/text/src/Plugin/Field/FieldWidget/TextareaWidget.php
+index cd38f4244aeb..61ebca42018b 100644
+--- a/core/modules/text/src/Plugin/Field/FieldWidget/TextareaWidget.php
++++ b/core/modules/text/src/Plugin/Field/FieldWidget/TextareaWidget.php
+@@ -57,7 +57,7 @@ public function errorElement(array $element, ConstraintViolationInterface $viola
+       // See \Drupal\filter\Element\TextFormat::processFormat().
+       return FALSE;
+     }
+-    return $element;
++    return $element['value'];
+   }
+ 
+ }
+diff --git a/core/modules/text/src/Plugin/Field/FieldWidget/TextfieldWidget.php b/core/modules/text/src/Plugin/Field/FieldWidget/TextfieldWidget.php
+index 16b7549681c1..b6ab353da345 100644
+--- a/core/modules/text/src/Plugin/Field/FieldWidget/TextfieldWidget.php
++++ b/core/modules/text/src/Plugin/Field/FieldWidget/TextfieldWidget.php
+@@ -48,7 +48,7 @@ public function errorElement(array $element, ConstraintViolationInterface $viola
+       // See \Drupal\filter\Element\TextFormat::processFormat().
+       return FALSE;
+     }
+-    return $element;
++    return $element['value'];
+   }
+ 
+ }
+diff --git a/core/modules/text/tests/src/Functional/TextFieldTest.php b/core/modules/text/tests/src/Functional/TextFieldTest.php
+index e3d9dbd91004..e515bd84f3ba 100644
+--- a/core/modules/text/tests/src/Functional/TextFieldTest.php
++++ b/core/modules/text/tests/src/Functional/TextFieldTest.php
+@@ -31,7 +31,7 @@ class TextFieldTest extends StringFieldTest {
+   /**
+    * {@inheritdoc}
+    */
+-  protected static $modules = ['entity_test', 'file', 'field_ui'];
++  protected static $modules = ['entity_test', 'file', 'field_ui', 'inline_form_errors', 'text_test', 'node'];
+ 
+   /**
+    * A user with relevant administrative privileges.
+@@ -51,9 +51,12 @@ class TextFieldTest extends StringFieldTest {
+   protected function setUp(): void {
+     parent::setUp();
+ 
++    $this->drupalCreateContentType(['type' => 'page']);
+     $this->adminUser = $this->drupalCreateUser([
+       'administer filters',
+       'administer entity_test fields',
++      'create page content',
++      'edit own page content',
+     ]);
+   }
+ 
+@@ -408,4 +411,76 @@ public function _testTextfieldWidgetsFormatted($field_type, $widget_type): void
+     $this->assertStringContainsString($value, (string) $rendered_entity);
+   }
+ 
++  /**
++   * Tests that the error summary link anchor is correctly set for text area widgets with a constraint validation error
++   * when inline_form_errors is enabled.
++   */
++  public function testTextAreaWidgetInlineFormErrorLink(): void {
++    $this->_textWidgetInlineFormErrorLink('text_long');
++  }
++
++  /**
++   * Tests that the error summary link anchor is correctly set for text field widgets with a constraint validation error
++   * when inline_form_errors is enabled.
++   */
++  public function testTextFieldWidgetInlineFormErrorLink(): void {
++    $this->_textWidgetInlineFormErrorLink('text');
++  }
++
++  /**
++   * Helper function for testTextAreaWidgetInlineFormErrorLink() and testTextFieldWidgetInlineFormErrorLink().
++   *
++   * @see \Drupal\text_test\Hook\TextTestHooks::entityBundleFieldInfoAlter()
++   */
++  public function _textWidgetInlineFormErrorLink(string $field_type): void {
++    // Create a field for validation testing.
++    $entity_type_id = 'node';
++    $field_name = $this->randomMachineName();
++    $entity_type_manager = $this->container->get('entity_type.manager');
++    $field_storage = $entity_type_manager->getStorage('field_storage_config')->create([
++      'field_name' => $field_name,
++      'entity_type' => $entity_type_id,
++      'type' => $field_type,
++      'cardinality' => 2,
++    ]);
++    $field_storage->save();
++    $bundle_id = 'page';
++    $field_label = $this->randomMachineName() . '_label';
++    $entity_type_manager->getStorage('field_config')->create([
++      'field_storage' => $field_storage,
++      'bundle' => $bundle_id,
++      'label' => $field_label,
++      'settings' => [
++        'display_summary' => TRUE,
++        'required_summary' => FALSE,
++      ],
++    ])->save();
++
++    // Add the created field to the form.
++    $this->container
++      ->get('entity_display.repository')
++      ->getFormDisplay($entity_type_id, $bundle_id)
++      ->setComponent($field_name, [])
++      ->save();
++
++    // Enable delta-specific validation for the field.
++    $this->container->get('state')->set('field_test_constraint', $field_name);
++    $this->container->get('entity_field.manager')->clearCachedFieldDefinitions();
++
++    // Create a node to verify that the inline error link anchor is set correctly.
++    $value = $this->randomMachineName();
++    $this->drupalLogin($this->adminUser);
++    $this->drupalGet('node/add/page');
++    $edit = [
++      'title[0][value]' => $this->randomMachineName(),
++      "{$field_name}[0][value]" => $value,
++      "{$field_name}[1][value]" => $value,
++    ];
++    $this->submitForm($edit, 'Save');
++
++    // Verify that the error summary link anchor points to an element that exists.
++    $linkEl = $this->assertSession()->elementAttributeExists('css', 'div[data-drupal-messages] a', 'href');
++    $anchor_id = str_replace('#', '', $linkEl->getAttribute('href'));
++    $this->assertSession()->elementExists('css', "#{$anchor_id}");
++  }
+ }
+-- 
+GitLab
+
