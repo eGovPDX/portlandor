@@ -1,7 +1,9 @@
 uuid: e517b125-b9ac-4774-bc75-16b325b3a7b1
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -25,11 +27,6 @@ elements: |-
       '#location_address__title': 'Business address'
       '#location_address__description': ''
       '#address_suggest': 0
-    permit_insured_name:
-      '#type': textfield
-      '#title': 'Name of Insured on Certificate of Liability Insurance'
-      '#description': 'The name on the insurance certificate must match the name of the production company.'
-      '#description_display': before
   section_contact_information:
     '#type': webform_section
     '#title': 'Contact information'
@@ -111,7 +108,7 @@ elements: |-
         '#multiple': 1
         '#max_filesize': '50'
         '#file_help': help
-        '#file_extensions': 'pdf'
+        '#file_extensions': pdf
   container_no_production_packet:
     '#type': container
     '#states':
@@ -150,6 +147,100 @@ elements: |-
         '#multiple__add_more_button_label': 'Add another location'
         '#multiple__add_more_input_label': 'more locations'
         '#element':
+          requested_use:
+            '#type': radios
+            '#required': true
+            '#title': 'Requested use'
+            '#options':
+              b_roll: B-Roll
+              row: 'Right of way'
+              parking: 'Parking only'
+          requested_area:
+            '#type': checkboxes
+            '#title': 'Requested area'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
+                  value: row
+            '#options':
+              sidewalk: Sidewalk
+              lane: Lane
+              street: Street
+              parking: Parking
+          sidewalk_closure_type:
+            '#type': radios
+            '#title': 'Sidewalk closure type'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_area][sidewalk]"]':
+                  checked: true
+            '#options':
+              itc: 'ITC (1-5 min max)'
+              full: Full
+              none: 'None (shared use)'
+            '#required': true
+          lane_closure_type:
+            '#type': radios
+            '#title': 'Lane closure type'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_area][lane]"]':
+                  checked: true
+            '#options':
+              itc: 'ITC (1-5 min max)'
+              full: Full
+              none: 'None (shared use)'
+            '#required': true
+          street_closure_type:
+            '#type': radios
+            '#title': 'Street closure type'
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_area][street]"]':
+                  checked: true
+            '#options':
+              itc: 'ITC (1-5 min max)'
+              full: Full
+              none: 'None (shared use)'
+            '#required': true
+          space_type:
+            '#type': select
+            '#options':
+              metered: Metered
+              non_metered: Non-Metered
+              app: 'Area Parking Permit'
+            '#required': true
+            '#title': 'Type of parking space'
+            '#states':
+              visible:
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
+                    checked: true
+                - or
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
+                    value: parking
+          num_spaces:
+            '#type': textfield
+            '#required': true
+            '#title': 'Number of spaces or feet'
+            '#description': '(1 space = 20 feet)'
+            '#description_display': before
+            '#states':
+              visible:
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
+                    checked: true
+                - or
+                - ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
+                    value: parking
+          needs_enforcement:
+            '#type': radios
+            '#options': yes_no
+            '#required': true
+            '#title': 'Parking Enforcement for towing? (Non-Metered only)'
+            '#options_display': side_by_side
+            '#states':
+              visible:
+                ':input[name="permit_locations[items][{delta}][_item_][space_type]"]':
+                  value: non_metered
           date_start:
             '#type': date
             '#title': 'Start date'
@@ -178,96 +269,54 @@ elements: |-
               both: 'Both Sides'
             '#required': true
             '#title': 'Side of the street'
-          nearest_cross_streets:
+          cross_street_1:
             '#type': textfield
             '#required': true
-            '#title': 'Names of nearest cross streets'
-          other_cross_streets:
-            '#type': textfield
-            '#required': true
-            '#title': 'Names of other adjacent cross streets'
-          requested_use:
-            '#type': radios
-            '#required': true
-            '#title': 'Requested use'
-            '#options_display': side_by_side
-            '#options':
-              b_roll: 'B-Roll'
-              row: 'Right of way'
-          requested_area:
-            '#type': checkboxes
-            '#title': 'Requested area'
-            '#states':
-              visible:
-                ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
-                  value: row
-            '#options':
-              sidewalk_closure: 'Sidewalk closure'
-              sidewalk_use: 'Sidewalk use'
-              lane: 'Lane'
-              street: 'Street'
-              parking: 'Parking'
-          closure_type:
-            '#type': radios
-            '#title': 'Closure type'
-            '#states':
-              visible:
-                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][sidewalk_closure]"]':
-                    checked: true
-                - or
-                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][sidewalk_use]"]':
-                    checked: true
-                - or
-                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][lane]"]':
-                    checked: true
-                - or
-                - ':input[name="permit_locations[items][{delta}][_item_][requested_area][street]"]':
-                    checked: true
-            '#options':
-              itc: 'ITC (1-5 min max)'
-              full: FULL
-              none: 'None (shared use)'
-            '#required': true
-            '#options_display': side_by_side
-          space_type:
-            '#type': select
-            '#options':
-              metered: Metered
-              non_metered: Non-Metered
-              app: 'Area Parking Permit'
-            '#required': true
-            '#title': 'Type of parking space'
-            '#states':
-              visible:
-                ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
-                  checked: true
-          num_spaces:
-            '#type': textfield
-            '#required': true
-            '#title': 'Number of spaces or feet'
-            '#description': '(1 space = 20 feet)'
+            '#title': 'Cross street 1'
+            '#description': 'If you were standing at the location, facing the street, what would be the nearest cross street on your left?'
             '#description_display': before
-            '#states':
-              visible:
-                ':input[name="permit_locations[items][{delta}][_item_][requested_area][parking]"]':
-                  checked: true
-          needs_enforcement:
-            '#type': radios
-            '#options': yes_no
+          cross_street_2:
+            '#type': textfield
             '#required': true
-            '#title': 'Parking Enforcement for towing? (Non-Metered only)'
-            '#options_display': side_by_side
-            '#states':
-              visible:
-                ':input[name="permit_locations[items][{delta}][_item_][space_type]"]':
-                  value: non_metered
+            '#title': 'Cross street 2'
+            '#description': 'If you were standing at the location, facing the street, what would be the nearest cross street on your right?'
+            '#description_display': before
           attachment:
             '#type': webform_document_file
             '#title': 'Upload attachment'
-            '#multiple': 1
+            '#description': '<p>A traffic control plan is required for lane, street, or sidewalk uses with any closure or traffic control/holds.<br>For parking requests, please include a map image indicating requested location(s).</p>'
+            '#description_display': before
+            '#states':
+              invisible:
+                ':input[name="permit_locations[items][{delta}][_item_][requested_use]"]':
+                  value: b_roll
+            '#required': true
+            '#multiple': 3
             '#max_filesize': '10'
             '#file_help': help
             '#file_extensions': 'pdf jpg jpeg png'
+  section_insurance:
+    '#type': webform_section
+    '#title': 'Insurance requirements'
+    '#states':
+      visible:
+        ':input[name="permit_has_production_packet"]':
+          checked: true
+    markup_insurance_information:
+      '#type': webform_markup
+      '#markup': '<p>Any permits for the use of the street or sidewalk area will require an insurance certificate and endorsement per these requirements. If you are reserving parking only and not impacting the street or sidewalk, this insurance requirement does not apply.</p><p><a href="/transportation/permitting/row-insurance" target="_blank">Learn more about insurance requirements</a></p>'
+    permit_insurance_attestation:
+      '#type': checkbox
+      '#title': 'I confirm the name of the production company matches the name on my insurance documents.'
+      '#required': true
+    permit_insurance_attachment:
+      '#type': webform_document_file
+      '#title': 'Upload insurance documents'
+      '#description_display': before
+      '#multiple': 2
+      '#max_filesize': '10'
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
 css: "div.form-item-permit-locations .webform-multiple-table table {\r\n    margin-bottom: 0;\r\n    width: inherit;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table thead th,\r\ndiv.form-item-permit-locations .webform-multiple-table tbody td {\r\n    border: 0;\r\n    padding: 0;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table tbody tr:hover,\r\ndiv.form-item-permit-locations .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table tbody {\r\n    counter-reset: location;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table tbody td > .form-item:not(:last-child) {\r\n    margin-bottom: 1rem;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table tbody tr {\r\n    border: 0;\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n    position: relative;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table tbody tr::before {\r\n    counter-increment: location;\r\n    content: \"Location \" counter(location);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table td.webform-multiple-table--operations {\r\n    position: absolute;\r\n    top: 0.25rem;\r\n    right: 0;\r\n}\r\n\r\ndiv.form-item-permit-locations .webform-multiple-table .form-control,\r\ndiv.form-item-permit-locations .webform-multiple-table .form-select {\r\n    margin-top: 0.25rem;\r\n    width: 100%;\r\n}"
 javascript: ''
 settings:
@@ -451,5 +500,33 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_primary_name
+      requester_email: contact_primary_email
+      subject: 'Film Permit Application'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: pbotfilm@portlandoregon.gov
+      group_id: '12281750992407'
+      assignee_id: ''
+      type: question
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "1900004448785: ['[webform_submission:values:permit_company]', 'permit_company']"
+      ticket_id_field: ''
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: ''
+      excluded_elements: {  }
 variants: {  }
