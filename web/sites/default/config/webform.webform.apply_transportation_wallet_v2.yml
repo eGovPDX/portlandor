@@ -50,12 +50,18 @@ elements: |-
       visible:
         ':input[name="organization_name"]':
           filled: true
+  public_records_statement:
+    '#type': webform_section
+    '#title': 'How we use applicant information'
+    markup_04:
+      '#type': webform_markup
+      '#markup': '<p>The information provided in this form will only be used to sign the applicant up for a Transportation Wallet. There is a chance the information may be released if required by a public records request.</p><p>Portland State University (PSU) is helping evaluate the Transportation Wallet program. They may contact applicants later to ask about their experience. To support this evaluation, information about how applicants use the Transportation Wallet may be shared with PSU. They will not include name or other identifying information in any evaluation reports.</p>'
   apply_this_year:
     '#type': radios
-    '#title': 'Have you already received a Wallet this year?'
+    '#title': 'Has the applicant already received a Wallet this year?'
     '#options':
-      'Yes, I have already received a Wallet this calendar year (Jan-Dec)': 'Yes, I have already received a Wallet this calendar year (Jan-Dec)'
-      'No, I have not received a Wallet and will finish filling out the form': 'No, I have not received a Wallet and will finish filling out the form'
+      'Yes, they already received a Wallet this calendar year (Jan-Dec)': 'Yes, they already received a Wallet this calendar year (Jan-Dec)'
+      'No, they have not received a Wallet this year': 'No, they have not received a Wallet this year'
     '#required': true
     '#states':
       visible:
@@ -66,20 +72,20 @@ elements: |-
     '#states':
       visible:
         ':input[name="apply_this_year"]':
-          value: 'Yes, I have already received a Wallet this calendar year (Jan-Dec)'
-    '#alert_markup': '<h2>Information</h2><p>You can only receive one Wallet per calendar year. If you need assistance or would like to verify whether you have a valid, active Hop card, please contact us by email at <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a>.</p>'
+          value: 'Yes, they already received a Wallet this calendar year (Jan-Dec)'
+    '#alert_markup': '<p>Access for All Wallets are available to eligible participants onc<em><strong>e per calendar year</strong></em>. If you are experiencing issues with Access for All resources&nbsp;received earlier in the&nbsp;year, please&nbsp;reach out to the organization you signed up&nbsp;through for further assistance.</p><p>For TriMet Hop card issues or replacement of a lost Hop card, please <a href="https://support.trimet.org/hc/en-us">contact TriMet directly (by phone, text, chat, email or in person)</a>.&nbsp;</p>'
   container_submit:
     '#type': container
     '#states':
       visible:
         ':input[name="apply_this_year"]':
-          value: 'No, I have not received a Wallet and will finish filling out the form'
+          value: 'No, they have not received a Wallet this year'
     section_applicant_information:
       '#type': webform_section
-      '#title': 'Applicant Information'
+      '#title': 'Applicant Details'
       apply_home_address:
         '#type': portland_address_verifier
-        '#title': 'What is your home address?'
+        '#title': 'What is the home address?'
         '#location_verification_status__title': 'Address verification'
         '#location_verification_status__required': true
         '#location_address__title': 'Street address'
@@ -114,10 +120,15 @@ elements: |-
             - fw-semibold
       apply_has_hop_card:
         '#type': radios
-        '#title': 'Does this person have a TriMet Hop card?'
+        '#title': 'Does they have a TriMet Hop card?'
         '#options':
           'No, they need a Hop card': 'No, they need a Hop card'
           'Yes, they already have a Hop card': 'Yes, they already have a Hop card'
+        '#states':
+          visible:
+            ':input[name="apply_lift_user"]':
+              unchecked: true
+        '#required': true
       apply_hop_card_number:
         '#type': textfield
         '#title': 'Please enter the 16-digit Hop card number'
@@ -146,8 +157,6 @@ elements: |-
         '#counter_maximum': 16
         '#states':
           visible:
-            ':input[name="apply_has_hop_card"]':
-              value: 'Yes, they already have a Hop card'
             ':input[name="apply_lift_user"]':
               checked: true
       computed_hop_card_number:
@@ -171,7 +180,7 @@ elements: |-
             - ':input[name="apply_hop_card_number_lift"]':
                 value:
                   pattern: '^[^3]\d*$'
-        '#alert_markup': '<h2>Next Steps</h2><p>The numbered you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical Hop card, use that number instead. If you do not have a physical Hop card, please select "No, they need a Hop card" above and continue filling out the form.</p>'
+        '#alert_markup': '<h2>Next Steps</h2><p>The number you entered is for a virtual Hop card. We can''t load funds onto this type of card. If you have a physical Hop card, use that number instead. If you do not have a physical Hop card, please select "No, they need a Hop card" above and continue filling out the form.</p>'
       container_valid_card:
         '#type': container
         '#states':
@@ -184,7 +193,7 @@ elements: |-
                 '!pattern': '^[^3]\d*$'
         apply_date_of_birth:
           '#type': date
-          '#title': "What is this person's date of birth? (MM/DD/YYYY)"
+          '#title': 'What is their date of birth? (MM/DD/YYYY)'
           '#description': '<p>Must be 18 years or older. Please make sure to set the correct birth date year.</p>'
           '#description_display': before
           '#required': true
@@ -242,8 +251,8 @@ elements: |-
             {% endif %}
         contact_email:
           '#type': textfield
-          '#title': Email
-          '#description': '<p>If you do not have an email address, please provide the email of the community-based organization helping you. We will use this email if we have questions or to send important updates about your application.</p>'
+          '#title': "Applicant's Email"
+          '#description': '<p><strong>If the applicant has an email address, please enter it here.</strong> This helps us get in touch with questions or updates about your application, as well as the opportunity to take a paid survey through Portland State University to assist in evaluating this program. If they do not have an email address, please provide the email of the community-based organization helping them.&nbsp;&nbsp;</p>'
           '#autocomplete': email
           '#required': true
           '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -251,16 +260,16 @@ elements: |-
         contact_phone:
           '#type': textfield
           '#title': Phone
-          '#description': '<p>Please provide your phone number in case we need additional information.</p>'
+          '#description': '<p>Please provide a phone number in case we need additional information.</p>'
           '#autocomplete': tel-national
           '#input_mask': '(999) 999-9999'
         apply_final_questions_text:
           '#type': textarea
-          '#title': 'Do you have questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond to you.'
+          '#title': 'Questions about the Transportation Wallet? Please leave questions or comments in the field below and we will do our best to respond.'
         section_optional_survey:
           '#type': webform_section
-          '#title': 'Help us improve'
-          '#description': '<p>Please share a bit about your travel habits and background so PBOT can keep making our transportation programs better and more equitable.</p>'
+          '#title': 'Travel behavior survey'
+          '#description': "<p>Share the applicant's current travel habits to help PBOT understand the impact of Transportation Wallet: Access for All and improve our program.</p>"
           '#description_display': before
           '#attributes':
             class:
@@ -268,7 +277,7 @@ elements: |-
               - mb-10
           apply_transit_frequency:
             '#type': webform_likert
-            '#title': 'How often do you or members of your household use the following transportation modes?'
+            '#title': 'How often does the applicant or members of their household use the following transportation modes?'
             '#required': true
             '#questions':
               'Transit - Bus, MAX, Streetcar': 'Transit - Bus, MAX, Streetcar'
@@ -294,7 +303,7 @@ elements: |-
                 - 'table table-bordered'
           apply_how_affordable_scale:
             '#type': radios
-            '#title': 'My household struggles to afford the cost of transportation'
+            '#title': "The applicant's household struggles to afford the cost of transportation"
             '#options':
               'Strongly disagree': 'Strongly disagree'
               'Somewhat disagree': 'Somewhat disagree'
@@ -304,7 +313,7 @@ elements: |-
             '#required': true
           apply_travel_services:
             '#type': radios
-            '#title': 'TriMet services (bus, MAX, etc.) go to the places where I need to go'
+            '#title': 'TriMet services (bus, MAX, etc.) go to the places where the applicant needs to go'
             '#options':
               'Strongly disagree': 'Strongly disagree'
               'Somewhat disagree': 'Somewhat disagree'
@@ -314,7 +323,7 @@ elements: |-
             '#required': true
           apply_how_often_skip:
             '#type': radios
-            '#title': 'In the past 30 days, how often did you skip going somewhere because of a problem with transportation?'
+            '#title': 'In the past 30 days, how often did the applicant skip going somewhere because of a problem with transportation?'
             '#options':
               Often: Often
               Sometimes: Sometimes
@@ -322,36 +331,36 @@ elements: |-
             '#required': true
           apply_travel_experience_text:
             '#type': textarea
-            '#title': 'Anything else you want to tell us about your experience traveling in Portland?'
+            '#title': "Anything else to tell us about the applicant's experience traveling in Portland?"
         demographic_questions:
           '#type': webform_section
           '#title': 'Optional demographic questions'
           demographic_zipcode:
             '#type': textfield
-            '#title': 'What is the zipcode where you live?'
+            '#title': 'What is the zipcode where the applicant lives?'
           demographic_employment_school:
             '#type': checkboxes
-            '#title': 'What is your employment/school status?'
+            '#title': 'What is their employment/school status?'
             '#description': '<p>Select all that apply.</p>'
             '#description_display': before
             '#options':
-              'I work outside the home': 'I work outside the home'
-              'I work from home': 'I work from home'
+              'Work outside the home': 'Work outside the home'
+              'Work from home': 'Work from home'
               'Not employed, looking for work': 'Not employed, looking for work'
               'Not employed, NOT looking': 'Not employed, NOT looking'
-              'I go to school outside the home': 'I go to school outside the home'
+              'Go to school outside the home': 'Go to school outside the home'
               Retired: Retired
               'Not able to work': 'Not able to work'
               'Prefer not to answer': 'Prefer not to answer'
           demographic_adults:
             '#type': number
-            '#title': 'How many adults live in your household, including yourself?'
+            '#title': 'How many adults live in the household, including the applicant?'
           demographic_children:
             '#type': number
-            '#title': 'How many children under 18 live in your household?'
+            '#title': 'How many children under 18 live in the household?'
           demographic_ethnicity:
             '#type': webform_checkboxes_other
-            '#title': 'Which of the following describes your racial or ethnic identity?'
+            '#title': "Which of the following describes the applicant's racial or ethnic identity?"
             '#description': '<p>Select all that apply</p>'
             '#description_display': before
             '#options': ethnicity
@@ -359,7 +368,7 @@ elements: |-
             '#other__placeholder': 'Please describe'
           demographic_languages:
             '#type': webform_checkboxes_other
-            '#title': 'Which languages are spoken in your home?'
+            '#title': 'Which languages are spoken in the home?'
             '#description': '<p>Select all that apply.</p>'
             '#description_display': before
             '#options': languages_ppr
@@ -367,14 +376,14 @@ elements: |-
             '#other__placeholder': 'Please describe'
           demographic_disability:
             '#type': radios
-            '#title': 'Do you identify with having or living with a disability?'
+            '#title': 'Does the applicant identify with having or living with a disability?'
             '#options':
               'Yes': 'Yes'
               'No': 'No'
-              'I prefer not to answer': 'I prefer not to answer'
+              'Prefer not to answer': 'Prefer not to answer'
           demogrpahic_disability_type:
             '#type': webform_checkboxes_other
-            '#title': 'Please describe the nature of your disability'
+            '#title': 'Please describe the nature of the disability'
             '#description': '<p>Select all that apply.</p>'
             '#description_display': before
             '#options': disability_details
@@ -504,10 +513,10 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>Thank you for submitting a <em>Transportation Wallet: Access for All</em> registration form. We will review your application, verify your eligibility and work to fulfill your Wallet within 10 business days of receiving all information needed to process your application. Once fulfilled, your Wallet will be handed off to community-based organization staff, who are responsible for making sure you receive it.</p><p><strong>Please note that missing or incorrect information in your application can result in delaying your Wallet’s fulfillment.</strong></p>'
+  confirmation_message: "<p>Thank you for submitting a <em>Transportation Wallet: Access for All</em> registration form. We aim to fulfill the applicant's Wallet within 10 business days of receiving the application. Once fulfilled, your Wallet will be handed off to [webform_submission:values:organization_name] staff, who are responsible for making sure the applicant receives it.</p><p><strong>Please note that missing or incorrect information in the application can result in delaying the Wallet’s fulfillment.</strong></p><p><strong>&nbsp;</strong></p>"
   confirmation_attributes: {  }
   confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back_label: 'Submit another application'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
