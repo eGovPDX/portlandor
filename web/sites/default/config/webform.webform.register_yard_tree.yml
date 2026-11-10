@@ -61,7 +61,7 @@ elements: |-
           ':input[name="apply_location[location_capture_field]"]':
             value:
               pattern: '^(Argay Terrace|Boise|Buckman|Centennial|Cully|East Columbia|Eliot|Glenfair|Hayden Island|Hazelwood|Humboldt|Hollywood|Kerns|King|Lloyd|Montavilla|Mill Park|Mt. Scott-Arleta|Overlook|Parkrose|Parkrose Heights|Piedmont|Portsmouth|Powellhurst-Gilbert|Russell|South Tabor|St. Johns|Sumner|Sunderland|Wilkes|Woodlawn)$'
-      '#title': '<strong>Check here if you want a yard sign celebrating trees!</strong> <em>* Available while supplies last.</em>'
+      '#title': '<strong>Check here if you want a yard sign celebrating trees!</strong><em> * Available while supplies last.</em>'
     markup_verify:
       '#type': webform_markup
       '#states':
@@ -115,7 +115,7 @@ elements: |-
           '#markup': '<p><strong>Choose your preferred language:</strong><br><a href="https://www.portland.gov/trees/tree-planting/documents/2025-yard-tree-species-list-russian/download">Russian</a><br><a href="https://www.portland.gov/trees/tree-planting/documents/2025-yard-tree-species-list-somali/download">Somali</a><br><a href="https://www.portland.gov/trees/tree-planting/documents/2025-summary-trees-spanish/download">Spanish</a><br><a href="https://www.portland.gov/trees/documents/2025-yard-tree-species-list-vietnamese/download">Vietnamese</a></p>'
       markup_tree_info:
         '#type': webform_markup
-        '#markup': '<p>Yard trees should be planted a minimum of 10 feet from your house, two feet from property lines, and five feet from a driveway. For advice on where to plant your tree, see <a href="https://www.arborday.org/trees/righttreeandplace/" target="_blank">Right Tree, Right Place from the Arbor Day Foundation</a></p><p><strong>Please select your tree species below.</strong></p><p><strong><u>Every address is eligible for 3 trees.</u></strong></p>'
+        '#markup': '<p>Yard trees should be planted a minimum of 10 feet from your house, two feet from property lines, and five feet from a driveway. For advice on where to plant your tree, see <a href="https://www.arborday.org/trees/righttreeandplace/" target="_blank">Right Tree, Right Place from the Arbor Day Foundation</a></p><p><strong>Please select your tree species below.</strong></p><p><strong><u>Every address is eligible for up to 3 trees. If you choose 3 trees, you will receive 3 trees. </u></strong></p>'
       apply_tree_1:
         '#type': portland_views_select
         '#title': 'Tree #1'
@@ -195,6 +195,8 @@ elements: |-
         '#type': radios
         '#states':
           visible:
+            ':input[name="after_event"]':
+              value: ''
             ':input[name="apply_location[location_verification_status]"]':
               value: Verified
             ':input[name="apply_location[location_capture_field]"]':
@@ -207,6 +209,8 @@ elements: |-
         '#type': radios
         '#states':
           visible:
+            ':input[name="after_event"]':
+              value: ''
             ':input[name="apply_location[location_verification_status]"]':
               value: Verified
             ':input[name="apply_location[location_capture_field]"]':
@@ -226,25 +230,6 @@ elements: |-
         '#options':
           Yes: 'Yes, I need an accommodation, please plant my tree'
           No: 'No, just delivery please'
-      markup_will_plant:
-        '#type': portland_alert
-        '#states':
-          visible:
-            - ':input[name="apply_free_planting"]':
-                value: Yes
-            - or
-            - ':input[name="apply_free_delivery_planting_accommodation"]':
-                value: Yes
-        '#alert_markup': '<p class="mb-0">Great, we will deliver and plant your tree(s).</p>'
-      markup_will_deliver:
-        '#type': portland_alert
-        '#states':
-          visible:
-            ':input[name="apply_free_delivery"]':
-              value: Yes
-            ':input[name="apply_free_delivery_planting_accommodation"]':
-              value: No
-        '#alert_markup': '<p class="mb-0">Great, we will deliver your tree(s).</p>'
       container_event_selection:
         '#type': container
         '#states':
@@ -322,6 +307,31 @@ elements: |-
             - ':input[name="after_event"]':
                 '!value': ''
         '#required': true
+      markup_will_plant:
+        '#type': portland_alert
+        '#states':
+          visible:
+            - ':input[name="apply_tree_delivery"]':
+                value: 'Delivery and Planting'
+            - or
+            - ':input[name="apply_free_planting"]':
+                value: Yes
+            - or
+            - ':input[name="apply_free_delivery_planting_accommodation"]':
+                value: Yes
+        '#alert_markup': '<p class="mb-0">Great, we will deliver and plant your tree(s). Please keep an eye on your email for scheduling instructions.</p>'
+      markup_will_deliver:
+        '#type': portland_alert
+        '#states':
+          visible:
+            - ':input[name="apply_free_delivery"]':
+                value: Yes
+              ':input[name="apply_free_delivery_planting_accommodation"]':
+                value: No
+            - or
+            - ':input[name="apply_tree_delivery"]':
+                value: 'Delivery Only'
+        '#alert_markup': '<p class="mb-0">Great, we will deliver your tree(s).</p>'
       computed_tree_delivery:
         '#type': webform_computed_twig
         '#title': "Computed - Tree delivery / planting?"
@@ -926,8 +936,8 @@ handlers:
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: 'Yard Tree Giveaway Registration Received'
-      body: '<p>Dear [webform_submission:values:contact_first_name],[webform_submission:values:computed_booking_link:raw]</p><p>Thank you for registering for free trees from Portland Parks &amp; Recreation’s Yard Tree Giveaway. We are thrilled to provide you with high quality trees to grow Portland’s canopy!</p><p><strong>You do not need to attend an event to pick up your trees. Urban Forestry will contact recipients about deliveries, starting in early October through December, to ask for more information regarding your delivery!</strong></p><h2>Registration details</h2><p>Please check your registration details below and contact us immediately if changes are needed. Please do not resubmit your order.</p><p><strong>Planting Address:</strong><br>[webform_submission:values:apply_location:location_full_address]</p><p><strong>You requested delivery:</strong><br>Your trees will be delivered to the planting address above.&nbsp;</p><p><strong>Name:</strong> [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]<br><strong>Email:</strong> [webform_submission:values:contact_email]<br><strong>Phone:</strong> [webform_submission:values:contact_phone]</p><p><strong>Your registration is confirmed for the following trees:</strong></p><p><strong>Tree 1:</strong> [webform_submission:values:apply_tree_1] [webform_submission:values:apply_tree_1:cell_2]<br><strong>Tree 2:</strong> [webform_submission:values:apply_tree_2] [webform_submission:values:apply_tree_2:cell_2]<br><strong>Tree 3:</strong> [webform_submission:values:apply_tree_3] [webform_submission:values:apply_tree_3:cell_2]</p><h2>Delivery information</h2><p>Prior to receiving your tree(s), Urban Forestry will contact you via email to arrange your delivery. You do not need to be home for delivery. If you have specific instructions for where to leave the tree(s), please let our staff know when you are contacted.</p><p><strong>If you do not respond to our attempts to contact you for delivery, your trees will not be delivered and will no longer be reserved. If you need to cancel your order, please contact us as early as possible so we can give your trees to someone else.</strong></p><h2>Planting and care</h2><p><strong>Once you have your tree(s):</strong></p><ul><li data-list-item-id="e28ee5e0cb0c87d0945e03cb89d53f66c"><strong>Plant your tree(s) as soon as possible.</strong> There are a few important steps to take when planting a young tree; you will receive <a href="https://www.portland.gov/trees/tree-planting/documents/how-properly-plant-and-care-your-tree-english/download">planting and care information</a> with your tree delivery.<br>&nbsp;</li><li data-list-item-id="e0247e46340584ae78d91dd24f4217243">Water your tree(s) with 15 gallons of water, once every week May through October.</li></ul><p>Thank you for planting trees! Trees provide essential services for all Portlanders including cleaning the air we breathe, shading us and our homes during the hot summer months and improving our health.</p><p>Sincerely,</p><p><strong>Portland Parks &amp; Recreation</strong><br><strong>Urban Forestry Yard Tree Giveaway Team</strong><br><a href="mailto:freeyardtrees@portlandoregon.gov">freeyardtrees@portlandoregon.gov</a><br><a href="https://www.portland.gov/freeyardtrees">www.portland.gov/freeyardtrees</a></p><p>Yard Tree Pledge:</p><ul><li data-list-item-id="edf94fd7830d0a2b460e91c14d566d74c"><strong>If selected, allow Urban Forestry to monitor the tree''s survival and health once a year. This helps us to see how trees are faring and improve our program.</strong><br>&nbsp;</li><li data-list-item-id="ef658b85c8139fc705f3d1161e2ef177e">Review the planting and care instructions that come with my tree before planting.<br>&nbsp;</li><li data-list-item-id="e652b36c0fb0dffd9fad2713da603e106">Water the tree 15 gallons of water per week, May-Oct, for at least the first three years.<br>&nbsp;</li><li data-list-item-id="e2bb583bd8922a74e3455a1b0a949c0f4">Plant the tree at the address provided <strong>that is inside Portland city limits.</strong><br>&nbsp;</li><li data-list-item-id="e35fcd6138178804e470c69ad6c0dee33">Plant the tree on my property, not as street trees.<br>&nbsp;</li><li data-list-item-id="ea7d99fc0c7924783a5a5a9c16716d372">Plant the tree in the ground, not in a container.<br>&nbsp;</li><li data-list-item-id="ec4bf3e1a8c93c2e9736eb6c7dcdbc32b">Contact Urban Forestry or a tree care professional with questions about my tree.<br>&nbsp;</li><li data-list-item-id="ec7c91c058d2a497ac297bda6d224302f">Return the tree to Urban Forestry if I cannot plant it.<br>&nbsp;</li><li data-list-item-id="efa98d1415eb0e8de53f8a692a936fcff">Ask permission from the property owner to plant the tree, if I am a renter.</li></ul>'
+      subject: 'Yard Tree Giveaway Delivery Registration – Please Respond '
+      body: '<p>Dear [webform_submission:values:contact_first_name],[webform_submission:values:computed_booking_link:raw]</p><p>Thank you for registering for free trees from Portland Parks &amp; Recreation’s Yard Tree Giveaway. We are thrilled to provide you with high quality trees to grow Portland’s canopy!</p><p><strong>Please check your registration details and contact us if changes are needed.</strong></p><h2>Registration details</h2><p><strong>Planting Address:</strong><br>[webform_submission:values:apply_location:location_full_address]</p><p><strong>You requested delivery:</strong><br>Your trees will be delivered to the planting address above.&nbsp;</p><p><strong>Name:</strong> [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]<br><strong>Email:</strong> [webform_submission:values:contact_email]<br><strong>Phone:</strong> [webform_submission:values:contact_phone]</p><p><strong>Your registration is confirmed for the following trees:</strong></p><p><strong>Tree 1:</strong> [webform_submission:values:apply_tree_1] [webform_submission:values:apply_tree_1:cell_2]<br><strong>Tree 2:</strong> [webform_submission:values:apply_tree_2] [webform_submission:values:apply_tree_2:cell_2]<br><strong>Tree 3:</strong> [webform_submission:values:apply_tree_3] [webform_submission:values:apply_tree_3:cell_2]</p><h2>Delivery information</h2><p>Deliveries are currently underway. <strong>You do not need to be home for delivery. We will text or call you on the day we plan to deliver your trees. &nbsp;</strong></p><ul><li data-list-item-id="ef6cae08f9f49d0663854cf66dcec4e1a">Deliveries generally run Monday through Friday, 8:30am – 3pm.</li><li data-list-item-id="e0a37dee6fb71586da1a7d5774096b11d">Each tree will come with one bag of mulch. We will also leave a <a href="https://www.portland.gov/trees/documents/how-properly-plant-and-care-your-tree-english-0/download">booklet with proper planting and care instructions</a> – please review this information before planting.</li><li class="ck-list-marker-bold" data-list-item-id="e85685ced0cf9c21668a64abdb8f45774"><strong>You do not need to be present to receive your tree(s).</strong></li><li data-list-item-id="e35f206af692d0f355c1727953a31e7cb">Staff delivering trees will not be able to help you with questions about placement of the tree(s) in your yard. &nbsp;</li></ul><h2>What we need from you:</h2><ul><li data-list-item-id="e1a07732783a31cbd07b0332b06edcbc0"><strong>Please respond to this email to let us know where on your property you would like your tree(s) delivered.</strong> You do not need to be home for delivery. We will text or call you on the day we plan to deliver your trees. &nbsp;<br>&nbsp;</li><li data-list-item-id="e2aec9f8fec9b004a38652a0c00b8f092">If you change your mind and would no longer like the trees, <strong>please let us know as soon as possible so we can give them to someone else.</strong></li></ul><p><strong>Once you have your tree(s):</strong></p><ul><li data-list-item-id="e28ee5e0cb0c87d0945e03cb89d53f66c"><strong>Plant your tree(s) as soon as possible.</strong> There are a few important steps to take when planting a young tree; you will receive <a href="https://www.portland.gov/trees/tree-planting/documents/how-properly-plant-and-care-your-tree-english/download">planting and care information</a> with your tree delivery.<br>&nbsp;</li><li data-list-item-id="e0247e46340584ae78d91dd24f4217243">Water your tree(s) with 15 gallons of water, once every week May through October.</li></ul><p>Thank you for planting trees! Trees provide essential services for all Portlanders including cleaning the air we breathe, shading us and our homes during the hot summer months and improving our health.</p><p>Sincerely,</p><p><strong>Portland Parks &amp; Recreation</strong><br><strong>Urban Forestry Yard Tree Giveaway Team</strong><br><a href="mailto:freeyardtrees@portlandoregon.gov">freeyardtrees@portlandoregon.gov</a><br><a href="https://www.portland.gov/freeyardtrees">www.portland.gov/freeyardtrees</a></p><p>Yard Tree Pledge:</p><ul><li data-list-item-id="edf94fd7830d0a2b460e91c14d566d74c"><strong>If selected, allow Urban Forestry to monitor the tree''s survival and health once a year. This helps us to see how trees are faring and improve our program.</strong><br>&nbsp;</li><li data-list-item-id="ef658b85c8139fc705f3d1161e2ef177e">Review the planting and care instructions that come with my tree before planting.<br>&nbsp;</li><li data-list-item-id="e652b36c0fb0dffd9fad2713da603e106">Water the tree 15 gallons of water per week, May-Oct, for at least the first three years.<br>&nbsp;</li><li data-list-item-id="e2bb583bd8922a74e3455a1b0a949c0f4">Plant the tree at the address provided <strong>that is inside Portland city limits.</strong><br>&nbsp;</li><li data-list-item-id="e35fcd6138178804e470c69ad6c0dee33">Plant the tree on my property, not as street trees.<br>&nbsp;</li><li data-list-item-id="ea7d99fc0c7924783a5a5a9c16716d372">Plant the tree in the ground, not in a container.<br>&nbsp;</li><li data-list-item-id="ec4bf3e1a8c93c2e9736eb6c7dcdbc32b">Contact Urban Forestry or a tree care professional with questions about my tree.<br>&nbsp;</li><li data-list-item-id="ec7c91c058d2a497ac297bda6d224302f">Return the tree to Urban Forestry if I cannot plant it.<br>&nbsp;</li><li data-list-item-id="efa98d1415eb0e8de53f8a692a936fcff">Ask permission from the property owner to plant the tree, if I am a renter.</li></ul>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
