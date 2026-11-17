@@ -143,6 +143,23 @@ git checkout -b pgov-[ID]
 
 </details>
 
+### Workflows for Composer patches
+
+[Official documentation on recommended workflows](https://docs.cweagans.net/composer-patches/usage/recommended-workflows/)
+
+#### Adding a patch
+
+1. Add the patch definition to `patches.json`.
+2. Run `lando composer patches-relock` to regenerate `patches.lock.json` with your new patch.
+3. Run `lando composer patches-repatch` to reapply the defined patches to all dependencies.
+
+#### Removing a patch
+
+1. Delete the patch definition from `patches.json`.
+2. Run `lando composer patches-relock` to regenerate `patches.lock.json`.
+3. Manually delete the dependency that you removed a patch from (the location of the dependency will vary, but a good starting point is to look in the /vendor or /web/modules/contrib directories).
+4. Run `lando composer patches-repatch` to reapply the defined patches to all dependencies.
+
 ### Commit code and push to Github
 
 1. In addition to any custom module or theme files you may have edited, you need to export any configuration changes to the repo in order for those changes to be synchronized. Run `lando drush cex` (config-export) in your local environment to create/update/delete the necessary config files. You will need to commit these to git.
