@@ -44,7 +44,7 @@ elements: |-
         '#title': 'Visit type'
         '#options':
           'I want to visit a station': 'I want to visit a station'
-          'I want a station to visit me': 'I want a station to visit me'
+          ' I want a station to visit an event, community function, or K-12 school': ' I want a station to visit an event, community function, or K-12 school'
         '#required': true
         '#states':
           visible:
@@ -56,10 +56,15 @@ elements: |-
         '#required': true
         '#states':
           visible:
-            ':input[name="request_visit_or_tour"]':
-              value: 'Fire fighter visit request'
+            ':input[name="request_visit_type"]':
+              value: 'I want to visit a station'
+        '#location_search__access': false
         '#location_search__title': 'Location of the station or visit'
         '#location_details__access': false
+        '#primary_layer_source': /api/features/firestations
+        '#primary_layer_type': asset
+        '#primary_layer_behavior': selection
+        '#feature_layer_visible_zoom': 11
       request_date:
         '#type': date
         '#title': 'Preferred date'
@@ -110,6 +115,34 @@ elements: |-
           ':input[name="request_visit_or_tour"]':
             value: 'Belmont Firehouse Museum tour request'
       '#alert_markup': '<h2>Important</h2><p class="mb-0">Tours are only offered between 9:00am-3:00pm on Tuesdays, Wednesdays, Thursdays, and Fridays. Please select a date and time within that range.</p>'
+    request_closest_station:
+      '#type': portland_address_verifier
+      '#title': 'Find your closest station'
+      '#secondary_queries':
+        - api: 'https://www.portlandmaps.com/api/detail/'
+          api_args:
+            - detail_type: property
+            - sections: public-safety
+            - geometry: '{"x":${x}, "y":${y}}'
+            - api_key: AC3208DDEFB2FD0AE5F26D573C27252F
+          capture:
+            - path: 'public-safety.fire_nearest[0].station'
+              field: nearby_fire_station
+              parse: stringify
+    nearby_fire_station:
+      '#type': hidden
+      '#title': 'Nearby fire station'
+    request_firestation_email:
+      '#type': webform_computed_twig
+      '#title': 'Fire station email'
+      '#mode': html
+      '#template': |-
+        {% if data.nearby_fire_station %}
+         station{{ data.nearby_fire_station }}@portlandoregon.gov
+        {% else %}
+          No nearby fire station found.
+        {% endif %}
+      '#ajax': true
     section_contact:
       '#type': webform_section
       '#title': 'Your contact information'
@@ -142,6 +175,13 @@ elements: |-
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
+      '#states':
+        disabled:
+          - ':input[name="nearby_fire_station"]':
+              filled: true
+          - or
+          - ':input[name="request_location[location_search]"]':
+              filled: true
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support agent use only'
@@ -192,6 +232,7 @@ settings:
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_file_limit_message: ''
   form_attributes: {  }
   form_method: ''
   form_action: ''
@@ -257,8 +298,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Thank you for submitting your request to Portland Fire & Rescue.'
-  confirmation_message: '<p>A Tour Coordinator or Station Captain will contact you by phone and/or e-mail to confirm your request.</p><p>Please call us at <a href="tel:+1-503-823-3741">503-823-3741</a> with questions.</p><p>&nbsp;</p>'
+  confirmation_title: 'Thank you for your request!'
+  confirmation_message: '<p data-renderer-start-pos="1080" data-local-id="75340820edf0"><span data-testid="comment-base-item-59867" tabindex="-1">Upon receipt of your request, a Tour Coordinator or Station Captain will&nbsp;contact you by phone and/or e-mail to confirm your request. Please call us with questions at 503-823-3741.</span></p><p data-renderer-start-pos="1291" data-local-id="8bb1b6a25964"><br><span data-testid="comment-base-item-59867" tabindex="-1">We strive to balance community engagement with emergency response and operational readiness. Although every effort will be made to meet your request, please understand we are unable to accommodate every request.</span></p><p>&nbsp;</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
