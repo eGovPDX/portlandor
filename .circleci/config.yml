@@ -132,20 +132,38 @@ build_and_deploy: &build_and_deploy
     - checkout_source
     - install_terminus_and_login
     - restore_cache:
-        name: Restore theme dependencies cache
+        name: Restore Cloudy theme dependencies cache
         keys:
           - cloudy_-{{ checksum "web/themes/custom/cloudy/package-lock.json" }}
     - run:
-        name: Install theme dependencies
+        name: Install Cloudy theme dependencies
         command: |
           cd web/themes/custom/cloudy
           [ ! -d node_modules ] && npm ci --cache .npm  || echo package-lock.json unchanged, using cached node_modules
     - save_cache:
-        name: Save theme dependencies cache
+        name: Save Cloudy theme dependencies cache
         key: cloudy_-{{ checksum "web/themes/custom/cloudy/package-lock.json" }}
         paths:
           - "web/themes/custom/cloudy/node_modules"
           - "web/themes/custom/cloudy/.npm"
+    - restore_cache:
+        name: Restore Rainy theme dependencies cache
+        keys:
+          - rainy-v1-{{ checksum "web/themes/custom/rainy/pnpm-lock.yaml" }}
+    - run:
+        name: Install Rainy theme dependencies
+        command: |
+          npm install -g pnpm
+          cd web/themes/custom/rainy
+          pnpm config set --location global store-dir $(pwd)/.pnpm-store
+          pnpm config set --location project node-linker hoisted
+          [ ! -d node_modules ] && pnpm ci || echo pnpm-lock.yaml unchanged, using cached node_modules
+    - save_cache:
+        name: Save Rainy theme dependencies cache
+        key: rainy-v1-{{ checksum "web/themes/custom/rainy/pnpm-lock.yaml" }}
+        paths:
+          - "web/themes/custom/rainy/node_modules"
+          - "web/themes/custom/rainy/.pnpm-store"
     - restore_cache:
         name: Restore Composer Cache
         keys:
@@ -174,9 +192,14 @@ build_and_deploy: &build_and_deploy
           - /home/circleci/app/web/themes/contrib
           - /home/circleci/app/web/libraries
     - run:
-        name: Build theme
+        name: Build Cloudy theme
         command: |
           npm -C web/themes/custom/cloudy run build
+    - run:
+        name: Build Rainy theme
+        command: |
+          pnpm -C web/themes/custom/rainy run build
+          pnpm -C web/themes/custom/rainy prune --production
     - run_common_prep_tasks
     - run:
         name: Deploy to Pantheon
@@ -205,6 +228,7 @@ build_and_deploy: &build_and_deploy
           find /home/circleci/app/web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           find /home/circleci/app/web/libraries -name .git -type d -prune -exec rm -rf "{}" \;
           rm -rf /home/circleci/app/web/themes/custom/cloudy/node_modules
+          rm -rf /home/circleci/app/web/themes/custom/rainy/.pnpm-store
 
           # Fetch the remote branch
           echo 'export NO_REMOTE_BRANCH=0' >> "$BASH_ENV" && source $BASH_ENV
