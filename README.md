@@ -29,7 +29,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
    2. Name the token something descriptive like "portlandor composer token."
    3. Set the expiration as long as you want, preferably a year.
    4. Under Repository Access, you can select *Public Repositories (read-only)*. The token doesn't need any access but just authenticates you to GitHub.
-5. **If this is a new clone of the repo:** before continuing to the next step you must run `lando composer install` and `lando npm install` to install the appropriate dependencies.
+5. **If this is a new clone of the repo:** before continuing to the next step you must run `lando composer install` and `lando pnpm install` to install the appropriate dependencies.
 6. You have three options to get your database and files set up:
    1. If you're logged in with Terminus, run `lando latest` to automaticaly download and import the latest DB from Dev.
    2. Manually import the database
@@ -251,14 +251,14 @@ We are using the Dev environment to bundle all the approved code together into a
 
 Note: The theme build process is automatically triggered everytime your Lando containers start up and whenever you run `lando refresh` so you should only need to manually run it if you're editing the .scss or .js source files.
 
-You can run `lando npm install` if you need to install/update your Node dependencies.
+You can run `lando pnpm install` if you need to install/update your Node dependencies.
 
 ### Quick Start
 
 Here are some commands you may find useful:
 
-- Run `lando npm run watch` to watch for changes and automatically build, when actively developing the theme.
-- Run `lando npm run build` to build the theme minified as it would be in production.
+- Run `lando pnpm -r watch` to watch for changes and automatically build, when actively developing the theme.
+- Run `lando pnpm -r build` to build the theme minified as it would be in production.
 
 ### Cloudy's asset files
 
@@ -343,8 +343,6 @@ To resolve this, run `lando composer update --lock`, which will generate a new h
 Tests can be found under `tests/percy/__tests__/`. In order to reduce the time spent in switching user sessions, tests are generally organized by users. The same tests can be run in both local and CI environments.
 
 ### Run tests locally
-Run `lando yarn-percy` to install or update all dependencies required by Jest.
-
 Run all tests at once: `lando jest`
 
 Run a single test: `lando jest [YOUR_TEST_NAME]`. Currently there are 5 tests available: admin, admin_group, marty, ally, and anonymous.

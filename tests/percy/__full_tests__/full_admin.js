@@ -20,7 +20,7 @@ var BROWSER_OPTION = {
   // To watch tests locally on MacOS:
   // 1. Uncomment these two settings below
   // 2. In CLI, go into folder "tests/percy"
-  // 3. Run "lando drush uli > superAdmin_uli.log && npm run jest-full"
+  // 3. Run "lando drush uli > superAdmin_uli.log && pnpm run jest-full"
   // executablePath:
   //   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   // headless: false,
