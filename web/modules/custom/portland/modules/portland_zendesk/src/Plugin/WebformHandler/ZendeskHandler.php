@@ -971,11 +971,14 @@ class ZendeskHandler extends WebformHandlerBase
           continue;
         }
 
-        $this->getLogger()->error('Zendesk attachment recovery failed: fid=@fid, uri_changed=@changed, scheme=@scheme, sid_placeholder=@placeholder.', [
+        $this->getLogger()->error('Zendesk attachment recovery failed: fid=@fid, uri_changed=@changed, scheme=@scheme, sid_placeholder=@placeholder, resolved=@resolved, exists=@exists, readable=@readable.', [
           '@fid' => $fid,
           '@changed' => $uri !== $original_uri ? 'yes' : 'no',
           '@scheme' => parse_url($uri, PHP_URL_SCHEME) ?: 'unknown',
           '@placeholder' => str_contains($uri, '/_sid_/') ? 'yes' : 'no',
+          '@resolved' => $real !== '' ? 'yes' : 'no',
+          '@exists' => $real !== '' && is_file($real) ? 'yes' : 'no',
+          '@readable' => $real !== '' && is_readable($real) ? 'yes' : 'no',
         ]);
         throw new \RuntimeException("Zendesk attachment source unavailable: fid=$fid");
       }
