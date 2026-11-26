@@ -869,6 +869,10 @@ class ZendeskHandler extends WebformHandlerBase
           foreach ($fid_to_element as $fid => $element) {
             $file = File::load($fid);
 
+            if (!$file) {
+              throw new \RuntimeException("Zendesk attachment file entity missing: fid=$fid");
+            }
+
             // add uploads key to Zendesk comment, if not already present
             if ($file && !array_key_exists('uploads', $request['comment'])) {
               $request['comment']['uploads'] = [];
@@ -921,34 +925,128 @@ class ZendeskHandler extends WebformHandlerBase
   }
 
   /**
-   * Resolve a File entity to a real path suitable for Zendesk SDK.
-   * If private:// path isn't real yet or contains "/_sid_/", copy to temporary://.
+   * Resolve a file to a local path suitable for the Zendesk SDK.
+   *
+   * Copy files in the _sid_ directory to temporary storage. If the source
+   * is unavailable, reload the file entity and retry once.
    */
   private function pathForZendeskUpload(File $file): string
   {
     $fs = \Drupal::service('file_system');
-    $uri = $file->getFileUri();
-    $real = $fs->realpath($uri) ?: '';
-    $needs_copy = !$real || !file_exists($real) || str_contains($uri, '/_sid_/');
+    $fid = $file->id();
+    $original_uri = $file->getFileUri();
 
-    if ($needs_copy) {
+    for ($attempt = 1; $attempt <= 2; $attempt++) {
+      if ($attempt === 2) {
+        // Allow a brief interval for a transient filesystem issue to clear.
+        usleep(250000);
+        clearstatcache(TRUE);
+
+        // Reload the file entity in case another request updated its URI.
+        \Drupal::entityTypeManager()->getStorage('file')->resetCache([$fid]);
+        $file = File::load($fid);
+
+        if (!$file) {
+          $this->getLogger()->warning('Zendesk attachment recovery failed: fid=@fid, file entity no longer exists.', [
+            '@fid' => $fid,
+          ]);
+          throw new \RuntimeException("Zendesk attachment file entity missing: fid=$fid");
+        }
+      }
+
+      $uri = $file->getFileUri();
+      $real = $fs->realpath($uri) ?: '';
+      $available = $real !== '' && is_file($real) && is_readable($real);
+
+      if (!$available) {
+        if ($attempt === 1) {
+          $this->getLogger()->warning('Zendesk attachment source unavailable; retrying: fid=@fid, scheme=@scheme, sid_placeholder=@placeholder, resolved=@resolved, exists=@exists, readable=@readable.', [
+            '@fid' => $fid,
+            '@scheme' => parse_url($uri, PHP_URL_SCHEME) ?: 'unknown',
+            '@placeholder' => str_contains($uri, '/_sid_/') ? 'yes' : 'no',
+            '@resolved' => $real !== '' ? 'yes' : 'no',
+            '@exists' => $real !== '' && is_file($real) ? 'yes' : 'no',
+            '@readable' => $real !== '' && is_readable($real) ? 'yes' : 'no',
+          ]);
+          continue;
+        }
+
+        $this->getLogger()->error('Zendesk attachment recovery failed: fid=@fid, uri_changed=@changed, scheme=@scheme, sid_placeholder=@placeholder, resolved=@resolved, exists=@exists, readable=@readable.', [
+          '@fid' => $fid,
+          '@changed' => $uri !== $original_uri ? 'yes' : 'no',
+          '@scheme' => parse_url($uri, PHP_URL_SCHEME) ?: 'unknown',
+          '@placeholder' => str_contains($uri, '/_sid_/') ? 'yes' : 'no',
+          '@resolved' => $real !== '' ? 'yes' : 'no',
+          '@exists' => $real !== '' && is_file($real) ? 'yes' : 'no',
+          '@readable' => $real !== '' && is_readable($real) ? 'yes' : 'no',
+        ]);
+        throw new \RuntimeException("Zendesk attachment source unavailable: fid=$fid");
+      }
+
+      // If the URI no longer contains _sid_, the existing path can be used.
+      if (!str_contains($uri, '/_sid_/')) {
+        if ($attempt === 2) {
+          $this->getLogger()->warning('Zendesk attachment recovered: fid=@fid, uri_changed=@changed, method=direct.', [
+            '@fid' => $fid,
+            '@changed' => $uri !== $original_uri ? 'yes' : 'no',
+          ]);
+        }
+        return $real;
+      }
+
+      // Files in _sid_ are copied to a stable temporary path for Zendesk.
       $dir = 'temporary://zendesk_uploads';
-      $fs->prepareDirectory($dir, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+      if (!$fs->prepareDirectory($dir, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+        throw new \RuntimeException('Could not prepare Zendesk temporary upload directory.');
+      }
 
-      // Create a unique temp name (Drupal wrapper around tempnam()).
       $dest = $fs->tempnam($fs->realpath($dir), 'zd-');
-      // Convert it back to a stream wrapper URI so `copy()` can use it.
-      // If $dest is a real path, get a matching URI:
-      $dest_uri = $fs->realpath($dir) ? $dir . '/' . basename($dest) : $dest;
+      if ($dest === FALSE) {
+        throw new \RuntimeException('Could not create Zendesk temporary upload file.');
+      }
 
-      $copied = $fs->copy($uri, $dest_uri, FileSystemInterface::EXISTS_REPLACE);
-      $real = $fs->realpath($copied) ?: '';
+      $dest_uri = $dir . '/' . basename($dest);
+
+      try {
+        $copied = $fs->copy($uri, $dest_uri, FileSystemInterface::EXISTS_REPLACE);
+        $copied_real = $fs->realpath($copied) ?: '';
+
+        if (!$copied_real || !is_file($copied_real) || !is_readable($copied_real)) {
+          throw new \RuntimeException('Zendesk temporary upload copy is unavailable.');
+        }
+
+        if ($attempt === 2) {
+          $this->getLogger()->warning('Zendesk attachment recovered: fid=@fid, uri_changed=@changed, method=copy.', [
+            '@fid' => $fid,
+            '@changed' => $uri !== $original_uri ? 'yes' : 'no',
+          ]);
+        }
+
+        return $copied_real;
+      }
+      catch (\Exception $e) {
+        // Remove an incomplete temporary copy before retrying or failing.
+        if (is_file($dest)) {
+          $fs->unlink($dest);
+        }
+
+        if ($attempt === 2) {
+          $this->getLogger()->warning('Zendesk attachment recovery failed after copy retry: fid=@fid, uri_changed=@changed, exception=@exception.', [
+            '@fid' => $fid,
+            '@changed' => $uri !== $original_uri ? 'yes' : 'no',
+            '@exception' => get_class($e),
+          ]);
+          throw $e;
+        }
+
+        $this->getLogger()->warning('Zendesk attachment copy failed; retrying: fid=@fid, exception=@exception.', [
+          '@fid' => $fid,
+          '@exception' => get_class($e),
+        ]);
+      }
     }
 
-    if (!$real || !file_exists($real)) {
-      throw new \RuntimeException(sprintf('Upload source missing for fid=%d (uri=%s)', $file->id(), $uri));
-    }
-    return $real;
+    throw new \RuntimeException("Zendesk attachment recovery exhausted: fid=$fid");
   }
 
   private function cleanupTempUploads(array $paths): void
