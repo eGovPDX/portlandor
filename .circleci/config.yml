@@ -73,24 +73,27 @@ commands:
           command: |
             terminus auth:login || terminus auth:login  --machine-token="$eGov_Terminus" --email="$eGov_Email"
             echo "export BOT_TOKEN=$(terminus gcdn:bot-bypass portlandor --format=json | jq -r '.[0].token')" >> $BASH_ENV && source $BASH_ENV
-  install_jest_and_percy:
+  install_test_dependencies:
     steps:
       - restore_cache:
           name: Restore Jest and Percy dependencies cache
           keys:
-            - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+            - jest-v3-{{ checksum "pnpm-lock.yaml" }}
       - run:
           name: Install Jest and Percy dependencies
           command: |
+            sudo npm install -g pnpm
+            pnpm config set --location global store-dir $(pwd)/.pnpm-store
+            pnpm ci --filter @cityofportland/portlandor-tests
             cd /home/circleci/app/tests/percy
             export PERCY_POSTINSTALL_BROWSER=true
-            yarn install --frozen-lockfile
             node node_modules/puppeteer/install.mjs
       - save_cache:
           name: Save Jest and Percy dependencies cache
-          key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+          key: jest-v3-{{ checksum "pnpm-lock.yaml" }}
           paths:
             - "tests/percy/node_modules"
+            - ".pnpm-store"
   run_common_prep_tasks:
     steps:
       - run:
@@ -132,20 +135,23 @@ build_and_deploy: &build_and_deploy
     - checkout_source
     - install_terminus_and_login
     - restore_cache:
-        name: Restore theme dependencies cache
+        name: Restore pnpm dependencies cache
         keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/package-lock.json" }}
+          - pnpm-deps-v1-{{ checksum "pnpm-lock.yaml" }}
     - run:
-        name: Install theme dependencies
+        name: Install pnpm dependencies
         command: |
-          cd web/themes/custom/cloudy
-          [ ! -d node_modules ] && npm ci --cache .npm  || echo package-lock.json unchanged, using cached node_modules
+          sudo npm install -g pnpm
+          pnpm config set --location global store-dir $(pwd)/.pnpm-store
+          [ ! -d node_modules ] && pnpm ci --filter '!@cityofportland/portlandor-tests' || echo pnpm-lock.yaml unchanged, using cached node_modules
     - save_cache:
-        name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/package-lock.json" }}
+        name: Save pnpm dependencies cache
+        key: pnpm-deps-v1-{{ checksum "pnpm-lock.yaml" }}
         paths:
+          - "web/modules/custom/portland_components/node_modules"
           - "web/themes/custom/cloudy/node_modules"
-          - "web/themes/custom/cloudy/.npm"
+          - "web/themes/custom/rainy/node_modules"
+          - ".pnpm-store"
     - restore_cache:
         name: Restore Composer Cache
         keys:
@@ -174,9 +180,10 @@ build_and_deploy: &build_and_deploy
           - /home/circleci/app/web/themes/contrib
           - /home/circleci/app/web/libraries
     - run:
-        name: Build theme
+        name: Build themes and prune dependencies for production
         command: |
-          npm -C web/themes/custom/cloudy run build
+          pnpm -r build
+          pnpm -r prune --production
     - run_common_prep_tasks
     - run:
         name: Deploy to Pantheon
@@ -205,6 +212,7 @@ build_and_deploy: &build_and_deploy
           find /home/circleci/app/web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           find /home/circleci/app/web/libraries -name .git -type d -prune -exec rm -rf "{}" \;
           rm -rf /home/circleci/app/web/themes/custom/cloudy/node_modules
+          rm -rf /home/circleci/app/.pnpm-store
 
           # Fetch the remote branch
           echo 'export NO_REMOTE_BRANCH=0' >> "$BASH_ENV" && source $BASH_ENV
@@ -389,7 +397,7 @@ basic_tests: &basic_tests
   steps:
     - checkout_source
     - install_terminus_and_login
-    - install_jest_and_percy
+    - install_test_dependencies
     - run_common_prep_tasks
     - run:
         name: Run Percy tests
@@ -404,16 +412,16 @@ basic_tests: &basic_tests
             # Generate one time login link for tests
             if [[ ${TESTFILE} == *"ally"* ]]; then
               echo 'export ALLY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
+              pnpm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"marty"* ]]; then
               echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
+              pnpm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin-group"* ]]; then
               echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
+              pnpm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"anonymous"* ]]; then
               echo 'export NODE_OPTIONS="${NODE_OPTIONS} --experimental-vm-modules"' >> $BASH_ENV && source $BASH_ENV
-              npm run single-test -- ${TESTFILE}
+              pnpm run single-test -- ${TESTFILE}
             fi
           done
     - store_artifacts:
@@ -433,7 +441,7 @@ full_regression: &full_regression
   steps:
     - checkout_source
     - install_terminus_and_login
-    - install_jest_and_percy
+    - install_test_dependencies
     - restore_cache:
         name: Restore last git commit file
         keys:
@@ -470,7 +478,7 @@ full_regression: &full_regression
           echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
 
           # Start Percy tests
-          npm run jest-full
+          pnpm run jest-full
     - save_cache:
         name: Save git commit file
         key: git-commit-{{ .Revision }}-v1
@@ -501,7 +509,7 @@ clone_live_database: &clone_live_database
   steps:
     - checkout_source
     - install_terminus_and_login
-    - install_jest_and_percy
+    - install_test_dependencies
     - run_common_prep_tasks
     - run:
         name: Clone database from Live
@@ -538,7 +546,7 @@ clone_live_database: &clone_live_database
             do
               # Generate one time login link for tests
               echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-sandbox -- ${TESTFILE}
+              pnpm run jest-sandbox -- ${TESTFILE}
             done
           fi
     - store_artifacts:

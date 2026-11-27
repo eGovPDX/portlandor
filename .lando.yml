@@ -48,9 +48,9 @@ services:
     run_as_root:
       - /bin/sh -c "chmod -R 777 /var/www"
     build:
-      - echo "Installing Node.js dependencies and building theme..."
-      - npm -C /app/web/themes/custom/cloudy install
-      - npm -C /app/web/themes/custom/cloudy run build
+      - echo "Installing pnpm dependencies and building themes..."
+      - pnpm -C /app install --filter '!@cityofportland/portlandor-tests'
+      - pnpm -C /app -r build
   solr:
     type: solr:9
     portforward: true
@@ -83,14 +83,10 @@ tooling:
   node:
     description: CUSTOM Run node commands
     service: node
-  npm:
-    description: CUSTOM Run npm commands within cloudy
+  pnpm:
+    description: CUSTOM Run pnpm commands
     service: node
-    cmd: npm -C /app/web/themes/custom/cloudy
-  yarn-percy:
-    description: CUSTOM Run yarn commands
-    service: node
-    cmd: yarn --cwd /app/tests/percy
+    cmd: pnpm
   jest:
     description: CUSTOM Run Jest tests
     dir: /app/tests/percy
@@ -99,7 +95,7 @@ tooling:
       - appserver: drush uli --mail xinju.wang@portlandoregon.gov > superAdmin_uli_2.log
       - appserver: drush uli --mail ally.admin@portlandoregon.gov > ally_uli.log
       - appserver: drush uli --mail marty.member@portlandoregon.gov > marty_uli.log
-      - node: npm run jest-test
+      - node: pnpm run jest-test
   jest-full:
     description: CUSTOM Run full regression Jest tests
     dir: /app/tests/percy
@@ -107,13 +103,13 @@ tooling:
       - appserver: drush uli > superAdmin_uli.log
       - appserver: drush uli --mail ally.admin@portlandoregon.gov > ally_uli.log
       - appserver: drush uli --mail marty.member@portlandoregon.gov > marty_uli.log
-      - node: npm run jest-full
+      - node: pnpm run jest-full
   jest-sandbox:
     description: CUSTOM Run sandbox Jest tests
     dir: /app/tests/percy
     cmd:
       - appserver: drush uli > superAdmin_uli.log
-      - node: npm run jest-sandbox
+      - node: pnpm run jest-sandbox
   latest:
     description: CUSTOM Download and import the latest database from Dev
     cmd:
@@ -149,6 +145,8 @@ tooling:
       - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oPc 'Removing drupal/\S+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oP 'Removing drupal/\K\S+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi || true"
       - appserver: echo "Installing Composer dependencies..."
       - appserver: composer install -d /app
+      - node: echo "Installing pnpm dependencies..."
+      - node: pnpm -C /app install --filter '!@cityofportland/portlandor-tests'
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y || true
       - appserver: echo "Run drush updb -y..."
@@ -158,9 +156,8 @@ tooling:
       - appserver: if [ -n "$(git diff --shortstat master -- translations/)" ]; then private/import-locale-translations.sh; fi
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
-      - node: echo "Building theme asset files..."
-      - node: npm -C /app/web/themes/custom/cloudy install
-      - node: npm -C /app/web/themes/custom/cloudy run build
+      - node: echo "Building themes..."
+      - node: pnpm -C /app -r build
   reindex:
     description: CUSTOM Reindex the Solr searcher
     service: appserver
